@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, FileText, CheckCircle2, XCircle, Send, Clock, AlertTriangle, CreditCard } from "lucide-react";
+import { ArrowLeft, FileText, CheckCircle2, XCircle, Send, Clock, AlertTriangle, CreditCard, Printer } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -101,15 +101,18 @@ export default function InvoiceDetail({ id }: { id: string }) {
             </div>
           </div>
           <div className="flex gap-2 flex-wrap">
+            <Button variant="outline" size="sm" className="gap-1.5 print:hidden" onClick={() => window.print()}>
+              <Printer className="w-3.5 h-3.5" /> Print
+            </Button>
             {canApproveMismatch && (
-              <Button size="sm" variant="outline" className="border-amber-200 text-amber-700 hover:bg-amber-50" onClick={() => setActionDialog("approve-mismatch")}>
+              <Button size="sm" variant="outline" className="border-amber-200 text-amber-700 hover:bg-amber-50 print:hidden" onClick={() => setActionDialog("approve-mismatch")}>
                 <AlertTriangle className="w-3.5 h-3.5 mr-1" /> Approve Mismatch
               </Button>
             )}
-            {canSubmit && <Button size="sm" className="gap-1.5 bg-blue-600 hover:bg-blue-700" onClick={() => setActionDialog("submit")}><Send className="w-3.5 h-3.5" /> Submit</Button>}
-            {canApprove && <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 gap-1.5" onClick={() => setActionDialog("approve")}><CheckCircle2 className="w-3.5 h-3.5" /> Approve</Button>}
-            {canReject && <Button size="sm" variant="outline" className="border-red-200 text-red-700 hover:bg-red-50" onClick={() => setActionDialog("reject")}><XCircle className="w-3.5 h-3.5 mr-1" /> Reject</Button>}
-            {canMarkPaid && <Button size="sm" className="bg-green-600 hover:bg-green-700 gap-1.5" onClick={() => setActionDialog("mark-paid")}><CreditCard className="w-3.5 h-3.5" /> Mark Paid</Button>}
+            {canSubmit && <Button size="sm" className="gap-1.5 bg-blue-600 hover:bg-blue-700 print:hidden" onClick={() => setActionDialog("submit")}><Send className="w-3.5 h-3.5" /> Submit</Button>}
+            {canApprove && <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 gap-1.5 print:hidden" onClick={() => setActionDialog("approve")}><CheckCircle2 className="w-3.5 h-3.5" /> Approve</Button>}
+            {canReject && <Button size="sm" variant="outline" className="border-red-200 text-red-700 hover:bg-red-50 print:hidden" onClick={() => setActionDialog("reject")}><XCircle className="w-3.5 h-3.5 mr-1" /> Reject</Button>}
+            {canMarkPaid && <Button size="sm" className="bg-green-600 hover:bg-green-700 gap-1.5 print:hidden" onClick={() => setActionDialog("mark-paid")}><CreditCard className="w-3.5 h-3.5" /> Mark Paid</Button>}
           </div>
         </div>
 

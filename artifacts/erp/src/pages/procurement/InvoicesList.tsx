@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, FileText, Search, AlertTriangle } from "lucide-react";
+import { Plus, FileText, Search, AlertTriangle, Download } from "lucide-react";
+import { exportToCsv } from "@/lib/export";
 import { cn } from "@/lib/utils";
 
 const STATUS_TABS = ["All", "Draft", "PendingApproval", "Approved", "OnHold", "Paid", "Cancelled"];
@@ -27,6 +28,14 @@ export default function InvoicesList() {
   const [, setLocation] = useLocation();
   const [tab, setTab] = useState("All");
   const [search, setSearch] = useState("");
+
+  const handleExport = (filtered: any[]) => {
+    exportToCsv(
+      `invoices-${new Date().toISOString().slice(0, 10)}.csv`,
+      ["Invoice Number", "Vendor Invoice No.", "Vendor", "Status", "Match Status", "Net Payable (₹)", "Due Date", "Created At"],
+      filtered.map(i => [i.invoiceNumber, i.vendorInvoiceNumber ?? "", i.vendorName, i.status, i.matchStatus ?? "", i.netPayable ?? i.totalAmount ?? 0, i.dueDate ?? "", new Date(i.createdAt).toLocaleDateString("en-IN")])
+    );
+  };
 
   const { data: invoices = [], isLoading } = useGetProcInvoices(
     tab !== "All" ? { status: tab as any } : {},
@@ -53,9 +62,14 @@ export default function InvoicesList() {
           <h1 className="text-2xl font-bold text-slate-900">Vendor Invoices</h1>
           <p className="text-sm text-slate-500 mt-0.5">3-way matched invoices — Quotation → PO → GRN → Invoice</p>
         </div>
-        <Button className="gap-2 bg-orange-500 hover:bg-orange-600" onClick={() => setLocation("/procurement/invoices/new")}>
-          <Plus className="w-4 h-4" /> New Invoice
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" className="gap-2" onClick={() => handleExport(filtered)}>
+            <Download className="w-4 h-4" /> Export CSV
+          </Button>
+          <Button className="gap-2 bg-orange-500 hover:bg-orange-600" onClick={() => setLocation("/procurement/invoices/new")}>
+            <Plus className="w-4 h-4" /> New Invoice
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}

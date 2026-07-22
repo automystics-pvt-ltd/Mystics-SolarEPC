@@ -171,3 +171,18 @@
     box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05), 0 0 0 1px rgb(0 0 0 / 0.04);
   }
 }
+
+/* ── Print styles ────────────────────────────────────────── */
+@media print {
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  body { background: white !important; }
+
+  /* Framer-motion wrappers need to be visible */
+  [style*="opacity: 0"] { opacity: 1 !important; }
+
+  /* Company print header */
+  .print-doc-header { display: block !important; }
+
+  /* Prevent page-break inside cards */
+  .rounded-xl, .rounded-\[12px\] { break-inside: avoid; }
+}

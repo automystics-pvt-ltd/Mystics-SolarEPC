@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Package, Search } from "lucide-react";
+import { Plus, Package, Search, Download } from "lucide-react";
+import { exportToCsv } from "@/lib/export";
 import { cn } from "@/lib/utils";
 
 const STATUS_TABS = ["All", "Draft", "Submitted", "Accepted", "PartiallyAccepted", "Rejected"];
@@ -23,6 +24,14 @@ export default function GRNsList() {
   const [, setLocation] = useLocation();
   const [tab, setTab] = useState("All");
   const [search, setSearch] = useState("");
+
+  const handleExport = (filtered: any[]) => {
+    exportToCsv(
+      `grns-${new Date().toISOString().slice(0, 10)}.csv`,
+      ["GRN Number", "Vendor", "PO ID", "Status", "Delivery Date", "Accepted Qty", "Ordered Qty", "Created At"],
+      filtered.map(g => [g.grnNumber, g.vendorName, g.poId, g.status, g.deliveryDate ?? "", g.totalAcceptedQty ?? "", g.totalOrderedQty ?? "", new Date(g.createdAt).toLocaleDateString("en-IN")])
+    );
+  };
 
   const { data: grns = [], isLoading } = useGetProcGrns(
     tab !== "All" ? { status: tab as any } : {},
@@ -47,9 +56,14 @@ export default function GRNsList() {
           <h1 className="text-2xl font-bold text-slate-900">Goods Receipt Notes</h1>
           <p className="text-sm text-slate-500 mt-0.5">Record and inspect incoming deliveries</p>
         </div>
-        <Button className="gap-2 bg-orange-500 hover:bg-orange-600" onClick={() => setLocation("/procurement/grns/new")}>
-          <Plus className="w-4 h-4" /> New GRN
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" className="gap-2" onClick={() => handleExport(filtered)}>
+            <Download className="w-4 h-4" /> Export CSV
+          </Button>
+          <Button className="gap-2 bg-orange-500 hover:bg-orange-600" onClick={() => setLocation("/procurement/grns/new")}>
+            <Plus className="w-4 h-4" /> New GRN
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}

@@ -1,0 +1,11 @@
+Enhance the Procurement workflow with a complete end-to-end Purchase Order (PO), Goods Receipt Note (GRN), and Invoice Management process.
+
+* Once a quotation is approved, it should be converted directly into a Purchase Order (PO) with a unique PO number while retaining all quotation, vendor, pricing, tax, and approval references.
+* Implement a comprehensive procurement lifecycle with real-time status tracking and a visual timeline from Quotation → PO → Vendor Acceptance → Dispatch → Delivery → GRN → Invoice → Payment → Completion.
+* Define expected delivery dates for each PO. If materials are not received within the committed timeline, automatically escalate the delay to the Manager through notifications and a dedicated dashboard showing overdue procurements.
+* Provide user-friendly dashboards for Procurement, Managers, and Approvers to track the status of every order, pending actions, delays, bottlenecks, and completion progress.
+* Record every procurement activity, including who created the PO, approved it, dispatched it, received the materials, collected them, verified the quantity and quality, accepted or rejected items, and finalized the receipt, along with timestamps and user details.
+* Implement a complete Goods Receipt Note (GRN) process supporting full, partial, and multiple deliveries, quantity verification, quality inspection, damaged/short/excess material recording, attachments (photos/documents), remarks, and GRN version history.
+* Enable invoice creation only after successful GRN completion, with automatic validation against the approved PO and received quantities (3-way matching: Quotation → PO → GRN → Invoice). Any mismatch should require approval before processing.
+* Allow Approvers to review and approve/reject GRNs and invoices with mandatory comments, maintaining a complete approval history and audit trail.
+* Every action must be fully traceable with unique reference IDs, timestamps, user information, comments, document history, and status changes to ensure complete transparency, accountability, and enterprise-grade procurement management.

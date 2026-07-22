@@ -13,7 +13,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, ShoppingCart, ExternalLink, Package, FileText,
-  AlertTriangle, Truck, Clock, CheckCircle2, Circle,
+  AlertTriangle, Truck, Clock, CheckCircle2, Circle, Printer,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
@@ -148,18 +148,23 @@ export default function ProcurementPODetail({ id }: { id: string }) {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {nextStatuses.length > 0 && (
-              <Select onValueChange={updateStatus} disabled={updateMut.isPending}>
-                <SelectTrigger className="w-44 h-9 text-sm">
-                  <SelectValue placeholder="Change status…" />
-                </SelectTrigger>
-                <SelectContent>
-                  {nextStatuses.map(s => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+            <Button variant="outline" size="sm" className="gap-1.5 print:hidden" onClick={() => window.print()}>
+              <Printer className="w-3.5 h-3.5" /> Print
+            </Button>
+            <div className="print:hidden">
+              {nextStatuses.length > 0 && (
+                <Select onValueChange={updateStatus} disabled={updateMut.isPending}>
+                  <SelectTrigger className="w-44 h-9 text-sm">
+                    <SelectValue placeholder="Change status…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {nextStatuses.map(s => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
           </div>
         </div>
 

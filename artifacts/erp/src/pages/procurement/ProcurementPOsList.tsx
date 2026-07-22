@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
-import { Search, ShoppingCart, ChevronRight, CheckCircle2, Truck, XCircle, Clock } from "lucide-react";
+import { Search, ShoppingCart, ChevronRight, CheckCircle2, Truck, XCircle, Clock, Download } from "lucide-react";
+import { exportToCsv } from "@/lib/export";
 import { cn } from "@/lib/utils";
 
 const STATUS_CONFIG: Record<string, { color: string }> = {
@@ -25,6 +26,14 @@ export default function ProcurementPOsList() {
   const [activeTab, setActiveTab] = useState("All");
   const [search, setSearch] = useState("");
 
+  const handleExport = (pos: any[], filtered: any[]) => {
+    exportToCsv(
+      `purchase-orders-${new Date().toISOString().slice(0, 10)}.csv`,
+      ["PO Number", "Vendor", "Status", "Total Amount (₹)", "PO Date", "Delivery Deadline", "Approved By"],
+      filtered.map(p => [p.poNumber, p.vendorName, p.status, p.totalAmount ?? 0, p.poDate ?? "", p.deliveryDeadline ?? "", p.approvedByName ?? ""])
+    );
+  };
+
   const { data: pos = [], isLoading } = useGetProcurementPOs({
     status: activeTab !== "All" ? activeTab : undefined,
   });
@@ -39,9 +48,14 @@ export default function ProcurementPOsList() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Purchase Orders</h1>
-        <p className="text-sm text-gray-500 mt-1">Auto-generated from approved vendor quotations</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Purchase Orders</h1>
+          <p className="text-sm text-gray-500 mt-1">Auto-generated from approved vendor quotations</p>
+        </div>
+        <Button variant="outline" size="sm" className="gap-2" onClick={() => handleExport(pos, filtered)}>
+          <Download className="w-4 h-4" /> Export CSV
+        </Button>
       </div>
 
       {/* Tabs */}

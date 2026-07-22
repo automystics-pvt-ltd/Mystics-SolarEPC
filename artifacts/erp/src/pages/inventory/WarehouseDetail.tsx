@@ -5,7 +5,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Plus, ArrowLeft, Package, Grid, MapPin } from "lucide-react";
+import { Loader2, Plus, ArrowLeft, Package, Grid, MapPin, Download } from "lucide-react";
+import { exportToCsv } from "@/lib/export";
 import { useLocation } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
@@ -86,9 +87,20 @@ export function WarehouseDetail({ id }: { id: string }) {
             <TabsContent value="stock" className="m-0 border-none outline-none">
               <div className="p-6 pb-0 flex justify-between items-end mb-4">
                 <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Inventory Valuation</h3>
-                <div className="text-right">
-                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Value</p>
-                  <p className="text-3xl font-bold tracking-tight text-[#EA580C] font-mono">₹{Number(stock?.totalValue || 0).toLocaleString("en-IN")}</p>
+                <div className="flex items-end gap-4">
+                  <Button variant="outline" size="sm" className="gap-2 mb-1" onClick={() => {
+                    exportToCsv(
+                      `stock-${wh.name.replace(/\s+/g, "-").toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`,
+                      ["Item Name", "Balance Qty", "Unit", "Unit Value (₹)", "Total Value (₹)"],
+                      (stock?.items ?? []).map((i: any) => [i.itemName, i.balanceQty, i.unit, i.unitValue, i.totalValue])
+                    );
+                  }}>
+                    <Download className="h-4 w-4" /> Export CSV
+                  </Button>
+                  <div className="text-right">
+                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Value</p>
+                    <p className="text-3xl font-bold tracking-tight text-[#EA580C] font-mono">₹{Number(stock?.totalValue || 0).toLocaleString("en-IN")}</p>
+                  </div>
                 </div>
               </div>
               <div className="px-6 pb-6">

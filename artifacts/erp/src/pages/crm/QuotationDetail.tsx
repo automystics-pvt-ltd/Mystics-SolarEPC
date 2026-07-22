@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
-  Loader2, ArrowLeft, Plus, Trash2, Save, FileCheck, CheckCircle,
+  Loader2, ArrowLeft, Plus, Trash2, Save, FileCheck, CheckCircle, Printer,
   FileText, Calculator, ChevronsUpDown, Search, PlusCircle, Check,
 } from "lucide-react";
 import { useLocation } from "wouter";
@@ -291,8 +291,13 @@ export function QuotationDetail({ id }: { id?: string }) {
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto">
+          {!isNew && (
+            <Button variant="outline" className="h-10 gap-2 print:hidden" onClick={() => window.print()}>
+              <Printer className="h-4 w-4" /> Print
+            </Button>
+          )}
           {!isNew && quote?.approvalStatus === "Draft" && !isEditing && (
-            <Button onClick={() => setShowApproveDialog(true)} disabled={approveMut.isPending} className="h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-[8px]">
+            <Button onClick={() => setShowApproveDialog(true)} disabled={approveMut.isPending} className="h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-[8px] print:hidden">
               <CheckCircle className="h-4 w-4 mr-2" /> Approve Quote
             </Button>
           )}

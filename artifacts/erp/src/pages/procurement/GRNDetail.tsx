@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Package, CheckCircle2, XCircle, Send, AlertTriangle, Clock } from "lucide-react";
+import { ArrowLeft, Package, CheckCircle2, XCircle, Send, AlertTriangle, Clock, Printer } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -90,13 +90,16 @@ export default function GRNDetail({ id }: { id: string }) {
             </div>
           </div>
           <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="gap-1.5 print:hidden" onClick={() => window.print()}>
+              <Printer className="w-3.5 h-3.5" /> Print
+            </Button>
             {canSubmit && (
-              <Button size="sm" className="gap-1.5 bg-blue-600 hover:bg-blue-700" onClick={() => setActionDialog("submit")}>
+              <Button size="sm" className="gap-1.5 bg-blue-600 hover:bg-blue-700 print:hidden" onClick={() => setActionDialog("submit")}>
                 <Send className="w-3.5 h-3.5" /> Submit for Inspection
               </Button>
             )}
             {canApprove && (
-              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 gap-1.5" onClick={() => setActionDialog("approve")}>
+              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 gap-1.5 print:hidden" onClick={() => setActionDialog("approve")}>
                 <CheckCircle2 className="w-3.5 h-3.5" /> Approve
               </Button>
             )}
