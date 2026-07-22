@@ -312,13 +312,240 @@ describe("Quotation lifecycle: Draft → Submitted → UnderReview → Approved 
     expect(res.body.map((p: any) => p.id)).toContain(poId);
   });
 
-  it("PO status can be updated to Acknowledged", async () => {
+  it("PO cannot skip from Draft directly to Acknowledged (transition guard)", async () => {
     const res = await api
       .patch(`/api/procurement-pos/${poId}`)
       .send({ status: "Acknowledged" });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/Cannot transition/i);
+  });
+
+  it("PO can be issued (Draft → Issued)", async () => {
+    const res = await api
+      .patch(`/api/procurement-pos/${poId}`)
+      .send({ status: "Issued", ...actor });
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("Issued");
+  });
+
+  it("PO status can be updated to Acknowledged (Issued → Acknowledged)", async () => {
+    const res = await api
+      .patch(`/api/procurement-pos/${poId}`)
+      .send({ status: "Acknowledged", ...actor });
     expect(res.status).toBe(200);
     expect(res.body.status).toBe("Acknowledged");
     expect(res.body.acknowledgedAt).toBeDefined();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe("PO state machine — valid and blocked transitions", () => {
+  // We create a dedicated PO for this suite to avoid interfering with the
+  // quotation lifecycle PO (poId) which is already at Acknowledged.
+  let smPoId: number;
+
+  it("creates a fresh quotation and approves it to get a Draft PO", async () => {
+    const createRes = await api.post("/api/procurement-quotations").send({
+      ...actor,
+      vendorId,
+      mrId,
+      items: [{ materialName: "SM Test Item", uom: "Nos", qty: 1, unitPrice: 1000, gstRate: 18, discountPct: 0 }],
+    });
+    expect(createRes.status).toBe(201);
+    const qid = createRes.body.id;
+
+    await api.post(`/api/procurement-quotations/${qid}/submit`).send(actor);
+    await api.post(`/api/procurement-quotations/${qid}/start-review`).send(actor);
+    const approveRes = await api
+      .post(`/api/procurement-quotations/${qid}/approve`)
+      .send({ ...actor, remarks: "SM test approval" });
+    expect(approveRes.status).toBe(200);
+    smPoId = approveRes.body.po.id;
+    expect(smPoId).toBeDefined();
+    expect(approveRes.body.po.status).toBe("Draft");
+  });
+
+  // ── Blocked transitions from Draft ─────────────────────────────────────────
+  it("blocks Draft → Acknowledged (out of order)", async () => {
+    const res = await api.patch(`/api/procurement-pos/${smPoId}`).send({ status: "Acknowledged" });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/Cannot transition from Draft to Acknowledged/i);
+  });
+
+  it("blocks Draft → PartiallyReceived (out of order)", async () => {
+    const res = await api.patch(`/api/procurement-pos/${smPoId}`).send({ status: "PartiallyReceived" });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/Cannot transition/i);
+  });
+
+  it("blocks Draft → FullyReceived (out of order)", async () => {
+    const res = await api.patch(`/api/procurement-pos/${smPoId}`).send({ status: "FullyReceived" });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/Cannot transition/i);
+  });
+
+  it("blocks Draft → Closed (out of order)", async () => {
+    const res = await api.patch(`/api/procurement-pos/${smPoId}`).send({ status: "Closed" });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/Cannot transition from Draft to Closed/i);
+  });
+
+  // ── Valid: Draft → Issued ──────────────────────────────────────────────────
+  it("allows Draft → Issued", async () => {
+    const res = await api.patch(`/api/procurement-pos/${smPoId}`).send({ status: "Issued", ...actor });
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("Issued");
+  });
+
+  // ── Blocked transitions from Issued ────────────────────────────────────────
+  it("blocks Issued → Draft (backwards)", async () => {
+    const res = await api.patch(`/api/procurement-pos/${smPoId}`).send({ status: "Draft" });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/Cannot transition/i);
+  });
+
+  it("blocks Issued → PartiallyReceived (skipping Acknowledged)", async () => {
+    const res = await api.patch(`/api/procurement-pos/${smPoId}`).send({ status: "PartiallyReceived" });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/Cannot transition/i);
+  });
+
+  it("blocks Issued → Closed (skipping multiple steps)", async () => {
+    const res = await api.patch(`/api/procurement-pos/${smPoId}`).send({ status: "Closed" });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/Cannot transition/i);
+  });
+
+  // ── Valid: Issued → Acknowledged ──────────────────────────────────────────
+  it("allows Issued → Acknowledged", async () => {
+    const res = await api.patch(`/api/procurement-pos/${smPoId}`).send({ status: "Acknowledged", ...actor });
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("Acknowledged");
+    expect(res.body.acknowledgedAt).toBeDefined();
+  });
+
+  // ── Blocked transitions from Acknowledged ──────────────────────────────────
+  it("blocks Acknowledged → Closed (skipping Received)", async () => {
+    const res = await api.patch(`/api/procurement-pos/${smPoId}`).send({ status: "Closed" });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/Cannot transition/i);
+  });
+
+  it("blocks Acknowledged → Draft (backwards)", async () => {
+    const res = await api.patch(`/api/procurement-pos/${smPoId}`).send({ status: "Draft" });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/Cannot transition/i);
+  });
+
+  // ── Valid: Acknowledged → FullyReceived ───────────────────────────────────
+  it("allows Acknowledged → FullyReceived", async () => {
+    const res = await api.patch(`/api/procurement-pos/${smPoId}`).send({ status: "FullyReceived", ...actor });
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("FullyReceived");
+  });
+
+  // ── Blocked from FullyReceived ─────────────────────────────────────────────
+  it("blocks FullyReceived → Acknowledged (backwards)", async () => {
+    const res = await api.patch(`/api/procurement-pos/${smPoId}`).send({ status: "Acknowledged" });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/Cannot transition/i);
+  });
+
+  // ── Valid: FullyReceived → Closed ─────────────────────────────────────────
+  it("allows FullyReceived → Closed", async () => {
+    const res = await api.patch(`/api/procurement-pos/${smPoId}`).send({ status: "Closed", ...actor });
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("Closed");
+    expect(res.body.closedAt).toBeDefined();
+  });
+
+  // ── No transitions from terminal states ────────────────────────────────────
+  it("blocks any transition from Closed (terminal state)", async () => {
+    const res = await api.patch(`/api/procurement-pos/${smPoId}`).send({ status: "Issued" });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/Cannot transition/i);
+  });
+
+  // ── Cancelled path ─────────────────────────────────────────────────────────
+  it("allows Draft → Cancelled", async () => {
+    // Create another PO at Draft to test cancellation path
+    const createRes = await api.post("/api/procurement-quotations").send({
+      ...actor,
+      vendorId,
+      mrId,
+      items: [{ materialName: "Cancel Test Item", uom: "Nos", qty: 1, unitPrice: 500, gstRate: 18, discountPct: 0 }],
+    });
+    const qid = createRes.body.id;
+    await api.post(`/api/procurement-quotations/${qid}/submit`).send(actor);
+    await api.post(`/api/procurement-quotations/${qid}/start-review`).send(actor);
+    const approveRes = await api
+      .post(`/api/procurement-quotations/${qid}/approve`)
+      .send({ ...actor, remarks: "Cancel path test approval" });
+    const cancelPoId = approveRes.body.po.id;
+
+    const res = await api.patch(`/api/procurement-pos/${cancelPoId}`).send({ status: "Cancelled", ...actor });
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("Cancelled");
+  });
+
+  it("blocks any transition from Cancelled (terminal state)", async () => {
+    // Create and immediately cancel another PO
+    const createRes = await api.post("/api/procurement-quotations").send({
+      ...actor,
+      vendorId,
+      mrId,
+      items: [{ materialName: "Cancelled Block Test", uom: "Nos", qty: 1, unitPrice: 100, gstRate: 18, discountPct: 0 }],
+    });
+    const qid = createRes.body.id;
+    await api.post(`/api/procurement-quotations/${qid}/submit`).send(actor);
+    await api.post(`/api/procurement-quotations/${qid}/start-review`).send(actor);
+    const approveRes = await api
+      .post(`/api/procurement-quotations/${qid}/approve`)
+      .send({ ...actor, remarks: "For cancel block test" });
+    const cancelPoId = approveRes.body.po.id;
+    await api.patch(`/api/procurement-pos/${cancelPoId}`).send({ status: "Cancelled", ...actor });
+
+    const res = await api.patch(`/api/procurement-pos/${cancelPoId}`).send({ status: "Issued" });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/Cannot transition/i);
+  });
+
+  // ── PartiallyReceived path ─────────────────────────────────────────────────
+  it("allows Acknowledged → PartiallyReceived → FullyReceived → Closed", async () => {
+    // Full run through the partial-receipt path
+    const createRes = await api.post("/api/procurement-quotations").send({
+      ...actor,
+      vendorId,
+      mrId,
+      items: [{ materialName: "Partial Receipt Test", uom: "Nos", qty: 5, unitPrice: 200, gstRate: 18, discountPct: 0 }],
+    });
+    const qid = createRes.body.id;
+    await api.post(`/api/procurement-quotations/${qid}/submit`).send(actor);
+    await api.post(`/api/procurement-quotations/${qid}/start-review`).send(actor);
+    const approveRes = await api
+      .post(`/api/procurement-quotations/${qid}/approve`)
+      .send({ ...actor, remarks: "Partial receipt path test" });
+    const partialPoId = approveRes.body.po.id;
+
+    // Draft → Issued → Acknowledged → PartiallyReceived → FullyReceived → Closed
+    let r = await api.patch(`/api/procurement-pos/${partialPoId}`).send({ status: "Issued", ...actor });
+    expect(r.status).toBe(200);
+    r = await api.patch(`/api/procurement-pos/${partialPoId}`).send({ status: "Acknowledged", ...actor });
+    expect(r.status).toBe(200);
+    r = await api.patch(`/api/procurement-pos/${partialPoId}`).send({ status: "PartiallyReceived", ...actor });
+    expect(r.status).toBe(200);
+    expect(r.body.status).toBe("PartiallyReceived");
+
+    // blocks going back to Acknowledged from PartiallyReceived
+    const back = await api.patch(`/api/procurement-pos/${partialPoId}`).send({ status: "Acknowledged" });
+    expect(back.status).toBe(400);
+
+    r = await api.patch(`/api/procurement-pos/${partialPoId}`).send({ status: "FullyReceived", ...actor });
+    expect(r.status).toBe(200);
+    r = await api.patch(`/api/procurement-pos/${partialPoId}`).send({ status: "Closed", ...actor });
+    expect(r.status).toBe(200);
+    expect(r.body.status).toBe("Closed");
+    expect(r.body.closedAt).toBeDefined();
   });
 });
 
