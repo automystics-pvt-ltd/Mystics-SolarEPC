@@ -27,10 +27,10 @@ export function ProjectOverview({ projectId }: { projectId: number }) {
           </div>
         </div>
         <div>
-          <p className={`text-2xl font-bold tracking-tight font-mono ${isOverBudget ? 'text-red-700' : 'text-emerald-800'}`}>${bg?.totalActual?.toLocaleString() || 0}</p>
+          <p className={`text-2xl font-bold tracking-tight font-mono ${isOverBudget ? 'text-red-700' : 'text-emerald-800'}`}>₹{Number(bg?.totalActual || 0).toLocaleString("en-IN")}</p>
           <p className={`text-xs font-bold mt-1 flex items-center gap-1 ${isOverBudget ? 'text-red-600' : 'text-emerald-600'}`}>
             {isOverBudget ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-            {health} (Var: ${Math.abs(bg?.totalVariance || 0).toLocaleString()})
+            {health} (Var: ₹{Math.abs(bg?.totalVariance || 0).toLocaleString("en-IN")})
           </p>
         </div>
       </div>
@@ -117,7 +117,7 @@ export function ProjectOverview({ projectId }: { projectId: number }) {
                 <p className="text-xs font-semibold text-gray-500 mt-1 uppercase tracking-wider">Due: {m.dueDate ? format(new Date(m.dueDate), 'MMM d, yyyy') : 'No due date'}</p>
               </div>
               <div className="text-right">
-                <p className="font-bold text-gray-900 font-mono text-[15px]">${m.amount.toLocaleString()}</p>
+                <p className="font-bold text-gray-900 font-mono text-[15px]">₹{Number(m.amount).toLocaleString("en-IN")}</p>
               </div>
             </div>
           ))}

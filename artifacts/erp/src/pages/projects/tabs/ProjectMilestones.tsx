@@ -104,7 +104,7 @@ export function ProjectMilestones({ projectId }: { projectId: number }) {
                 <TableCell className="px-5 py-3 font-bold text-sm text-gray-900">{m.milestoneName}</TableCell>
                 <TableCell className="py-3 text-xs font-medium text-gray-500">{m.triggerCondition || '-'}</TableCell>
                 <TableCell className="py-3 text-sm font-semibold text-gray-700">{m.dueDate ? format(new Date(m.dueDate), 'MMM d, yyyy') : '-'}</TableCell>
-                <TableCell className="py-3 text-right font-mono font-bold text-[15px] text-gray-900">${Number(m.amount ?? 0).toLocaleString()}</TableCell>
+                <TableCell className="py-3 text-right font-mono font-bold text-[15px] text-gray-900">₹{Number(m.amount ?? 0).toLocaleString("en-IN")}</TableCell>
                 <TableCell className="px-5 py-3">
                   <Badge variant="outline" className={`font-bold text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-[4px] border ${
                     m.status === 'Paid' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 

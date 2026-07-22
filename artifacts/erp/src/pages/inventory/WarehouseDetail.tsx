@@ -88,7 +88,7 @@ export function WarehouseDetail({ id }: { id: string }) {
                 <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Inventory Valuation</h3>
                 <div className="text-right">
                   <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Value</p>
-                  <p className="text-3xl font-bold tracking-tight text-[#EA580C] font-mono">${stock?.totalValue?.toLocaleString() || 0}</p>
+                  <p className="text-3xl font-bold tracking-tight text-[#EA580C] font-mono">₹{Number(stock?.totalValue || 0).toLocaleString("en-IN")}</p>
                 </div>
               </div>
               <div className="px-6 pb-6">
@@ -117,8 +117,8 @@ export function WarehouseDetail({ id }: { id: string }) {
                             </TableCell>
                             <TableCell className="py-3 text-right font-mono font-bold text-[15px] text-gray-900">{item.balanceQty.toLocaleString()}</TableCell>
                             <TableCell className="py-3 pl-4 text-sm font-semibold text-gray-500">{item.unit}</TableCell>
-                            <TableCell className="py-3 text-right font-mono font-bold text-sm text-gray-600">${item.unitValue.toLocaleString()}</TableCell>
-                            <TableCell className="px-5 py-3 text-right font-mono font-bold text-[15px] text-[#EA580C]">${item.totalValue.toLocaleString()}</TableCell>
+                            <TableCell className="py-3 text-right font-mono font-bold text-sm text-gray-600">₹{Number(item.unitValue).toLocaleString("en-IN")}</TableCell>
+                            <TableCell className="px-5 py-3 text-right font-mono font-bold text-[15px] text-[#EA580C]">₹{Number(item.totalValue).toLocaleString("en-IN")}</TableCell>
                         </TableRow>
                         ))}
                         {!stock?.items?.length && (

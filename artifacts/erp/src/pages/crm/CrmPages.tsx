@@ -61,7 +61,7 @@ export function ClientPOsList() {
                       </div>
                     </TableCell>
                     <TableCell className="py-4 text-right">
-                      <span className="font-mono font-bold text-gray-900 text-[15px]">${Number(item.contractValue ?? 0).toLocaleString()}</span>
+                      <span className="font-mono font-bold text-gray-900 text-[15px]">₹{Number(item.contractValue ?? 0).toLocaleString("en-IN")}</span>
                     </TableCell>
                     <TableCell className="py-4 px-6">
                       <Badge variant="outline" className={`font-bold text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-[4px] border ${item.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-100 text-gray-600 border-gray-200'}`}>
@@ -143,7 +143,7 @@ export function CrmInvoicesList() {
                       <span className="text-sm font-bold text-gray-600">{inv.type}</span>
                     </TableCell>
                     <TableCell className="py-4 text-right">
-                      <span className="font-mono font-bold text-gray-900 text-[15px]">${inv.amount.toLocaleString()}</span>
+                      <span className="font-mono font-bold text-gray-900 text-[15px]">₹{Number(inv.amount).toLocaleString("en-IN")}</span>
                     </TableCell>
                     <TableCell className="py-4 px-6">
                       <span className="text-sm font-medium text-gray-600">{inv.dueDate ? format(new Date(inv.dueDate), 'MMM d, yyyy') : '-'}</span>

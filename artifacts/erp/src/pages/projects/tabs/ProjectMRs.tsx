@@ -87,7 +87,7 @@ export function ProjectMRs({ projectId }: { projectId: number }) {
                                 <p className="text-[11px] font-mono font-bold text-gray-500 mt-1">{vq.quotationNumber || `VQ-${vq.id}`}</p>
                               </div>
                               <div className="text-right">
-                                <p className="font-mono font-bold text-[15px] text-[#EA580C]">${vq.quotedAmount.toLocaleString()}</p>
+                                <p className="font-mono font-bold text-[15px] text-[#EA580C]">₹{Number(vq.quotedAmount).toLocaleString("en-IN")}</p>
                                 <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider rounded-[4px] mt-1.5">{vq.status}</Badge>
                               </div>
                             </div>

@@ -94,7 +94,7 @@ export function QuotationsList() {
                       </Link>
                     </TableCell>
                     <TableCell className="py-4 text-right">
-                      <span className="font-mono font-bold text-gray-900 text-[15px]">${quote.totalAmount?.toLocaleString() || 0}</span>
+                      <span className="font-mono font-bold text-gray-900 text-[15px]">₹{Number(quote.totalAmount || 0).toLocaleString("en-IN")}</span>
                     </TableCell>
                     <TableCell className="py-4 px-6">
                       {getStatusBadge(quote.approvalStatus)}

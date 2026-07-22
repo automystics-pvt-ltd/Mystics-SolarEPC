@@ -161,14 +161,14 @@ export function LeadsList() {
       <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none">
         <div className="bg-gradient-to-br from-[#0A0F2C] to-[#1E293B] rounded-[12px] p-5 text-white min-w-[200px] shrink-0 premium-shadow">
           <p className="text-[11px] font-bold text-white/50 uppercase tracking-widest mb-2">Total Pipeline</p>
-          <p className="text-3xl font-bold tracking-tight">${summary?.totalValue?.toLocaleString() || 0}</p>
+          <p className="text-3xl font-bold tracking-tight">₹{Number(summary?.totalValue || 0).toLocaleString("en-IN")}</p>
         </div>
         {summary?.stages?.map(stage => (
           <div key={stage.stage} className="bg-white rounded-[12px] p-5 min-w-[180px] shrink-0 premium-shadow border border-gray-100 flex flex-col justify-between">
             <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">{stage.stage}</p>
             <div>
               <p className="text-2xl font-bold text-gray-900 tracking-tight">{stage.count}</p>
-              <p className="text-sm font-medium text-gray-500 mt-0.5">${stage.value.toLocaleString()}</p>
+              <p className="text-sm font-medium text-gray-500 mt-0.5">₹{Number(stage.value).toLocaleString("en-IN")}</p>
             </div>
           </div>
         ))}
@@ -244,7 +244,7 @@ export function LeadsList() {
                     <TableCell className="py-4 text-right">
                       <Link href={`/crm/leads/${lead.id}`} className="block">
                         <span className="font-mono font-bold text-sm text-gray-900">
-                          {lead.estimatedValue ? `$${lead.estimatedValue.toLocaleString()}` : '-'}
+                          {lead.estimatedValue ? `₹${Number(lead.estimatedValue).toLocaleString("en-IN")}` : '-'}
                         </span>
                       </Link>
                     </TableCell>
