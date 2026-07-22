@@ -3,18 +3,132 @@ import { useGetLeads, useCreateLead, useGetLeadsPipelineSummary, getGetLeadsQuer
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Plus, Search, Filter, Building2, UserCircle, Target } from "lucide-react";
+import { Loader2, Plus, Search, Filter, Building2, UserCircle, Target, ChevronsUpDown, Check } from "lucide-react";
 import { Link } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
+
+/* ── Searchable combobox ── */
+function SearchableCombobox({
+  value, onChange, options, placeholder = "Select…", className,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  placeholder?: string;
+  className?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = options.find(o => o.value === value);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className={cn(
+            "h-10 w-full justify-between bg-gray-50 border-gray-200 font-normal text-sm rounded-[6px] hover:bg-gray-100",
+            !selected && "text-gray-400",
+            className,
+          )}
+        >
+          {selected ? selected.label : placeholder}
+          <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-40" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+        <Command>
+          <CommandInput placeholder="Search…" className="h-9 text-sm" />
+          <CommandList className="max-h-52">
+            <CommandEmpty className="py-4 text-center text-sm text-gray-400">No match found.</CommandEmpty>
+            <CommandGroup>
+              {options.map(o => (
+                <CommandItem
+                  key={o.value}
+                  value={o.label}
+                  onSelect={() => { onChange(o.value); setOpen(false); }}
+                  className="text-sm cursor-pointer"
+                >
+                  <Check className={cn("mr-2 h-3.5 w-3.5", value === o.value ? "opacity-100" : "opacity-0")} />
+                  {o.label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+/* ── Static option lists ── */
+const STAGE_OPTIONS = [
+  { value: "New", label: "New" },
+  { value: "Contacted", label: "Contacted" },
+  { value: "Qualified", label: "Qualified" },
+  { value: "Proposal", label: "Proposal" },
+  { value: "Negotiation", label: "Negotiation" },
+];
+
+const SOURCE_OPTIONS = [
+  { value: "Inbound", label: "Inbound" },
+  { value: "Outbound", label: "Outbound" },
+  { value: "Referral", label: "Referral" },
+  { value: "Event", label: "Event" },
+  { value: "Digital", label: "Digital / Social" },
+  { value: "Tender", label: "Tender / Bid" },
+];
+
+const TERRITORY_OPTIONS = [
+  { value: "Andhra Pradesh", label: "Andhra Pradesh" },
+  { value: "Arunachal Pradesh", label: "Arunachal Pradesh" },
+  { value: "Assam", label: "Assam" },
+  { value: "Bihar", label: "Bihar" },
+  { value: "Chhattisgarh", label: "Chhattisgarh" },
+  { value: "Goa", label: "Goa" },
+  { value: "Gujarat", label: "Gujarat" },
+  { value: "Haryana", label: "Haryana" },
+  { value: "Himachal Pradesh", label: "Himachal Pradesh" },
+  { value: "Jharkhand", label: "Jharkhand" },
+  { value: "Karnataka", label: "Karnataka" },
+  { value: "Kerala", label: "Kerala" },
+  { value: "Madhya Pradesh", label: "Madhya Pradesh" },
+  { value: "Maharashtra", label: "Maharashtra" },
+  { value: "Manipur", label: "Manipur" },
+  { value: "Meghalaya", label: "Meghalaya" },
+  { value: "Mizoram", label: "Mizoram" },
+  { value: "Nagaland", label: "Nagaland" },
+  { value: "Odisha", label: "Odisha" },
+  { value: "Punjab", label: "Punjab" },
+  { value: "Rajasthan", label: "Rajasthan" },
+  { value: "Sikkim", label: "Sikkim" },
+  { value: "Tamil Nadu", label: "Tamil Nadu" },
+  { value: "Telangana", label: "Telangana" },
+  { value: "Tripura", label: "Tripura" },
+  { value: "Uttar Pradesh", label: "Uttar Pradesh" },
+  { value: "Uttarakhand", label: "Uttarakhand" },
+  { value: "West Bengal", label: "West Bengal" },
+  { value: "Andaman & Nicobar Islands", label: "Andaman & Nicobar Islands" },
+  { value: "Chandigarh", label: "Chandigarh" },
+  { value: "Dadra & Nagar Haveli and Daman & Diu", label: "Dadra & Nagar Haveli and Daman & Diu" },
+  { value: "Delhi", label: "Delhi (NCT)" },
+  { value: "Jammu & Kashmir", label: "Jammu & Kashmir" },
+  { value: "Ladakh", label: "Ladakh" },
+  { value: "Lakshadweep", label: "Lakshadweep" },
+  { value: "Puducherry", label: "Puducherry" },
+];
 
 const createLeadSchema = z.object({
   companyName: z.string().min(1, "Company name is required"),
@@ -143,33 +257,28 @@ export function LeadsList() {
                     <FormField control={form.control} name="status" render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700">Stage</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl><SelectTrigger className="h-10 bg-gray-50"><SelectValue /></SelectTrigger></FormControl>
-                          <SelectContent>
-                            <SelectItem value="New">New</SelectItem>
-                            <SelectItem value="Contacted">Contacted</SelectItem>
-                            <SelectItem value="Qualified">Qualified</SelectItem>
-                            <SelectItem value="Proposal">Proposal</SelectItem>
-                            <SelectItem value="Negotiation">Negotiation</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <FormControl>
+                          <SearchableCombobox
+                            value={field.value ?? ""}
+                            onChange={field.onChange}
+                            options={STAGE_OPTIONS}
+                            placeholder="Select stage…"
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )} />
                     <FormField control={form.control} name="source" render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700">Lead Source *</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl><SelectTrigger className="h-10 bg-gray-50"><SelectValue /></SelectTrigger></FormControl>
-                          <SelectContent>
-                            <SelectItem value="Inbound">Inbound</SelectItem>
-                            <SelectItem value="Outbound">Outbound</SelectItem>
-                            <SelectItem value="Referral">Referral</SelectItem>
-                            <SelectItem value="Event">Event</SelectItem>
-                            <SelectItem value="Digital">Digital / Social</SelectItem>
-                            <SelectItem value="Tender">Tender / Bid</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <FormControl>
+                          <SearchableCombobox
+                            value={field.value ?? ""}
+                            onChange={field.onChange}
+                            options={SOURCE_OPTIONS}
+                            placeholder="Select source…"
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )} />
@@ -183,7 +292,14 @@ export function LeadsList() {
                     <FormField control={form.control} name="territory" render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700">Territory / Region</FormLabel>
-                        <FormControl><Input className="h-10 bg-gray-50" placeholder="e.g. Maharashtra" {...field} /></FormControl>
+                        <FormControl>
+                          <SearchableCombobox
+                            value={field.value ?? ""}
+                            onChange={field.onChange}
+                            options={TERRITORY_OPTIONS}
+                            placeholder="Select state / UT…"
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )} />
