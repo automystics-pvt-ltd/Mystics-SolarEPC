@@ -1,20 +1,17 @@
 import { useAuth } from "@/lib/auth";
-import { Bell, Search, HelpCircle, ChevronDown } from "lucide-react";
+import { Bell, Search, HelpCircle, ChevronDown, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Sidebar } from "./Sidebar";
 import { useLocation } from "wouter";
 import { Menu } from "lucide-react";
+import { useSidebar } from "@/lib/sidebar-context";
 
 const PAGE_TITLE_MAP: Record<string, { title: string; section?: string }> = {
   "/dashboard": { title: "Dashboard" },
@@ -45,15 +42,15 @@ function getPageMeta(path: string) {
 
 function getFYLabel() {
   const now = new Date();
-  const year = now.getFullYear();
   const month = now.getMonth() + 1;
-  const fyStart = month >= 4 ? year : year - 1;
+  const fyStart = month >= 4 ? now.getFullYear() : now.getFullYear() - 1;
   return `FY ${fyStart}-${String(fyStart + 1).slice(-2)}`;
 }
 
 export function Topbar() {
   const { user, logout } = useAuth();
   const [location] = useLocation();
+  const { toggle, isCollapsed } = useSidebar();
   const meta = getPageMeta(location);
   const fyLabel = getFYLabel();
 
@@ -62,7 +59,16 @@ export function Topbar() {
     : "U";
 
   return (
-    <header className="h-14 bg-white border-b border-gray-200 flex items-center gap-3 px-4 sm:px-6 shrink-0 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+    <header className="h-14 bg-white border-b border-orange-100/80 flex items-center gap-3 px-4 sm:px-5 shrink-0 shadow-[0_1px_4px_rgba(234,88,12,0.08)]">
+      {/* Desktop sidebar toggle */}
+      <button
+        onClick={toggle}
+        className="hidden lg:flex h-8 w-8 items-center justify-center rounded-md text-gray-400 hover:text-orange-600 hover:bg-orange-50 transition-colors"
+        title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+      >
+        {isCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+      </button>
+
       {/* Mobile menu */}
       <Sheet>
         <SheetTrigger asChild>
@@ -70,12 +76,12 @@ export function Topbar() {
             <Menu className="h-4 w-4" />
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="p-0 w-[220px]">
-          <Sidebar className="w-full flex border-r-0" />
+        <SheetContent side="left" className="p-0 w-[220px] bg-[#0c1445] border-r-0">
+          <Sidebar className="w-full flex" />
         </SheetContent>
       </Sheet>
 
-      {/* Page title / breadcrumb */}
+      {/* Page title */}
       <div className="hidden sm:flex items-center gap-1.5 min-w-[120px]">
         {meta.section && (
           <>
@@ -86,41 +92,36 @@ export function Topbar() {
         <span className="text-[13px] font-semibold text-gray-700">{meta.title}</span>
       </div>
 
-      {/* Search — center */}
-      <div className="flex-1 max-w-sm mx-auto">
+      {/* Search */}
+      <div className="flex-1 max-w-xs mx-auto">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
           <Input
-            placeholder="Search leads, projects, POs..."
-            className="pl-9 pr-3 h-8 bg-gray-50 border-gray-200 text-[13px] rounded-full focus-visible:ring-1 focus-visible:ring-indigo-300 placeholder:text-gray-400"
+            placeholder="Search projects, leads, POs..."
+            className="pl-9 pr-3 h-8 text-[13px] rounded-full border-orange-100 bg-orange-50/40 focus-visible:ring-1 focus-visible:ring-orange-300 placeholder:text-gray-400"
           />
         </div>
       </div>
 
       {/* Right actions */}
       <div className="flex items-center gap-1.5">
-        {/* FY selector */}
-        <button className="hidden sm:flex items-center gap-1 px-3 py-1 rounded-md bg-gray-800 text-white text-[11px] font-semibold hover:bg-gray-700 transition-colors">
-          {fyLabel}
+        {/* FY pill */}
+        <button className="hidden sm:flex items-center gap-1 px-3 py-1 rounded-md text-[11px] font-semibold text-white hover:opacity-90 transition-opacity"
+          style={{ background: "linear-gradient(90deg, #0c1445, #1e3a8a)" }}>
+          ☀ {fyLabel}
           <ChevronDown className="h-3 w-3 opacity-70" />
         </button>
 
         {/* Notifications */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative h-8 w-8 text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-        >
+        <Button variant="ghost" size="icon"
+          className="relative h-8 w-8 text-gray-500 hover:text-orange-600 hover:bg-orange-50">
           <Bell className="h-4 w-4" />
           <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500 border border-white" />
         </Button>
 
         {/* Help */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="hidden sm:flex items-center gap-1 h-8 text-[12px] text-gray-500 hover:text-gray-700 hover:bg-gray-100 px-2"
-        >
+        <Button variant="ghost" size="sm"
+          className="hidden sm:flex items-center gap-1 h-8 text-[12px] text-gray-500 hover:text-orange-600 hover:bg-orange-50 px-2">
           <HelpCircle className="h-3.5 w-3.5" />
           Help
         </Button>
@@ -128,12 +129,10 @@ export function Topbar() {
         {/* User avatar */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 rounded-full p-0 hover:bg-gray-100">
+            <Button variant="ghost" className="h-8 w-8 rounded-full p-0 hover:bg-orange-50">
               <Avatar className="h-7 w-7">
-                <AvatarFallback
-                  className="text-white text-[11px] font-bold"
-                  style={{ background: "linear-gradient(135deg, #f59e0b, #ef4444)" }}
-                >
+                <AvatarFallback className="text-white text-[11px] font-bold"
+                  style={{ background: "linear-gradient(135deg, #f59e0b, #ea580c)" }}>
                   {initials}
                 </AvatarFallback>
               </Avatar>
@@ -144,16 +143,13 @@ export function Topbar() {
               <div className="flex flex-col gap-0.5">
                 <p className="text-sm font-semibold">{user?.name}</p>
                 <p className="text-xs text-muted-foreground">{user?.email}</p>
-                <span className="mt-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 w-fit uppercase tracking-wide">
+                <span className="mt-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-orange-50 text-orange-700 w-fit uppercase tracking-wide">
                   {user?.role}
                 </span>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => logout()}
-              className="text-red-600 cursor-pointer focus:text-red-600 focus:bg-red-50"
-            >
+            <DropdownMenuItem onClick={() => logout()} className="text-red-600 cursor-pointer focus:text-red-600 focus:bg-red-50">
               Sign Out
             </DropdownMenuItem>
           </DropdownMenuContent>

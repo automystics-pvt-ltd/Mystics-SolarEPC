@@ -4,6 +4,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
 import { Route, Switch, Router as WouterRouter, useLocation, Redirect } from 'wouter';
 import { AuthProvider, useAuth } from '@/lib/auth';
+import { SidebarProvider } from '@/lib/sidebar-context';
 import { Shell } from '@/components/layout/Shell';
 import { Login } from '@/pages/auth/Login';
 import { Dashboard } from '@/pages/dashboard/Dashboard';
@@ -33,15 +34,13 @@ function ProtectedRoute({ component: Component, ...rest }: any) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-sidebar">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "linear-gradient(135deg, #0c1445 0%, #1e3a8a 100%)" }}>
+        <Loader2 className="h-8 w-8 animate-spin text-amber-400" />
       </div>
     );
   }
 
-  if (!user) {
-    return <Redirect to="/login" />;
-  }
+  if (!user) return <Redirect to="/login" />;
 
   return (
     <Shell>
@@ -54,91 +53,45 @@ function Router() {
   const { user, isLoading } = useAuth();
   const [location] = useLocation();
 
-  // While auth is resolving, show spinner
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-sidebar">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "linear-gradient(135deg, #0c1445 0%, #1e3a8a 100%)" }}>
+        <Loader2 className="h-8 w-8 animate-spin text-amber-400" />
       </div>
     );
   }
 
-  // Redirect root to the appropriate page
-  if (location === '/') {
-    return <Redirect to={user ? '/dashboard' : '/login'} />;
-  }
-
-  // Redirect unauthenticated users away from protected routes
-  if (!user && location !== '/login') {
-    return <Redirect to="/login" />;
-  }
+  if (location === '/') return <Redirect to={user ? '/dashboard' : '/login'} />;
+  if (!user && location !== '/login') return <Redirect to="/login" />;
 
   return (
     <Switch>
       <Route path="/login" component={Login} />
-      
-      <Route path="/dashboard">
-        {() => <ProtectedRoute component={Dashboard} />}
-      </Route>
 
-      <Route path="/crm/leads">
-        {() => <ProtectedRoute component={LeadsList} />}
-      </Route>
-      <Route path="/crm/leads/:id">
-        {(params) => <ProtectedRoute component={LeadDetail} id={params.id} />}
-      </Route>
+      <Route path="/dashboard">{() => <ProtectedRoute component={Dashboard} />}</Route>
 
-      <Route path="/crm/quotations">
-        {() => <ProtectedRoute component={QuotationsList} />}
-      </Route>
-      <Route path="/crm/quotations/:id">
-        {(params) => <ProtectedRoute component={QuotationDetail} id={params.id} />}
-      </Route>
+      <Route path="/crm/leads">{() => <ProtectedRoute component={LeadsList} />}</Route>
+      <Route path="/crm/leads/:id">{(p) => <ProtectedRoute component={LeadDetail} id={p.id} />}</Route>
 
-      <Route path="/crm/client-pos">
-        {() => <ProtectedRoute component={ClientPOsList} />}
-      </Route>
-      <Route path="/crm/invoices">
-        {() => <ProtectedRoute component={CrmInvoicesList} />}
-      </Route>
-      <Route path="/crm/tasks">
-        {() => <ProtectedRoute component={TasksList} />}
-      </Route>
-      <Route path="/crm/escalations">
-        {() => <ProtectedRoute component={EscalationsList} />}
-      </Route>
+      <Route path="/crm/quotations">{() => <ProtectedRoute component={QuotationsList} />}</Route>
+      <Route path="/crm/quotations/:id">{(p) => <ProtectedRoute component={QuotationDetail} id={p.id} />}</Route>
 
-      <Route path="/projects">
-        {() => <ProtectedRoute component={ProjectsList} />}
-      </Route>
-      <Route path="/projects/contractors">
-        {() => <ProtectedRoute component={ContractorsList} />}
-      </Route>
-      <Route path="/projects/:id">
-        {(params) => <ProtectedRoute component={ProjectWorkspace} id={params.id} />}
-      </Route>
+      <Route path="/crm/client-pos">{() => <ProtectedRoute component={ClientPOsList} />}</Route>
+      <Route path="/crm/invoices">{() => <ProtectedRoute component={CrmInvoicesList} />}</Route>
+      <Route path="/crm/tasks">{() => <ProtectedRoute component={TasksList} />}</Route>
+      <Route path="/crm/escalations">{() => <ProtectedRoute component={EscalationsList} />}</Route>
 
-      <Route path="/inventory/warehouses">
-        {() => <ProtectedRoute component={WarehousesList} />}
-      </Route>
-      <Route path="/inventory/warehouses/:id">
-        {(params) => <ProtectedRoute component={WarehouseDetail} id={params.id} />}
-      </Route>
-      <Route path="/inventory/grns">
-        {() => <ProtectedRoute component={GRNsList} />}
-      </Route>
-      <Route path="/inventory/delivery-challans">
-        {() => <ProtectedRoute component={DeliveryChallansList} />}
-      </Route>
-      <Route path="/inventory/stock-ledger">
-        {() => <ProtectedRoute component={StockLedgerList} />}
-      </Route>
-      <Route path="/inventory/stock-valuation">
-        {() => <ProtectedRoute component={StockValuationList} />}
-      </Route>
-      <Route path="/inventory/audits">
-        {() => <ProtectedRoute component={InventoryAuditsList} />}
-      </Route>
+      <Route path="/projects">{() => <ProtectedRoute component={ProjectsList} />}</Route>
+      <Route path="/projects/contractors">{() => <ProtectedRoute component={ContractorsList} />}</Route>
+      <Route path="/projects/:id">{(p) => <ProtectedRoute component={ProjectWorkspace} id={p.id} />}</Route>
+
+      <Route path="/inventory/warehouses">{() => <ProtectedRoute component={WarehousesList} />}</Route>
+      <Route path="/inventory/warehouses/:id">{(p) => <ProtectedRoute component={WarehouseDetail} id={p.id} />}</Route>
+      <Route path="/inventory/grns">{() => <ProtectedRoute component={GRNsList} />}</Route>
+      <Route path="/inventory/delivery-challans">{() => <ProtectedRoute component={DeliveryChallansList} />}</Route>
+      <Route path="/inventory/stock-ledger">{() => <ProtectedRoute component={StockLedgerList} />}</Route>
+      <Route path="/inventory/stock-valuation">{() => <ProtectedRoute component={StockValuationList} />}</Route>
+      <Route path="/inventory/audits">{() => <ProtectedRoute component={InventoryAuditsList} />}</Route>
 
       <Route component={NotFound} />
     </Switch>
@@ -151,7 +104,9 @@ function App() {
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
           <AuthProvider>
-            <Router />
+            <SidebarProvider>
+              <Router />
+            </SidebarProvider>
           </AuthProvider>
         </WouterRouter>
         <Toaster />
