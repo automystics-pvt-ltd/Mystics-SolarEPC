@@ -86,6 +86,8 @@ import type {
   GetMaintenanceSchedulesParams,
   GetMaterialRequestsParams,
   GetMaterialsParams,
+  GetProcGrnsParams,
+  GetProcInvoicesParams,
   GetProcurementPOsParams,
   GetProcurementQuotationsParams,
   GetProjectsParams,
@@ -119,10 +121,16 @@ import type {
   MaterialRequest,
   MaterialRequestInput,
   PODeliveryStatus,
+  PODispatchInput,
   PaymentMilestone,
   PaymentMilestoneInput,
   PipelineSummary,
   PortfolioSummary,
+  ProcGRN,
+  ProcGRNInput,
+  ProcInvoice,
+  ProcInvoiceInput,
+  ProcurementDashboardData,
   ProcurementPO,
   ProcurementPOUpdate,
   ProcurementQuotation,
@@ -10829,5 +10837,1194 @@ export const useUpdateProcurementPO = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getUpdateProcurementPOMutationOptions(options));
+    }
+
+export const getGetProcurementDashboardUrl = () => {
+
+
+
+
+  return `/api/procurement-dashboard`
+}
+
+/**
+ * @summary Procurement dashboard stats, overdue POs, pending GRNs & invoices
+ */
+export const getProcurementDashboard = async ( options?: RequestInit): Promise<ProcurementDashboardData> => {
+
+  return customFetch<ProcurementDashboardData>(getGetProcurementDashboardUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetProcurementDashboardQueryKey = () => {
+    return [
+    `/api/procurement-dashboard`
+    ] as const;
+    }
+
+
+export const getGetProcurementDashboardQueryOptions = <TData = Awaited<ReturnType<typeof getProcurementDashboard>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProcurementDashboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetProcurementDashboardQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getProcurementDashboard>>> = ({ signal }) => getProcurementDashboard({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getProcurementDashboard>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetProcurementDashboardQueryResult = NonNullable<Awaited<ReturnType<typeof getProcurementDashboard>>>
+export type GetProcurementDashboardQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Procurement dashboard stats, overdue POs, pending GRNs & invoices
+ */
+
+export function useGetProcurementDashboard<TData = Awaited<ReturnType<typeof getProcurementDashboard>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProcurementDashboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetProcurementDashboardQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetProcGrnsUrl = (params?: GetProcGrnsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/proc-grns?${stringifiedParams}` : `/api/proc-grns`
+}
+
+/**
+ * @summary List GRNs
+ */
+export const getProcGrns = async (params?: GetProcGrnsParams, options?: RequestInit): Promise<ProcGRN[]> => {
+
+  return customFetch<ProcGRN[]>(getGetProcGrnsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetProcGrnsQueryKey = (params?: GetProcGrnsParams,) => {
+    return [
+    `/api/proc-grns`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetProcGrnsQueryOptions = <TData = Awaited<ReturnType<typeof getProcGrns>>, TError = ErrorType<unknown>>(params?: GetProcGrnsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProcGrns>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetProcGrnsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getProcGrns>>> = ({ signal }) => getProcGrns(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getProcGrns>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetProcGrnsQueryResult = NonNullable<Awaited<ReturnType<typeof getProcGrns>>>
+export type GetProcGrnsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List GRNs
+ */
+
+export function useGetProcGrns<TData = Awaited<ReturnType<typeof getProcGrns>>, TError = ErrorType<unknown>>(
+ params?: GetProcGrnsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProcGrns>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetProcGrnsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateProcGrnUrl = () => {
+
+
+
+
+  return `/api/proc-grns`
+}
+
+/**
+ * @summary Create a new GRN
+ */
+export const createProcGrn = async (procGRNInput: ProcGRNInput, options?: RequestInit): Promise<ProcGRN> => {
+
+  return customFetch<ProcGRN>(getCreateProcGrnUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(procGRNInput)
+  }
+);}
+
+
+
+
+
+export const getCreateProcGrnMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createProcGrn>>, TError,{data: BodyType<ProcGRNInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createProcGrn>>, TError,{data: BodyType<ProcGRNInput>}, TContext> => {
+
+const mutationKey = ['createProcGrn'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createProcGrn>>, {data: BodyType<ProcGRNInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createProcGrn(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateProcGrnMutationResult = NonNullable<Awaited<ReturnType<typeof createProcGrn>>>
+    export type CreateProcGrnMutationBody = BodyType<ProcGRNInput>
+    export type CreateProcGrnMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create a new GRN
+ */
+export const useCreateProcGrn = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createProcGrn>>, TError,{data: BodyType<ProcGRNInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createProcGrn>>,
+        TError,
+        {data: BodyType<ProcGRNInput>},
+        TContext
+      > => {
+      return useMutation(getCreateProcGrnMutationOptions(options));
+    }
+
+export const getGetProcGrnUrl = (id: number,) => {
+
+
+
+
+  return `/api/proc-grns/${id}`
+}
+
+/**
+ * @summary Get GRN by ID
+ */
+export const getProcGrn = async (id: number, options?: RequestInit): Promise<ProcGRN> => {
+
+  return customFetch<ProcGRN>(getGetProcGrnUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetProcGrnQueryKey = (id: number,) => {
+    return [
+    `/api/proc-grns/${id}`
+    ] as const;
+    }
+
+
+export const getGetProcGrnQueryOptions = <TData = Awaited<ReturnType<typeof getProcGrn>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProcGrn>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetProcGrnQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getProcGrn>>> = ({ signal }) => getProcGrn(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getProcGrn>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetProcGrnQueryResult = NonNullable<Awaited<ReturnType<typeof getProcGrn>>>
+export type GetProcGrnQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get GRN by ID
+ */
+
+export function useGetProcGrn<TData = Awaited<ReturnType<typeof getProcGrn>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProcGrn>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetProcGrnQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSubmitProcGrnUrl = (id: number,) => {
+
+
+
+
+  return `/api/proc-grns/${id}/submit`
+}
+
+/**
+ * @summary Submit GRN for inspection
+ */
+export const submitProcGrn = async (id: number,
+    workflowActionInput: WorkflowActionInput, options?: RequestInit): Promise<ProcGRN> => {
+
+  return customFetch<ProcGRN>(getSubmitProcGrnUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(workflowActionInput)
+  }
+);}
+
+
+
+
+
+export const getSubmitProcGrnMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitProcGrn>>, TError,{id: number;data: BodyType<WorkflowActionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof submitProcGrn>>, TError,{id: number;data: BodyType<WorkflowActionInput>}, TContext> => {
+
+const mutationKey = ['submitProcGrn'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof submitProcGrn>>, {id: number;data: BodyType<WorkflowActionInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  submitProcGrn(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SubmitProcGrnMutationResult = NonNullable<Awaited<ReturnType<typeof submitProcGrn>>>
+    export type SubmitProcGrnMutationBody = BodyType<WorkflowActionInput>
+    export type SubmitProcGrnMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Submit GRN for inspection
+ */
+export const useSubmitProcGrn = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitProcGrn>>, TError,{id: number;data: BodyType<WorkflowActionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof submitProcGrn>>,
+        TError,
+        {id: number;data: BodyType<WorkflowActionInput>},
+        TContext
+      > => {
+      return useMutation(getSubmitProcGrnMutationOptions(options));
+    }
+
+export const getApproveProcGrnUrl = (id: number,) => {
+
+
+
+
+  return `/api/proc-grns/${id}/approve`
+}
+
+/**
+ * @summary Approve GRN
+ */
+export const approveProcGrn = async (id: number,
+    workflowActionInput: WorkflowActionInput, options?: RequestInit): Promise<ProcGRN> => {
+
+  return customFetch<ProcGRN>(getApproveProcGrnUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(workflowActionInput)
+  }
+);}
+
+
+
+
+
+export const getApproveProcGrnMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveProcGrn>>, TError,{id: number;data: BodyType<WorkflowActionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof approveProcGrn>>, TError,{id: number;data: BodyType<WorkflowActionInput>}, TContext> => {
+
+const mutationKey = ['approveProcGrn'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof approveProcGrn>>, {id: number;data: BodyType<WorkflowActionInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  approveProcGrn(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ApproveProcGrnMutationResult = NonNullable<Awaited<ReturnType<typeof approveProcGrn>>>
+    export type ApproveProcGrnMutationBody = BodyType<WorkflowActionInput>
+    export type ApproveProcGrnMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Approve GRN
+ */
+export const useApproveProcGrn = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveProcGrn>>, TError,{id: number;data: BodyType<WorkflowActionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof approveProcGrn>>,
+        TError,
+        {id: number;data: BodyType<WorkflowActionInput>},
+        TContext
+      > => {
+      return useMutation(getApproveProcGrnMutationOptions(options));
+    }
+
+export const getRejectProcGrnUrl = (id: number,) => {
+
+
+
+
+  return `/api/proc-grns/${id}/reject`
+}
+
+/**
+ * @summary Reject GRN
+ */
+export const rejectProcGrn = async (id: number,
+    workflowActionInput: WorkflowActionInput, options?: RequestInit): Promise<ProcGRN> => {
+
+  return customFetch<ProcGRN>(getRejectProcGrnUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(workflowActionInput)
+  }
+);}
+
+
+
+
+
+export const getRejectProcGrnMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rejectProcGrn>>, TError,{id: number;data: BodyType<WorkflowActionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof rejectProcGrn>>, TError,{id: number;data: BodyType<WorkflowActionInput>}, TContext> => {
+
+const mutationKey = ['rejectProcGrn'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof rejectProcGrn>>, {id: number;data: BodyType<WorkflowActionInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  rejectProcGrn(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RejectProcGrnMutationResult = NonNullable<Awaited<ReturnType<typeof rejectProcGrn>>>
+    export type RejectProcGrnMutationBody = BodyType<WorkflowActionInput>
+    export type RejectProcGrnMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Reject GRN
+ */
+export const useRejectProcGrn = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rejectProcGrn>>, TError,{id: number;data: BodyType<WorkflowActionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof rejectProcGrn>>,
+        TError,
+        {id: number;data: BodyType<WorkflowActionInput>},
+        TContext
+      > => {
+      return useMutation(getRejectProcGrnMutationOptions(options));
+    }
+
+export const getGetProcInvoicesUrl = (params?: GetProcInvoicesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/proc-invoices?${stringifiedParams}` : `/api/proc-invoices`
+}
+
+/**
+ * @summary List invoices
+ */
+export const getProcInvoices = async (params?: GetProcInvoicesParams, options?: RequestInit): Promise<ProcInvoice[]> => {
+
+  return customFetch<ProcInvoice[]>(getGetProcInvoicesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetProcInvoicesQueryKey = (params?: GetProcInvoicesParams,) => {
+    return [
+    `/api/proc-invoices`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetProcInvoicesQueryOptions = <TData = Awaited<ReturnType<typeof getProcInvoices>>, TError = ErrorType<unknown>>(params?: GetProcInvoicesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProcInvoices>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetProcInvoicesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getProcInvoices>>> = ({ signal }) => getProcInvoices(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getProcInvoices>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetProcInvoicesQueryResult = NonNullable<Awaited<ReturnType<typeof getProcInvoices>>>
+export type GetProcInvoicesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List invoices
+ */
+
+export function useGetProcInvoices<TData = Awaited<ReturnType<typeof getProcInvoices>>, TError = ErrorType<unknown>>(
+ params?: GetProcInvoicesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProcInvoices>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetProcInvoicesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateProcInvoiceUrl = () => {
+
+
+
+
+  return `/api/proc-invoices`
+}
+
+/**
+ * @summary Create invoice (3-way match)
+ */
+export const createProcInvoice = async (procInvoiceInput: ProcInvoiceInput, options?: RequestInit): Promise<ProcInvoice> => {
+
+  return customFetch<ProcInvoice>(getCreateProcInvoiceUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(procInvoiceInput)
+  }
+);}
+
+
+
+
+
+export const getCreateProcInvoiceMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createProcInvoice>>, TError,{data: BodyType<ProcInvoiceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createProcInvoice>>, TError,{data: BodyType<ProcInvoiceInput>}, TContext> => {
+
+const mutationKey = ['createProcInvoice'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createProcInvoice>>, {data: BodyType<ProcInvoiceInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createProcInvoice(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateProcInvoiceMutationResult = NonNullable<Awaited<ReturnType<typeof createProcInvoice>>>
+    export type CreateProcInvoiceMutationBody = BodyType<ProcInvoiceInput>
+    export type CreateProcInvoiceMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create invoice (3-way match)
+ */
+export const useCreateProcInvoice = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createProcInvoice>>, TError,{data: BodyType<ProcInvoiceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createProcInvoice>>,
+        TError,
+        {data: BodyType<ProcInvoiceInput>},
+        TContext
+      > => {
+      return useMutation(getCreateProcInvoiceMutationOptions(options));
+    }
+
+export const getGetProcInvoiceUrl = (id: number,) => {
+
+
+
+
+  return `/api/proc-invoices/${id}`
+}
+
+/**
+ * @summary Get invoice by ID
+ */
+export const getProcInvoice = async (id: number, options?: RequestInit): Promise<ProcInvoice> => {
+
+  return customFetch<ProcInvoice>(getGetProcInvoiceUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetProcInvoiceQueryKey = (id: number,) => {
+    return [
+    `/api/proc-invoices/${id}`
+    ] as const;
+    }
+
+
+export const getGetProcInvoiceQueryOptions = <TData = Awaited<ReturnType<typeof getProcInvoice>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProcInvoice>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetProcInvoiceQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getProcInvoice>>> = ({ signal }) => getProcInvoice(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getProcInvoice>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetProcInvoiceQueryResult = NonNullable<Awaited<ReturnType<typeof getProcInvoice>>>
+export type GetProcInvoiceQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get invoice by ID
+ */
+
+export function useGetProcInvoice<TData = Awaited<ReturnType<typeof getProcInvoice>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProcInvoice>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetProcInvoiceQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSubmitProcInvoiceUrl = (id: number,) => {
+
+
+
+
+  return `/api/proc-invoices/${id}/submit`
+}
+
+/**
+ * @summary Submit invoice for approval
+ */
+export const submitProcInvoice = async (id: number,
+    workflowActionInput: WorkflowActionInput, options?: RequestInit): Promise<ProcInvoice> => {
+
+  return customFetch<ProcInvoice>(getSubmitProcInvoiceUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(workflowActionInput)
+  }
+);}
+
+
+
+
+
+export const getSubmitProcInvoiceMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitProcInvoice>>, TError,{id: number;data: BodyType<WorkflowActionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof submitProcInvoice>>, TError,{id: number;data: BodyType<WorkflowActionInput>}, TContext> => {
+
+const mutationKey = ['submitProcInvoice'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof submitProcInvoice>>, {id: number;data: BodyType<WorkflowActionInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  submitProcInvoice(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SubmitProcInvoiceMutationResult = NonNullable<Awaited<ReturnType<typeof submitProcInvoice>>>
+    export type SubmitProcInvoiceMutationBody = BodyType<WorkflowActionInput>
+    export type SubmitProcInvoiceMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Submit invoice for approval
+ */
+export const useSubmitProcInvoice = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitProcInvoice>>, TError,{id: number;data: BodyType<WorkflowActionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof submitProcInvoice>>,
+        TError,
+        {id: number;data: BodyType<WorkflowActionInput>},
+        TContext
+      > => {
+      return useMutation(getSubmitProcInvoiceMutationOptions(options));
+    }
+
+export const getApproveProcInvoiceMismatchUrl = (id: number,) => {
+
+
+
+
+  return `/api/proc-invoices/${id}/approve-mismatch`
+}
+
+/**
+ * @summary Approve 3-way match mismatch
+ */
+export const approveProcInvoiceMismatch = async (id: number,
+    workflowActionInput: WorkflowActionInput, options?: RequestInit): Promise<ProcInvoice> => {
+
+  return customFetch<ProcInvoice>(getApproveProcInvoiceMismatchUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(workflowActionInput)
+  }
+);}
+
+
+
+
+
+export const getApproveProcInvoiceMismatchMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveProcInvoiceMismatch>>, TError,{id: number;data: BodyType<WorkflowActionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof approveProcInvoiceMismatch>>, TError,{id: number;data: BodyType<WorkflowActionInput>}, TContext> => {
+
+const mutationKey = ['approveProcInvoiceMismatch'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof approveProcInvoiceMismatch>>, {id: number;data: BodyType<WorkflowActionInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  approveProcInvoiceMismatch(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ApproveProcInvoiceMismatchMutationResult = NonNullable<Awaited<ReturnType<typeof approveProcInvoiceMismatch>>>
+    export type ApproveProcInvoiceMismatchMutationBody = BodyType<WorkflowActionInput>
+    export type ApproveProcInvoiceMismatchMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Approve 3-way match mismatch
+ */
+export const useApproveProcInvoiceMismatch = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveProcInvoiceMismatch>>, TError,{id: number;data: BodyType<WorkflowActionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof approveProcInvoiceMismatch>>,
+        TError,
+        {id: number;data: BodyType<WorkflowActionInput>},
+        TContext
+      > => {
+      return useMutation(getApproveProcInvoiceMismatchMutationOptions(options));
+    }
+
+export const getApproveProcInvoiceUrl = (id: number,) => {
+
+
+
+
+  return `/api/proc-invoices/${id}/approve`
+}
+
+/**
+ * @summary Approve invoice
+ */
+export const approveProcInvoice = async (id: number,
+    workflowActionInput: WorkflowActionInput, options?: RequestInit): Promise<ProcInvoice> => {
+
+  return customFetch<ProcInvoice>(getApproveProcInvoiceUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(workflowActionInput)
+  }
+);}
+
+
+
+
+
+export const getApproveProcInvoiceMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveProcInvoice>>, TError,{id: number;data: BodyType<WorkflowActionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof approveProcInvoice>>, TError,{id: number;data: BodyType<WorkflowActionInput>}, TContext> => {
+
+const mutationKey = ['approveProcInvoice'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof approveProcInvoice>>, {id: number;data: BodyType<WorkflowActionInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  approveProcInvoice(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ApproveProcInvoiceMutationResult = NonNullable<Awaited<ReturnType<typeof approveProcInvoice>>>
+    export type ApproveProcInvoiceMutationBody = BodyType<WorkflowActionInput>
+    export type ApproveProcInvoiceMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Approve invoice
+ */
+export const useApproveProcInvoice = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveProcInvoice>>, TError,{id: number;data: BodyType<WorkflowActionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof approveProcInvoice>>,
+        TError,
+        {id: number;data: BodyType<WorkflowActionInput>},
+        TContext
+      > => {
+      return useMutation(getApproveProcInvoiceMutationOptions(options));
+    }
+
+export const getRejectProcInvoiceUrl = (id: number,) => {
+
+
+
+
+  return `/api/proc-invoices/${id}/reject`
+}
+
+/**
+ * @summary Reject invoice
+ */
+export const rejectProcInvoice = async (id: number,
+    workflowActionInput: WorkflowActionInput, options?: RequestInit): Promise<ProcInvoice> => {
+
+  return customFetch<ProcInvoice>(getRejectProcInvoiceUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(workflowActionInput)
+  }
+);}
+
+
+
+
+
+export const getRejectProcInvoiceMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rejectProcInvoice>>, TError,{id: number;data: BodyType<WorkflowActionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof rejectProcInvoice>>, TError,{id: number;data: BodyType<WorkflowActionInput>}, TContext> => {
+
+const mutationKey = ['rejectProcInvoice'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof rejectProcInvoice>>, {id: number;data: BodyType<WorkflowActionInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  rejectProcInvoice(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RejectProcInvoiceMutationResult = NonNullable<Awaited<ReturnType<typeof rejectProcInvoice>>>
+    export type RejectProcInvoiceMutationBody = BodyType<WorkflowActionInput>
+    export type RejectProcInvoiceMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Reject invoice
+ */
+export const useRejectProcInvoice = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rejectProcInvoice>>, TError,{id: number;data: BodyType<WorkflowActionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof rejectProcInvoice>>,
+        TError,
+        {id: number;data: BodyType<WorkflowActionInput>},
+        TContext
+      > => {
+      return useMutation(getRejectProcInvoiceMutationOptions(options));
+    }
+
+export const getMarkProcInvoicePaidUrl = (id: number,) => {
+
+
+
+
+  return `/api/proc-invoices/${id}/mark-paid`
+}
+
+/**
+ * @summary Mark invoice as paid
+ */
+export const markProcInvoicePaid = async (id: number,
+    workflowActionInput: WorkflowActionInput, options?: RequestInit): Promise<ProcInvoice> => {
+
+  return customFetch<ProcInvoice>(getMarkProcInvoicePaidUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(workflowActionInput)
+  }
+);}
+
+
+
+
+
+export const getMarkProcInvoicePaidMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markProcInvoicePaid>>, TError,{id: number;data: BodyType<WorkflowActionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof markProcInvoicePaid>>, TError,{id: number;data: BodyType<WorkflowActionInput>}, TContext> => {
+
+const mutationKey = ['markProcInvoicePaid'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof markProcInvoicePaid>>, {id: number;data: BodyType<WorkflowActionInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  markProcInvoicePaid(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MarkProcInvoicePaidMutationResult = NonNullable<Awaited<ReturnType<typeof markProcInvoicePaid>>>
+    export type MarkProcInvoicePaidMutationBody = BodyType<WorkflowActionInput>
+    export type MarkProcInvoicePaidMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Mark invoice as paid
+ */
+export const useMarkProcInvoicePaid = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markProcInvoicePaid>>, TError,{id: number;data: BodyType<WorkflowActionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof markProcInvoicePaid>>,
+        TError,
+        {id: number;data: BodyType<WorkflowActionInput>},
+        TContext
+      > => {
+      return useMutation(getMarkProcInvoicePaidMutationOptions(options));
+    }
+
+export const getRecordProcurementPODispatchUrl = (id: number,) => {
+
+
+
+
+  return `/api/procurement-pos/${id}/record-dispatch`
+}
+
+/**
+ * @summary Record vendor dispatch info on PO
+ */
+export const recordProcurementPODispatch = async (id: number,
+    pODispatchInput: PODispatchInput, options?: RequestInit): Promise<ProcurementPO> => {
+
+  return customFetch<ProcurementPO>(getRecordProcurementPODispatchUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(pODispatchInput)
+  }
+);}
+
+
+
+
+
+export const getRecordProcurementPODispatchMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordProcurementPODispatch>>, TError,{id: number;data: BodyType<PODispatchInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordProcurementPODispatch>>, TError,{id: number;data: BodyType<PODispatchInput>}, TContext> => {
+
+const mutationKey = ['recordProcurementPODispatch'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordProcurementPODispatch>>, {id: number;data: BodyType<PODispatchInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  recordProcurementPODispatch(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecordProcurementPODispatchMutationResult = NonNullable<Awaited<ReturnType<typeof recordProcurementPODispatch>>>
+    export type RecordProcurementPODispatchMutationBody = BodyType<PODispatchInput>
+    export type RecordProcurementPODispatchMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Record vendor dispatch info on PO
+ */
+export const useRecordProcurementPODispatch = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordProcurementPODispatch>>, TError,{id: number;data: BodyType<PODispatchInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof recordProcurementPODispatch>>,
+        TError,
+        {id: number;data: BodyType<PODispatchInput>},
+        TContext
+      > => {
+      return useMutation(getRecordProcurementPODispatchMutationOptions(options));
     }
 

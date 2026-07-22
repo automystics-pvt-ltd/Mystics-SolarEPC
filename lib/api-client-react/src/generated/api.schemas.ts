@@ -1527,6 +1527,8 @@ export interface WorkflowActionInput {
   userId?: number;
   userRole?: string;
   remarks?: string;
+  paymentReference?: string;
+  paymentMode?: string;
 }
 
 export interface ProcurementPOItem {
@@ -1607,6 +1609,221 @@ export interface ProcurementPOUpdate {
   deliveryAddress?: string;
   specialTerms?: string;
   internalNotes?: string;
+}
+
+export interface PODispatchInput {
+  vendorDispatchRef?: string;
+  trackingNumber?: string;
+  expectedDeliveryDate?: string;
+  userName?: string;
+  userId?: number;
+  remarks?: string;
+}
+
+export interface ProcGRNItem {
+  id?: number;
+  grnId?: number;
+  poItemId?: number;
+  lineNo?: number;
+  materialId?: number;
+  materialCode?: string;
+  materialName?: string;
+  description?: string;
+  uom?: string;
+  orderedQty?: number;
+  receivedQty?: number;
+  acceptedQty?: number;
+  rejectedQty?: number;
+  damagedQty?: number;
+  excessQty?: number;
+  shortQty?: number;
+  qcStatus?: string;
+  rejectionReason?: string;
+  itemRemarks?: string;
+  unitPrice?: number;
+  acceptedValue?: number;
+}
+
+export interface ProcGRNAuditLog {
+  id?: number;
+  grnId?: number;
+  action?: string;
+  performedBy?: number;
+  performedByName?: string;
+  remarks?: string;
+  createdAt?: string;
+}
+
+export interface ProcGRN {
+  id?: number;
+  grnNumber?: string;
+  poId?: number;
+  vendorId?: number;
+  vendorName?: string;
+  status?: string;
+  deliveryDate?: string;
+  vehicleNumber?: string;
+  dcNumber?: string;
+  dcDate?: string;
+  receivedBy?: number;
+  receivedByName?: string;
+  receivedAt?: string;
+  inspectedBy?: number;
+  inspectedByName?: string;
+  inspectedAt?: string;
+  approvedBy?: number;
+  approvedByName?: string;
+  approvedAt?: string;
+  rejectedBy?: number;
+  rejectedByName?: string;
+  rejectedAt?: string;
+  approvalRemarks?: string;
+  totalOrderedQty?: number;
+  totalReceivedQty?: number;
+  totalAcceptedQty?: number;
+  totalRejectedQty?: number;
+  totalAcceptedValue?: number;
+  remarks?: string;
+  createdBy?: number;
+  createdByName?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  items?: ProcGRNItem[];
+  auditLogs?: ProcGRNAuditLog[];
+}
+
+export type ProcGRNInputItemsItem = { [key: string]: unknown };
+
+export interface ProcGRNInput {
+  poId: number;
+  deliveryDate?: string;
+  vehicleNumber?: string;
+  dcNumber?: string;
+  dcDate?: string;
+  remarks?: string;
+  userName?: string;
+  userId?: number;
+  items?: ProcGRNInputItemsItem[];
+}
+
+export interface ProcInvoiceItem {
+  id?: number;
+  invoiceId?: number;
+  poItemId?: number;
+  grnItemId?: number;
+  lineNo?: number;
+  materialName?: string;
+  materialCode?: string;
+  uom?: string;
+  orderedQty?: number;
+  receivedQty?: number;
+  invoicedQty?: number;
+  unitPrice?: number;
+  discountPct?: number;
+  taxableAmount?: number;
+  gstRate?: number;
+  gstAmount?: number;
+  lineTotal?: number;
+  isMatched?: boolean;
+  mismatchNote?: string;
+}
+
+export interface ProcInvoiceAuditLog {
+  id?: number;
+  invoiceId?: number;
+  action?: string;
+  performedBy?: number;
+  performedByName?: string;
+  remarks?: string;
+  createdAt?: string;
+}
+
+export interface ProcInvoice {
+  id?: number;
+  invoiceNumber?: string;
+  poId?: number;
+  grnId?: number;
+  vendorId?: number;
+  vendorName?: string;
+  vendorInvoiceNumber?: string;
+  vendorInvoiceDate?: string;
+  status?: string;
+  matchStatus?: string;
+  mismatchDetails?: string;
+  mismatchApprovedByName?: string;
+  mismatchApprovedAt?: string;
+  subtotal?: number;
+  totalGst?: number;
+  freightCharges?: number;
+  otherCharges?: number;
+  totalAmount?: number;
+  tdsAmount?: number;
+  netPayable?: number;
+  paymentTerms?: string;
+  dueDate?: string;
+  submittedAt?: string;
+  submittedByName?: string;
+  approvedBy?: number;
+  approvedByName?: string;
+  approvedAt?: string;
+  rejectedByName?: string;
+  rejectedAt?: string;
+  approvalRemarks?: string;
+  paidAt?: string;
+  paidByName?: string;
+  paymentReference?: string;
+  paymentMode?: string;
+  createdBy?: number;
+  createdByName?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  items?: ProcInvoiceItem[];
+  auditLogs?: ProcInvoiceAuditLog[];
+}
+
+export type ProcInvoiceInputItemsItem = { [key: string]: unknown };
+
+export interface ProcInvoiceInput {
+  poId: number;
+  grnId?: number;
+  vendorInvoiceNumber?: string;
+  vendorInvoiceDate?: string;
+  freightCharges?: number;
+  otherCharges?: number;
+  tdsAmount?: number;
+  paymentTerms?: string;
+  internalNotes?: string;
+  userName?: string;
+  userId?: number;
+  items?: ProcInvoiceInputItemsItem[];
+}
+
+export type ProcurementDashboardDataSummaryPoByStatus = { [key: string]: unknown };
+
+export type ProcurementDashboardDataSummary = {
+  totalPOs?: number;
+  openPOs?: number;
+  overduePOs?: number;
+  pendingGRNs?: number;
+  pendingInvoices?: number;
+  ytdSpend?: number;
+  poByStatus?: ProcurementDashboardDataSummaryPoByStatus;
+};
+
+export type ProcurementDashboardDataOverduePOsItem = { [key: string]: unknown };
+
+export type ProcurementDashboardDataPendingGRNsItem = { [key: string]: unknown };
+
+export type ProcurementDashboardDataPendingInvoicesItem = { [key: string]: unknown };
+
+export type ProcurementDashboardDataMonthlySpendItem = { [key: string]: unknown };
+
+export interface ProcurementDashboardData {
+  summary?: ProcurementDashboardDataSummary;
+  overduePOs?: ProcurementDashboardDataOverduePOsItem[];
+  pendingGRNs?: ProcurementDashboardDataPendingGRNsItem[];
+  pendingInvoices?: ProcurementDashboardDataPendingInvoicesItem[];
+  monthlySpend?: ProcurementDashboardDataMonthlySpendItem[];
 }
 
 export type GetDashboardParams = {
@@ -1755,5 +1972,16 @@ export type AddProcurementQuotationComment200 = {
 export type GetProcurementPOsParams = {
 status?: string;
 vendorId?: number;
+};
+
+export type GetProcGrnsParams = {
+poId?: number;
+status?: string;
+};
+
+export type GetProcInvoicesParams = {
+poId?: number;
+grnId?: number;
+status?: string;
 };
 

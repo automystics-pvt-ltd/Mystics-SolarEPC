@@ -4,7 +4,7 @@ import {
   AlertTriangle, FolderKanban, HardHat, Warehouse, Boxes, Truck,
   BookOpen, Scale, ClipboardCheck, ChevronLeft, ChevronRight,
   LogOut, Zap, Layers, CheckSquare2, Wrench, Building2, Package,
-  ClipboardList, ShoppingCart,
+  ClipboardList, ShoppingCart, BarChart2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
@@ -71,10 +71,13 @@ const MODULES = [
   {
     section: "PROCUREMENT",
     items: [
+      { name: "Dashboard", href: "/procurement/dashboard", icon: BarChart2 },
       { name: "Vendors", href: "/procurement/vendors", icon: Building2 },
       { name: "Materials", href: "/procurement/materials", icon: Package },
       { name: "Vendor Quotations", href: "/procurement/quotations", icon: ClipboardList },
       { name: "Purchase Orders", href: "/procurement/pos", icon: ShoppingCart },
+      { name: "GRNs", href: "/procurement/grns", icon: Boxes },
+      { name: "Invoices", href: "/procurement/invoices", icon: FilePlus },
     ],
   },
 ];

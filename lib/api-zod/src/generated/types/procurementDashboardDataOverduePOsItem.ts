@@ -6,11 +6,4 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface WorkflowActionInput {
-  userName?: string;
-  userId?: number;
-  userRole?: string;
-  remarks?: string;
-  paymentReference?: string;
-  paymentMode?: string;
-}
+export type ProcurementDashboardDataOverduePOsItem = { [key: string]: unknown };

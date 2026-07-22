@@ -48,6 +48,13 @@ import ProcurementQuotationForm from '@/pages/procurement/ProcurementQuotationFo
 import QuotationComparisonView from '@/pages/procurement/QuotationComparisonView';
 import ProcurementPOsList from '@/pages/procurement/ProcurementPOsList';
 import ProcurementPODetail from '@/pages/procurement/ProcurementPODetail';
+import ProcurementDashboard from '@/pages/procurement/ProcurementDashboard';
+import ProcGRNsList from '@/pages/procurement/GRNsList';
+import GRNForm from '@/pages/procurement/GRNForm';
+import GRNDetail from '@/pages/procurement/GRNDetail';
+import InvoicesList from '@/pages/procurement/InvoicesList';
+import InvoiceForm from '@/pages/procurement/InvoiceForm';
+import InvoiceDetail from '@/pages/procurement/InvoiceDetail';
 
 const queryClient = new QueryClient();
 
@@ -136,6 +143,13 @@ function Router() {
       <Route path="/procurement/quotations/:id">{(p) => <ProtectedRoute component={ProcurementQuotationDetail} id={p.id} />}</Route>
       <Route path="/procurement/pos">{() => <ProtectedRoute component={ProcurementPOsList} />}</Route>
       <Route path="/procurement/pos/:id">{(p) => <ProtectedRoute component={ProcurementPODetail} id={p.id} />}</Route>
+      <Route path="/procurement/dashboard">{() => <ProtectedRoute component={ProcurementDashboard} />}</Route>
+      <Route path="/procurement/grns/new">{() => <ProtectedRoute component={GRNForm} />}</Route>
+      <Route path="/procurement/grns/:id">{(p) => <ProtectedRoute component={GRNDetail} id={p.id} />}</Route>
+      <Route path="/procurement/grns">{() => <ProtectedRoute component={ProcGRNsList} />}</Route>
+      <Route path="/procurement/invoices/new">{() => <ProtectedRoute component={InvoiceForm} />}</Route>
+      <Route path="/procurement/invoices/:id">{(p) => <ProtectedRoute component={InvoiceDetail} id={p.id} />}</Route>
+      <Route path="/procurement/invoices">{() => <ProtectedRoute component={InvoicesList} />}</Route>
 
       <Route component={NotFound} />
     </Switch>

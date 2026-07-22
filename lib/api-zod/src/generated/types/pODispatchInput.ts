@@ -6,11 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface WorkflowActionInput {
+export interface PODispatchInput {
+  vendorDispatchRef?: string;
+  trackingNumber?: string;
+  expectedDeliveryDate?: string;
   userName?: string;
   userId?: number;
-  userRole?: string;
   remarks?: string;
-  paymentReference?: string;
-  paymentMode?: string;
 }

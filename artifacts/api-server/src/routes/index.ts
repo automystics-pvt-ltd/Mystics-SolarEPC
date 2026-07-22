@@ -17,6 +17,9 @@ import vendorsRouter from "./vendors";
 import materialsRouter from "./materials";
 import procQuotationsRouter from "./proc_quotations";
 import procPOsRouter from "./proc_pos";
+import procGRNsRouter from "./proc_grns";
+import procInvoicesRouter from "./proc_invoices";
+import procDashboardRouter from "./proc_dashboard";
 
 const router: IRouter = Router();
 
@@ -38,5 +41,8 @@ router.use(vendorsRouter);
 router.use(materialsRouter);
 router.use(procQuotationsRouter);
 router.use(procPOsRouter);
+router.use(procGRNsRouter);
+router.use(procInvoicesRouter);
+router.use(procDashboardRouter);
 
 export default router;

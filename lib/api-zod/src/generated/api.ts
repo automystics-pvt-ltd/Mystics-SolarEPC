@@ -4288,7 +4288,9 @@ export const SubmitProcurementQuotationBody = zod.object({
   "userName": zod.string().optional(),
   "userId": zod.number().optional(),
   "userRole": zod.string().optional(),
-  "remarks": zod.string().optional()
+  "remarks": zod.string().optional(),
+  "paymentReference": zod.string().optional(),
+  "paymentMode": zod.string().optional()
 })
 
 export const SubmitProcurementQuotationResponse = zod.object({
@@ -4406,7 +4408,9 @@ export const StartProcurementQuotationReviewBody = zod.object({
   "userName": zod.string().optional(),
   "userId": zod.number().optional(),
   "userRole": zod.string().optional(),
-  "remarks": zod.string().optional()
+  "remarks": zod.string().optional(),
+  "paymentReference": zod.string().optional(),
+  "paymentMode": zod.string().optional()
 })
 
 export const StartProcurementQuotationReviewResponse = zod.object({
@@ -4524,7 +4528,9 @@ export const RequestProcurementQuotationRevisionBody = zod.object({
   "userName": zod.string().optional(),
   "userId": zod.number().optional(),
   "userRole": zod.string().optional(),
-  "remarks": zod.string().optional()
+  "remarks": zod.string().optional(),
+  "paymentReference": zod.string().optional(),
+  "paymentMode": zod.string().optional()
 })
 
 export const RequestProcurementQuotationRevisionResponse = zod.object({
@@ -4642,7 +4648,9 @@ export const ApproveProcurementQuotationBody = zod.object({
   "userName": zod.string().optional(),
   "userId": zod.number().optional(),
   "userRole": zod.string().optional(),
-  "remarks": zod.string().optional()
+  "remarks": zod.string().optional(),
+  "paymentReference": zod.string().optional(),
+  "paymentMode": zod.string().optional()
 })
 
 export const ApproveProcurementQuotationResponse = zod.object({
@@ -4816,7 +4824,9 @@ export const RejectProcurementQuotationBody = zod.object({
   "userName": zod.string().optional(),
   "userId": zod.number().optional(),
   "userRole": zod.string().optional(),
-  "remarks": zod.string().optional()
+  "remarks": zod.string().optional(),
+  "paymentReference": zod.string().optional(),
+  "paymentMode": zod.string().optional()
 })
 
 export const RejectProcurementQuotationResponse = zod.object({
@@ -4934,7 +4944,9 @@ export const AddProcurementQuotationCommentBody = zod.object({
   "userName": zod.string().optional(),
   "userId": zod.number().optional(),
   "userRole": zod.string().optional(),
-  "remarks": zod.string().optional()
+  "remarks": zod.string().optional(),
+  "paymentReference": zod.string().optional(),
+  "paymentMode": zod.string().optional()
 })
 
 export const AddProcurementQuotationCommentResponse = zod.object({
@@ -5221,6 +5233,1296 @@ export const UpdateProcurementPOBody = zod.object({
 })
 
 export const UpdateProcurementPOResponse = zod.object({
+  "id": zod.number().optional(),
+  "poNumber": zod.string().optional(),
+  "quotationId": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "vendorName": zod.string().optional(),
+  "vendorGstin": zod.string().optional(),
+  "vendorAddress": zod.string().optional(),
+  "vendorContact": zod.string().optional(),
+  "status": zod.string().optional(),
+  "poDate": zod.string().optional(),
+  "deliveryDeadline": zod.string().optional(),
+  "deliveryAddress": zod.string().optional(),
+  "paymentTerms": zod.string().optional(),
+  "warrantyMonths": zod.number().optional(),
+  "freightCharges": zod.number().optional(),
+  "otherCharges": zod.number().optional(),
+  "subtotal": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "totalAmount": zod.number().optional(),
+  "specialTerms": zod.string().optional(),
+  "internalNotes": zod.string().optional(),
+  "approvedBy": zod.number().optional(),
+  "approvedByName": zod.string().optional(),
+  "approvedAt": zod.string().optional(),
+  "acknowledgedAt": zod.string().optional(),
+  "closedAt": zod.string().optional(),
+  "createdBy": zod.number().optional(),
+  "createdByName": zod.string().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional(),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "poId": zod.number().optional(),
+  "lineNo": zod.number().optional(),
+  "materialId": zod.number().optional(),
+  "materialCode": zod.string().optional(),
+  "materialName": zod.string().optional(),
+  "description": zod.string().optional(),
+  "uom": zod.string().optional(),
+  "hsnSacCode": zod.string().optional(),
+  "brand": zod.string().optional(),
+  "qty": zod.number().optional(),
+  "unitPrice": zod.number().optional(),
+  "discountPct": zod.number().optional(),
+  "discountAmount": zod.number().optional(),
+  "taxableAmount": zod.number().optional(),
+  "gstRate": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "lineTotal": zod.number().optional(),
+  "deliveredQty": zod.number().optional(),
+  "remarks": zod.string().optional()
+})).optional()
+})
+
+
+/**
+ * @summary Procurement dashboard stats, overdue POs, pending GRNs & invoices
+ */
+export const GetProcurementDashboardResponse = zod.object({
+  "summary": zod.object({
+  "totalPOs": zod.number().optional(),
+  "openPOs": zod.number().optional(),
+  "overduePOs": zod.number().optional(),
+  "pendingGRNs": zod.number().optional(),
+  "pendingInvoices": zod.number().optional(),
+  "ytdSpend": zod.number().optional(),
+  "poByStatus": zod.looseObject({
+
+}).optional()
+}).optional(),
+  "overduePOs": zod.array(zod.looseObject({
+
+})).optional(),
+  "pendingGRNs": zod.array(zod.looseObject({
+
+})).optional(),
+  "pendingInvoices": zod.array(zod.looseObject({
+
+})).optional(),
+  "monthlySpend": zod.array(zod.looseObject({
+
+})).optional()
+})
+
+
+/**
+ * @summary List GRNs
+ */
+export const GetProcGrnsQueryParams = zod.object({
+  "poId": zod.coerce.number().optional(),
+  "status": zod.coerce.string().optional()
+})
+
+export const GetProcGrnsResponseItem = zod.object({
+  "id": zod.number().optional(),
+  "grnNumber": zod.string().optional(),
+  "poId": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "vendorName": zod.string().optional(),
+  "status": zod.string().optional(),
+  "deliveryDate": zod.string().optional(),
+  "vehicleNumber": zod.string().optional(),
+  "dcNumber": zod.string().optional(),
+  "dcDate": zod.string().optional(),
+  "receivedBy": zod.number().optional(),
+  "receivedByName": zod.string().optional(),
+  "receivedAt": zod.string().optional(),
+  "inspectedBy": zod.number().optional(),
+  "inspectedByName": zod.string().optional(),
+  "inspectedAt": zod.string().optional(),
+  "approvedBy": zod.number().optional(),
+  "approvedByName": zod.string().optional(),
+  "approvedAt": zod.string().optional(),
+  "rejectedBy": zod.number().optional(),
+  "rejectedByName": zod.string().optional(),
+  "rejectedAt": zod.string().optional(),
+  "approvalRemarks": zod.string().optional(),
+  "totalOrderedQty": zod.number().optional(),
+  "totalReceivedQty": zod.number().optional(),
+  "totalAcceptedQty": zod.number().optional(),
+  "totalRejectedQty": zod.number().optional(),
+  "totalAcceptedValue": zod.number().optional(),
+  "remarks": zod.string().optional(),
+  "createdBy": zod.number().optional(),
+  "createdByName": zod.string().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional(),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "grnId": zod.number().optional(),
+  "poItemId": zod.number().optional(),
+  "lineNo": zod.number().optional(),
+  "materialId": zod.number().optional(),
+  "materialCode": zod.string().optional(),
+  "materialName": zod.string().optional(),
+  "description": zod.string().optional(),
+  "uom": zod.string().optional(),
+  "orderedQty": zod.number().optional(),
+  "receivedQty": zod.number().optional(),
+  "acceptedQty": zod.number().optional(),
+  "rejectedQty": zod.number().optional(),
+  "damagedQty": zod.number().optional(),
+  "excessQty": zod.number().optional(),
+  "shortQty": zod.number().optional(),
+  "qcStatus": zod.string().optional(),
+  "rejectionReason": zod.string().optional(),
+  "itemRemarks": zod.string().optional(),
+  "unitPrice": zod.number().optional(),
+  "acceptedValue": zod.number().optional()
+})).optional(),
+  "auditLogs": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "grnId": zod.number().optional(),
+  "action": zod.string().optional(),
+  "performedBy": zod.number().optional(),
+  "performedByName": zod.string().optional(),
+  "remarks": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional()
+})
+export const GetProcGrnsResponse = zod.array(GetProcGrnsResponseItem)
+
+
+/**
+ * @summary Create a new GRN
+ */
+export const CreateProcGrnBody = zod.object({
+  "poId": zod.number(),
+  "deliveryDate": zod.string().optional(),
+  "vehicleNumber": zod.string().optional(),
+  "dcNumber": zod.string().optional(),
+  "dcDate": zod.string().optional(),
+  "remarks": zod.string().optional(),
+  "userName": zod.string().optional(),
+  "userId": zod.number().optional(),
+  "items": zod.array(zod.looseObject({
+
+})).optional()
+})
+
+export const CreateProcGrnResponse = zod.object({
+  "id": zod.number().optional(),
+  "grnNumber": zod.string().optional(),
+  "poId": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "vendorName": zod.string().optional(),
+  "status": zod.string().optional(),
+  "deliveryDate": zod.string().optional(),
+  "vehicleNumber": zod.string().optional(),
+  "dcNumber": zod.string().optional(),
+  "dcDate": zod.string().optional(),
+  "receivedBy": zod.number().optional(),
+  "receivedByName": zod.string().optional(),
+  "receivedAt": zod.string().optional(),
+  "inspectedBy": zod.number().optional(),
+  "inspectedByName": zod.string().optional(),
+  "inspectedAt": zod.string().optional(),
+  "approvedBy": zod.number().optional(),
+  "approvedByName": zod.string().optional(),
+  "approvedAt": zod.string().optional(),
+  "rejectedBy": zod.number().optional(),
+  "rejectedByName": zod.string().optional(),
+  "rejectedAt": zod.string().optional(),
+  "approvalRemarks": zod.string().optional(),
+  "totalOrderedQty": zod.number().optional(),
+  "totalReceivedQty": zod.number().optional(),
+  "totalAcceptedQty": zod.number().optional(),
+  "totalRejectedQty": zod.number().optional(),
+  "totalAcceptedValue": zod.number().optional(),
+  "remarks": zod.string().optional(),
+  "createdBy": zod.number().optional(),
+  "createdByName": zod.string().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional(),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "grnId": zod.number().optional(),
+  "poItemId": zod.number().optional(),
+  "lineNo": zod.number().optional(),
+  "materialId": zod.number().optional(),
+  "materialCode": zod.string().optional(),
+  "materialName": zod.string().optional(),
+  "description": zod.string().optional(),
+  "uom": zod.string().optional(),
+  "orderedQty": zod.number().optional(),
+  "receivedQty": zod.number().optional(),
+  "acceptedQty": zod.number().optional(),
+  "rejectedQty": zod.number().optional(),
+  "damagedQty": zod.number().optional(),
+  "excessQty": zod.number().optional(),
+  "shortQty": zod.number().optional(),
+  "qcStatus": zod.string().optional(),
+  "rejectionReason": zod.string().optional(),
+  "itemRemarks": zod.string().optional(),
+  "unitPrice": zod.number().optional(),
+  "acceptedValue": zod.number().optional()
+})).optional(),
+  "auditLogs": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "grnId": zod.number().optional(),
+  "action": zod.string().optional(),
+  "performedBy": zod.number().optional(),
+  "performedByName": zod.string().optional(),
+  "remarks": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional()
+})
+
+
+/**
+ * @summary Get GRN by ID
+ */
+export const GetProcGrnParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetProcGrnResponse = zod.object({
+  "id": zod.number().optional(),
+  "grnNumber": zod.string().optional(),
+  "poId": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "vendorName": zod.string().optional(),
+  "status": zod.string().optional(),
+  "deliveryDate": zod.string().optional(),
+  "vehicleNumber": zod.string().optional(),
+  "dcNumber": zod.string().optional(),
+  "dcDate": zod.string().optional(),
+  "receivedBy": zod.number().optional(),
+  "receivedByName": zod.string().optional(),
+  "receivedAt": zod.string().optional(),
+  "inspectedBy": zod.number().optional(),
+  "inspectedByName": zod.string().optional(),
+  "inspectedAt": zod.string().optional(),
+  "approvedBy": zod.number().optional(),
+  "approvedByName": zod.string().optional(),
+  "approvedAt": zod.string().optional(),
+  "rejectedBy": zod.number().optional(),
+  "rejectedByName": zod.string().optional(),
+  "rejectedAt": zod.string().optional(),
+  "approvalRemarks": zod.string().optional(),
+  "totalOrderedQty": zod.number().optional(),
+  "totalReceivedQty": zod.number().optional(),
+  "totalAcceptedQty": zod.number().optional(),
+  "totalRejectedQty": zod.number().optional(),
+  "totalAcceptedValue": zod.number().optional(),
+  "remarks": zod.string().optional(),
+  "createdBy": zod.number().optional(),
+  "createdByName": zod.string().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional(),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "grnId": zod.number().optional(),
+  "poItemId": zod.number().optional(),
+  "lineNo": zod.number().optional(),
+  "materialId": zod.number().optional(),
+  "materialCode": zod.string().optional(),
+  "materialName": zod.string().optional(),
+  "description": zod.string().optional(),
+  "uom": zod.string().optional(),
+  "orderedQty": zod.number().optional(),
+  "receivedQty": zod.number().optional(),
+  "acceptedQty": zod.number().optional(),
+  "rejectedQty": zod.number().optional(),
+  "damagedQty": zod.number().optional(),
+  "excessQty": zod.number().optional(),
+  "shortQty": zod.number().optional(),
+  "qcStatus": zod.string().optional(),
+  "rejectionReason": zod.string().optional(),
+  "itemRemarks": zod.string().optional(),
+  "unitPrice": zod.number().optional(),
+  "acceptedValue": zod.number().optional()
+})).optional(),
+  "auditLogs": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "grnId": zod.number().optional(),
+  "action": zod.string().optional(),
+  "performedBy": zod.number().optional(),
+  "performedByName": zod.string().optional(),
+  "remarks": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional()
+})
+
+
+/**
+ * @summary Submit GRN for inspection
+ */
+export const SubmitProcGrnParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const SubmitProcGrnBody = zod.object({
+  "userName": zod.string().optional(),
+  "userId": zod.number().optional(),
+  "userRole": zod.string().optional(),
+  "remarks": zod.string().optional(),
+  "paymentReference": zod.string().optional(),
+  "paymentMode": zod.string().optional()
+})
+
+export const SubmitProcGrnResponse = zod.object({
+  "id": zod.number().optional(),
+  "grnNumber": zod.string().optional(),
+  "poId": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "vendorName": zod.string().optional(),
+  "status": zod.string().optional(),
+  "deliveryDate": zod.string().optional(),
+  "vehicleNumber": zod.string().optional(),
+  "dcNumber": zod.string().optional(),
+  "dcDate": zod.string().optional(),
+  "receivedBy": zod.number().optional(),
+  "receivedByName": zod.string().optional(),
+  "receivedAt": zod.string().optional(),
+  "inspectedBy": zod.number().optional(),
+  "inspectedByName": zod.string().optional(),
+  "inspectedAt": zod.string().optional(),
+  "approvedBy": zod.number().optional(),
+  "approvedByName": zod.string().optional(),
+  "approvedAt": zod.string().optional(),
+  "rejectedBy": zod.number().optional(),
+  "rejectedByName": zod.string().optional(),
+  "rejectedAt": zod.string().optional(),
+  "approvalRemarks": zod.string().optional(),
+  "totalOrderedQty": zod.number().optional(),
+  "totalReceivedQty": zod.number().optional(),
+  "totalAcceptedQty": zod.number().optional(),
+  "totalRejectedQty": zod.number().optional(),
+  "totalAcceptedValue": zod.number().optional(),
+  "remarks": zod.string().optional(),
+  "createdBy": zod.number().optional(),
+  "createdByName": zod.string().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional(),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "grnId": zod.number().optional(),
+  "poItemId": zod.number().optional(),
+  "lineNo": zod.number().optional(),
+  "materialId": zod.number().optional(),
+  "materialCode": zod.string().optional(),
+  "materialName": zod.string().optional(),
+  "description": zod.string().optional(),
+  "uom": zod.string().optional(),
+  "orderedQty": zod.number().optional(),
+  "receivedQty": zod.number().optional(),
+  "acceptedQty": zod.number().optional(),
+  "rejectedQty": zod.number().optional(),
+  "damagedQty": zod.number().optional(),
+  "excessQty": zod.number().optional(),
+  "shortQty": zod.number().optional(),
+  "qcStatus": zod.string().optional(),
+  "rejectionReason": zod.string().optional(),
+  "itemRemarks": zod.string().optional(),
+  "unitPrice": zod.number().optional(),
+  "acceptedValue": zod.number().optional()
+})).optional(),
+  "auditLogs": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "grnId": zod.number().optional(),
+  "action": zod.string().optional(),
+  "performedBy": zod.number().optional(),
+  "performedByName": zod.string().optional(),
+  "remarks": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional()
+})
+
+
+/**
+ * @summary Approve GRN
+ */
+export const ApproveProcGrnParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ApproveProcGrnBody = zod.object({
+  "userName": zod.string().optional(),
+  "userId": zod.number().optional(),
+  "userRole": zod.string().optional(),
+  "remarks": zod.string().optional(),
+  "paymentReference": zod.string().optional(),
+  "paymentMode": zod.string().optional()
+})
+
+export const ApproveProcGrnResponse = zod.object({
+  "id": zod.number().optional(),
+  "grnNumber": zod.string().optional(),
+  "poId": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "vendorName": zod.string().optional(),
+  "status": zod.string().optional(),
+  "deliveryDate": zod.string().optional(),
+  "vehicleNumber": zod.string().optional(),
+  "dcNumber": zod.string().optional(),
+  "dcDate": zod.string().optional(),
+  "receivedBy": zod.number().optional(),
+  "receivedByName": zod.string().optional(),
+  "receivedAt": zod.string().optional(),
+  "inspectedBy": zod.number().optional(),
+  "inspectedByName": zod.string().optional(),
+  "inspectedAt": zod.string().optional(),
+  "approvedBy": zod.number().optional(),
+  "approvedByName": zod.string().optional(),
+  "approvedAt": zod.string().optional(),
+  "rejectedBy": zod.number().optional(),
+  "rejectedByName": zod.string().optional(),
+  "rejectedAt": zod.string().optional(),
+  "approvalRemarks": zod.string().optional(),
+  "totalOrderedQty": zod.number().optional(),
+  "totalReceivedQty": zod.number().optional(),
+  "totalAcceptedQty": zod.number().optional(),
+  "totalRejectedQty": zod.number().optional(),
+  "totalAcceptedValue": zod.number().optional(),
+  "remarks": zod.string().optional(),
+  "createdBy": zod.number().optional(),
+  "createdByName": zod.string().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional(),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "grnId": zod.number().optional(),
+  "poItemId": zod.number().optional(),
+  "lineNo": zod.number().optional(),
+  "materialId": zod.number().optional(),
+  "materialCode": zod.string().optional(),
+  "materialName": zod.string().optional(),
+  "description": zod.string().optional(),
+  "uom": zod.string().optional(),
+  "orderedQty": zod.number().optional(),
+  "receivedQty": zod.number().optional(),
+  "acceptedQty": zod.number().optional(),
+  "rejectedQty": zod.number().optional(),
+  "damagedQty": zod.number().optional(),
+  "excessQty": zod.number().optional(),
+  "shortQty": zod.number().optional(),
+  "qcStatus": zod.string().optional(),
+  "rejectionReason": zod.string().optional(),
+  "itemRemarks": zod.string().optional(),
+  "unitPrice": zod.number().optional(),
+  "acceptedValue": zod.number().optional()
+})).optional(),
+  "auditLogs": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "grnId": zod.number().optional(),
+  "action": zod.string().optional(),
+  "performedBy": zod.number().optional(),
+  "performedByName": zod.string().optional(),
+  "remarks": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional()
+})
+
+
+/**
+ * @summary Reject GRN
+ */
+export const RejectProcGrnParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const RejectProcGrnBody = zod.object({
+  "userName": zod.string().optional(),
+  "userId": zod.number().optional(),
+  "userRole": zod.string().optional(),
+  "remarks": zod.string().optional(),
+  "paymentReference": zod.string().optional(),
+  "paymentMode": zod.string().optional()
+})
+
+export const RejectProcGrnResponse = zod.object({
+  "id": zod.number().optional(),
+  "grnNumber": zod.string().optional(),
+  "poId": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "vendorName": zod.string().optional(),
+  "status": zod.string().optional(),
+  "deliveryDate": zod.string().optional(),
+  "vehicleNumber": zod.string().optional(),
+  "dcNumber": zod.string().optional(),
+  "dcDate": zod.string().optional(),
+  "receivedBy": zod.number().optional(),
+  "receivedByName": zod.string().optional(),
+  "receivedAt": zod.string().optional(),
+  "inspectedBy": zod.number().optional(),
+  "inspectedByName": zod.string().optional(),
+  "inspectedAt": zod.string().optional(),
+  "approvedBy": zod.number().optional(),
+  "approvedByName": zod.string().optional(),
+  "approvedAt": zod.string().optional(),
+  "rejectedBy": zod.number().optional(),
+  "rejectedByName": zod.string().optional(),
+  "rejectedAt": zod.string().optional(),
+  "approvalRemarks": zod.string().optional(),
+  "totalOrderedQty": zod.number().optional(),
+  "totalReceivedQty": zod.number().optional(),
+  "totalAcceptedQty": zod.number().optional(),
+  "totalRejectedQty": zod.number().optional(),
+  "totalAcceptedValue": zod.number().optional(),
+  "remarks": zod.string().optional(),
+  "createdBy": zod.number().optional(),
+  "createdByName": zod.string().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional(),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "grnId": zod.number().optional(),
+  "poItemId": zod.number().optional(),
+  "lineNo": zod.number().optional(),
+  "materialId": zod.number().optional(),
+  "materialCode": zod.string().optional(),
+  "materialName": zod.string().optional(),
+  "description": zod.string().optional(),
+  "uom": zod.string().optional(),
+  "orderedQty": zod.number().optional(),
+  "receivedQty": zod.number().optional(),
+  "acceptedQty": zod.number().optional(),
+  "rejectedQty": zod.number().optional(),
+  "damagedQty": zod.number().optional(),
+  "excessQty": zod.number().optional(),
+  "shortQty": zod.number().optional(),
+  "qcStatus": zod.string().optional(),
+  "rejectionReason": zod.string().optional(),
+  "itemRemarks": zod.string().optional(),
+  "unitPrice": zod.number().optional(),
+  "acceptedValue": zod.number().optional()
+})).optional(),
+  "auditLogs": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "grnId": zod.number().optional(),
+  "action": zod.string().optional(),
+  "performedBy": zod.number().optional(),
+  "performedByName": zod.string().optional(),
+  "remarks": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional()
+})
+
+
+/**
+ * @summary List invoices
+ */
+export const GetProcInvoicesQueryParams = zod.object({
+  "poId": zod.coerce.number().optional(),
+  "grnId": zod.coerce.number().optional(),
+  "status": zod.coerce.string().optional()
+})
+
+export const GetProcInvoicesResponseItem = zod.object({
+  "id": zod.number().optional(),
+  "invoiceNumber": zod.string().optional(),
+  "poId": zod.number().optional(),
+  "grnId": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "vendorName": zod.string().optional(),
+  "vendorInvoiceNumber": zod.string().optional(),
+  "vendorInvoiceDate": zod.string().optional(),
+  "status": zod.string().optional(),
+  "matchStatus": zod.string().optional(),
+  "mismatchDetails": zod.string().optional(),
+  "mismatchApprovedByName": zod.string().optional(),
+  "mismatchApprovedAt": zod.string().optional(),
+  "subtotal": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "freightCharges": zod.number().optional(),
+  "otherCharges": zod.number().optional(),
+  "totalAmount": zod.number().optional(),
+  "tdsAmount": zod.number().optional(),
+  "netPayable": zod.number().optional(),
+  "paymentTerms": zod.string().optional(),
+  "dueDate": zod.string().optional(),
+  "submittedAt": zod.string().optional(),
+  "submittedByName": zod.string().optional(),
+  "approvedBy": zod.number().optional(),
+  "approvedByName": zod.string().optional(),
+  "approvedAt": zod.string().optional(),
+  "rejectedByName": zod.string().optional(),
+  "rejectedAt": zod.string().optional(),
+  "approvalRemarks": zod.string().optional(),
+  "paidAt": zod.string().optional(),
+  "paidByName": zod.string().optional(),
+  "paymentReference": zod.string().optional(),
+  "paymentMode": zod.string().optional(),
+  "createdBy": zod.number().optional(),
+  "createdByName": zod.string().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional(),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "invoiceId": zod.number().optional(),
+  "poItemId": zod.number().optional(),
+  "grnItemId": zod.number().optional(),
+  "lineNo": zod.number().optional(),
+  "materialName": zod.string().optional(),
+  "materialCode": zod.string().optional(),
+  "uom": zod.string().optional(),
+  "orderedQty": zod.number().optional(),
+  "receivedQty": zod.number().optional(),
+  "invoicedQty": zod.number().optional(),
+  "unitPrice": zod.number().optional(),
+  "discountPct": zod.number().optional(),
+  "taxableAmount": zod.number().optional(),
+  "gstRate": zod.number().optional(),
+  "gstAmount": zod.number().optional(),
+  "lineTotal": zod.number().optional(),
+  "isMatched": zod.boolean().optional(),
+  "mismatchNote": zod.string().optional()
+})).optional(),
+  "auditLogs": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "invoiceId": zod.number().optional(),
+  "action": zod.string().optional(),
+  "performedBy": zod.number().optional(),
+  "performedByName": zod.string().optional(),
+  "remarks": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional()
+})
+export const GetProcInvoicesResponse = zod.array(GetProcInvoicesResponseItem)
+
+
+/**
+ * @summary Create invoice (3-way match)
+ */
+export const CreateProcInvoiceBody = zod.object({
+  "poId": zod.number(),
+  "grnId": zod.number().optional(),
+  "vendorInvoiceNumber": zod.string().optional(),
+  "vendorInvoiceDate": zod.string().optional(),
+  "freightCharges": zod.number().optional(),
+  "otherCharges": zod.number().optional(),
+  "tdsAmount": zod.number().optional(),
+  "paymentTerms": zod.string().optional(),
+  "internalNotes": zod.string().optional(),
+  "userName": zod.string().optional(),
+  "userId": zod.number().optional(),
+  "items": zod.array(zod.looseObject({
+
+})).optional()
+})
+
+export const CreateProcInvoiceResponse = zod.object({
+  "id": zod.number().optional(),
+  "invoiceNumber": zod.string().optional(),
+  "poId": zod.number().optional(),
+  "grnId": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "vendorName": zod.string().optional(),
+  "vendorInvoiceNumber": zod.string().optional(),
+  "vendorInvoiceDate": zod.string().optional(),
+  "status": zod.string().optional(),
+  "matchStatus": zod.string().optional(),
+  "mismatchDetails": zod.string().optional(),
+  "mismatchApprovedByName": zod.string().optional(),
+  "mismatchApprovedAt": zod.string().optional(),
+  "subtotal": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "freightCharges": zod.number().optional(),
+  "otherCharges": zod.number().optional(),
+  "totalAmount": zod.number().optional(),
+  "tdsAmount": zod.number().optional(),
+  "netPayable": zod.number().optional(),
+  "paymentTerms": zod.string().optional(),
+  "dueDate": zod.string().optional(),
+  "submittedAt": zod.string().optional(),
+  "submittedByName": zod.string().optional(),
+  "approvedBy": zod.number().optional(),
+  "approvedByName": zod.string().optional(),
+  "approvedAt": zod.string().optional(),
+  "rejectedByName": zod.string().optional(),
+  "rejectedAt": zod.string().optional(),
+  "approvalRemarks": zod.string().optional(),
+  "paidAt": zod.string().optional(),
+  "paidByName": zod.string().optional(),
+  "paymentReference": zod.string().optional(),
+  "paymentMode": zod.string().optional(),
+  "createdBy": zod.number().optional(),
+  "createdByName": zod.string().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional(),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "invoiceId": zod.number().optional(),
+  "poItemId": zod.number().optional(),
+  "grnItemId": zod.number().optional(),
+  "lineNo": zod.number().optional(),
+  "materialName": zod.string().optional(),
+  "materialCode": zod.string().optional(),
+  "uom": zod.string().optional(),
+  "orderedQty": zod.number().optional(),
+  "receivedQty": zod.number().optional(),
+  "invoicedQty": zod.number().optional(),
+  "unitPrice": zod.number().optional(),
+  "discountPct": zod.number().optional(),
+  "taxableAmount": zod.number().optional(),
+  "gstRate": zod.number().optional(),
+  "gstAmount": zod.number().optional(),
+  "lineTotal": zod.number().optional(),
+  "isMatched": zod.boolean().optional(),
+  "mismatchNote": zod.string().optional()
+})).optional(),
+  "auditLogs": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "invoiceId": zod.number().optional(),
+  "action": zod.string().optional(),
+  "performedBy": zod.number().optional(),
+  "performedByName": zod.string().optional(),
+  "remarks": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional()
+})
+
+
+/**
+ * @summary Get invoice by ID
+ */
+export const GetProcInvoiceParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetProcInvoiceResponse = zod.object({
+  "id": zod.number().optional(),
+  "invoiceNumber": zod.string().optional(),
+  "poId": zod.number().optional(),
+  "grnId": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "vendorName": zod.string().optional(),
+  "vendorInvoiceNumber": zod.string().optional(),
+  "vendorInvoiceDate": zod.string().optional(),
+  "status": zod.string().optional(),
+  "matchStatus": zod.string().optional(),
+  "mismatchDetails": zod.string().optional(),
+  "mismatchApprovedByName": zod.string().optional(),
+  "mismatchApprovedAt": zod.string().optional(),
+  "subtotal": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "freightCharges": zod.number().optional(),
+  "otherCharges": zod.number().optional(),
+  "totalAmount": zod.number().optional(),
+  "tdsAmount": zod.number().optional(),
+  "netPayable": zod.number().optional(),
+  "paymentTerms": zod.string().optional(),
+  "dueDate": zod.string().optional(),
+  "submittedAt": zod.string().optional(),
+  "submittedByName": zod.string().optional(),
+  "approvedBy": zod.number().optional(),
+  "approvedByName": zod.string().optional(),
+  "approvedAt": zod.string().optional(),
+  "rejectedByName": zod.string().optional(),
+  "rejectedAt": zod.string().optional(),
+  "approvalRemarks": zod.string().optional(),
+  "paidAt": zod.string().optional(),
+  "paidByName": zod.string().optional(),
+  "paymentReference": zod.string().optional(),
+  "paymentMode": zod.string().optional(),
+  "createdBy": zod.number().optional(),
+  "createdByName": zod.string().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional(),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "invoiceId": zod.number().optional(),
+  "poItemId": zod.number().optional(),
+  "grnItemId": zod.number().optional(),
+  "lineNo": zod.number().optional(),
+  "materialName": zod.string().optional(),
+  "materialCode": zod.string().optional(),
+  "uom": zod.string().optional(),
+  "orderedQty": zod.number().optional(),
+  "receivedQty": zod.number().optional(),
+  "invoicedQty": zod.number().optional(),
+  "unitPrice": zod.number().optional(),
+  "discountPct": zod.number().optional(),
+  "taxableAmount": zod.number().optional(),
+  "gstRate": zod.number().optional(),
+  "gstAmount": zod.number().optional(),
+  "lineTotal": zod.number().optional(),
+  "isMatched": zod.boolean().optional(),
+  "mismatchNote": zod.string().optional()
+})).optional(),
+  "auditLogs": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "invoiceId": zod.number().optional(),
+  "action": zod.string().optional(),
+  "performedBy": zod.number().optional(),
+  "performedByName": zod.string().optional(),
+  "remarks": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional()
+})
+
+
+/**
+ * @summary Submit invoice for approval
+ */
+export const SubmitProcInvoiceParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const SubmitProcInvoiceBody = zod.object({
+  "userName": zod.string().optional(),
+  "userId": zod.number().optional(),
+  "userRole": zod.string().optional(),
+  "remarks": zod.string().optional(),
+  "paymentReference": zod.string().optional(),
+  "paymentMode": zod.string().optional()
+})
+
+export const SubmitProcInvoiceResponse = zod.object({
+  "id": zod.number().optional(),
+  "invoiceNumber": zod.string().optional(),
+  "poId": zod.number().optional(),
+  "grnId": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "vendorName": zod.string().optional(),
+  "vendorInvoiceNumber": zod.string().optional(),
+  "vendorInvoiceDate": zod.string().optional(),
+  "status": zod.string().optional(),
+  "matchStatus": zod.string().optional(),
+  "mismatchDetails": zod.string().optional(),
+  "mismatchApprovedByName": zod.string().optional(),
+  "mismatchApprovedAt": zod.string().optional(),
+  "subtotal": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "freightCharges": zod.number().optional(),
+  "otherCharges": zod.number().optional(),
+  "totalAmount": zod.number().optional(),
+  "tdsAmount": zod.number().optional(),
+  "netPayable": zod.number().optional(),
+  "paymentTerms": zod.string().optional(),
+  "dueDate": zod.string().optional(),
+  "submittedAt": zod.string().optional(),
+  "submittedByName": zod.string().optional(),
+  "approvedBy": zod.number().optional(),
+  "approvedByName": zod.string().optional(),
+  "approvedAt": zod.string().optional(),
+  "rejectedByName": zod.string().optional(),
+  "rejectedAt": zod.string().optional(),
+  "approvalRemarks": zod.string().optional(),
+  "paidAt": zod.string().optional(),
+  "paidByName": zod.string().optional(),
+  "paymentReference": zod.string().optional(),
+  "paymentMode": zod.string().optional(),
+  "createdBy": zod.number().optional(),
+  "createdByName": zod.string().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional(),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "invoiceId": zod.number().optional(),
+  "poItemId": zod.number().optional(),
+  "grnItemId": zod.number().optional(),
+  "lineNo": zod.number().optional(),
+  "materialName": zod.string().optional(),
+  "materialCode": zod.string().optional(),
+  "uom": zod.string().optional(),
+  "orderedQty": zod.number().optional(),
+  "receivedQty": zod.number().optional(),
+  "invoicedQty": zod.number().optional(),
+  "unitPrice": zod.number().optional(),
+  "discountPct": zod.number().optional(),
+  "taxableAmount": zod.number().optional(),
+  "gstRate": zod.number().optional(),
+  "gstAmount": zod.number().optional(),
+  "lineTotal": zod.number().optional(),
+  "isMatched": zod.boolean().optional(),
+  "mismatchNote": zod.string().optional()
+})).optional(),
+  "auditLogs": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "invoiceId": zod.number().optional(),
+  "action": zod.string().optional(),
+  "performedBy": zod.number().optional(),
+  "performedByName": zod.string().optional(),
+  "remarks": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional()
+})
+
+
+/**
+ * @summary Approve 3-way match mismatch
+ */
+export const ApproveProcInvoiceMismatchParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ApproveProcInvoiceMismatchBody = zod.object({
+  "userName": zod.string().optional(),
+  "userId": zod.number().optional(),
+  "userRole": zod.string().optional(),
+  "remarks": zod.string().optional(),
+  "paymentReference": zod.string().optional(),
+  "paymentMode": zod.string().optional()
+})
+
+export const ApproveProcInvoiceMismatchResponse = zod.object({
+  "id": zod.number().optional(),
+  "invoiceNumber": zod.string().optional(),
+  "poId": zod.number().optional(),
+  "grnId": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "vendorName": zod.string().optional(),
+  "vendorInvoiceNumber": zod.string().optional(),
+  "vendorInvoiceDate": zod.string().optional(),
+  "status": zod.string().optional(),
+  "matchStatus": zod.string().optional(),
+  "mismatchDetails": zod.string().optional(),
+  "mismatchApprovedByName": zod.string().optional(),
+  "mismatchApprovedAt": zod.string().optional(),
+  "subtotal": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "freightCharges": zod.number().optional(),
+  "otherCharges": zod.number().optional(),
+  "totalAmount": zod.number().optional(),
+  "tdsAmount": zod.number().optional(),
+  "netPayable": zod.number().optional(),
+  "paymentTerms": zod.string().optional(),
+  "dueDate": zod.string().optional(),
+  "submittedAt": zod.string().optional(),
+  "submittedByName": zod.string().optional(),
+  "approvedBy": zod.number().optional(),
+  "approvedByName": zod.string().optional(),
+  "approvedAt": zod.string().optional(),
+  "rejectedByName": zod.string().optional(),
+  "rejectedAt": zod.string().optional(),
+  "approvalRemarks": zod.string().optional(),
+  "paidAt": zod.string().optional(),
+  "paidByName": zod.string().optional(),
+  "paymentReference": zod.string().optional(),
+  "paymentMode": zod.string().optional(),
+  "createdBy": zod.number().optional(),
+  "createdByName": zod.string().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional(),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "invoiceId": zod.number().optional(),
+  "poItemId": zod.number().optional(),
+  "grnItemId": zod.number().optional(),
+  "lineNo": zod.number().optional(),
+  "materialName": zod.string().optional(),
+  "materialCode": zod.string().optional(),
+  "uom": zod.string().optional(),
+  "orderedQty": zod.number().optional(),
+  "receivedQty": zod.number().optional(),
+  "invoicedQty": zod.number().optional(),
+  "unitPrice": zod.number().optional(),
+  "discountPct": zod.number().optional(),
+  "taxableAmount": zod.number().optional(),
+  "gstRate": zod.number().optional(),
+  "gstAmount": zod.number().optional(),
+  "lineTotal": zod.number().optional(),
+  "isMatched": zod.boolean().optional(),
+  "mismatchNote": zod.string().optional()
+})).optional(),
+  "auditLogs": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "invoiceId": zod.number().optional(),
+  "action": zod.string().optional(),
+  "performedBy": zod.number().optional(),
+  "performedByName": zod.string().optional(),
+  "remarks": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional()
+})
+
+
+/**
+ * @summary Approve invoice
+ */
+export const ApproveProcInvoiceParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ApproveProcInvoiceBody = zod.object({
+  "userName": zod.string().optional(),
+  "userId": zod.number().optional(),
+  "userRole": zod.string().optional(),
+  "remarks": zod.string().optional(),
+  "paymentReference": zod.string().optional(),
+  "paymentMode": zod.string().optional()
+})
+
+export const ApproveProcInvoiceResponse = zod.object({
+  "id": zod.number().optional(),
+  "invoiceNumber": zod.string().optional(),
+  "poId": zod.number().optional(),
+  "grnId": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "vendorName": zod.string().optional(),
+  "vendorInvoiceNumber": zod.string().optional(),
+  "vendorInvoiceDate": zod.string().optional(),
+  "status": zod.string().optional(),
+  "matchStatus": zod.string().optional(),
+  "mismatchDetails": zod.string().optional(),
+  "mismatchApprovedByName": zod.string().optional(),
+  "mismatchApprovedAt": zod.string().optional(),
+  "subtotal": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "freightCharges": zod.number().optional(),
+  "otherCharges": zod.number().optional(),
+  "totalAmount": zod.number().optional(),
+  "tdsAmount": zod.number().optional(),
+  "netPayable": zod.number().optional(),
+  "paymentTerms": zod.string().optional(),
+  "dueDate": zod.string().optional(),
+  "submittedAt": zod.string().optional(),
+  "submittedByName": zod.string().optional(),
+  "approvedBy": zod.number().optional(),
+  "approvedByName": zod.string().optional(),
+  "approvedAt": zod.string().optional(),
+  "rejectedByName": zod.string().optional(),
+  "rejectedAt": zod.string().optional(),
+  "approvalRemarks": zod.string().optional(),
+  "paidAt": zod.string().optional(),
+  "paidByName": zod.string().optional(),
+  "paymentReference": zod.string().optional(),
+  "paymentMode": zod.string().optional(),
+  "createdBy": zod.number().optional(),
+  "createdByName": zod.string().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional(),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "invoiceId": zod.number().optional(),
+  "poItemId": zod.number().optional(),
+  "grnItemId": zod.number().optional(),
+  "lineNo": zod.number().optional(),
+  "materialName": zod.string().optional(),
+  "materialCode": zod.string().optional(),
+  "uom": zod.string().optional(),
+  "orderedQty": zod.number().optional(),
+  "receivedQty": zod.number().optional(),
+  "invoicedQty": zod.number().optional(),
+  "unitPrice": zod.number().optional(),
+  "discountPct": zod.number().optional(),
+  "taxableAmount": zod.number().optional(),
+  "gstRate": zod.number().optional(),
+  "gstAmount": zod.number().optional(),
+  "lineTotal": zod.number().optional(),
+  "isMatched": zod.boolean().optional(),
+  "mismatchNote": zod.string().optional()
+})).optional(),
+  "auditLogs": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "invoiceId": zod.number().optional(),
+  "action": zod.string().optional(),
+  "performedBy": zod.number().optional(),
+  "performedByName": zod.string().optional(),
+  "remarks": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional()
+})
+
+
+/**
+ * @summary Reject invoice
+ */
+export const RejectProcInvoiceParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const RejectProcInvoiceBody = zod.object({
+  "userName": zod.string().optional(),
+  "userId": zod.number().optional(),
+  "userRole": zod.string().optional(),
+  "remarks": zod.string().optional(),
+  "paymentReference": zod.string().optional(),
+  "paymentMode": zod.string().optional()
+})
+
+export const RejectProcInvoiceResponse = zod.object({
+  "id": zod.number().optional(),
+  "invoiceNumber": zod.string().optional(),
+  "poId": zod.number().optional(),
+  "grnId": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "vendorName": zod.string().optional(),
+  "vendorInvoiceNumber": zod.string().optional(),
+  "vendorInvoiceDate": zod.string().optional(),
+  "status": zod.string().optional(),
+  "matchStatus": zod.string().optional(),
+  "mismatchDetails": zod.string().optional(),
+  "mismatchApprovedByName": zod.string().optional(),
+  "mismatchApprovedAt": zod.string().optional(),
+  "subtotal": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "freightCharges": zod.number().optional(),
+  "otherCharges": zod.number().optional(),
+  "totalAmount": zod.number().optional(),
+  "tdsAmount": zod.number().optional(),
+  "netPayable": zod.number().optional(),
+  "paymentTerms": zod.string().optional(),
+  "dueDate": zod.string().optional(),
+  "submittedAt": zod.string().optional(),
+  "submittedByName": zod.string().optional(),
+  "approvedBy": zod.number().optional(),
+  "approvedByName": zod.string().optional(),
+  "approvedAt": zod.string().optional(),
+  "rejectedByName": zod.string().optional(),
+  "rejectedAt": zod.string().optional(),
+  "approvalRemarks": zod.string().optional(),
+  "paidAt": zod.string().optional(),
+  "paidByName": zod.string().optional(),
+  "paymentReference": zod.string().optional(),
+  "paymentMode": zod.string().optional(),
+  "createdBy": zod.number().optional(),
+  "createdByName": zod.string().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional(),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "invoiceId": zod.number().optional(),
+  "poItemId": zod.number().optional(),
+  "grnItemId": zod.number().optional(),
+  "lineNo": zod.number().optional(),
+  "materialName": zod.string().optional(),
+  "materialCode": zod.string().optional(),
+  "uom": zod.string().optional(),
+  "orderedQty": zod.number().optional(),
+  "receivedQty": zod.number().optional(),
+  "invoicedQty": zod.number().optional(),
+  "unitPrice": zod.number().optional(),
+  "discountPct": zod.number().optional(),
+  "taxableAmount": zod.number().optional(),
+  "gstRate": zod.number().optional(),
+  "gstAmount": zod.number().optional(),
+  "lineTotal": zod.number().optional(),
+  "isMatched": zod.boolean().optional(),
+  "mismatchNote": zod.string().optional()
+})).optional(),
+  "auditLogs": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "invoiceId": zod.number().optional(),
+  "action": zod.string().optional(),
+  "performedBy": zod.number().optional(),
+  "performedByName": zod.string().optional(),
+  "remarks": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional()
+})
+
+
+/**
+ * @summary Mark invoice as paid
+ */
+export const MarkProcInvoicePaidParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const MarkProcInvoicePaidBody = zod.object({
+  "userName": zod.string().optional(),
+  "userId": zod.number().optional(),
+  "userRole": zod.string().optional(),
+  "remarks": zod.string().optional(),
+  "paymentReference": zod.string().optional(),
+  "paymentMode": zod.string().optional()
+})
+
+export const MarkProcInvoicePaidResponse = zod.object({
+  "id": zod.number().optional(),
+  "invoiceNumber": zod.string().optional(),
+  "poId": zod.number().optional(),
+  "grnId": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "vendorName": zod.string().optional(),
+  "vendorInvoiceNumber": zod.string().optional(),
+  "vendorInvoiceDate": zod.string().optional(),
+  "status": zod.string().optional(),
+  "matchStatus": zod.string().optional(),
+  "mismatchDetails": zod.string().optional(),
+  "mismatchApprovedByName": zod.string().optional(),
+  "mismatchApprovedAt": zod.string().optional(),
+  "subtotal": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "freightCharges": zod.number().optional(),
+  "otherCharges": zod.number().optional(),
+  "totalAmount": zod.number().optional(),
+  "tdsAmount": zod.number().optional(),
+  "netPayable": zod.number().optional(),
+  "paymentTerms": zod.string().optional(),
+  "dueDate": zod.string().optional(),
+  "submittedAt": zod.string().optional(),
+  "submittedByName": zod.string().optional(),
+  "approvedBy": zod.number().optional(),
+  "approvedByName": zod.string().optional(),
+  "approvedAt": zod.string().optional(),
+  "rejectedByName": zod.string().optional(),
+  "rejectedAt": zod.string().optional(),
+  "approvalRemarks": zod.string().optional(),
+  "paidAt": zod.string().optional(),
+  "paidByName": zod.string().optional(),
+  "paymentReference": zod.string().optional(),
+  "paymentMode": zod.string().optional(),
+  "createdBy": zod.number().optional(),
+  "createdByName": zod.string().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional(),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "invoiceId": zod.number().optional(),
+  "poItemId": zod.number().optional(),
+  "grnItemId": zod.number().optional(),
+  "lineNo": zod.number().optional(),
+  "materialName": zod.string().optional(),
+  "materialCode": zod.string().optional(),
+  "uom": zod.string().optional(),
+  "orderedQty": zod.number().optional(),
+  "receivedQty": zod.number().optional(),
+  "invoicedQty": zod.number().optional(),
+  "unitPrice": zod.number().optional(),
+  "discountPct": zod.number().optional(),
+  "taxableAmount": zod.number().optional(),
+  "gstRate": zod.number().optional(),
+  "gstAmount": zod.number().optional(),
+  "lineTotal": zod.number().optional(),
+  "isMatched": zod.boolean().optional(),
+  "mismatchNote": zod.string().optional()
+})).optional(),
+  "auditLogs": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "invoiceId": zod.number().optional(),
+  "action": zod.string().optional(),
+  "performedBy": zod.number().optional(),
+  "performedByName": zod.string().optional(),
+  "remarks": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional()
+})
+
+
+/**
+ * @summary Record vendor dispatch info on PO
+ */
+export const RecordProcurementPODispatchParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const RecordProcurementPODispatchBody = zod.object({
+  "vendorDispatchRef": zod.string().optional(),
+  "trackingNumber": zod.string().optional(),
+  "expectedDeliveryDate": zod.string().optional(),
+  "userName": zod.string().optional(),
+  "userId": zod.number().optional(),
+  "remarks": zod.string().optional()
+})
+
+export const RecordProcurementPODispatchResponse = zod.object({
   "id": zod.number().optional(),
   "poNumber": zod.string().optional(),
   "quotationId": zod.number().optional(),

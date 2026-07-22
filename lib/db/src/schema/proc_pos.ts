@@ -38,6 +38,12 @@ export const procurementPOsTable = pgTable("procurement_pos", {
   acknowledgedAt: timestamp("acknowledged_at"),
   closedAt: timestamp("closed_at"),
 
+  // Dispatch tracking
+  vendorDispatchRef: varchar("vendor_dispatch_ref", { length: 50 }),
+  trackingNumber: varchar("tracking_number", { length: 50 }),
+  dispatchedAt: timestamp("dispatched_at"),
+  expectedDeliveryDate: varchar("expected_delivery_date", { length: 20 }),
+
   createdBy: integer("created_by"),
   createdByName: text("created_by_name"),
   createdAt: timestamp("created_at").defaultNow().notNull(),

@@ -6,11 +6,12 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface WorkflowActionInput {
-  userName?: string;
-  userId?: number;
-  userRole?: string;
+export interface ProcInvoiceAuditLog {
+  id?: number;
+  invoiceId?: number;
+  action?: string;
+  performedBy?: number;
+  performedByName?: string;
   remarks?: string;
-  paymentReference?: string;
-  paymentMode?: string;
+  createdAt?: string;
 }

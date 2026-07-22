@@ -74,6 +74,12 @@ tags:
     description: Procurement — Vendor Quotation Workflow
   - name: proc-pos
     description: Procurement — Purchase Orders (from approved quotations)
+  - name: proc-grns
+    description: Procurement — Goods Receipt Notes
+  - name: proc-invoices
+    description: Procurement — Vendor Invoices (3-way match)
+  - name: proc-dashboard
+    description: Procurement — Dashboard & Analytics
 
 paths:
   /healthz:
@@ -3060,6 +3066,356 @@ paths:
                 $ref: "#/components/schemas/ProcurementPO"
 
 
+  # ── PROCUREMENT DASHBOARD ──────────────────────────────────────────────────
+  /procurement-dashboard:
+    get:
+      operationId: getProcurementDashboard
+      tags: [proc-dashboard]
+      summary: Procurement dashboard stats, overdue POs, pending GRNs & invoices
+      responses:
+        "200":
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcurementDashboardData"
+
+  # ── PROC GRNS ───────────────────────────────────────────────────────────────
+  /proc-grns:
+    get:
+      operationId: getProcGrns
+      tags: [proc-grns]
+      summary: List GRNs
+      parameters:
+        - name: poId
+          in: query
+          schema: { type: integer }
+        - name: status
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: GRN list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProcGRN"
+    post:
+      operationId: createProcGrn
+      tags: [proc-grns]
+      summary: Create a new GRN
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProcGRNInput"
+      responses:
+        "201":
+          description: Created GRN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcGRN"
+
+  /proc-grns/{id}:
+    get:
+      operationId: getProcGrn
+      tags: [proc-grns]
+      summary: Get GRN by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: GRN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcGRN"
+
+  /proc-grns/{id}/submit:
+    post:
+      operationId: submitProcGrn
+      tags: [proc-grns]
+      summary: Submit GRN for inspection
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowActionInput"
+      responses:
+        "200":
+          description: Updated GRN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcGRN"
+
+  /proc-grns/{id}/approve:
+    post:
+      operationId: approveProcGrn
+      tags: [proc-grns]
+      summary: Approve GRN
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowActionInput"
+      responses:
+        "200":
+          description: Approved GRN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcGRN"
+
+  /proc-grns/{id}/reject:
+    post:
+      operationId: rejectProcGrn
+      tags: [proc-grns]
+      summary: Reject GRN
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowActionInput"
+      responses:
+        "200":
+          description: Rejected GRN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcGRN"
+
+  # ── PROC INVOICES ────────────────────────────────────────────────────────────
+  /proc-invoices:
+    get:
+      operationId: getProcInvoices
+      tags: [proc-invoices]
+      summary: List invoices
+      parameters:
+        - name: poId
+          in: query
+          schema: { type: integer }
+        - name: grnId
+          in: query
+          schema: { type: integer }
+        - name: status
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Invoice list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProcInvoice"
+    post:
+      operationId: createProcInvoice
+      tags: [proc-invoices]
+      summary: Create invoice (3-way match)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProcInvoiceInput"
+      responses:
+        "201":
+          description: Created invoice
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcInvoice"
+
+  /proc-invoices/{id}:
+    get:
+      operationId: getProcInvoice
+      tags: [proc-invoices]
+      summary: Get invoice by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Invoice
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcInvoice"
+
+  /proc-invoices/{id}/submit:
+    post:
+      operationId: submitProcInvoice
+      tags: [proc-invoices]
+      summary: Submit invoice for approval
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowActionInput"
+      responses:
+        "200":
+          description: Submitted invoice
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcInvoice"
+
+  /proc-invoices/{id}/approve-mismatch:
+    post:
+      operationId: approveProcInvoiceMismatch
+      tags: [proc-invoices]
+      summary: Approve 3-way match mismatch
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowActionInput"
+      responses:
+        "200":
+          description: Mismatch approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcInvoice"
+
+  /proc-invoices/{id}/approve:
+    post:
+      operationId: approveProcInvoice
+      tags: [proc-invoices]
+      summary: Approve invoice
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowActionInput"
+      responses:
+        "200":
+          description: Approved invoice
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcInvoice"
+
+  /proc-invoices/{id}/reject:
+    post:
+      operationId: rejectProcInvoice
+      tags: [proc-invoices]
+      summary: Reject invoice
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowActionInput"
+      responses:
+        "200":
+          description: Rejected invoice
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcInvoice"
+
+  /proc-invoices/{id}/mark-paid:
+    post:
+      operationId: markProcInvoicePaid
+      tags: [proc-invoices]
+      summary: Mark invoice as paid
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowActionInput"
+      responses:
+        "200":
+          description: Invoice marked paid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcInvoice"
+
+  # ── DISPATCH RECORDING ───────────────────────────────────────────────────────
+  /procurement-pos/{id}/record-dispatch:
+    post:
+      operationId: recordProcurementPODispatch
+      tags: [proc-pos]
+      summary: Record vendor dispatch info on PO
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PODispatchInput"
+      responses:
+        "200":
+          description: Updated PO
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcurementPO"
+
 components:
   schemas:
     HealthStatus:
@@ -5477,6 +5833,8 @@ components:
         userId: { type: integer }
         userRole: { type: string }
         remarks: { type: string }
+        paymentReference: { type: string }
+        paymentMode: { type: string }
 
     ApproveQuotationResponse:
       type: object
@@ -5571,3 +5929,241 @@ components:
         deliveryAddress: { type: string }
         specialTerms: { type: string }
         internalNotes: { type: string }
+
+    PODispatchInput:
+      type: object
+      properties:
+        vendorDispatchRef: { type: string }
+        trackingNumber: { type: string }
+        expectedDeliveryDate: { type: string }
+        userName: { type: string }
+        userId: { type: integer }
+        remarks: { type: string }
+
+    ProcGRNItem:
+      type: object
+      properties:
+        id: { type: integer }
+        grnId: { type: integer }
+        poItemId: { type: integer }
+        lineNo: { type: integer }
+        materialId: { type: integer }
+        materialCode: { type: string }
+        materialName: { type: string }
+        description: { type: string }
+        uom: { type: string }
+        orderedQty: { type: number }
+        receivedQty: { type: number }
+        acceptedQty: { type: number }
+        rejectedQty: { type: number }
+        damagedQty: { type: number }
+        excessQty: { type: number }
+        shortQty: { type: number }
+        qcStatus: { type: string }
+        rejectionReason: { type: string }
+        itemRemarks: { type: string }
+        unitPrice: { type: number }
+        acceptedValue: { type: number }
+
+    ProcGRNAuditLog:
+      type: object
+      properties:
+        id: { type: integer }
+        grnId: { type: integer }
+        action: { type: string }
+        performedBy: { type: integer }
+        performedByName: { type: string }
+        remarks: { type: string }
+        createdAt: { type: string }
+
+    ProcGRN:
+      type: object
+      properties:
+        id: { type: integer }
+        grnNumber: { type: string }
+        poId: { type: integer }
+        vendorId: { type: integer }
+        vendorName: { type: string }
+        status: { type: string }
+        deliveryDate: { type: string }
+        vehicleNumber: { type: string }
+        dcNumber: { type: string }
+        dcDate: { type: string }
+        receivedBy: { type: integer }
+        receivedByName: { type: string }
+        receivedAt: { type: string }
+        inspectedBy: { type: integer }
+        inspectedByName: { type: string }
+        inspectedAt: { type: string }
+        approvedBy: { type: integer }
+        approvedByName: { type: string }
+        approvedAt: { type: string }
+        rejectedBy: { type: integer }
+        rejectedByName: { type: string }
+        rejectedAt: { type: string }
+        approvalRemarks: { type: string }
+        totalOrderedQty: { type: number }
+        totalReceivedQty: { type: number }
+        totalAcceptedQty: { type: number }
+        totalRejectedQty: { type: number }
+        totalAcceptedValue: { type: number }
+        remarks: { type: string }
+        createdBy: { type: integer }
+        createdByName: { type: string }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProcGRNItem"
+        auditLogs:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProcGRNAuditLog"
+
+    ProcGRNInput:
+      type: object
+      required: [poId]
+      properties:
+        poId: { type: integer }
+        deliveryDate: { type: string }
+        vehicleNumber: { type: string }
+        dcNumber: { type: string }
+        dcDate: { type: string }
+        remarks: { type: string }
+        userName: { type: string }
+        userId: { type: integer }
+        items:
+          type: array
+          items:
+            type: object
+
+    ProcInvoiceItem:
+      type: object
+      properties:
+        id: { type: integer }
+        invoiceId: { type: integer }
+        poItemId: { type: integer }
+        grnItemId: { type: integer }
+        lineNo: { type: integer }
+        materialName: { type: string }
+        materialCode: { type: string }
+        uom: { type: string }
+        orderedQty: { type: number }
+        receivedQty: { type: number }
+        invoicedQty: { type: number }
+        unitPrice: { type: number }
+        discountPct: { type: number }
+        taxableAmount: { type: number }
+        gstRate: { type: number }
+        gstAmount: { type: number }
+        lineTotal: { type: number }
+        isMatched: { type: boolean }
+        mismatchNote: { type: string }
+
+    ProcInvoiceAuditLog:
+      type: object
+      properties:
+        id: { type: integer }
+        invoiceId: { type: integer }
+        action: { type: string }
+        performedBy: { type: integer }
+        performedByName: { type: string }
+        remarks: { type: string }
+        createdAt: { type: string }
+
+    ProcInvoice:
+      type: object
+      properties:
+        id: { type: integer }
+        invoiceNumber: { type: string }
+        poId: { type: integer }
+        grnId: { type: integer }
+        vendorId: { type: integer }
+        vendorName: { type: string }
+        vendorInvoiceNumber: { type: string }
+        vendorInvoiceDate: { type: string }
+        status: { type: string }
+        matchStatus: { type: string }
+        mismatchDetails: { type: string }
+        mismatchApprovedByName: { type: string }
+        mismatchApprovedAt: { type: string }
+        subtotal: { type: number }
+        totalGst: { type: number }
+        freightCharges: { type: number }
+        otherCharges: { type: number }
+        totalAmount: { type: number }
+        tdsAmount: { type: number }
+        netPayable: { type: number }
+        paymentTerms: { type: string }
+        dueDate: { type: string }
+        submittedAt: { type: string }
+        submittedByName: { type: string }
+        approvedBy: { type: integer }
+        approvedByName: { type: string }
+        approvedAt: { type: string }
+        rejectedByName: { type: string }
+        rejectedAt: { type: string }
+        approvalRemarks: { type: string }
+        paidAt: { type: string }
+        paidByName: { type: string }
+        paymentReference: { type: string }
+        paymentMode: { type: string }
+        createdBy: { type: integer }
+        createdByName: { type: string }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProcInvoiceItem"
+        auditLogs:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProcInvoiceAuditLog"
+
+    ProcInvoiceInput:
+      type: object
+      required: [poId]
+      properties:
+        poId: { type: integer }
+        grnId: { type: integer }
+        vendorInvoiceNumber: { type: string }
+        vendorInvoiceDate: { type: string }
+        freightCharges: { type: number }
+        otherCharges: { type: number }
+        tdsAmount: { type: number }
+        paymentTerms: { type: string }
+        internalNotes: { type: string }
+        userName: { type: string }
+        userId: { type: integer }
+        items:
+          type: array
+          items:
+            type: object
+
+    ProcurementDashboardData:
+      type: object
+      properties:
+        summary:
+          type: object
+          properties:
+            totalPOs: { type: integer }
+            openPOs: { type: integer }
+            overduePOs: { type: integer }
+            pendingGRNs: { type: integer }
+            pendingInvoices: { type: integer }
+            ytdSpend: { type: number }
+            poByStatus: { type: object }
+        overduePOs:
+          type: array
+          items: { type: object }
+        pendingGRNs:
+          type: array
+          items: { type: object }
+        pendingInvoices:
+          type: array
+          items: { type: object }
+        monthlySpend:
+          type: array
+          items: { type: object }

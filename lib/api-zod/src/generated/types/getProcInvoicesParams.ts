@@ -6,11 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface WorkflowActionInput {
-  userName?: string;
-  userId?: number;
-  userRole?: string;
-  remarks?: string;
-  paymentReference?: string;
-  paymentMode?: string;
-}
+export type GetProcInvoicesParams = {
+poId?: number;
+grnId?: number;
+status?: string;
+};
