@@ -97,9 +97,13 @@ router.post("/proc-grns", async (req, res): Promise<void> => {
   const [po] = await db.select().from(procurementPOsTable).where(eq(procurementPOsTable.id, Number(poId)));
   if (!po) { res.status(404).json({ error: "PO not found" }); return; }
 
-  // Block GRN creation against terminal PO statuses
-  if (po.status === "Cancelled" || po.status === "Closed") {
-    res.status(400).json({ error: `Cannot create a GRN against PO ${po.poNumber} because it is ${po.status}` });
+  // Only allow GRN creation against POs that have been issued to the vendor.
+  // Allowlist: Issued, Acknowledged, PartiallyReceived, FullyReceived.
+  const ALLOWED_GRN_STATUSES = ["Issued", "Acknowledged", "PartiallyReceived", "FullyReceived"];
+  if (!ALLOWED_GRN_STATUSES.includes(po.status)) {
+    res.status(400).json({
+      error: `Cannot create a GRN against PO ${po.poNumber} because it is ${po.status}. Allowed statuses: ${ALLOWED_GRN_STATUSES.join(", ")}.`,
+    });
     return;
   }
 

@@ -1138,4 +1138,37 @@ describe("GRN creation guard — blocked against Cancelled or Closed PO", () => 
     expect(res.status).toBe(201);
     expect(res.body.grnNumber).toMatch(/^GRN-/);
   });
+
+  it("returns 400 with allowed-statuses listed when the PO is in Draft status", async () => {
+    const pid = await createDraftPO("GRN Draft PO Guard");
+    // PO stays in Draft — do not advance it
+
+    const res = await api.post("/api/proc-grns").send(grnPayload(pid));
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/Draft/);
+    expect(res.body.error).toMatch(/PO-/);
+    expect(res.body.error).toMatch(/Issued/); // allowed statuses listed
+  });
+
+  it("returns 201 when the PO is PartiallyReceived (allowed status — further deliveries expected)", async () => {
+    const pid = await createDraftPO("GRN PartiallyReceived PO Guard");
+    await api.patch(`/api/procurement-pos/${pid}`).send({ status: "Issued", ...actor });
+    await api.patch(`/api/procurement-pos/${pid}`).send({ status: "Acknowledged", ...actor });
+    await api.patch(`/api/procurement-pos/${pid}`).send({ status: "PartiallyReceived", ...actor });
+
+    const res = await api.post("/api/proc-grns").send(grnPayload(pid));
+    expect(res.status).toBe(201);
+    expect(res.body.grnNumber).toMatch(/^GRN-/);
+  });
+
+  it("returns 201 when the PO is FullyReceived (allowed status)", async () => {
+    const pid = await createDraftPO("GRN FullyReceived PO Guard");
+    await api.patch(`/api/procurement-pos/${pid}`).send({ status: "Issued", ...actor });
+    await api.patch(`/api/procurement-pos/${pid}`).send({ status: "Acknowledged", ...actor });
+    await api.patch(`/api/procurement-pos/${pid}`).send({ status: "FullyReceived", ...actor });
+
+    const res = await api.post("/api/proc-grns").send(grnPayload(pid));
+    expect(res.status).toBe(201);
+    expect(res.body.grnNumber).toMatch(/^GRN-/);
+  });
 });
