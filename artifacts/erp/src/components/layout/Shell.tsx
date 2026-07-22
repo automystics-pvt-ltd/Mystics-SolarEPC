@@ -347,7 +347,7 @@ export function Shell({ children }: ShellProps) {
 
         {/* Page content */}
         <main
-          className="flex-1 overflow-y-auto p-6"
+          className="flex-1 overflow-y-auto p-4"
           style={{ position: "relative", zIndex: 1, backgroundColor: "transparent" }}
         >
           <div className="mx-auto max-w-7xl">

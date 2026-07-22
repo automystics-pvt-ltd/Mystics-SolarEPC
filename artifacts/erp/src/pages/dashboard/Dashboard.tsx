@@ -57,7 +57,7 @@ export function Dashboard() {
   ];
 
   return (
-    <div className="space-y-5 pb-10">
+    <div className="space-y-3 pb-4">
       {/* Heading */}
       <div className="flex items-start justify-between">
         <div>
@@ -76,7 +76,7 @@ export function Dashboard() {
       </div>
 
       {/* 4 Gradient KPI cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         <GradientCard
           gradient="linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)"
           glow="rgba(245,158,11,0.35)"
@@ -115,7 +115,7 @@ export function Dashboard() {
       </div>
 
       {/* 6 Mini stat cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2">
         <MiniStatCard icon={<Users className="h-4 w-4" />} iconColor="text-orange-500" iconBg="bg-orange-50" label="Active Leads" value={dashboard?.leadsCount ?? 0} href="/crm/leads" />
         <MiniStatCard icon={<FileText className="h-4 w-4" />} iconColor="text-sky-500" iconBg="bg-sky-50" label="Quotations" value={0} href="/crm/quotations" />
         <MiniStatCard icon={<FileCheck className="h-4 w-4" />} iconColor="text-emerald-500" iconBg="bg-emerald-50" label="Client POs" value={0} href="/crm/client-pos" />
@@ -125,12 +125,12 @@ export function Dashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-white rounded-xl border border-orange-100 shadow-sm p-4">
-        <p className="text-[10px] font-semibold text-orange-400 uppercase tracking-widest mb-4">Quick Actions</p>
-        <div className="grid grid-cols-4 sm:grid-cols-8 gap-3">
+      <div className="bg-white rounded-xl border border-orange-100 shadow-sm p-3">
+        <p className="text-[10px] font-semibold text-orange-400 uppercase tracking-widest mb-2">Quick Actions</p>
+        <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
           {quickActions.map((action) => (
             <button key={action.label} onClick={() => setLocation(action.href)}
-              className="flex flex-col items-center gap-2 py-3 px-2 rounded-lg hover:bg-orange-50/60 transition-colors group cursor-pointer">
+              className="flex flex-col items-center gap-1.5 py-2 px-2 rounded-lg hover:bg-orange-50/60 transition-colors group cursor-pointer">
               <div className="h-10 w-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
                 style={{ backgroundColor: action.bg }}>
                 <action.icon className="h-5 w-5" style={{ color: action.color }} />
@@ -142,10 +142,10 @@ export function Dashboard() {
       </div>
 
       {/* Charts Row */}
-      <div className="grid gap-4 lg:grid-cols-7">
+      <div className="grid gap-3 lg:grid-cols-7">
         {/* Sales Pipeline */}
-        <div className="lg:col-span-4 bg-white rounded-xl border border-orange-100 shadow-sm p-5">
-          <div className="flex items-center justify-between mb-4">
+        <div className="lg:col-span-4 bg-white rounded-xl border border-orange-100 shadow-sm p-4">
+          <div className="flex items-center justify-between mb-3">
             <div>
               <h3 className="text-[14px] font-semibold text-gray-800">Sales Pipeline</h3>
               <p className="text-[12px] text-gray-400">{combined?.pipeline?.totalLeads ?? 0} active leads across all stages</p>
@@ -156,7 +156,7 @@ export function Dashboard() {
               </span>
             </Link>
           </div>
-          <div className="h-[220px]">
+          <div className="h-[190px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={pipelineData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#fef3c7" />
@@ -175,8 +175,8 @@ export function Dashboard() {
         </div>
 
         {/* Portfolio Summary */}
-        <div className="lg:col-span-3 bg-white rounded-xl border border-orange-100 shadow-sm p-5">
-          <div className="flex items-center justify-between mb-4">
+        <div className="lg:col-span-3 bg-white rounded-xl border border-orange-100 shadow-sm p-4">
+          <div className="flex items-center justify-between mb-3">
             <div>
               <h3 className="text-[14px] font-semibold text-gray-800">Project Portfolio</h3>
               <p className="text-[12px] text-gray-400">Solar EPC execution health</p>
@@ -228,9 +228,9 @@ export function Dashboard() {
       </div>
 
       {/* Recent Items */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="bg-white rounded-xl border border-orange-100 shadow-sm p-5">
-          <div className="flex items-center justify-between mb-3">
+      <div className="grid gap-3 md:grid-cols-3">
+        <div className="bg-white rounded-xl border border-orange-100 shadow-sm p-4">
+          <div className="flex items-center justify-between mb-2">
             <h3 className="text-[14px] font-semibold text-gray-800">Recent Leads</h3>
             <Link href="/crm/leads"><span className="text-[12px] text-orange-600 hover:underline">View All</span></Link>
           </div>
@@ -254,8 +254,8 @@ export function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-orange-100 shadow-sm p-5">
-          <div className="flex items-center justify-between mb-3">
+        <div className="bg-white rounded-xl border border-orange-100 shadow-sm p-4">
+          <div className="flex items-center justify-between mb-2">
             <h3 className="text-[14px] font-semibold text-gray-800">Active Projects</h3>
             <Link href="/projects"><span className="text-[12px] text-orange-600 hover:underline">View All</span></Link>
           </div>
@@ -280,8 +280,8 @@ export function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-red-100 shadow-sm p-5">
-          <div className="flex items-center justify-between mb-3">
+        <div className="bg-white rounded-xl border border-red-100 shadow-sm p-4">
+          <div className="flex items-center justify-between mb-2">
             <h3 className="text-[14px] font-semibold text-gray-800 flex items-center gap-1.5">
               <AlertCircle className="h-4 w-4 text-red-500" /> Open Escalations
             </h3>
@@ -321,11 +321,11 @@ function GradientCard({ gradient, glow, icon, label, value, sub, trend, urgent }
   value: string; sub?: string; trend?: string; urgent?: boolean;
 }) {
   return (
-    <div className="rounded-xl p-5 text-white shadow-sm relative overflow-hidden"
+    <div className="rounded-xl p-4 text-white shadow-sm relative overflow-hidden"
       style={{ background: gradient, boxShadow: glow ? `0 8px 24px ${glow}` : undefined }}>
       <div className="absolute -right-5 -bottom-5 h-28 w-28 rounded-full bg-white/10" />
       <div className="absolute right-3 top-3 h-14 w-14 rounded-full bg-white/5" />
-      <div className="relative z-10 flex items-start justify-between mb-3">
+      <div className="relative z-10 flex items-start justify-between mb-2">
         <div className="h-9 w-9 rounded-xl bg-white/25 flex items-center justify-center backdrop-blur-sm">{icon}</div>
         {trend && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/20">{trend}</span>}
       </div>
@@ -341,7 +341,7 @@ function MiniStatCard({ icon, iconColor, iconBg, label, value, href }: {
 }) {
   return (
     <Link href={href}>
-      <div className="bg-white rounded-xl border border-orange-100 shadow-sm p-3 flex items-center gap-3 cursor-pointer hover:shadow-md hover:border-orange-200 transition-all group">
+      <div className="bg-white rounded-xl border border-orange-100 shadow-sm p-2.5 flex items-center gap-2.5 cursor-pointer hover:shadow-md hover:border-orange-200 transition-all group">
         <div className={`h-9 w-9 rounded-lg ${iconBg} flex items-center justify-center shrink-0`}>
           <span className={iconColor}>{icon}</span>
         </div>
