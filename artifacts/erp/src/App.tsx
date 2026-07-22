@@ -9,6 +9,7 @@ import { Shell } from '@/components/layout/Shell';
 import { Login } from '@/pages/auth/Login';
 import { Dashboard } from '@/pages/dashboard/Dashboard';
 import { Loader2 } from 'lucide-react';
+import { lazy, Suspense } from 'react';
 
 // CRM
 import { LeadsList } from '@/pages/crm/LeadsList';
@@ -56,7 +57,28 @@ import InvoicesList from '@/pages/procurement/InvoicesList';
 import InvoiceForm from '@/pages/procurement/InvoiceForm';
 import InvoiceDetail from '@/pages/procurement/InvoiceDetail';
 
-const queryClient = new QueryClient();
+// New modules (lazy-loaded for performance)
+const GRNReturnsList = lazy(() => import('@/pages/procurement/GRNReturnsList'));
+const GRNReturnForm = lazy(() => import('@/pages/procurement/GRNReturnForm'));
+const GRNReturnDetail = lazy(() => import('@/pages/procurement/GRNReturnDetail'));
+const StockTransfers = lazy(() => import('@/pages/inventory/StockTransfers'));
+const ReportsModule = lazy(() => import('@/pages/reports/ReportsModule'));
+const VendorPerformance = lazy(() => import('@/pages/reports/VendorPerformance'));
+const FinanceDashboard = lazy(() => import('@/pages/finance/FinanceDashboard'));
+const UserManagement = lazy(() => import('@/pages/admin/UserManagement'));
+const AuditLogs = lazy(() => import('@/pages/admin/AuditLogs'));
+
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: 1, staleTime: 30000 } },
+});
+
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center h-64">
+      <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+    </div>
+  );
+}
 
 function ProtectedRoute({ component: Component, ...rest }: any) {
   const { user, isLoading } = useAuth();
@@ -73,7 +95,9 @@ function ProtectedRoute({ component: Component, ...rest }: any) {
 
   return (
     <Shell>
-      <Component {...rest} />
+      <Suspense fallback={<PageLoader />}>
+        <Component {...rest} />
+      </Suspense>
     </Shell>
   );
 }
@@ -117,6 +141,7 @@ function Router() {
       <Route path="/inventory/warehouses">{() => <ProtectedRoute component={WarehousesList} />}</Route>
       <Route path="/inventory/warehouses/:id">{(p) => <ProtectedRoute component={WarehouseDetail} id={p.id} />}</Route>
       <Route path="/inventory/grns">{() => <ProtectedRoute component={GRNsList} />}</Route>
+      <Route path="/inventory/stock-transfers">{() => <ProtectedRoute component={StockTransfers} />}</Route>
       <Route path="/inventory/delivery-challans">{() => <ProtectedRoute component={DeliveryChallansList} />}</Route>
       <Route path="/inventory/stock-ledger">{() => <ProtectedRoute component={StockLedgerList} />}</Route>
       <Route path="/inventory/stock-valuation">{() => <ProtectedRoute component={StockValuationList} />}</Route>
@@ -147,9 +172,21 @@ function Router() {
       <Route path="/procurement/grns/new">{() => <ProtectedRoute component={GRNForm} />}</Route>
       <Route path="/procurement/grns/:id">{(p) => <ProtectedRoute component={GRNDetail} id={p.id} />}</Route>
       <Route path="/procurement/grns">{() => <ProtectedRoute component={ProcGRNsList} />}</Route>
+      <Route path="/procurement/grn-returns/new">{() => <ProtectedRoute component={GRNReturnForm} />}</Route>
+      <Route path="/procurement/grn-returns/:id">{(p) => <ProtectedRoute component={GRNReturnDetail} id={p.id} />}</Route>
+      <Route path="/procurement/grn-returns">{() => <ProtectedRoute component={GRNReturnsList} />}</Route>
       <Route path="/procurement/invoices/new">{() => <ProtectedRoute component={InvoiceForm} />}</Route>
       <Route path="/procurement/invoices/:id">{(p) => <ProtectedRoute component={InvoiceDetail} id={p.id} />}</Route>
       <Route path="/procurement/invoices">{() => <ProtectedRoute component={InvoicesList} />}</Route>
+
+      {/* Finance & Reports */}
+      <Route path="/finance/dashboard">{() => <ProtectedRoute component={FinanceDashboard} />}</Route>
+      <Route path="/reports/vendors">{() => <ProtectedRoute component={VendorPerformance} />}</Route>
+      <Route path="/reports">{() => <ProtectedRoute component={ReportsModule} />}</Route>
+
+      {/* Admin */}
+      <Route path="/admin/users">{() => <ProtectedRoute component={UserManagement} />}</Route>
+      <Route path="/admin/audit-logs">{() => <ProtectedRoute component={AuditLogs} />}</Route>
 
       <Route component={NotFound} />
     </Switch>

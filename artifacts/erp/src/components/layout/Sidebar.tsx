@@ -4,7 +4,8 @@ import {
   AlertTriangle, FolderKanban, HardHat, Warehouse, Boxes, Truck,
   BookOpen, Scale, ClipboardCheck, ChevronLeft, ChevronRight,
   LogOut, Zap, Layers, CheckSquare2, Wrench, Building2, Package,
-  ClipboardList, ShoppingCart, BarChart2,
+  ClipboardList, ShoppingCart, BarChart2, ArrowRightLeft, RotateCcw,
+  DollarSign, BarChart3, UserCog, ScrollText, TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
@@ -12,7 +13,10 @@ import { useSidebar } from "@/lib/sidebar-context";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { motion, AnimatePresence } from "framer-motion";
 
-const MODULES = [
+type NavItem = { name: string; href: string; icon: React.ElementType; roles?: string[] };
+type NavSection = { section: string; roles?: string[]; items: NavItem[] };
+
+const MODULES: NavSection[] = [
   {
     section: "CORE",
     items: [
@@ -42,6 +46,7 @@ const MODULES = [
     items: [
       { name: "Warehouses", href: "/inventory/warehouses", icon: Warehouse },
       { name: "GRNs", href: "/inventory/grns", icon: Boxes },
+      { name: "Stock Transfers", href: "/inventory/stock-transfers", icon: ArrowRightLeft },
       { name: "Delivery Challans", href: "/inventory/delivery-challans", icon: Truck },
       { name: "Stock Ledger", href: "/inventory/stock-ledger", icon: BookOpen },
       { name: "Stock Valuation", href: "/inventory/stock-valuation", icon: Scale },
@@ -77,7 +82,24 @@ const MODULES = [
       { name: "Vendor Quotations", href: "/procurement/quotations", icon: ClipboardList },
       { name: "Purchase Orders", href: "/procurement/pos", icon: ShoppingCart },
       { name: "GRNs", href: "/procurement/grns", icon: Boxes },
+      { name: "GRN Returns", href: "/procurement/grn-returns", icon: RotateCcw },
       { name: "Invoices", href: "/procurement/invoices", icon: FilePlus },
+    ],
+  },
+  {
+    section: "FINANCE & REPORTS",
+    items: [
+      { name: "Finance Dashboard", href: "/finance/dashboard", icon: DollarSign },
+      { name: "Reports", href: "/reports", icon: BarChart3 },
+      { name: "Vendor Performance", href: "/reports/vendors", icon: TrendingUp },
+    ],
+  },
+  {
+    section: "ADMIN",
+    roles: ["admin", "director"],
+    items: [
+      { name: "User Management", href: "/admin/users", icon: UserCog },
+      { name: "Audit Logs", href: "/admin/audit-logs", icon: ScrollText },
     ],
   },
 ];
@@ -90,6 +112,11 @@ export function Sidebar({ className }: { className?: string }) {
   const initials = user?.name
     ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
     : "U";
+
+  const visibleModules = MODULES.filter(m => {
+    if (!m.roles) return true;
+    return m.roles.includes(user?.role ?? "");
+  });
 
   return (
     <motion.aside
@@ -134,8 +161,8 @@ export function Sidebar({ className }: { className?: string }) {
 
       {/* Navigation */}
       <div className="flex-1 overflow-y-auto py-4 scrollbar-none px-3">
-        {MODULES.map((module, idx) => (
-          <div key={module.section} className={cn("mb-6", idx === MODULES.length - 1 && "mb-0")}>
+        {visibleModules.map((module, idx) => (
+          <div key={module.section} className={cn("mb-6", idx === visibleModules.length - 1 && "mb-0")}>
             <AnimatePresence initial={false}>
               {!isCollapsed && (
                 <motion.div 

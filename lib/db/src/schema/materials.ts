@@ -45,6 +45,9 @@ export const materialsTable = pgTable("materials", {
   specifications: text("specifications"),
   minOrderQty: numeric("min_order_qty", { precision: 12, scale: 3 }),
   leadTimeDays: integer("lead_time_days"),
+  minStockLevel: numeric("min_stock_level", { precision: 12, scale: 3 }),
+  maxStockLevel: numeric("max_stock_level", { precision: 12, scale: 3 }),
+  reorderPoint: numeric("reorder_point", { precision: 12, scale: 3 }),
 
   isActive: boolean("is_active").default(true),
   createdBy: integer("created_by"),

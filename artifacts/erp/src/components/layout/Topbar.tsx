@@ -1,5 +1,5 @@
 import { useAuth } from "@/lib/auth";
-import { Bell, Search, HelpCircle, ChevronDown, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Bell, Search, PanelLeftClose, PanelLeftOpen, CheckCheck, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,10 @@ import { useLocation } from "wouter";
 import { Menu } from "lucide-react";
 import { useSidebar } from "@/lib/sidebar-context";
 import { motion } from "framer-motion";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiGet, apiPost, apiPatch } from "@/lib/fetch";
+import { cn } from "@/lib/utils";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const PAGE_TITLE_MAP: Record<string, { title: string; section?: string }> = {
   "/dashboard": { title: "Overview", section: "Dashboard" },
@@ -27,10 +31,24 @@ const PAGE_TITLE_MAP: Record<string, { title: string; section?: string }> = {
   "/projects/contractors": { title: "Contractors", section: "Project Management" },
   "/inventory/warehouses": { title: "Warehouses", section: "Inventory" },
   "/inventory/grns": { title: "GRNs", section: "Inventory" },
+  "/inventory/stock-transfers": { title: "Stock Transfers", section: "Inventory" },
   "/inventory/delivery-challans": { title: "Delivery Challans", section: "Inventory" },
   "/inventory/stock-ledger": { title: "Stock Ledger", section: "Inventory" },
   "/inventory/stock-valuation": { title: "Stock Valuation", section: "Inventory" },
   "/inventory/audits": { title: "Audits", section: "Inventory" },
+  "/procurement/dashboard": { title: "Dashboard", section: "Procurement" },
+  "/procurement/vendors": { title: "Vendors", section: "Procurement" },
+  "/procurement/materials": { title: "Materials", section: "Procurement" },
+  "/procurement/quotations": { title: "Vendor Quotations", section: "Procurement" },
+  "/procurement/pos": { title: "Purchase Orders", section: "Procurement" },
+  "/procurement/grns": { title: "GRNs", section: "Procurement" },
+  "/procurement/grn-returns": { title: "GRN Returns", section: "Procurement" },
+  "/procurement/invoices": { title: "Invoices", section: "Procurement" },
+  "/finance/dashboard": { title: "Finance Dashboard", section: "Finance & Reports" },
+  "/reports": { title: "Reports", section: "Finance & Reports" },
+  "/reports/vendors": { title: "Vendor Performance", section: "Finance & Reports" },
+  "/admin/users": { title: "User Management", section: "Admin" },
+  "/admin/audit-logs": { title: "Audit Logs", section: "Admin" },
 };
 
 function getPageMeta(path: string) {
@@ -39,6 +57,10 @@ function getPageMeta(path: string) {
   if (path.startsWith("/crm/quotations/")) return { title: "Quotation", section: "Sales & CRM" };
   if (path.startsWith("/projects/")) return { title: "Project Workspace", section: "Project Management" };
   if (path.startsWith("/inventory/warehouses/")) return { title: "Warehouse Detail", section: "Inventory" };
+  if (path.startsWith("/procurement/grn-returns/")) return { title: "GRN Return Detail", section: "Procurement" };
+  if (path.startsWith("/procurement/pos/")) return { title: "Purchase Order", section: "Procurement" };
+  if (path.startsWith("/procurement/grns/")) return { title: "GRN Detail", section: "Procurement" };
+  if (path.startsWith("/procurement/invoices/")) return { title: "Invoice Detail", section: "Procurement" };
   return { title: "Mystics ERP", section: "Workspace" };
 }
 
@@ -47,6 +69,114 @@ function getFYLabel() {
   const month = now.getMonth() + 1;
   const fyStart = month >= 4 ? now.getFullYear() : now.getFullYear() - 1;
   return `FY ${fyStart}-${String(fyStart + 1).slice(-2)}`;
+}
+
+const NOTIF_ICON_COLOR: Record<string, string> = {
+  info: "bg-blue-100 text-blue-600",
+  warning: "bg-amber-100 text-amber-600",
+  success: "bg-emerald-100 text-emerald-600",
+  error: "bg-red-100 text-red-600",
+  approval: "bg-orange-100 text-orange-600",
+};
+
+function NotificationBell({ userId }: { userId: number }) {
+  const qc = useQueryClient();
+  const [, setLocation] = useLocation();
+
+  const { data: countData } = useQuery({
+    queryKey: ["notifications-count", userId],
+    queryFn: () => apiGet<{ count: number }>("/notifications/unread-count", { userId }),
+    refetchInterval: 30000,
+  });
+
+  const { data: notifications = [] } = useQuery({
+    queryKey: ["notifications", userId],
+    queryFn: () => apiGet<any[]>("/notifications", { userId, limit: 20 }),
+    refetchInterval: 60000,
+  });
+
+  const markRead = useMutation({
+    mutationFn: (id: number) => apiPatch(`/notifications/${id}/read`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["notifications"] });
+      qc.invalidateQueries({ queryKey: ["notifications-count"] });
+    },
+  });
+
+  const markAllRead = useMutation({
+    mutationFn: () => apiPost("/notifications/read-all", { userId }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["notifications"] });
+      qc.invalidateQueries({ queryKey: ["notifications-count"] });
+    },
+  });
+
+  const unread = countData?.count ?? 0;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon"
+          className="relative h-9 w-9 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-full">
+          <Bell className="h-4 w-4" />
+          {unread > 0 && (
+            <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center ring-2 ring-white">
+              {unread > 9 ? "9+" : unread}
+            </span>
+          )}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-80 p-0" sideOffset={8}>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+          <div>
+            <p className="text-[13px] font-bold text-gray-900">Notifications</p>
+            {unread > 0 && <p className="text-[11px] text-gray-500">{unread} unread</p>}
+          </div>
+          {unread > 0 && (
+            <Button variant="ghost" size="sm" className="h-7 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 gap-1"
+              onClick={() => markAllRead.mutate()}>
+              <CheckCheck className="h-3 w-3" /> Mark all read
+            </Button>
+          )}
+        </div>
+
+        <ScrollArea className="h-[360px]">
+          {(notifications as any[]).length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 text-gray-400">
+              <Bell className="h-8 w-8 mb-2 opacity-20" />
+              <p className="text-sm">No notifications yet</p>
+            </div>
+          ) : (
+            (notifications as any[]).map((n: any) => (
+              <div
+                key={n.id}
+                onClick={() => {
+                  if (!n.isRead) markRead.mutate(n.id);
+                  if (n.actionUrl) setLocation(n.actionUrl);
+                }}
+                className={cn(
+                  "flex items-start gap-3 px-4 py-3 border-b border-gray-50 cursor-pointer hover:bg-gray-50 transition-colors group",
+                  !n.isRead && "bg-orange-50/40"
+                )}
+              >
+                <div className={cn("h-8 w-8 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5", NOTIF_ICON_COLOR[n.type] ?? "bg-gray-100 text-gray-600")}>
+                  {n.type === "approval" ? "A" : n.type === "info" ? "i" : n.type === "warning" ? "!" : n.type === "success" ? "✓" : "!"}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className={cn("text-[12px] leading-tight", n.isRead ? "text-gray-600 font-medium" : "text-gray-900 font-bold")}>{n.title}</p>
+                  <p className="text-[11px] text-gray-500 mt-0.5 leading-tight line-clamp-2">{n.message}</p>
+                  {n.entityRef && <p className="text-[10px] text-orange-600 font-mono mt-1">{n.entityRef}</p>}
+                  <p className="text-[10px] text-gray-400 mt-1">{new Date(n.createdAt).toLocaleString("en-IN", { dateStyle: "short", timeStyle: "short" })}</p>
+                </div>
+                {!n.isRead && <div className="h-2 w-2 rounded-full bg-orange-500 shrink-0 mt-1.5" />}
+                {n.actionUrl && <ExternalLink className="h-3 w-3 text-gray-300 group-hover:text-gray-500 shrink-0 mt-1" />}
+              </div>
+            ))
+          )}
+        </ScrollArea>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }
 
 export function Topbar() {
@@ -120,11 +250,14 @@ export function Topbar() {
         </div>
 
         {/* Notifications */}
-        <Button variant="ghost" size="icon"
-          className="relative h-9 w-9 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-full">
-          <Bell className="h-4 w-4" />
-          <span className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-red-500 ring-2 ring-white" />
-        </Button>
+        {user?.id ? (
+          <NotificationBell userId={user.id} />
+        ) : (
+          <Button variant="ghost" size="icon"
+            className="relative h-9 w-9 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-full">
+            <Bell className="h-4 w-4" />
+          </Button>
+        )}
 
         {/* User avatar */}
         <DropdownMenu>

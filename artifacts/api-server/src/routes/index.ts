@@ -20,6 +20,11 @@ import procPOsRouter from "./proc_pos";
 import procGRNsRouter from "./proc_grns";
 import procInvoicesRouter from "./proc_invoices";
 import procDashboardRouter from "./proc_dashboard";
+import notificationsRouter from "./notifications";
+import grnReturnsRouter from "./grn_returns";
+import stockTransfersRouter from "./stock_transfers";
+import reportsRouter from "./reports";
+import usersRouter from "./users";
 
 const router: IRouter = Router();
 
@@ -44,5 +49,10 @@ router.use(procPOsRouter);
 router.use(procGRNsRouter);
 router.use(procInvoicesRouter);
 router.use(procDashboardRouter);
+router.use(notificationsRouter);
+router.use(grnReturnsRouter);
+router.use(stockTransfersRouter);
+router.use(reportsRouter);
+router.use(usersRouter);
 
 export default router;
