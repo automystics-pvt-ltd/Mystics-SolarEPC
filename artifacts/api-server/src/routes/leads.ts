@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
-import { db, leadsTable } from "@workspace/db";
+import { db, leadsTable, siteSurveysTable } from "@workspace/db";
+import { z } from "zod";
 import { eq, desc, and, sql, ilike, or } from "drizzle-orm";
 import { CreateLeadBody, UpdateLeadBody, GetLeadParams, UpdateLeadParams, DeleteLeadParams, AssignLeadParams, AssignLeadBody } from "@workspace/api-zod";
 
@@ -71,6 +72,51 @@ router.post("/leads/:id/assign", async (req, res): Promise<void> => {
   const [row] = await db.update(leadsTable).set({ ownerId: body.data.ownerId, score: 75 }).where(eq(leadsTable.id, params.data.id)).returning();
   if (!row) { res.status(404).json({ error: "Lead not found" }); return; }
   res.json(fmt(row));
+});
+
+// ── SITE SURVEYS ──────────────────────────────────────────────────────────────
+const UpsertSurveyBody = z.object({
+  surveyedBy: z.number().optional(),
+  surveyDate: z.string().optional(),
+  roofType: z.string().optional(),
+  roofArea: z.number().optional(),
+  shadowAnalysis: z.string().optional(),
+  gpsLat: z.number().optional(),
+  gpsLng: z.number().optional(),
+  sanctionedLoad: z.number().optional(),
+  avgMonthlyBill: z.number().optional(),
+  proposedCapacity: z.number().optional(),
+  photos: z.array(z.string()).optional(),
+  structuralNotes: z.string().optional(),
+  feasibilityStatus: z.string().optional(),
+  feasibilityNotes: z.string().optional(),
+});
+
+function fmtSurvey(s: typeof siteSurveysTable.$inferSelect) {
+  return { id: s.id, leadId: s.leadId, surveyedBy: s.surveyedBy, surveyDate: s.surveyDate, roofType: s.roofType, roofArea: s.roofArea, shadowAnalysis: s.shadowAnalysis, gpsLat: s.gpsLat, gpsLng: s.gpsLng, sanctionedLoad: s.sanctionedLoad, avgMonthlyBill: s.avgMonthlyBill, proposedCapacity: s.proposedCapacity, photos: s.photos ?? [], structuralNotes: s.structuralNotes, feasibilityStatus: s.feasibilityStatus, feasibilityNotes: s.feasibilityNotes, createdAt: s.createdAt.toISOString() };
+}
+
+router.get("/leads/:id/survey", async (req, res): Promise<void> => {
+  const { eq } = await import("drizzle-orm");
+  const [row] = await db.select().from(siteSurveysTable).where(eq(siteSurveysTable.leadId, Number(req.params.id)));
+  if (!row) { res.status(404).json({ error: "No survey found" }); return; }
+  res.json(fmtSurvey(row));
+});
+
+router.post("/leads/:id/survey", async (req, res): Promise<void> => {
+  const { eq } = await import("drizzle-orm");
+  const leadId = Number(req.params.id);
+  const parsed = UpsertSurveyBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error }); return; }
+  // upsert — one survey per lead
+  const [existing] = await db.select().from(siteSurveysTable).where(eq(siteSurveysTable.leadId, leadId));
+  if (existing) {
+    const [updated] = await db.update(siteSurveysTable).set(parsed.data).where(eq(siteSurveysTable.id, existing.id)).returning();
+    res.json(fmtSurvey(updated));
+  } else {
+    const [created] = await db.insert(siteSurveysTable).values({ ...parsed.data, leadId }).returning();
+    res.status(201).json(fmtSurvey(created));
+  }
 });
 
 export default router;

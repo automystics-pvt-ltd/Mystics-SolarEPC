@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LeadSurvey } from "./tabs/LeadSurvey";
 import { Loader2, ArrowLeft, Building2, Mail, Phone, UserSquare2, Edit2, Save, X, Plus, FileText, StickyNote, Building } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useState, useRef, useEffect } from "react";
@@ -291,6 +292,10 @@ export function LeadDetail({ id }: { id: string }) {
                     {lead.notes || <span className="text-gray-400 italic font-medium">No notes recorded. Click edit to add context.</span>}
                   </div>
                 )}
+              </TabsContent>
+
+              <TabsContent value="survey" className="p-6 m-0 flex-1 outline-none">
+                <LeadSurvey leadId={lead.id} />
               </TabsContent>
             </Tabs>
           </div>

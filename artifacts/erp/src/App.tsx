@@ -27,6 +27,17 @@ import { WarehousesList } from '@/pages/inventory/WarehousesList';
 import { WarehouseDetail } from '@/pages/inventory/WarehouseDetail';
 import { GRNsList, DeliveryChallansList, StockLedgerList, StockValuationList, InventoryAuditsList } from '@/pages/inventory/InventoryPages';
 
+// Engineering & Design
+import DesignDocsList from '@/pages/engineering/DesignDocsList';
+import DesignDocDetail from '@/pages/engineering/DesignDocDetail';
+
+// Commissioning
+import CommissioningList from '@/pages/commissioning/CommissioningList';
+import CommissioningDetail from '@/pages/commissioning/CommissioningDetail';
+
+// O&M & AMC
+import OamPages from '@/pages/oam/OamPages';
+
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ component: Component, ...rest }: any) {
@@ -92,6 +103,16 @@ function Router() {
       <Route path="/inventory/stock-ledger">{() => <ProtectedRoute component={StockLedgerList} />}</Route>
       <Route path="/inventory/stock-valuation">{() => <ProtectedRoute component={StockValuationList} />}</Route>
       <Route path="/inventory/audits">{() => <ProtectedRoute component={InventoryAuditsList} />}</Route>
+
+      <Route path="/engineering/docs">{() => <ProtectedRoute component={DesignDocsList} />}</Route>
+      <Route path="/engineering/docs/:id">{(p) => <ProtectedRoute component={DesignDocDetail} id={p.id} />}</Route>
+
+      <Route path="/commissioning">{() => <ProtectedRoute component={CommissioningList} />}</Route>
+      <Route path="/commissioning/:id">{(p) => <ProtectedRoute component={CommissioningDetail} id={p.id} />}</Route>
+
+      <Route path="/oam/amc">{() => <ProtectedRoute component={OamPages} />}</Route>
+      <Route path="/oam/maintenance">{() => <ProtectedRoute component={OamPages} />}</Route>
+      <Route path="/oam/tickets">{() => <ProtectedRoute component={OamPages} />}</Route>
 
       <Route component={NotFound} />
     </Switch>

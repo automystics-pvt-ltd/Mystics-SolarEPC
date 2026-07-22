@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
-import { db, projectsTable, activitiesTable, budgetsTable, dprsTable, paymentMilestonesTable, expensesTable, crmInvoicesTable, clientPOsTable, escalationsTable, materialRequestsTable, purchaseOrdersTable } from "@workspace/db";
+import { db, projectsTable, activitiesTable, budgetsTable, dprsTable, paymentMilestonesTable, expensesTable, crmInvoicesTable, clientPOsTable, escalationsTable, materialRequestsTable, purchaseOrdersTable, snagLogsTable } from "@workspace/db";
+import { z } from "zod";
 import { eq, desc, sql, and } from "drizzle-orm";
 import {
   CreateProjectBody, GetProjectParams, UpdateProjectParams, UpdateProjectBody,
@@ -233,6 +234,53 @@ router.post("/budgets", async (req, res): Promise<void> => {
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const [row] = await db.insert(budgetsTable).values({ ...parsed.data, budgetedAmount: parsed.data.budgetedAmount.toString() }).returning();
   res.status(201).json(fmtBudget(row));
+});
+
+// ── SNAG LOGS ─────────────────────────────────────────────────────────────────
+const CreateSnagBody = z.object({
+  zone: z.string().optional(),
+  category: z.string().optional(),
+  description: z.string(),
+  reportedBy: z.number().optional(),
+  photoUrl: z.string().optional(),
+  severity: z.string().optional(),
+  assignedTo: z.number().optional(),
+});
+
+const ResolveSnagBody = z.object({
+  resolution: z.string(),
+});
+
+function fmtSnag(s: typeof snagLogsTable.$inferSelect) {
+  return { id: s.id, projectId: s.projectId, zone: s.zone, category: s.category, description: s.description, reportedBy: s.reportedBy, photoUrl: s.photoUrl, severity: s.severity, status: s.status, assignedTo: s.assignedTo, resolvedAt: s.resolvedAt?.toISOString() ?? null, resolution: s.resolution, createdAt: s.createdAt.toISOString() };
+}
+
+router.get("/projects/:id/snags", async (req, res): Promise<void> => {
+  const projectId = Number(req.params.id);
+  const rows = await db.select().from(snagLogsTable).where(eq(snagLogsTable.projectId, projectId)).orderBy(desc(snagLogsTable.createdAt));
+  res.json(rows.map(fmtSnag));
+});
+
+router.post("/projects/:id/snags", async (req, res): Promise<void> => {
+  const projectId = Number(req.params.id);
+  const parsed = CreateSnagBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+  const [row] = await db.insert(snagLogsTable).values({ ...parsed.data, projectId }).returning();
+  res.status(201).json(fmtSnag(row));
+});
+
+router.patch("/snags/:id/resolve", async (req, res): Promise<void> => {
+  const parsed = ResolveSnagBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+  const [updated] = await db.update(snagLogsTable).set({ status: "Resolved", resolvedAt: new Date(), resolution: parsed.data.resolution }).where(eq(snagLogsTable.id, Number(req.params.id))).returning();
+  if (!updated) { res.status(404).json({ error: "Snag not found" }); return; }
+  res.json(fmtSnag(updated));
+});
+
+router.patch("/snags/:id", async (req, res): Promise<void> => {
+  const [updated] = await db.update(snagLogsTable).set(req.body).where(eq(snagLogsTable.id, Number(req.params.id))).returning();
+  if (!updated) { res.status(404).json({ error: "Snag not found" }); return; }
+  res.json(fmtSnag(updated));
 });
 
 export default router;

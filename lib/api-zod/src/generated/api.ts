@@ -2266,3 +2266,875 @@ export const ReconcileInventoryAuditResponse = zod.object({
 })
 
 
+/**
+ * @summary Get site survey for a lead
+ */
+export const GetLeadSurveyParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetLeadSurveyResponse = zod.object({
+  "id": zod.number(),
+  "leadId": zod.number(),
+  "surveyedBy": zod.number().nullish(),
+  "surveyDate": zod.string().nullish(),
+  "roofType": zod.string().nullish(),
+  "roofArea": zod.number().nullish(),
+  "shadowAnalysis": zod.string().nullish(),
+  "gpsLat": zod.number().nullish(),
+  "gpsLng": zod.number().nullish(),
+  "sanctionedLoad": zod.number().nullish(),
+  "avgMonthlyBill": zod.number().nullish(),
+  "proposedCapacity": zod.number().nullish(),
+  "photos": zod.array(zod.string()).optional(),
+  "structuralNotes": zod.string().nullish(),
+  "feasibilityStatus": zod.string(),
+  "feasibilityNotes": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Create or update site survey for a lead
+ */
+export const UpsertLeadSurveyParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpsertLeadSurveyBody = zod.object({
+  "surveyedBy": zod.number().optional(),
+  "surveyDate": zod.string().optional(),
+  "roofType": zod.string().optional(),
+  "roofArea": zod.number().optional(),
+  "shadowAnalysis": zod.string().optional(),
+  "gpsLat": zod.number().optional(),
+  "gpsLng": zod.number().optional(),
+  "sanctionedLoad": zod.number().optional(),
+  "avgMonthlyBill": zod.number().optional(),
+  "proposedCapacity": zod.number().optional(),
+  "photos": zod.array(zod.string()).optional(),
+  "structuralNotes": zod.string().optional(),
+  "feasibilityStatus": zod.string().optional(),
+  "feasibilityNotes": zod.string().optional()
+})
+
+export const UpsertLeadSurveyResponse = zod.object({
+  "id": zod.number(),
+  "leadId": zod.number(),
+  "surveyedBy": zod.number().nullish(),
+  "surveyDate": zod.string().nullish(),
+  "roofType": zod.string().nullish(),
+  "roofArea": zod.number().nullish(),
+  "shadowAnalysis": zod.string().nullish(),
+  "gpsLat": zod.number().nullish(),
+  "gpsLng": zod.number().nullish(),
+  "sanctionedLoad": zod.number().nullish(),
+  "avgMonthlyBill": zod.number().nullish(),
+  "proposedCapacity": zod.number().nullish(),
+  "photos": zod.array(zod.string()).optional(),
+  "structuralNotes": zod.string().nullish(),
+  "feasibilityStatus": zod.string(),
+  "feasibilityNotes": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+
+
+/**
+ * @summary List snag logs for a project
+ */
+export const GetProjectSnagsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetProjectSnagsResponseItem = zod.object({
+  "id": zod.number(),
+  "projectId": zod.number(),
+  "zone": zod.string().nullish(),
+  "category": zod.string(),
+  "description": zod.string(),
+  "reportedBy": zod.number().nullish(),
+  "photoUrl": zod.string().nullish(),
+  "severity": zod.string(),
+  "status": zod.string(),
+  "assignedTo": zod.number().nullish(),
+  "resolvedAt": zod.string().nullish(),
+  "resolution": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+export const GetProjectSnagsResponse = zod.array(GetProjectSnagsResponseItem)
+
+
+/**
+ * @summary Create snag log
+ */
+export const CreateProjectSnagParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const CreateProjectSnagBody = zod.object({
+  "zone": zod.string().optional(),
+  "category": zod.string().optional(),
+  "description": zod.string(),
+  "reportedBy": zod.number().optional(),
+  "photoUrl": zod.string().optional(),
+  "severity": zod.string().optional(),
+  "assignedTo": zod.number().optional()
+})
+
+export const CreateProjectSnagResponse = zod.object({
+  "id": zod.number(),
+  "projectId": zod.number(),
+  "zone": zod.string().nullish(),
+  "category": zod.string(),
+  "description": zod.string(),
+  "reportedBy": zod.number().nullish(),
+  "photoUrl": zod.string().nullish(),
+  "severity": zod.string(),
+  "status": zod.string(),
+  "assignedTo": zod.number().nullish(),
+  "resolvedAt": zod.string().nullish(),
+  "resolution": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Resolve a snag
+ */
+export const ResolveSnagParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ResolveSnagBody = zod.object({
+  "resolution": zod.string()
+})
+
+export const ResolveSnagResponse = zod.object({
+  "id": zod.number(),
+  "projectId": zod.number(),
+  "zone": zod.string().nullish(),
+  "category": zod.string(),
+  "description": zod.string(),
+  "reportedBy": zod.number().nullish(),
+  "photoUrl": zod.string().nullish(),
+  "severity": zod.string(),
+  "status": zod.string(),
+  "assignedTo": zod.number().nullish(),
+  "resolvedAt": zod.string().nullish(),
+  "resolution": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+
+
+/**
+ * @summary List design documents
+ */
+export const GetDesignDocumentsQueryParams = zod.object({
+  "projectId": zod.coerce.number().optional()
+})
+
+export const GetDesignDocumentsResponseItem = zod.object({
+  "id": zod.number(),
+  "projectId": zod.number(),
+  "docType": zod.string(),
+  "title": zod.string(),
+  "version": zod.string(),
+  "fileUrl": zod.string().nullish(),
+  "uploadedBy": zod.number().nullish(),
+  "description": zod.string().nullish(),
+  "internalStatus": zod.string(),
+  "internalApprovedBy": zod.number().nullish(),
+  "internalApprovedAt": zod.string().nullish(),
+  "clientApprovedAt": zod.string().nullish(),
+  "clientApprovedBy": zod.string().nullish(),
+  "rejectionReason": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+export const GetDesignDocumentsResponse = zod.array(GetDesignDocumentsResponseItem)
+
+
+/**
+ * @summary Create design document
+ */
+export const CreateDesignDocumentBody = zod.object({
+  "projectId": zod.number(),
+  "docType": zod.string().optional(),
+  "title": zod.string(),
+  "version": zod.string().optional(),
+  "fileUrl": zod.string().optional(),
+  "uploadedBy": zod.number().optional(),
+  "description": zod.string().optional()
+})
+
+export const CreateDesignDocumentResponse = zod.object({
+  "id": zod.number(),
+  "projectId": zod.number(),
+  "docType": zod.string(),
+  "title": zod.string(),
+  "version": zod.string(),
+  "fileUrl": zod.string().nullish(),
+  "uploadedBy": zod.number().nullish(),
+  "description": zod.string().nullish(),
+  "internalStatus": zod.string(),
+  "internalApprovedBy": zod.number().nullish(),
+  "internalApprovedAt": zod.string().nullish(),
+  "clientApprovedAt": zod.string().nullish(),
+  "clientApprovedBy": zod.string().nullish(),
+  "rejectionReason": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Get design document with revisions
+ */
+export const GetDesignDocumentParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetDesignDocumentResponse = zod.object({
+  "id": zod.number(),
+  "projectId": zod.number(),
+  "docType": zod.string(),
+  "title": zod.string(),
+  "version": zod.string(),
+  "fileUrl": zod.string().nullish(),
+  "uploadedBy": zod.number().nullish(),
+  "description": zod.string().nullish(),
+  "internalStatus": zod.string(),
+  "internalApprovedBy": zod.number().nullish(),
+  "internalApprovedAt": zod.string().nullish(),
+  "clientApprovedAt": zod.string().nullish(),
+  "clientApprovedBy": zod.string().nullish(),
+  "rejectionReason": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+}).and(zod.object({
+  "revisions": zod.array(zod.object({
+  "id": zod.number(),
+  "docId": zod.number(),
+  "version": zod.string(),
+  "fileUrl": zod.string().nullish(),
+  "changeNotes": zod.string().nullish(),
+  "revisedBy": zod.number().nullish(),
+  "createdAt": zod.string().optional()
+})).optional()
+}))
+
+
+/**
+ * @summary Approve or reject design document
+ */
+export const ApproveDesignDocumentParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ApproveDesignDocumentBody = zod.object({
+  "approvalType": zod.string(),
+  "approvedBy": zod.string().optional(),
+  "rejectionReason": zod.string().optional()
+})
+
+export const ApproveDesignDocumentResponse = zod.object({
+  "id": zod.number(),
+  "projectId": zod.number(),
+  "docType": zod.string(),
+  "title": zod.string(),
+  "version": zod.string(),
+  "fileUrl": zod.string().nullish(),
+  "uploadedBy": zod.number().nullish(),
+  "description": zod.string().nullish(),
+  "internalStatus": zod.string(),
+  "internalApprovedBy": zod.number().nullish(),
+  "internalApprovedAt": zod.string().nullish(),
+  "clientApprovedAt": zod.string().nullish(),
+  "clientApprovedBy": zod.string().nullish(),
+  "rejectionReason": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Add a new revision to a design document
+ */
+export const AddDesignRevisionParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const AddDesignRevisionBody = zod.object({
+  "version": zod.string(),
+  "fileUrl": zod.string().optional(),
+  "changeNotes": zod.string().optional(),
+  "revisedBy": zod.number().optional()
+})
+
+export const AddDesignRevisionResponse = zod.object({
+  "id": zod.number(),
+  "docId": zod.number(),
+  "version": zod.string(),
+  "fileUrl": zod.string().nullish(),
+  "changeNotes": zod.string().nullish(),
+  "revisedBy": zod.number().nullish(),
+  "createdAt": zod.string().optional()
+})
+
+
+/**
+ * @summary List commissioning checklists
+ */
+export const GetCommissioningChecklistsQueryParams = zod.object({
+  "projectId": zod.coerce.number().optional()
+})
+
+export const GetCommissioningChecklistsResponseItem = zod.object({
+  "id": zod.number(),
+  "projectId": zod.number(),
+  "status": zod.string(),
+  "commissionedOn": zod.string().nullish(),
+  "commissionedBy": zod.number().nullish(),
+  "clientSignatoryName": zod.string().nullish(),
+  "clientSignedAt": zod.string().nullish(),
+  "remarks": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+export const GetCommissioningChecklistsResponse = zod.array(GetCommissioningChecklistsResponseItem)
+
+
+/**
+ * @summary Create commissioning checklist (auto-seeds default items)
+ */
+export const CreateCommissioningChecklistBody = zod.object({
+  "projectId": zod.number(),
+  "commissionedOn": zod.string().optional(),
+  "commissionedBy": zod.number().optional(),
+  "remarks": zod.string().optional()
+})
+
+export const CreateCommissioningChecklistResponse = zod.object({
+  "id": zod.number(),
+  "projectId": zod.number(),
+  "status": zod.string(),
+  "commissionedOn": zod.string().nullish(),
+  "commissionedBy": zod.number().nullish(),
+  "clientSignatoryName": zod.string().nullish(),
+  "clientSignedAt": zod.string().nullish(),
+  "remarks": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Get checklist with items
+ */
+export const GetCommissioningChecklistParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetCommissioningChecklistResponse = zod.object({
+  "id": zod.number(),
+  "projectId": zod.number(),
+  "status": zod.string(),
+  "commissionedOn": zod.string().nullish(),
+  "commissionedBy": zod.number().nullish(),
+  "clientSignatoryName": zod.string().nullish(),
+  "clientSignedAt": zod.string().nullish(),
+  "remarks": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+}).and(zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.number(),
+  "checklistId": zod.number(),
+  "category": zod.string(),
+  "description": zod.string(),
+  "isDone": zod.boolean(),
+  "doneBy": zod.number().nullish(),
+  "doneAt": zod.string().nullish(),
+  "remarks": zod.string().nullish(),
+  "sortOrder": zod.number().nullish()
+})).optional()
+}))
+
+
+/**
+ * @summary Add checklist item
+ */
+export const AddCommissioningItemParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const AddCommissioningItemBody = zod.object({
+  "category": zod.string().optional(),
+  "description": zod.string(),
+  "sortOrder": zod.number().optional()
+})
+
+export const AddCommissioningItemResponse = zod.object({
+  "id": zod.number(),
+  "checklistId": zod.number(),
+  "category": zod.string(),
+  "description": zod.string(),
+  "isDone": zod.boolean(),
+  "doneBy": zod.number().nullish(),
+  "doneAt": zod.string().nullish(),
+  "remarks": zod.string().nullish(),
+  "sortOrder": zod.number().nullish()
+})
+
+
+/**
+ * @summary Record client sign-off on commissioning
+ */
+export const SignoffCommissioningChecklistParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const SignoffCommissioningChecklistBody = zod.object({
+  "clientSignatoryName": zod.string()
+})
+
+export const SignoffCommissioningChecklistResponse = zod.object({
+  "id": zod.number(),
+  "projectId": zod.number(),
+  "status": zod.string(),
+  "commissionedOn": zod.string().nullish(),
+  "commissionedBy": zod.number().nullish(),
+  "clientSignatoryName": zod.string().nullish(),
+  "clientSignedAt": zod.string().nullish(),
+  "remarks": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Toggle commissioning item done
+ */
+export const UpdateCommissioningItemParams = zod.object({
+  "itemId": zod.coerce.number()
+})
+
+export const UpdateCommissioningItemBody = zod.object({
+  "isDone": zod.boolean(),
+  "doneBy": zod.number().optional(),
+  "remarks": zod.string().optional()
+})
+
+export const UpdateCommissioningItemResponse = zod.object({
+  "id": zod.number(),
+  "checklistId": zod.number(),
+  "category": zod.string(),
+  "description": zod.string(),
+  "isDone": zod.boolean(),
+  "doneBy": zod.number().nullish(),
+  "doneAt": zod.string().nullish(),
+  "remarks": zod.string().nullish(),
+  "sortOrder": zod.number().nullish()
+})
+
+
+/**
+ * @summary List compliance documents
+ */
+export const GetComplianceDocumentsQueryParams = zod.object({
+  "projectId": zod.coerce.number().optional()
+})
+
+export const GetComplianceDocumentsResponseItem = zod.object({
+  "id": zod.number(),
+  "projectId": zod.number(),
+  "docType": zod.string(),
+  "title": zod.string(),
+  "fileUrl": zod.string().nullish(),
+  "submittedBy": zod.number().nullish(),
+  "submissionDate": zod.string().nullish(),
+  "status": zod.string(),
+  "expiryDate": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+export const GetComplianceDocumentsResponse = zod.array(GetComplianceDocumentsResponseItem)
+
+
+/**
+ * @summary Create compliance document
+ */
+export const CreateComplianceDocumentBody = zod.object({
+  "projectId": zod.number(),
+  "docType": zod.string().optional(),
+  "title": zod.string(),
+  "fileUrl": zod.string().optional(),
+  "submittedBy": zod.number().optional(),
+  "submissionDate": zod.string().optional(),
+  "status": zod.string().optional(),
+  "expiryDate": zod.string().optional(),
+  "notes": zod.string().optional()
+})
+
+export const CreateComplianceDocumentResponse = zod.object({
+  "id": zod.number(),
+  "projectId": zod.number(),
+  "docType": zod.string(),
+  "title": zod.string(),
+  "fileUrl": zod.string().nullish(),
+  "submittedBy": zod.number().nullish(),
+  "submissionDate": zod.string().nullish(),
+  "status": zod.string(),
+  "expiryDate": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Update compliance document
+ */
+export const UpdateComplianceDocumentParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateComplianceDocumentBody = zod.object({
+  "projectId": zod.number(),
+  "docType": zod.string().optional(),
+  "title": zod.string(),
+  "fileUrl": zod.string().optional(),
+  "submittedBy": zod.number().optional(),
+  "submissionDate": zod.string().optional(),
+  "status": zod.string().optional(),
+  "expiryDate": zod.string().optional(),
+  "notes": zod.string().optional()
+})
+
+export const UpdateComplianceDocumentResponse = zod.object({
+  "id": zod.number(),
+  "projectId": zod.number(),
+  "docType": zod.string(),
+  "title": zod.string(),
+  "fileUrl": zod.string().nullish(),
+  "submittedBy": zod.number().nullish(),
+  "submissionDate": zod.string().nullish(),
+  "status": zod.string(),
+  "expiryDate": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+
+
+/**
+ * @summary List AMC contracts
+ */
+export const GetAmcContractsQueryParams = zod.object({
+  "projectId": zod.coerce.number().optional()
+})
+
+export const GetAmcContractsResponseItem = zod.object({
+  "id": zod.number(),
+  "projectId": zod.number(),
+  "contractNumber": zod.string(),
+  "clientName": zod.string(),
+  "startDate": zod.string(),
+  "endDate": zod.string(),
+  "annualValue": zod.number(),
+  "visitFrequency": zod.string().optional(),
+  "status": zod.string(),
+  "terms": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+export const GetAmcContractsResponse = zod.array(GetAmcContractsResponseItem)
+
+
+/**
+ * @summary Create AMC contract
+ */
+export const CreateAmcContractBody = zod.object({
+  "projectId": zod.number(),
+  "clientName": zod.string(),
+  "startDate": zod.string(),
+  "endDate": zod.string(),
+  "annualValue": zod.number(),
+  "visitFrequency": zod.string().optional(),
+  "terms": zod.string().optional()
+})
+
+export const CreateAmcContractResponse = zod.object({
+  "id": zod.number(),
+  "projectId": zod.number(),
+  "contractNumber": zod.string(),
+  "clientName": zod.string(),
+  "startDate": zod.string(),
+  "endDate": zod.string(),
+  "annualValue": zod.number(),
+  "visitFrequency": zod.string().optional(),
+  "status": zod.string(),
+  "terms": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Get AMC contract
+ */
+export const GetAmcContractParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetAmcContractResponse = zod.object({
+  "id": zod.number(),
+  "projectId": zod.number(),
+  "contractNumber": zod.string(),
+  "clientName": zod.string(),
+  "startDate": zod.string(),
+  "endDate": zod.string(),
+  "annualValue": zod.number(),
+  "visitFrequency": zod.string().optional(),
+  "status": zod.string(),
+  "terms": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Update AMC contract
+ */
+export const UpdateAmcContractParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateAmcContractBody = zod.object({
+  "projectId": zod.number(),
+  "clientName": zod.string(),
+  "startDate": zod.string(),
+  "endDate": zod.string(),
+  "annualValue": zod.number(),
+  "visitFrequency": zod.string().optional(),
+  "terms": zod.string().optional()
+})
+
+export const UpdateAmcContractResponse = zod.object({
+  "id": zod.number(),
+  "projectId": zod.number(),
+  "contractNumber": zod.string(),
+  "clientName": zod.string(),
+  "startDate": zod.string(),
+  "endDate": zod.string(),
+  "annualValue": zod.number(),
+  "visitFrequency": zod.string().optional(),
+  "status": zod.string(),
+  "terms": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+
+
+/**
+ * @summary List maintenance schedules
+ */
+export const GetMaintenanceSchedulesQueryParams = zod.object({
+  "projectId": zod.coerce.number().optional(),
+  "amcContractId": zod.coerce.number().optional()
+})
+
+export const GetMaintenanceSchedulesResponseItem = zod.object({
+  "id": zod.number(),
+  "amcContractId": zod.number().nullish(),
+  "projectId": zod.number(),
+  "visitType": zod.string(),
+  "scheduledDate": zod.string(),
+  "assignedTechnicianId": zod.number().nullish(),
+  "assignedTechnicianName": zod.string().nullish(),
+  "status": zod.string(),
+  "completedDate": zod.string().nullish(),
+  "workDone": zod.string().nullish(),
+  "observations": zod.string().nullish(),
+  "nextScheduledDate": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+export const GetMaintenanceSchedulesResponse = zod.array(GetMaintenanceSchedulesResponseItem)
+
+
+/**
+ * @summary Schedule a maintenance visit
+ */
+export const CreateMaintenanceScheduleBody = zod.object({
+  "projectId": zod.number(),
+  "amcContractId": zod.number().optional(),
+  "visitType": zod.string().optional(),
+  "scheduledDate": zod.string(),
+  "assignedTechnicianId": zod.number().optional(),
+  "assignedTechnicianName": zod.string().optional()
+})
+
+export const CreateMaintenanceScheduleResponse = zod.object({
+  "id": zod.number(),
+  "amcContractId": zod.number().nullish(),
+  "projectId": zod.number(),
+  "visitType": zod.string(),
+  "scheduledDate": zod.string(),
+  "assignedTechnicianId": zod.number().nullish(),
+  "assignedTechnicianName": zod.string().nullish(),
+  "status": zod.string(),
+  "completedDate": zod.string().nullish(),
+  "workDone": zod.string().nullish(),
+  "observations": zod.string().nullish(),
+  "nextScheduledDate": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Mark maintenance visit as completed
+ */
+export const CompleteMaintenanceScheduleParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const CompleteMaintenanceScheduleBody = zod.object({
+  "completedDate": zod.string(),
+  "workDone": zod.string().optional(),
+  "observations": zod.string().optional(),
+  "nextScheduledDate": zod.string().optional()
+})
+
+export const CompleteMaintenanceScheduleResponse = zod.object({
+  "id": zod.number(),
+  "amcContractId": zod.number().nullish(),
+  "projectId": zod.number(),
+  "visitType": zod.string(),
+  "scheduledDate": zod.string(),
+  "assignedTechnicianId": zod.number().nullish(),
+  "assignedTechnicianName": zod.string().nullish(),
+  "status": zod.string(),
+  "completedDate": zod.string().nullish(),
+  "workDone": zod.string().nullish(),
+  "observations": zod.string().nullish(),
+  "nextScheduledDate": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+
+
+/**
+ * @summary List service tickets
+ */
+export const GetServiceTicketsQueryParams = zod.object({
+  "projectId": zod.coerce.number().optional(),
+  "status": zod.coerce.string().optional()
+})
+
+export const GetServiceTicketsResponseItem = zod.object({
+  "id": zod.number(),
+  "projectId": zod.number(),
+  "amcContractId": zod.number().nullish(),
+  "ticketNumber": zod.string(),
+  "raisedBy": zod.string().nullish(),
+  "issueCategory": zod.string(),
+  "description": zod.string(),
+  "priority": zod.string(),
+  "status": zod.string(),
+  "assignedTechnicianId": zod.number().nullish(),
+  "assignedTechnicianName": zod.string().nullish(),
+  "slaHours": zod.number().nullish(),
+  "resolvedAt": zod.string().nullish(),
+  "resolution": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+export const GetServiceTicketsResponse = zod.array(GetServiceTicketsResponseItem)
+
+
+/**
+ * @summary Raise a service ticket
+ */
+export const CreateServiceTicketBody = zod.object({
+  "projectId": zod.number(),
+  "amcContractId": zod.number().optional(),
+  "raisedBy": zod.string().optional(),
+  "issueCategory": zod.string().optional(),
+  "description": zod.string(),
+  "priority": zod.string().optional(),
+  "assignedTechnicianId": zod.number().optional(),
+  "assignedTechnicianName": zod.string().optional(),
+  "slaHours": zod.number().optional()
+})
+
+export const CreateServiceTicketResponse = zod.object({
+  "id": zod.number(),
+  "projectId": zod.number(),
+  "amcContractId": zod.number().nullish(),
+  "ticketNumber": zod.string(),
+  "raisedBy": zod.string().nullish(),
+  "issueCategory": zod.string(),
+  "description": zod.string(),
+  "priority": zod.string(),
+  "status": zod.string(),
+  "assignedTechnicianId": zod.number().nullish(),
+  "assignedTechnicianName": zod.string().nullish(),
+  "slaHours": zod.number().nullish(),
+  "resolvedAt": zod.string().nullish(),
+  "resolution": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Resolve a service ticket
+ */
+export const ResolveServiceTicketParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ResolveServiceTicketBody = zod.object({
+  "resolution": zod.string()
+})
+
+export const ResolveServiceTicketResponse = zod.object({
+  "id": zod.number(),
+  "projectId": zod.number(),
+  "amcContractId": zod.number().nullish(),
+  "ticketNumber": zod.string(),
+  "raisedBy": zod.string().nullish(),
+  "issueCategory": zod.string(),
+  "description": zod.string(),
+  "priority": zod.string(),
+  "status": zod.string(),
+  "assignedTechnicianId": zod.number().nullish(),
+  "assignedTechnicianName": zod.string().nullish(),
+  "slaHours": zod.number().nullish(),
+  "resolvedAt": zod.string().nullish(),
+  "resolution": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Update service ticket
+ */
+export const UpdateServiceTicketParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateServiceTicketBody = zod.object({
+  "projectId": zod.number(),
+  "amcContractId": zod.number().optional(),
+  "raisedBy": zod.string().optional(),
+  "issueCategory": zod.string().optional(),
+  "description": zod.string(),
+  "priority": zod.string().optional(),
+  "assignedTechnicianId": zod.number().optional(),
+  "assignedTechnicianName": zod.string().optional(),
+  "slaHours": zod.number().optional()
+})
+
+export const UpdateServiceTicketResponse = zod.object({
+  "id": zod.number(),
+  "projectId": zod.number(),
+  "amcContractId": zod.number().nullish(),
+  "ticketNumber": zod.string(),
+  "raisedBy": zod.string().nullish(),
+  "issueCategory": zod.string(),
+  "description": zod.string(),
+  "priority": zod.string(),
+  "status": zod.string(),
+  "assignedTechnicianId": zod.number().nullish(),
+  "assignedTechnicianName": zod.string().nullish(),
+  "slaHours": zod.number().nullish(),
+  "resolvedAt": zod.string().nullish(),
+  "resolution": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+
+

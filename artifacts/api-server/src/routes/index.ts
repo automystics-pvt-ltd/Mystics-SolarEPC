@@ -10,6 +10,9 @@ import escalationsRouter from "./escalations";
 import projectsRouter from "./projects";
 import procurementRouter from "./procurement";
 import inventoryRouter from "./inventory";
+import engineeringRouter from "./engineering";
+import commissioningRouter from "./commissioning";
+import oamRouter from "./oam";
 
 const router: IRouter = Router();
 
@@ -24,5 +27,8 @@ router.use(escalationsRouter);
 router.use(projectsRouter);
 router.use(procurementRouter);
 router.use(inventoryRouter);
+router.use(engineeringRouter);
+router.use(commissioningRouter);
+router.use(oamRouter);
 
 export default router;

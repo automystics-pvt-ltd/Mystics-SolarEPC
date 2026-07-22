@@ -897,6 +897,353 @@ export interface AuditReconcileInput {
   notes?: string;
 }
 
+export interface SiteSurvey {
+  id: number;
+  leadId: number;
+  /** @nullable */
+  surveyedBy?: number | null;
+  /** @nullable */
+  surveyDate?: string | null;
+  /** @nullable */
+  roofType?: string | null;
+  /** @nullable */
+  roofArea?: number | null;
+  /** @nullable */
+  shadowAnalysis?: string | null;
+  /** @nullable */
+  gpsLat?: number | null;
+  /** @nullable */
+  gpsLng?: number | null;
+  /** @nullable */
+  sanctionedLoad?: number | null;
+  /** @nullable */
+  avgMonthlyBill?: number | null;
+  /** @nullable */
+  proposedCapacity?: number | null;
+  photos?: string[];
+  /** @nullable */
+  structuralNotes?: string | null;
+  feasibilityStatus: string;
+  /** @nullable */
+  feasibilityNotes?: string | null;
+  createdAt?: string;
+}
+
+export interface SiteSurveyInput {
+  surveyedBy?: number;
+  surveyDate?: string;
+  roofType?: string;
+  roofArea?: number;
+  shadowAnalysis?: string;
+  gpsLat?: number;
+  gpsLng?: number;
+  sanctionedLoad?: number;
+  avgMonthlyBill?: number;
+  proposedCapacity?: number;
+  photos?: string[];
+  structuralNotes?: string;
+  feasibilityStatus?: string;
+  feasibilityNotes?: string;
+}
+
+export interface SnagLog {
+  id: number;
+  projectId: number;
+  /** @nullable */
+  zone?: string | null;
+  category: string;
+  description: string;
+  /** @nullable */
+  reportedBy?: number | null;
+  /** @nullable */
+  photoUrl?: string | null;
+  severity: string;
+  status: string;
+  /** @nullable */
+  assignedTo?: number | null;
+  /** @nullable */
+  resolvedAt?: string | null;
+  /** @nullable */
+  resolution?: string | null;
+  createdAt?: string;
+}
+
+export interface SnagInput {
+  zone?: string;
+  category?: string;
+  description: string;
+  reportedBy?: number;
+  photoUrl?: string;
+  severity?: string;
+  assignedTo?: number;
+}
+
+export interface ResolveSnagInput {
+  resolution: string;
+}
+
+export interface DesignDocument {
+  id: number;
+  projectId: number;
+  docType: string;
+  title: string;
+  version: string;
+  /** @nullable */
+  fileUrl?: string | null;
+  /** @nullable */
+  uploadedBy?: number | null;
+  /** @nullable */
+  description?: string | null;
+  internalStatus: string;
+  /** @nullable */
+  internalApprovedBy?: number | null;
+  /** @nullable */
+  internalApprovedAt?: string | null;
+  /** @nullable */
+  clientApprovedAt?: string | null;
+  /** @nullable */
+  clientApprovedBy?: string | null;
+  /** @nullable */
+  rejectionReason?: string | null;
+  createdAt?: string;
+}
+
+export interface DesignRevision {
+  id: number;
+  docId: number;
+  version: string;
+  /** @nullable */
+  fileUrl?: string | null;
+  /** @nullable */
+  changeNotes?: string | null;
+  /** @nullable */
+  revisedBy?: number | null;
+  createdAt?: string;
+}
+
+export type DesignDocumentDetail = DesignDocument & {
+  revisions?: DesignRevision[];
+};
+
+export interface DesignDocumentInput {
+  projectId: number;
+  docType?: string;
+  title: string;
+  version?: string;
+  fileUrl?: string;
+  uploadedBy?: number;
+  description?: string;
+}
+
+export interface DesignApprovalInput {
+  approvalType: string;
+  approvedBy?: string;
+  rejectionReason?: string;
+}
+
+export interface DesignRevisionInput {
+  version: string;
+  fileUrl?: string;
+  changeNotes?: string;
+  revisedBy?: number;
+}
+
+export interface CommissioningChecklist {
+  id: number;
+  projectId: number;
+  status: string;
+  /** @nullable */
+  commissionedOn?: string | null;
+  /** @nullable */
+  commissionedBy?: number | null;
+  /** @nullable */
+  clientSignatoryName?: string | null;
+  /** @nullable */
+  clientSignedAt?: string | null;
+  /** @nullable */
+  remarks?: string | null;
+  createdAt?: string;
+}
+
+export interface CommissioningItem {
+  id: number;
+  checklistId: number;
+  category: string;
+  description: string;
+  isDone: boolean;
+  /** @nullable */
+  doneBy?: number | null;
+  /** @nullable */
+  doneAt?: string | null;
+  /** @nullable */
+  remarks?: string | null;
+  /** @nullable */
+  sortOrder?: number | null;
+}
+
+export type CommissioningChecklistDetail = CommissioningChecklist & {
+  items?: CommissioningItem[];
+};
+
+export interface CommissioningChecklistInput {
+  projectId: number;
+  commissionedOn?: string;
+  commissionedBy?: number;
+  remarks?: string;
+}
+
+export interface CommissioningItemInput {
+  category?: string;
+  description: string;
+  sortOrder?: number;
+}
+
+export interface CommissioningItemToggle {
+  isDone: boolean;
+  doneBy?: number;
+  remarks?: string;
+}
+
+export interface ClientSignoffInput {
+  clientSignatoryName: string;
+}
+
+export interface ComplianceDocument {
+  id: number;
+  projectId: number;
+  docType: string;
+  title: string;
+  /** @nullable */
+  fileUrl?: string | null;
+  /** @nullable */
+  submittedBy?: number | null;
+  /** @nullable */
+  submissionDate?: string | null;
+  status: string;
+  /** @nullable */
+  expiryDate?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  createdAt?: string;
+}
+
+export interface ComplianceDocumentInput {
+  projectId: number;
+  docType?: string;
+  title: string;
+  fileUrl?: string;
+  submittedBy?: number;
+  submissionDate?: string;
+  status?: string;
+  expiryDate?: string;
+  notes?: string;
+}
+
+export interface AmcContract {
+  id: number;
+  projectId: number;
+  contractNumber: string;
+  clientName: string;
+  startDate: string;
+  endDate: string;
+  annualValue: number;
+  visitFrequency?: string;
+  status: string;
+  /** @nullable */
+  terms?: string | null;
+  createdAt?: string;
+}
+
+export interface AmcContractInput {
+  projectId: number;
+  clientName: string;
+  startDate: string;
+  endDate: string;
+  annualValue: number;
+  visitFrequency?: string;
+  terms?: string;
+}
+
+export interface MaintenanceSchedule {
+  id: number;
+  /** @nullable */
+  amcContractId?: number | null;
+  projectId: number;
+  visitType: string;
+  scheduledDate: string;
+  /** @nullable */
+  assignedTechnicianId?: number | null;
+  /** @nullable */
+  assignedTechnicianName?: string | null;
+  status: string;
+  /** @nullable */
+  completedDate?: string | null;
+  /** @nullable */
+  workDone?: string | null;
+  /** @nullable */
+  observations?: string | null;
+  /** @nullable */
+  nextScheduledDate?: string | null;
+  createdAt?: string;
+}
+
+export interface MaintenanceScheduleInput {
+  projectId: number;
+  amcContractId?: number;
+  visitType?: string;
+  scheduledDate: string;
+  assignedTechnicianId?: number;
+  assignedTechnicianName?: string;
+}
+
+export interface MaintenanceCompleteInput {
+  completedDate: string;
+  workDone?: string;
+  observations?: string;
+  nextScheduledDate?: string;
+}
+
+export interface ServiceTicket {
+  id: number;
+  projectId: number;
+  /** @nullable */
+  amcContractId?: number | null;
+  ticketNumber: string;
+  /** @nullable */
+  raisedBy?: string | null;
+  issueCategory: string;
+  description: string;
+  priority: string;
+  status: string;
+  /** @nullable */
+  assignedTechnicianId?: number | null;
+  /** @nullable */
+  assignedTechnicianName?: string | null;
+  /** @nullable */
+  slaHours?: number | null;
+  /** @nullable */
+  resolvedAt?: string | null;
+  /** @nullable */
+  resolution?: string | null;
+  createdAt?: string;
+}
+
+export interface ServiceTicketInput {
+  projectId: number;
+  amcContractId?: number;
+  raisedBy?: string;
+  issueCategory?: string;
+  description: string;
+  priority?: string;
+  assignedTechnicianId?: number;
+  assignedTechnicianName?: string;
+  slaHours?: number;
+}
+
+export interface ResolveTicketInput {
+  resolution: string;
+}
+
 export type GetDashboardParams = {
 role?: string;
 };
@@ -990,5 +1337,31 @@ asOf?: string;
 
 export type GetInventoryAuditsParams = {
 warehouseId?: number;
+};
+
+export type GetDesignDocumentsParams = {
+projectId?: number;
+};
+
+export type GetCommissioningChecklistsParams = {
+projectId?: number;
+};
+
+export type GetComplianceDocumentsParams = {
+projectId?: number;
+};
+
+export type GetAmcContractsParams = {
+projectId?: number;
+};
+
+export type GetMaintenanceSchedulesParams = {
+projectId?: number;
+amcContractId?: number;
+};
+
+export type GetServiceTicketsParams = {
+projectId?: number;
+status?: string;
 };
 

@@ -11,6 +11,7 @@ import { ProjectMRs } from "./tabs/ProjectMRs";
 import { ProjectDPRs } from "./tabs/ProjectDPRs";
 import { ProjectBudget } from "./tabs/ProjectBudget";
 import { ProjectMilestones } from "./tabs/ProjectMilestones";
+import { ProjectSnagLog } from "./tabs/ProjectSnagLog";
 import { motion } from "framer-motion";
 
 function getStatusColor(status: string) {
@@ -70,6 +71,7 @@ export function ProjectWorkspace({ id }: { id: string }) {
               <TabsTrigger value="dprs" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#EA580C] rounded-none px-1 h-10 text-sm font-bold text-gray-500 data-[state=active]:text-gray-900 transition-colors shrink-0">DPRs</TabsTrigger>
               <TabsTrigger value="budget" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#EA580C] rounded-none px-1 h-10 text-sm font-bold text-gray-500 data-[state=active]:text-gray-900 transition-colors shrink-0">Budget</TabsTrigger>
               <TabsTrigger value="milestones" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#EA580C] rounded-none px-1 h-10 text-sm font-bold text-gray-500 data-[state=active]:text-gray-900 transition-colors shrink-0">Milestones</TabsTrigger>
+              <TabsTrigger value="snags" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#EA580C] rounded-none px-1 h-10 text-sm font-bold text-gray-500 data-[state=active]:text-gray-900 transition-colors shrink-0">Snag Log</TabsTrigger>
             </TabsList>
           </div>
           
@@ -91,6 +93,9 @@ export function ProjectWorkspace({ id }: { id: string }) {
             </TabsContent>
             <TabsContent value="milestones" className="m-0 border-none outline-none">
               <ProjectMilestones projectId={projectId} />
+            </TabsContent>
+            <TabsContent value="snags" className="m-0 border-none outline-none">
+              <ProjectSnagLog projectId={projectId} />
             </TabsContent>
           </div>
         </Tabs>

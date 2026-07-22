@@ -119,3 +119,25 @@ export const contractorsTable = pgTable("contractors", {
 export const insertContractorSchema = createInsertSchema(contractorsTable).omit({ id: true, createdAt: true });
 export type InsertContractor = z.infer<typeof insertContractorSchema>;
 export type Contractor = typeof contractorsTable.$inferSelect;
+
+// ── Snag Logs ──────────────────────────────────────────────────────────────────
+export const snagLogsTable = pgTable("snag_logs", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull(),
+  zone: text("zone"),
+  category: text("category").notNull().default("Civil"), // Civil|Electrical|Structural|Safety|Other
+  description: text("description").notNull(),
+  reportedBy: integer("reported_by"),
+  photoUrl: text("photo_url"),
+  severity: text("severity").notNull().default("Medium"), // Low|Medium|High|Critical
+  status: text("status").notNull().default("Open"), // Open|InProgress|Resolved|Closed
+  assignedTo: integer("assigned_to"),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  resolution: text("resolution"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+});
+
+export const insertSnagLogSchema = createInsertSchema(snagLogsTable).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertSnagLog = z.infer<typeof insertSnagLogSchema>;
+export type SnagLog = typeof snagLogsTable.$inferSelect;
