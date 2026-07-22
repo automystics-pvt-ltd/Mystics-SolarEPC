@@ -1,5 +1,5 @@
 import { useAuth } from "@/lib/auth";
-import { Bell, Search, Menu } from "lucide-react";
+import { Bell, Search, HelpCircle, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,64 +13,148 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Sidebar } from "./Sidebar";
+import { useLocation } from "wouter";
+import { Menu } from "lucide-react";
+
+const PAGE_TITLE_MAP: Record<string, { title: string; section?: string }> = {
+  "/dashboard": { title: "Dashboard" },
+  "/crm/leads": { title: "Leads", section: "Sales & CRM" },
+  "/crm/quotations": { title: "Quotations", section: "Sales & CRM" },
+  "/crm/client-pos": { title: "Client POs", section: "Sales & CRM" },
+  "/crm/invoices": { title: "Invoices", section: "Sales & CRM" },
+  "/crm/tasks": { title: "Tasks", section: "Sales & CRM" },
+  "/crm/escalations": { title: "Escalations", section: "Sales & CRM" },
+  "/projects": { title: "Projects Hub", section: "Project Management" },
+  "/projects/contractors": { title: "Contractors", section: "Project Management" },
+  "/inventory/warehouses": { title: "Warehouses", section: "Inventory" },
+  "/inventory/grns": { title: "GRNs", section: "Inventory" },
+  "/inventory/delivery-challans": { title: "Delivery Challans", section: "Inventory" },
+  "/inventory/stock-ledger": { title: "Stock Ledger", section: "Inventory" },
+  "/inventory/stock-valuation": { title: "Stock Valuation", section: "Inventory" },
+  "/inventory/audits": { title: "Audits", section: "Inventory" },
+};
+
+function getPageMeta(path: string) {
+  if (PAGE_TITLE_MAP[path]) return PAGE_TITLE_MAP[path];
+  if (path.startsWith("/crm/leads/")) return { title: "Lead Detail", section: "Sales & CRM" };
+  if (path.startsWith("/crm/quotations/")) return { title: "Quotation", section: "Sales & CRM" };
+  if (path.startsWith("/projects/")) return { title: "Project Workspace", section: "Project Management" };
+  if (path.startsWith("/inventory/warehouses/")) return { title: "Warehouse Detail", section: "Inventory" };
+  return { title: "Mystics ERP" };
+}
+
+function getFYLabel() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+  const fyStart = month >= 4 ? year : year - 1;
+  return `FY ${fyStart}-${String(fyStart + 1).slice(-2)}`;
+}
 
 export function Topbar() {
   const { user, logout } = useAuth();
+  const [location] = useLocation();
+  const meta = getPageMeta(location);
+  const fyLabel = getFYLabel();
+
+  const initials = user?.name
+    ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    : "U";
 
   return (
-    <header className="h-16 border-b bg-card flex items-center justify-between px-4 sm:px-6 shrink-0">
-      <div className="flex items-center flex-1 gap-4">
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="lg:hidden text-muted-foreground">
-              <Menu className="h-5 w-5" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-64">
-            <Sidebar className="w-full flex border-r-0" />
-          </SheetContent>
-        </Sheet>
-        
-        <div className="relative w-64 max-w-md hidden sm:flex">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search leads, projects, POs..." 
-            className="pl-9 bg-muted/50 border-none focus-visible:ring-1"
+    <header className="h-14 bg-white border-b border-gray-200 flex items-center gap-3 px-4 sm:px-6 shrink-0 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+      {/* Mobile menu */}
+      <Sheet>
+        <SheetTrigger asChild>
+          <Button variant="ghost" size="icon" className="lg:hidden text-gray-500 h-8 w-8">
+            <Menu className="h-4 w-4" />
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="left" className="p-0 w-[220px]">
+          <Sidebar className="w-full flex border-r-0" />
+        </SheetContent>
+      </Sheet>
+
+      {/* Page title / breadcrumb */}
+      <div className="hidden sm:flex items-center gap-1.5 min-w-[120px]">
+        {meta.section && (
+          <>
+            <span className="text-[12px] text-gray-400 font-medium">{meta.section}</span>
+            <span className="text-gray-300 text-xs">/</span>
+          </>
+        )}
+        <span className="text-[13px] font-semibold text-gray-700">{meta.title}</span>
+      </div>
+
+      {/* Search — center */}
+      <div className="flex-1 max-w-sm mx-auto">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+          <Input
+            placeholder="Search leads, projects, POs..."
+            className="pl-9 pr-3 h-8 bg-gray-50 border-gray-200 text-[13px] rounded-full focus-visible:ring-1 focus-visible:ring-indigo-300 placeholder:text-gray-400"
           />
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground">
-          <Bell className="h-5 w-5" />
-          <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-accent border-2 border-card"></span>
+      {/* Right actions */}
+      <div className="flex items-center gap-1.5">
+        {/* FY selector */}
+        <button className="hidden sm:flex items-center gap-1 px-3 py-1 rounded-md bg-gray-800 text-white text-[11px] font-semibold hover:bg-gray-700 transition-colors">
+          {fyLabel}
+          <ChevronDown className="h-3 w-3 opacity-70" />
+        </button>
+
+        {/* Notifications */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative h-8 w-8 text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+        >
+          <Bell className="h-4 w-4" />
+          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500 border border-white" />
         </Button>
 
+        {/* Help */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="hidden sm:flex items-center gap-1 h-8 text-[12px] text-gray-500 hover:text-gray-700 hover:bg-gray-100 px-2"
+        >
+          <HelpCircle className="h-3.5 w-3.5" />
+          Help
+        </Button>
+
+        {/* User avatar */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                  {user?.name?.charAt(0) || "U"}
+            <Button variant="ghost" className="h-8 w-8 rounded-full p-0 hover:bg-gray-100">
+              <Avatar className="h-7 w-7">
+                <AvatarFallback
+                  className="text-white text-[11px] font-bold"
+                  style={{ background: "linear-gradient(135deg, #f59e0b, #ef4444)" }}
+                >
+                  {initials}
                 </AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56" align="end" forceMount>
+          <DropdownMenuContent className="w-52" align="end" forceMount>
             <DropdownMenuLabel className="font-normal">
-              <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">{user?.name}</p>
-                <p className="text-xs leading-none text-muted-foreground">
-                  {user?.email}
-                </p>
-                <div className="mt-2 text-xs font-semibold px-2 py-0.5 rounded-full bg-secondary w-fit uppercase">
+              <div className="flex flex-col gap-0.5">
+                <p className="text-sm font-semibold">{user?.name}</p>
+                <p className="text-xs text-muted-foreground">{user?.email}</p>
+                <span className="mt-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 w-fit uppercase tracking-wide">
                   {user?.role}
-                </div>
+                </span>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => logout()} className="text-destructive cursor-pointer">
-              Log out
+            <DropdownMenuItem
+              onClick={() => logout()}
+              className="text-red-600 cursor-pointer focus:text-red-600 focus:bg-red-50"
+            >
+              Sign Out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
