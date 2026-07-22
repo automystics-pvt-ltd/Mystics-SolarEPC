@@ -79,8 +79,8 @@
   --foreground: 222 39% 12%;
   --border: 35 25% 88%;
 
-  /* Cards — white */
-  --card: 0 0% 100%;
+  /* Cards — warm near-white (slightly translucent so watermark peeks through) */
+  --card: 42 30% 98%;
   --card-foreground: 222 39% 12%;
   --card-border: 35 20% 90%;
 
