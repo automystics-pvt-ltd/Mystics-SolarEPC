@@ -930,3 +930,67 @@ describe("Vendor delete and draft-only delete guard", () => {
     expect(r.body.ok).toBe(true);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe("record-dispatch status guard", () => {
+  let draftPoId: number;
+  let issuedPoId: number;
+
+  it("creates two fresh POs — one stays Draft, one is issued", async () => {
+    // Helper: create a quotation, push it through to an auto-generated PO.
+    async function createDraftPO() {
+      const qRes = await api.post("/api/procurement-quotations").send({
+        ...actor,
+        vendorId,
+        mrId,
+        items: [{ materialName: "Dispatch Guard Test Item", uom: "Nos", qty: 1, unitPrice: 200, gstRate: 18, discountPct: 0 }],
+      });
+      const qid = qRes.body.id;
+      await api.post(`/api/procurement-quotations/${qid}/submit`).send(actor);
+      await api.post(`/api/procurement-quotations/${qid}/start-review`).send(actor);
+      const approveRes = await api
+        .post(`/api/procurement-quotations/${qid}/approve`)
+        .send({ ...actor, remarks: "Dispatch guard test approval" });
+      expect(approveRes.status).toBe(200);
+      return approveRes.body.po.id as number;
+    }
+
+    draftPoId = await createDraftPO();
+    issuedPoId = await createDraftPO();
+    expect(draftPoId).toBeDefined();
+    expect(issuedPoId).toBeDefined();
+
+    // Advance the second PO to Issued
+    const r = await api.patch(`/api/procurement-pos/${issuedPoId}`).send({ status: "Issued", ...actor });
+    expect(r.status).toBe(200);
+    expect(r.body.status).toBe("Issued");
+  });
+
+  it("returns 400 when recording dispatch on a Draft PO", async () => {
+    const res = await api
+      .post(`/api/procurement-pos/${draftPoId}/record-dispatch`)
+      .send({ ...actor, vendorDispatchRef: "DISP-001", trackingNumber: "TRK-001" });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/Issued or Acknowledged/i);
+  });
+
+  it("returns 200 when recording dispatch on an Issued PO", async () => {
+    const res = await api
+      .post(`/api/procurement-pos/${issuedPoId}/record-dispatch`)
+      .send({ ...actor, vendorDispatchRef: "DISP-002", trackingNumber: "TRK-002", expectedDeliveryDate: "2026-08-01" });
+    expect(res.status).toBe(200);
+    expect(res.body.vendorDispatchRef).toBe("DISP-002");
+    expect(res.body.trackingNumber).toBe("TRK-002");
+    expect(res.body.dispatchedAt).toBeDefined();
+  });
+
+  it("returns 200 when recording dispatch on an Acknowledged PO", async () => {
+    // Advance the issued PO to Acknowledged, then record dispatch again.
+    await api.patch(`/api/procurement-pos/${issuedPoId}`).send({ status: "Acknowledged", ...actor });
+    const res = await api
+      .post(`/api/procurement-pos/${issuedPoId}/record-dispatch`)
+      .send({ ...actor, vendorDispatchRef: "DISP-003", trackingNumber: "TRK-003" });
+    expect(res.status).toBe(200);
+    expect(res.body.vendorDispatchRef).toBe("DISP-003");
+  });
+});

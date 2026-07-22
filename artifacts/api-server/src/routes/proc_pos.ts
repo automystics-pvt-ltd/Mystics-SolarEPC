@@ -128,6 +128,9 @@ router.post("/procurement-pos/:id/record-dispatch", async (req, res): Promise<vo
   const { vendorDispatchRef, trackingNumber, expectedDeliveryDate, userName = "System", userId, remarks } = req.body;
   const [existing] = await db.select().from(procurementPOsTable).where(eq(procurementPOsTable.id, id));
   if (!existing) { res.status(404).json({ error: "PO not found" }); return; }
+  if (!["Issued", "Acknowledged"].includes(existing.status)) {
+    res.status(400).json({ error: `Cannot record dispatch details on a PO in '${existing.status}' status. The PO must be in Issued or Acknowledged status.` }); return;
+  }
   const [po] = await db.update(procurementPOsTable).set({
     vendorDispatchRef, trackingNumber, dispatchedAt: new Date(),
     expectedDeliveryDate: expectedDeliveryDate ?? null,
