@@ -653,6 +653,174 @@ describe("Edit guard — non-editable statuses", () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+describe("Revision round-trip: Draft → Submitted → UnderReview → RevisionRequested → re-edit → re-submit → UnderReview → Approved → PO", () => {
+  let rrQId: number;
+  let rrPoId: number;
+
+  it("creates a quotation in Draft", async () => {
+    const res = await api.post("/api/procurement-quotations").send({
+      ...actor,
+      vendorId,
+      mrId,
+      quotationDate: "2026-07-22",
+      validityDate: "2026-08-22",
+      currency: "INR",
+      paymentTerms: "45 days net",
+      items: [
+        { materialName: "Round Bar 20mm", uom: "Kg", qty: 100, unitPrice: 80, gstRate: 18, discountPct: 0 },
+      ],
+    });
+    rrQId = res.body.id;
+    expect(res.status).toBe(201);
+    expect(res.body.status).toBe("Draft");
+    expect(res.body.version).toBe(1);
+  });
+
+  it("submits (Draft → Submitted)", async () => {
+    const res = await api
+      .post(`/api/procurement-quotations/${rrQId}/submit`)
+      .send(actor);
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("Submitted");
+  });
+
+  it("starts review (Submitted → UnderReview)", async () => {
+    const res = await api
+      .post(`/api/procurement-quotations/${rrQId}/start-review`)
+      .send({ ...actor, remarks: "Checking technical specs" });
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("UnderReview");
+  });
+
+  it("requests revision with remarks (UnderReview → RevisionRequested)", async () => {
+    const res = await api
+      .post(`/api/procurement-quotations/${rrQId}/request-revision`)
+      .send({ ...actor, remarks: "Please revise unit price downward" });
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("RevisionRequested");
+    expect(res.body.approvalRemarks).toBe("Please revise unit price downward");
+  });
+
+  it("audit log records RevisionRequested transition", async () => {
+    const res = await api.get(`/api/procurement-quotations/${rrQId}`);
+    expect(res.status).toBe(200);
+    const actions = res.body.auditLogs.map((a: any) => a.action);
+    expect(actions).toContain("RevisionRequested");
+  });
+
+  it("vendor edits the quotation in RevisionRequested status, bumping version", async () => {
+    const res = await api
+      .patch(`/api/procurement-quotations/${rrQId}`)
+      .send({
+        ...actor,
+        items: [
+          { materialName: "Round Bar 20mm", uom: "Kg", qty: 100, unitPrice: 70, gstRate: 18, discountPct: 0 },
+        ],
+        changeSummary: "Revised unit price from 80 to 70",
+      });
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("RevisionRequested");
+    expect(res.body.version).toBeGreaterThan(1);
+    // price should have dropped
+    expect(res.body.totalAmount).toBeLessThan(80 * 100 * 1.18 + 1); // was 9440, now 8260
+  });
+
+  it("re-submits from RevisionRequested (RevisionRequested → Submitted)", async () => {
+    const res = await api
+      .post(`/api/procurement-quotations/${rrQId}/submit`)
+      .send(actor);
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("Submitted");
+  });
+
+  it("blocks editing once re-submitted", async () => {
+    const res = await api
+      .patch(`/api/procurement-quotations/${rrQId}`)
+      .send({ ...actor, internalNotes: "Should be blocked again" });
+    expect(res.status).toBe(403);
+    expect(res.body.error).toMatch(/Cannot edit/i);
+  });
+
+  it("starts review again (Submitted → UnderReview)", async () => {
+    const res = await api
+      .post(`/api/procurement-quotations/${rrQId}/start-review`)
+      .send({ ...actor, remarks: "Re-reviewing after vendor revision" });
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("UnderReview");
+  });
+
+  it("approves and auto-generates PO (UnderReview → Approved + PO)", async () => {
+    const res = await api
+      .post(`/api/procurement-quotations/${rrQId}/approve`)
+      .send({ ...actor, remarks: "Revised price accepted" });
+    expect(res.status).toBe(200);
+
+    const { quotation, po } = res.body;
+    expect(quotation.status).toBe("Approved");
+    expect(quotation.poGenerated).toBe(true);
+    expect(quotation.approvalRemarks).toBe("Revised price accepted");
+
+    rrPoId = po?.id;
+    expect(po).toBeDefined();
+    expect(po.poNumber).toMatch(/^PO-/);
+    expect(po.quotationId).toBe(rrQId);
+    expect(po.vendorId).toBe(vendorId);
+  });
+
+  it("auto-generated PO is retrievable and reflects revised pricing", async () => {
+    const res = await api.get(`/api/procurement-pos/${rrPoId}`);
+    expect(res.status).toBe(200);
+    expect(res.body.id).toBe(rrPoId);
+    expect(res.body.items).toHaveLength(1);
+    // revised unit price (70) should be reflected in the PO total
+    expect(res.body.totalAmount).toBeLessThan(80 * 100 * 1.18 + 1);
+  });
+
+  it("audit log records all transitions in order", async () => {
+    const res = await api.get(`/api/procurement-quotations/${rrQId}`);
+    expect(res.status).toBe(200);
+    // auditLogs are ordered desc by createdAt; reverse to get chronological order
+    const actions: string[] = res.body.auditLogs.map((a: any) => a.action).reverse();
+    expect(actions).toContain("Created");
+    expect(actions).toContain("Submitted");
+    expect(actions).toContain("ReviewStarted");
+    expect(actions).toContain("RevisionRequested");
+    expect(actions).toContain("Updated");
+    expect(actions).toContain("Approved");
+    expect(actions).toContain("POGenerated");
+    // All critical transitions present; order: Created appears before Approved
+    expect(actions.indexOf("Created")).toBeLessThan(actions.indexOf("Approved"));
+    expect(actions.indexOf("RevisionRequested")).toBeLessThan(actions.indexOf("Approved"));
+  });
+
+  it("version numbers incremented correctly across the round-trip", async () => {
+    const res = await api.get(`/api/procurement-quotations/${rrQId}`);
+    expect(res.status).toBe(200);
+    // versions are ordered desc; highest version should be >= 2 (edit bumped it)
+    const topVersion: number = res.body.versions[0].version;
+    expect(topVersion).toBeGreaterThanOrEqual(2);
+    // All version numbers from 1..topVersion should be present
+    const versionNums: number[] = res.body.versions.map((v: any) => v.version).sort((a: number, b: number) => a - b);
+    for (let i = 0; i < versionNums.length; i++) {
+      expect(versionNums[i]).toBe(i + 1);
+    }
+  });
+
+  // ── Stale-transition guard on submit ────────────────────────────────────────
+  it("submit is atomically guarded — cannot overwrite a non-Draft/RevisionRequested status", async () => {
+    // rrQId is now Approved; a stale in-flight submit must be rejected, not silently accepted.
+    const res = await api
+      .post(`/api/procurement-quotations/${rrQId}/submit`)
+      .send(actor);
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/Draft or RevisionRequested/i);
+    // Confirm the record was NOT overwritten
+    const check = await api.get(`/api/procurement-quotations/${rrQId}`);
+    expect(check.body.status).toBe("Approved");
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 describe("L1 comparison endpoint", () => {
   // compMrId is unique per run (defined at module level) so no prior data interferes.
   let qLow: number;

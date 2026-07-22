@@ -5,7 +5,7 @@ import {
   procurementPOsTable, procPOItemsTable,
   vendorsTable, materialRequestsTable,
 } from "@workspace/db";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, desc, and, sql, inArray } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -245,10 +245,23 @@ router.delete("/procurement-quotations/:id", async (req, res): Promise<void> => 
 router.post("/procurement-quotations/:id/submit", async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const { userName = "System", userId, userRole } = req.body;
+  // Atomically transition only when current status is Draft or RevisionRequested.
+  // The status predicate lives in the WHERE clause of the UPDATE so there is no
+  // read-then-write race window — a concurrent state change between a prior
+  // SELECT and this UPDATE cannot silently overwrite the newer status.
   const [q] = await db.update(procurementQuotationsTable).set({
     status: "Submitted", submittedAt: new Date(), submittedBy: userId, submittedByName: userName, updatedAt: new Date(),
-  }).where(and(eq(procurementQuotationsTable.id, id), eq(procurementQuotationsTable.status, "Draft"))).returning();
-  if (!q) { res.status(400).json({ error: "Quotation must be in Draft status to submit" }); return; }
+  }).where(and(
+    eq(procurementQuotationsTable.id, id),
+    inArray(procurementQuotationsTable.status, ["Draft", "RevisionRequested"]),
+  )).returning();
+  if (!q) {
+    // Distinguish "record not found" from "wrong status".
+    const [existing] = await db.select({ status: procurementQuotationsTable.status })
+      .from(procurementQuotationsTable).where(eq(procurementQuotationsTable.id, id));
+    if (!existing) { res.status(404).json({ error: "Quotation not found" }); return; }
+    res.status(400).json({ error: `Quotation must be in Draft or RevisionRequested status to submit (currently ${existing.status})` }); return;
+  }
   await logAudit(id, "Submitted", userName, userId, userRole, "Submitted for review");
   res.json(fmtQ(q));
 });
