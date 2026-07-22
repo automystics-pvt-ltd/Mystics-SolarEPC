@@ -1469,3 +1469,153 @@ describe("Multi-GRN accumulation — reject path: only acceptedQty counts toward
     expect(Number(item.deliveredQty)).toBe(10);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe("Multi-line PO — FullyReceived only when ALL lines are fully delivered", () => {
+  /**
+   * Scenario:
+   *   PO has TWO line items: line 1 qty 5, line 2 qty 5.
+   *   GRN-1 fully delivers line 1 (accepted 5) but delivers nothing for line 2.
+   *     → line 1 deliveredQty = 5, line 2 deliveredQty = 0
+   *     → PO must stay PartiallyReceived (NOT FullyReceived)
+   *   GRN-2 fully delivers line 2 (accepted 5); line 1 already complete.
+   *     → line 2 deliveredQty = 5
+   *     → Now every line is fully delivered → PO becomes FullyReceived
+   */
+  let mlPoId: number;
+  let mlPoItem1Id: number;
+  let mlPoItem2Id: number;
+  let mlGrn1Id: number;
+  let mlGrn2Id: number;
+
+  it("creates a PO with two line items (qty 5 each) and advances it to Acknowledged", async () => {
+    const qRes = await api.post("/api/procurement-quotations").send({
+      ...actor,
+      vendorId,
+      mrId,
+      items: [
+        { materialName: "Multi-line Item A", uom: "Nos", qty: 5, unitPrice: 300, gstRate: 18, discountPct: 0 },
+        { materialName: "Multi-line Item B", uom: "Nos", qty: 5, unitPrice: 200, gstRate: 18, discountPct: 0 },
+      ],
+    });
+    expect(qRes.status).toBe(201);
+    const qid = qRes.body.id;
+
+    await api.post(`/api/procurement-quotations/${qid}/submit`).send(actor);
+    await api.post(`/api/procurement-quotations/${qid}/start-review`).send(actor);
+    const approveRes = await api
+      .post(`/api/procurement-quotations/${qid}/approve`)
+      .send({ ...actor, remarks: "Multi-line PO test approval" });
+    expect(approveRes.status).toBe(200);
+
+    mlPoId = approveRes.body.po.id;
+    expect(mlPoId).toBeDefined();
+
+    // Advance to Acknowledged
+    await api.patch(`/api/procurement-pos/${mlPoId}`).send({ status: "Issued", ...actor });
+    const ackRes = await api.patch(`/api/procurement-pos/${mlPoId}`).send({ status: "Acknowledged", ...actor });
+    expect(ackRes.status).toBe(200);
+    expect(ackRes.body.status).toBe("Acknowledged");
+
+    // Capture both PO item ids
+    const poDetail = await api.get(`/api/procurement-pos/${mlPoId}`);
+    expect(poDetail.status).toBe(200);
+    expect(poDetail.body.items).toHaveLength(2);
+    // Items are ordered by lineNo; line 1 = Item A, line 2 = Item B
+    mlPoItem1Id = poDetail.body.items[0].id;
+    mlPoItem2Id = poDetail.body.items[1].id;
+    expect(mlPoItem1Id).toBeDefined();
+    expect(mlPoItem2Id).toBeDefined();
+  });
+
+  it("creates GRN-1 covering only line 1 (all 5 accepted) and submits it", async () => {
+    const res = await api.post("/api/proc-grns").send({
+      ...actor,
+      poId: mlPoId,
+      deliveryDate: "2026-07-22",
+      items: [{
+        poItemId: mlPoItem1Id,
+        materialName: "Multi-line Item A",
+        uom: "Nos",
+        orderedQty: 5,
+        receivedQty: 5,
+        acceptedQty: 5,
+        rejectedQty: 0,
+        damagedQty: 0,
+        unitPrice: 300,
+      }],
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.grnNumber).toMatch(/^GRN-/);
+    mlGrn1Id = res.body.id;
+    expect(mlGrn1Id).toBeDefined();
+
+    const submitRes = await api.post(`/api/proc-grns/${mlGrn1Id}/submit`).send(actor);
+    expect(submitRes.status).toBe(200);
+    expect(submitRes.body.status).toBe("Submitted");
+  });
+
+  it("approves GRN-1 — line 1 fully delivered, line 2 still at 0 → PO stays PartiallyReceived", async () => {
+    const approveRes = await api
+      .post(`/api/proc-grns/${mlGrn1Id}/approve`)
+      .send({ ...actor, remarks: "Line 1 fully delivered" });
+    expect(approveRes.status).toBe(200);
+
+    // PO must NOT flip to FullyReceived because line 2 has zero delivered qty
+    const poRes = await api.get(`/api/procurement-pos/${mlPoId}`);
+    expect(poRes.status).toBe(200);
+    expect(poRes.body.status).toBe("PartiallyReceived");
+
+    // Verify deliveredQty per line
+    const item1 = poRes.body.items.find((i: any) => i.id === mlPoItem1Id);
+    const item2 = poRes.body.items.find((i: any) => i.id === mlPoItem2Id);
+    expect(Number(item1.deliveredQty)).toBe(5);  // fully delivered
+    expect(Number(item2.deliveredQty)).toBe(0);  // untouched
+  });
+
+  it("creates GRN-2 covering only line 2 (all 5 accepted) and submits it", async () => {
+    const res = await api.post("/api/proc-grns").send({
+      ...actor,
+      poId: mlPoId,
+      deliveryDate: "2026-07-25",
+      items: [{
+        poItemId: mlPoItem2Id,
+        materialName: "Multi-line Item B",
+        uom: "Nos",
+        orderedQty: 5,
+        receivedQty: 5,
+        acceptedQty: 5,
+        rejectedQty: 0,
+        damagedQty: 0,
+        unitPrice: 200,
+      }],
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.grnNumber).toMatch(/^GRN-/);
+    mlGrn2Id = res.body.id;
+    expect(mlGrn2Id).toBeDefined();
+    expect(mlGrn2Id).not.toBe(mlGrn1Id);
+
+    const submitRes = await api.post(`/api/proc-grns/${mlGrn2Id}/submit`).send(actor);
+    expect(submitRes.status).toBe(200);
+    expect(submitRes.body.status).toBe("Submitted");
+  });
+
+  it("approves GRN-2 — both lines now fully delivered → PO transitions to FullyReceived", async () => {
+    const approveRes = await api
+      .post(`/api/proc-grns/${mlGrn2Id}/approve`)
+      .send({ ...actor, remarks: "Line 2 fully delivered — order complete" });
+    expect(approveRes.status).toBe(200);
+
+    // Every PO line is now fully delivered, so the PO must become FullyReceived
+    const poRes = await api.get(`/api/procurement-pos/${mlPoId}`);
+    expect(poRes.status).toBe(200);
+    expect(poRes.body.status).toBe("FullyReceived");
+
+    // Both lines must show the correct final deliveredQty
+    const item1 = poRes.body.items.find((i: any) => i.id === mlPoItem1Id);
+    const item2 = poRes.body.items.find((i: any) => i.id === mlPoItem2Id);
+    expect(Number(item1.deliveredQty)).toBe(5);
+    expect(Number(item2.deliveredQty)).toBe(5);
+  });
+});
