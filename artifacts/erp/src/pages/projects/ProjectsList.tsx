@@ -23,8 +23,10 @@ const createProjectSchema = z.object({
 });
 
 function formatCurrency(amount?: number) {
-  if (!amount) return "$0";
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(amount);
+  if (!amount) return "₹0";
+  if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(2)} Cr`;
+  if (amount >= 100000) return `₹${(amount / 100000).toFixed(1)} L`;
+  return `₹${Number(amount).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 }
 
 function getStatusColor(status: string) {

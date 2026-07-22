@@ -145,7 +145,7 @@ export function ContractorsList() {
                       <span className="text-sm font-bold text-gray-600 flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 text-gray-400" /> {c.contact || '-'}</span>
                     </TableCell>
                     <TableCell className="py-4 text-right">
-                      <span className="font-mono font-bold text-[15px] text-gray-900">${c.contractValue?.toLocaleString() || 0}</span>
+                      <span className="font-mono font-bold text-[15px] text-gray-900">₹{Number(c.contractValue || 0).toLocaleString("en-IN")}</span>
                     </TableCell>
                     <TableCell className="px-5 py-4">
                       <div className="flex gap-1 text-amber-500">

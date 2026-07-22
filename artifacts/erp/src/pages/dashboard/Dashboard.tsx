@@ -15,10 +15,11 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 
 function formatCurrency(amount?: number | null) {
-  if (!amount) return "$0";
-  if (amount >= 1000000) return `$${(amount / 1000000).toFixed(2)}M`;
-  if (amount >= 1000) return `$${(amount / 1000).toFixed(1)}k`;
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(amount);
+  if (!amount) return "₹0";
+  if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(2)} Cr`;
+  if (amount >= 100000) return `₹${(amount / 100000).toFixed(1)} L`;
+  if (amount >= 1000) return `₹${(amount / 1000).toFixed(1)}k`;
+  return `₹${Number(amount).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 }
 
 export function Dashboard() {

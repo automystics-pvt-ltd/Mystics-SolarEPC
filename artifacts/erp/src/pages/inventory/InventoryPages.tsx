@@ -211,8 +211,8 @@ export function StockValuationList() {
                     </TableCell>
                     <TableCell className="py-4 font-mono text-xs font-bold text-gray-600">WH-{v.warehouseId}</TableCell>
                     <TableCell className="py-4 text-right font-mono font-bold text-[15px] text-gray-900">{v.balanceQty}</TableCell>
-                    <TableCell className="py-4 text-right font-mono text-sm font-semibold text-gray-500">${v.unitValue.toLocaleString()}</TableCell>
-                    <TableCell className="py-4 text-right font-mono font-bold text-[15px] text-[#EA580C]">${v.totalValue.toLocaleString()}</TableCell>
+                    <TableCell className="py-4 text-right font-mono text-sm font-semibold text-gray-500">₹{v.unitValue.toLocaleString("en-IN")}</TableCell>
+                    <TableCell className="py-4 text-right font-mono font-bold text-[15px] text-[#EA580C]">₹{v.totalValue.toLocaleString("en-IN")}</TableCell>
                     <TableCell className="px-5 py-4 text-right text-xs font-semibold text-gray-500">{format(new Date(v.asOfDate), 'MMM d, yyyy')}</TableCell>
                   </TableRow>
                 ))}
@@ -273,7 +273,7 @@ export function InventoryAuditsList() {
                       {a.varianceQty || 0}
                     </TableCell>
                     <TableCell className={`px-5 py-4 text-right font-mono font-bold text-[15px] ${a.varianceValue !== 0 ? 'text-red-600' : 'text-gray-900'}`}>
-                      ${a.varianceValue?.toLocaleString() || 0}
+                      ₹{Number(a.varianceValue || 0).toLocaleString("en-IN")}
                     </TableCell>
                   </TableRow>
                 ))}

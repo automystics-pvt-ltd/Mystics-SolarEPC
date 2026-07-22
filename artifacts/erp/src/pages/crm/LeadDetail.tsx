@@ -193,7 +193,7 @@ export function LeadDetail({ id }: { id: string }) {
                   <Input type="number" value={editForm.estimatedValue} onChange={e => setEditForm({...editForm, estimatedValue: e.target.value})} className="h-10 bg-gray-50 font-mono font-bold" />
                 ) : (
                   <p className="text-2xl font-bold text-gray-900 tracking-tight font-mono">
-                    ${lead.estimatedValue?.toLocaleString() || 0}
+                    ₹{Number(lead.estimatedValue || 0).toLocaleString("en-IN")}
                   </p>
                 )}
               </div>
@@ -270,7 +270,7 @@ export function LeadDetail({ id }: { id: string }) {
                           </p>
                         </div>
                         <div className="sm:text-right flex sm:block items-end justify-between w-full sm:w-auto pt-3 border-t border-gray-100 sm:border-0 sm:pt-0">
-                          <p className="text-lg font-bold text-gray-900 font-mono">${quote.totalAmount?.toLocaleString() || 0}</p>
+                          <p className="text-lg font-bold text-gray-900 font-mono">₹{Number(quote.totalAmount || 0).toLocaleString("en-IN")}</p>
                           <p className="text-[11px] font-semibold text-gray-400 mt-0.5 uppercase tracking-wider">Valid till {quote.validTill ? format(new Date(quote.validTill), 'MMM d') : '-'}</p>
                         </div>
                       </div>

@@ -21,15 +21,15 @@ export function ProjectBudget({ projectId }: { projectId: number }) {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-5 rounded-[12px] border border-gray-200 bg-white shadow-sm flex flex-col justify-between h-[100px]">
           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Total Budget</p>
-          <p className="text-2xl font-bold font-mono tracking-tight text-gray-900">${budget?.totalBudgeted?.toLocaleString() || 0}</p>
+          <p className="text-2xl font-bold font-mono tracking-tight text-gray-900">₹{budget?.totalBudgeted?.toLocaleString("en-IN") || 0}</p>
         </div>
         <div className="p-5 rounded-[12px] border border-gray-200 bg-white shadow-sm flex flex-col justify-between h-[100px]">
           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Committed (POs)</p>
-          <p className="text-2xl font-bold font-mono tracking-tight text-gray-900">${budget?.totalCommitted?.toLocaleString() || 0}</p>
+          <p className="text-2xl font-bold font-mono tracking-tight text-gray-900">₹{budget?.totalCommitted?.toLocaleString("en-IN") || 0}</p>
         </div>
         <div className="p-5 rounded-[12px] border border-gray-200 bg-white shadow-sm flex flex-col justify-between h-[100px]">
           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Actual Spend</p>
-          <p className="text-2xl font-bold font-mono tracking-tight text-gray-900">${budget?.totalActual?.toLocaleString() || 0}</p>
+          <p className="text-2xl font-bold font-mono tracking-tight text-gray-900">₹{budget?.totalActual?.toLocaleString("en-IN") || 0}</p>
         </div>
         <div className={`p-5 rounded-[12px] border flex flex-col justify-between h-[100px] ${budget?.totalVariance && budget.totalVariance > 0 ? 'border-red-200 bg-red-50 text-red-900' : 'border-emerald-200 bg-emerald-50 text-emerald-900'}`}>
           <div className="flex justify-between items-start">
@@ -38,7 +38,7 @@ export function ProjectBudget({ projectId }: { projectId: number }) {
               {budget?.totalVariance && budget.totalVariance > 0 ? 'Over' : 'Under'}
             </span>
           </div>
-          <p className="text-2xl font-bold font-mono tracking-tight">${Math.abs(budget?.totalVariance || 0).toLocaleString()}</p>
+          <p className="text-2xl font-bold font-mono tracking-tight">₹{Math.abs(budget?.totalVariance || 0).toLocaleString("en-IN")}</p>
         </div>
       </div>
 
@@ -57,11 +57,11 @@ export function ProjectBudget({ projectId }: { projectId: number }) {
             {budget?.lines?.map((line, idx) => (
               <TableRow key={idx} className="border-b border-gray-50 hover:bg-gray-50/30">
                 <TableCell className="px-5 py-3 font-bold text-sm text-gray-900">{line.costHead}</TableCell>
-                <TableCell className="py-3 text-right font-mono font-bold text-sm text-gray-600">${line.budgeted.toLocaleString()}</TableCell>
-                <TableCell className="py-3 text-right font-mono font-medium text-gray-500">${line.committed.toLocaleString()}</TableCell>
-                <TableCell className="py-3 text-right font-mono font-bold text-sm text-gray-900">${line.actual.toLocaleString()}</TableCell>
+                <TableCell className="py-3 text-right font-mono font-bold text-sm text-gray-600">₹{line.budgeted.toLocaleString("en-IN")}</TableCell>
+                <TableCell className="py-3 text-right font-mono font-medium text-gray-500">₹{line.committed.toLocaleString("en-IN")}</TableCell>
+                <TableCell className="py-3 text-right font-mono font-bold text-sm text-gray-900">₹{line.actual.toLocaleString("en-IN")}</TableCell>
                 <TableCell className={`px-5 py-3 text-right font-mono font-bold text-sm flex items-center justify-end gap-1.5 ${line.variance > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
-                  ${Math.abs(line.variance).toLocaleString()} <span className="text-[10px]">{line.variance > 0 ? '▼' : '▲'}</span>
+                  ₹{Math.abs(line.variance).toLocaleString("en-IN")} <span className="text-[10px]">{line.variance > 0 ? '▼' : '▲'}</span>
                 </TableCell>
               </TableRow>
             ))}
