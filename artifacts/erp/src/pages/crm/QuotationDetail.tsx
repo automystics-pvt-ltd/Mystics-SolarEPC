@@ -237,6 +237,11 @@ export function QuotationDetail({ id }: { id?: string }) {
   const gstAmount = preGstTotal * gstPct / 100;
   const grandTotal = preGstTotal + gstAmount;
 
+  // ── dialog state — must be above early returns ──
+  const [showApproveDialog, setShowApproveDialog] = useState(false);
+  const [showConvertDialog, setShowConvertDialog] = useState(false);
+  const [clientPoNum, setClientPoNum] = useState("");
+
   // ── save ──
   const handleSave = () => {
     if (isNew && !leadId) { toast({ title: "Please select a lead", variant: "destructive" }); return; }
@@ -254,10 +259,6 @@ export function QuotationDetail({ id }: { id?: string }) {
 
   const selectedLead = (leads as any[]).find(l => String(l.id) === String(leadId));
   const isSaving = createMut.isPending || updateMut.isPending;
-
-  const [showApproveDialog, setShowApproveDialog] = useState(false);
-  const [showConvertDialog, setShowConvertDialog] = useState(false);
-  const [clientPoNum, setClientPoNum] = useState("");
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
