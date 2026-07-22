@@ -53,7 +53,7 @@ export default function GRNsList() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
           { label: "Total GRNs", value: stats.total, color: "text-slate-900" },
           { label: "Pending Inspection", value: stats.pending, color: "text-amber-600" },

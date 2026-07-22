@@ -8,7 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Package, Save } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { ArrowLeft, Package, Save, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -114,7 +118,10 @@ export default function GRNForm({ poId: initPoId }: { poId?: string }) {
     });
   };
 
+  const [showConfirm, setShowConfirm] = useState(false);
   const activePOs = (allPOs as any[]).filter(p => !["Closed", "Cancelled", "Draft"].includes(p.status));
+  const { isLoading: posLoading } = useGetProcurementPOs({});
+  const selectedPO = activePOs.find(p => String(p.id) === selectedPoId);
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
@@ -228,10 +235,34 @@ export default function GRNForm({ poId: initPoId }: { poId?: string }) {
 
       <div className="flex justify-end gap-3">
         <Button variant="outline" onClick={() => setLocation("/procurement/grns")}>Cancel</Button>
-        <Button className="gap-2 bg-orange-500 hover:bg-orange-600" onClick={handleSubmit} disabled={createMut.isPending || !selectedPoId}>
+        <Button className="gap-2 bg-orange-500 hover:bg-orange-600" onClick={() => setShowConfirm(true)} disabled={createMut.isPending || !selectedPoId}>
           <Save className="w-4 h-4" /> {createMut.isPending ? "Saving…" : "Create GRN"}
         </Button>
       </div>
+
+      <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm GRN Creation</AlertDialogTitle>
+            <AlertDialogDescription>
+              You are about to record a Goods Receipt against{" "}
+              <strong>{selectedPO?.poNumber ?? `PO #${selectedPoId}`}</strong> for{" "}
+              <strong>{lineItems.length} item{lineItems.length !== 1 ? "s" : ""}</strong>.
+              This action will update the PO delivery quantities and cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Review Again</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-orange-500 hover:bg-orange-600 text-white"
+              onClick={() => { setShowConfirm(false); handleSubmit(); }}
+            >
+              {createMut.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Confirm &amp; Create GRN
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </motion.div>
   );
 }

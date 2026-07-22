@@ -11,6 +11,11 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
   Loader2, ArrowLeft, Plus, Trash2, Save, FileCheck, CheckCircle,
   FileText, Calculator, ChevronsUpDown, Search, PlusCircle, Check,
 } from "lucide-react";
@@ -250,6 +255,10 @@ export function QuotationDetail({ id }: { id?: string }) {
   const selectedLead = (leads as any[]).find(l => String(l.id) === String(leadId));
   const isSaving = createMut.isPending || updateMut.isPending;
 
+  const [showApproveDialog, setShowApproveDialog] = useState(false);
+  const [showConvertDialog, setShowConvertDialog] = useState(false);
+  const [clientPoNum, setClientPoNum] = useState("");
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
 
@@ -282,15 +291,12 @@ export function QuotationDetail({ id }: { id?: string }) {
 
         <div className="flex items-center gap-3 w-full sm:w-auto">
           {!isNew && quote?.approvalStatus === "Draft" && !isEditing && (
-            <Button onClick={() => approveMut.mutate({ id: quoteId, data: { action: "Approve" } })} disabled={approveMut.isPending} className="h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-[8px]">
+            <Button onClick={() => setShowApproveDialog(true)} disabled={approveMut.isPending} className="h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-[8px]">
               <CheckCircle className="h-4 w-4 mr-2" /> Approve Quote
             </Button>
           )}
           {!isNew && quote?.approvalStatus === "Approved" && (
-            <Button onClick={() => {
-              const po = prompt("Enter Client PO Number:");
-              if (po) logPoMut.mutate({ id: quoteId, data: { clientPoNumber: po, contractValue: grandTotal } });
-            }} disabled={logPoMut.isPending} className="h-10 bg-[#0C1445] hover:bg-[#0A0F2C] text-white font-bold rounded-[8px]">
+            <Button onClick={() => { setClientPoNum(""); setShowConvertDialog(true); }} disabled={logPoMut.isPending} className="h-10 bg-[#0C1445] hover:bg-[#0A0F2C] text-white font-bold rounded-[8px]">
               <FileCheck className="h-4 w-4 mr-2" /> Convert to Project
             </Button>
           )}
@@ -575,6 +581,76 @@ export function QuotationDetail({ id }: { id?: string }) {
           </div>
         </div>
       </div>
+      {/* ── Approve Confirmation ── */}
+      <AlertDialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Approve this Quotation?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You are approving{" "}
+              <strong>QTN-{quoteId.toString().padStart(4, "0")}</strong> with a grand total of{" "}
+              <strong>{fmtINR(grandTotal)}</strong>. Once approved it cannot be edited.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              onClick={() => { setShowApproveDialog(false); approveMut.mutate({ id: quoteId, data: { action: "Approve" } }); }}
+            >
+              Yes, Approve Quote
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ── Convert to Project Dialog ── */}
+      <Dialog open={showConvertDialog} onOpenChange={setShowConvertDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Convert to Project</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-gray-600">
+              Enter the Client PO number to log this quotation as a project.
+              Contract value will be set to <strong>{fmtINR(grandTotal)}</strong>.
+            </p>
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider text-gray-700 block mb-1.5">
+                Client PO Number *
+              </label>
+              <Input
+                value={clientPoNum}
+                onChange={e => setClientPoNum(e.target.value)}
+                placeholder="e.g. CPO/2024/001"
+                className="h-10 bg-gray-50"
+                autoFocus
+                onKeyDown={e => {
+                  if (e.key === "Enter" && clientPoNum.trim()) {
+                    setShowConvertDialog(false);
+                    logPoMut.mutate({ id: quoteId, data: { clientPoNumber: clientPoNum.trim(), contractValue: grandTotal } });
+                  }
+                }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowConvertDialog(false)}>Cancel</Button>
+            <Button
+              disabled={!clientPoNum.trim() || logPoMut.isPending}
+              className="bg-[#0C1445] hover:bg-[#0A0F2C] text-white"
+              onClick={() => {
+                if (!clientPoNum.trim()) return;
+                setShowConvertDialog(false);
+                logPoMut.mutate({ id: quoteId, data: { clientPoNumber: clientPoNum.trim(), contractValue: grandTotal } });
+              }}
+            >
+              <FileCheck className="h-4 w-4 mr-2" />
+              {logPoMut.isPending ? "Converting…" : "Confirm & Convert"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 }

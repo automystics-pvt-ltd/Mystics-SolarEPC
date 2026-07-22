@@ -9,6 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ArrowLeft, FileText, Save, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
@@ -132,6 +136,7 @@ export default function InvoiceForm({ poId: initPoId, grnId: initGrnId }: { poId
     });
   };
 
+  const [showConfirm, setShowConfirm] = useState(false);
   const acceptedGRNs = (poGRNs as any[]).filter(g => ["Accepted", "PartiallyAccepted"].includes(g.status));
 
   return (
@@ -280,10 +285,44 @@ export default function InvoiceForm({ poId: initPoId, grnId: initGrnId }: { poId
 
       <div className="flex justify-end gap-3">
         <Button variant="outline" onClick={() => setLocation("/procurement/invoices")}>Cancel</Button>
-        <Button className="gap-2 bg-orange-500 hover:bg-orange-600" onClick={handleSubmit} disabled={createMut.isPending || !selectedPoId}>
+        <Button className="gap-2 bg-orange-500 hover:bg-orange-600" onClick={() => setShowConfirm(true)} disabled={createMut.isPending || !selectedPoId}>
           <Save className="w-4 h-4" /> {createMut.isPending ? "Creating…" : "Create Invoice"}
         </Button>
       </div>
+
+      <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className={hasMismatch ? "text-red-700" : undefined}>
+              {hasMismatch ? "⚠ Quantity Mismatch — Confirm Invoice" : "Confirm Invoice Creation"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {hasMismatch ? (
+                <>
+                  One or more line items have quantities that don't match the GRN.
+                  The invoice will be created with a <strong>Mismatch Pending</strong> flag
+                  and will require explicit sign-off before it can be approved.
+                </>
+              ) : (
+                <>
+                  You are about to create an invoice for{" "}
+                  <strong>{fmt(netPayable)}</strong> net payable.
+                  This action cannot be undone.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Review Again</AlertDialogCancel>
+            <AlertDialogAction
+              className={hasMismatch ? "bg-red-600 hover:bg-red-700 text-white" : "bg-orange-500 hover:bg-orange-600 text-white"}
+              onClick={() => { setShowConfirm(false); handleSubmit(); }}
+            >
+              {hasMismatch ? "Create with Mismatch Flag" : "Confirm & Create Invoice"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </motion.div>
   );
 }

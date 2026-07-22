@@ -108,12 +108,12 @@ export function ProjectsList() {
                 )} />
                 <FormField control={form.control} name="contractValue" render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700">Contract Value ($)</FormLabel>
+                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700">Contract Value (₹)</FormLabel>
                     <FormControl><Input className="h-10 bg-gray-50 font-mono" type="number" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField control={form.control} name="startDate" render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700">Start Date</FormLabel>

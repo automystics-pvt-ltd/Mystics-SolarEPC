@@ -101,7 +101,7 @@ export function LeadsList() {
                     <FormMessage />
                   </FormItem>
                 )} />
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField control={form.control} name="contactName" render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700">Contact Name</FormLabel>
@@ -125,7 +125,7 @@ export function LeadsList() {
                     </FormItem>
                   )} />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField control={form.control} name="contactEmail" render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700">Email</FormLabel>
@@ -143,7 +143,7 @@ export function LeadsList() {
                 </div>
                 <FormField control={form.control} name="estimatedValue" render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700">Est. Value ($)</FormLabel>
+                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700">Est. Value (₹)</FormLabel>
                     <FormControl><Input className="h-10 bg-gray-50 font-mono" type="number" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>

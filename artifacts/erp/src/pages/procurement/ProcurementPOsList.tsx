@@ -60,7 +60,7 @@ export default function ProcurementPOsList() {
         <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by PO number or vendor…" className="pl-9" />
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
           { label: "Total POs", value: pos.length },
           { label: "Total Value", value: `₹${totalValue.toLocaleString("en-IN", { maximumFractionDigits: 0 })}` },
