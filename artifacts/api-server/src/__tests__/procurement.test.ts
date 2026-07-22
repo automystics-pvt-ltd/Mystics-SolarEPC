@@ -1066,3 +1066,76 @@ describe("PO cancellation guard — blocked once GRNs exist", () => {
     expect(res.body.status).toBe("Cancelled");
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe("GRN creation guard — blocked against Cancelled or Closed PO", () => {
+  /** Helper: create a quotation → approve → return auto-generated Draft PO id */
+  async function createDraftPO(label: string): Promise<number> {
+    const qRes = await api.post("/api/procurement-quotations").send({
+      ...actor,
+      vendorId,
+      mrId,
+      items: [{ materialName: label, uom: "Nos", qty: 5, unitPrice: 200, gstRate: 18, discountPct: 0 }],
+    });
+    expect(qRes.status).toBe(201);
+    const qid = qRes.body.id;
+    await api.post(`/api/procurement-quotations/${qid}/submit`).send(actor);
+    await api.post(`/api/procurement-quotations/${qid}/start-review`).send(actor);
+    const approveRes = await api
+      .post(`/api/procurement-quotations/${qid}/approve`)
+      .send({ ...actor, remarks: "GRN guard test" });
+    expect(approveRes.status).toBe(200);
+    return approveRes.body.po.id as number;
+  }
+
+  const grnPayload = (poId: number) => ({
+    ...actor,
+    poId,
+    deliveryDate: "2026-07-22",
+    items: [{ materialName: "Test Item", uom: "Nos", orderedQty: 5, receivedQty: 5, acceptedQty: 5, rejectedQty: 0, damagedQty: 0, unitPrice: 200 }],
+  });
+
+  it("returns 400 with a descriptive error when the PO is Cancelled", async () => {
+    const pid = await createDraftPO("GRN Cancelled PO Guard");
+    // Cancel the PO
+    await api.patch(`/api/procurement-pos/${pid}`).send({ status: "Cancelled", ...actor });
+
+    const res = await api.post("/api/proc-grns").send(grnPayload(pid));
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/Cancelled/);
+    expect(res.body.error).toMatch(/PO-/); // includes the PO number
+  });
+
+  it("returns 400 with a descriptive error when the PO is Closed", async () => {
+    const pid = await createDraftPO("GRN Closed PO Guard");
+    // Advance to Closed: Draft → Issued → Acknowledged → FullyReceived → Closed
+    await api.patch(`/api/procurement-pos/${pid}`).send({ status: "Issued", ...actor });
+    await api.patch(`/api/procurement-pos/${pid}`).send({ status: "Acknowledged", ...actor });
+    await api.patch(`/api/procurement-pos/${pid}`).send({ status: "FullyReceived", ...actor });
+    await api.patch(`/api/procurement-pos/${pid}`).send({ status: "Closed", ...actor });
+
+    const res = await api.post("/api/proc-grns").send(grnPayload(pid));
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/Closed/);
+    expect(res.body.error).toMatch(/PO-/); // includes the PO number
+  });
+
+  it("returns 201 when the PO is Issued (allowed status)", async () => {
+    const pid = await createDraftPO("GRN Issued PO Guard");
+    await api.patch(`/api/procurement-pos/${pid}`).send({ status: "Issued", ...actor });
+
+    const res = await api.post("/api/proc-grns").send(grnPayload(pid));
+    expect(res.status).toBe(201);
+    expect(res.body.grnNumber).toMatch(/^GRN-/);
+  });
+
+  it("returns 201 when the PO is Acknowledged (allowed status)", async () => {
+    const pid = await createDraftPO("GRN Acknowledged PO Guard");
+    await api.patch(`/api/procurement-pos/${pid}`).send({ status: "Issued", ...actor });
+    await api.patch(`/api/procurement-pos/${pid}`).send({ status: "Acknowledged", ...actor });
+
+    const res = await api.post("/api/proc-grns").send(grnPayload(pid));
+    expect(res.status).toBe(201);
+    expect(res.body.grnNumber).toMatch(/^GRN-/);
+  });
+});

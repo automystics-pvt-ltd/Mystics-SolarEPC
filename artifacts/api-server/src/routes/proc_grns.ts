@@ -97,6 +97,12 @@ router.post("/proc-grns", async (req, res): Promise<void> => {
   const [po] = await db.select().from(procurementPOsTable).where(eq(procurementPOsTable.id, Number(poId)));
   if (!po) { res.status(404).json({ error: "PO not found" }); return; }
 
+  // Block GRN creation against terminal PO statuses
+  if (po.status === "Cancelled" || po.status === "Closed") {
+    res.status(400).json({ error: `Cannot create a GRN against PO ${po.poNumber} because it is ${po.status}` });
+    return;
+  }
+
   // Fetch PO items to get ordered quantities
   const poItems = await db.select().from(procPOItemsTable).where(eq(procPOItemsTable.poId, Number(poId))).orderBy(procPOItemsTable.lineNo);
 
