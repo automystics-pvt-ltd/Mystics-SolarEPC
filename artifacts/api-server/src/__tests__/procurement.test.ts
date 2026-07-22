@@ -994,3 +994,75 @@ describe("record-dispatch status guard", () => {
     expect(res.body.vendorDispatchRef).toBe("DISP-003");
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe("PO cancellation guard — blocked once GRNs exist", () => {
+  let guardPoId: number;
+
+  it("creates a PO and advances it to Issued", async () => {
+    const qRes = await api.post("/api/procurement-quotations").send({
+      ...actor,
+      vendorId,
+      mrId,
+      items: [{ materialName: "GRN Guard Test Item", uom: "Nos", qty: 10, unitPrice: 300, gstRate: 18, discountPct: 0 }],
+    });
+    expect(qRes.status).toBe(201);
+    const qid = qRes.body.id;
+    await api.post(`/api/procurement-quotations/${qid}/submit`).send(actor);
+    await api.post(`/api/procurement-quotations/${qid}/start-review`).send(actor);
+    const approveRes = await api
+      .post(`/api/procurement-quotations/${qid}/approve`)
+      .send({ ...actor, remarks: "GRN guard test approval" });
+    expect(approveRes.status).toBe(200);
+    guardPoId = approveRes.body.po.id;
+    const issueRes = await api.patch(`/api/procurement-pos/${guardPoId}`).send({ status: "Issued", ...actor });
+    expect(issueRes.status).toBe(200);
+    expect(issueRes.body.status).toBe("Issued");
+  });
+
+  it("creates a GRN (in Draft) against the PO", async () => {
+    const res = await api.post("/api/proc-grns").send({
+      ...actor,
+      poId: guardPoId,
+      deliveryDate: "2026-07-22",
+      items: [{ materialName: "GRN Guard Test Item", uom: "Nos", orderedQty: 10, receivedQty: 5, acceptedQty: 5, rejectedQty: 0, damagedQty: 0, unitPrice: 300 }],
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.grnNumber).toMatch(/^GRN-/);
+  });
+
+  it("returns 400 when cancelling a PO that has a GRN against it", async () => {
+    const res = await api.patch(`/api/procurement-pos/${guardPoId}`).send({ status: "Cancelled", ...actor });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/GRN/i);
+    expect(res.body.error).toMatch(/GRN-/); // lists the blocking GRN number(s)
+  });
+
+  it("confirms the PO was NOT cancelled — still Issued", async () => {
+    const res = await api.get(`/api/procurement-pos/${guardPoId}`);
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("Issued");
+  });
+
+  it("allows cancelling a PO from Issued status when no GRNs exist", async () => {
+    // Create a fresh PO and cancel it immediately (no GRNs)
+    const qRes = await api.post("/api/procurement-quotations").send({
+      ...actor,
+      vendorId,
+      mrId,
+      items: [{ materialName: "No GRN Cancel Test", uom: "Nos", qty: 1, unitPrice: 100, gstRate: 18, discountPct: 0 }],
+    });
+    const qid = qRes.body.id;
+    await api.post(`/api/procurement-quotations/${qid}/submit`).send(actor);
+    await api.post(`/api/procurement-quotations/${qid}/start-review`).send(actor);
+    const approveRes = await api
+      .post(`/api/procurement-quotations/${qid}/approve`)
+      .send({ ...actor, remarks: "No GRN cancel path" });
+    const noGrnPoId = approveRes.body.po.id;
+    await api.patch(`/api/procurement-pos/${noGrnPoId}`).send({ status: "Issued", ...actor });
+
+    const res = await api.patch(`/api/procurement-pos/${noGrnPoId}`).send({ status: "Cancelled", ...actor });
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("Cancelled");
+  });
+});

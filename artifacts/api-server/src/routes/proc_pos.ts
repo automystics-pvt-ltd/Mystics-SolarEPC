@@ -102,6 +102,19 @@ router.patch("/procurement-pos/:id", async (req, res): Promise<void> => {
     res.status(400).json({ error: `Cannot transition from ${existing.status} to ${status}. Valid next: ${VALID_TRANSITIONS[existing.status]?.join(", ") || "none"}` }); return;
   }
 
+  if (status === "Cancelled") {
+    const existingGRNs = await db.select({ grnNumber: procGRNsTable.grnNumber })
+      .from(procGRNsTable)
+      .where(eq(procGRNsTable.poId, id));
+    if (existingGRNs.length > 0) {
+      const grnNumbers = existingGRNs.map(g => g.grnNumber).join(", ");
+      res.status(400).json({
+        error: `Cannot cancel PO: goods have already started arriving. Resolve the following GRN(s) first: ${grnNumbers}`,
+      });
+      return;
+    }
+  }
+
   const updateData: Record<string, any> = { updatedAt: new Date() };
   if (status) updateData.status = status;
   if (deliveryAddress !== undefined) updateData.deliveryAddress = deliveryAddress;
