@@ -99,19 +99,38 @@ export default function ProcurementPOsList() {
         <div className="space-y-2">
           {filtered.map((po, i) => {
             const cfg = STATUS_CONFIG[po.status ?? "Draft"] ?? STATUS_CONFIG["Draft"];
+            const today = new Date().toISOString().split("T")[0];
+            const deadline = (po as any).deliveryDeadline ?? (po as any).expectedDeliveryDate;
+            const overdue = (po as any).isOverdue || (deadline && deadline < today && !["Closed","Cancelled","FullyReceived"].includes(po.status ?? ""));
+            const STATUS_LABELS: Record<string, string> = {
+              Draft: "Draft", Issued: "Issued", Acknowledged: "Acknowledged",
+              PartiallyReceived: "Partially Received", FullyReceived: "Fully Received",
+              Closed: "Closed", Cancelled: "Cancelled",
+            };
             return (
               <motion.div key={po.id} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
                 <div onClick={() => setLocation(`/procurement/pos/${po.id}`)}
-                  className="bg-white border border-slate-200 rounded-xl p-4 flex items-center gap-4 cursor-pointer hover:border-orange-200 hover:shadow-sm transition-all group">
-                  <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
-                    <ShoppingCart className="w-5 h-5 text-slate-400" />
+                  className={cn(
+                    "bg-white border rounded-xl p-4 flex items-center gap-4 cursor-pointer hover:shadow-sm transition-all group",
+                    overdue ? "border-red-200 hover:border-red-300" : "border-slate-200 hover:border-orange-200"
+                  )}>
+                  <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
+                    overdue ? "bg-red-50" : "bg-slate-100")}>
+                    <ShoppingCart className={cn("w-5 h-5", overdue ? "text-red-400" : "text-slate-400")} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span className="font-mono font-bold text-slate-900 text-sm">{po.poNumber}</span>
-                      <Badge variant="outline" className={cn("text-xs", cfg.color)}>{po.status}</Badge>
+                      <Badge variant="outline" className={cn("text-xs", cfg.color)}>
+                        {STATUS_LABELS[po.status ?? "Draft"] ?? po.status}
+                      </Badge>
+                      {overdue && (
+                        <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
+                          Overdue
+                        </Badge>
+                      )}
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-slate-500">
+                    <div className="flex items-center gap-3 text-xs text-slate-500 flex-wrap">
                       <span>{po.vendorName}</span>
                       {po.poDate && <span>· {new Date(po.poDate).toLocaleDateString("en-IN")}</span>}
                       {po.approvedByName && <span>· Approved by {po.approvedByName}</span>}
@@ -119,7 +138,11 @@ export default function ProcurementPOsList() {
                   </div>
                   <div className="text-right shrink-0">
                     <p className="font-bold text-slate-900 font-mono">₹{Number(po.totalAmount ?? 0).toLocaleString("en-IN")}</p>
-                    {po.deliveryDeadline && <p className="text-xs text-slate-400 mt-0.5">Deliver by {po.deliveryDeadline}</p>}
+                    {deadline && (
+                      <p className={cn("text-xs mt-0.5", overdue ? "text-red-600 font-semibold" : "text-slate-400")}>
+                        {overdue ? "⚠ " : ""}Deliver by {deadline}
+                      </p>
+                    )}
                   </div>
                   <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-orange-400 shrink-0" />
                 </div>

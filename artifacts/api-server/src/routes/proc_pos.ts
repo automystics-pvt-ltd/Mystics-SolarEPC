@@ -115,11 +115,15 @@ router.patch("/procurement-pos/:id", async (req, res): Promise<void> => {
     }
   }
 
+  // When issuing, delivery deadline is strongly recommended
+  const { deliveryDeadline } = req.body;
+
   const updateData: Record<string, any> = { updatedAt: new Date() };
   if (status) updateData.status = status;
   if (deliveryAddress !== undefined) updateData.deliveryAddress = deliveryAddress;
   if (specialTerms !== undefined) updateData.specialTerms = specialTerms;
   if (internalNotes !== undefined) updateData.internalNotes = internalNotes;
+  if (deliveryDeadline !== undefined) updateData.deliveryDeadline = deliveryDeadline;
   if (status === "Acknowledged") updateData.acknowledgedAt = new Date();
   if (status === "Closed") updateData.closedAt = new Date();
 

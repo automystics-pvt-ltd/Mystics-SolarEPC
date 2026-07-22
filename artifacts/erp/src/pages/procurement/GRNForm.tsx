@@ -24,7 +24,10 @@ export default function GRNForm({ poId: initPoId }: { poId?: string }) {
   const qc = useQueryClient();
   const user = (() => { try { return JSON.parse(localStorage.getItem("mystics_user") ?? "{}"); } catch { return {}; } })();
 
-  const [selectedPoId, setSelectedPoId] = useState<string>(initPoId ?? "");
+  const urlPoId = typeof window !== "undefined"
+    ? new URLSearchParams(window.location.search).get("poId") ?? undefined
+    : undefined;
+  const [selectedPoId, setSelectedPoId] = useState<string>(initPoId ?? urlPoId ?? "");
   const [deliveryDate, setDeliveryDate] = useState("");
   const [vehicleNumber, setVehicleNumber] = useState("");
   const [dcNumber, setDcNumber] = useState("");
@@ -120,7 +123,8 @@ export default function GRNForm({ poId: initPoId }: { poId?: string }) {
   };
 
   const [showConfirm, setShowConfirm] = useState(false);
-  const activePOs = (allPOs as any[]).filter(p => !["Closed", "Cancelled", "Draft"].includes(p.status));
+  // Only POs that are eligible to receive goods; FullyReceived is excluded (backend also enforces this)
+  const activePOs = (allPOs as any[]).filter(p => ["Issued","Acknowledged","PartiallyReceived"].includes(p.status));
   const { isLoading: posLoading } = useGetProcurementPOs({});
   const selectedPO = activePOs.find(p => String(p.id) === selectedPoId);
 
