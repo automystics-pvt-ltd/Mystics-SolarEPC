@@ -1,6 +1,7 @@
 import { useGetLead, useUpdateLead, useAssignLead, useGetQuotations } from "@workspace/api-client-react";
 import { getGetLeadQueryKey, getGetQuotationsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -49,6 +50,9 @@ export function LeadDetail({ id }: { id: string }) {
       }
     }
   });
+
+  const { user } = useAuth();
+  const isAdmin = user?.role === "Admin";
 
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<any>({});
@@ -118,11 +122,11 @@ export function LeadDetail({ id }: { id: string }) {
                 Save Changes
               </Button>
             </>
-          ) : (
+          ) : isAdmin ? (
             <Button onClick={() => setIsEditing(true)} className="w-full sm:w-auto h-10 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 font-bold rounded-[8px] shadow-sm">
               <Edit2 className="h-4 w-4 mr-2" /> Edit Details
             </Button>
-          )}
+          ) : null}
         </div>
       </div>
 

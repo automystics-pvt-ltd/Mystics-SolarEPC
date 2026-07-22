@@ -22,9 +22,11 @@ const createLeadSchema = z.object({
   contactEmail: z.string().email().optional().or(z.literal("")),
   contactPhone: z.string().optional(),
   source: z.string().min(1, "Source is required"),
+  status: z.string().min(1),
   territory: z.string().optional(),
   estimatedValue: z.coerce.number().optional(),
   productInterest: z.string().optional(),
+  notes: z.string().optional(),
 });
 
 function getStatusColor(status: string) {
@@ -53,7 +55,7 @@ export function LeadsList() {
 
   const form = useForm<z.infer<typeof createLeadSchema>>({
     resolver: zodResolver(createLeadSchema),
-    defaultValues: { source: "Inbound" }
+    defaultValues: { source: "Inbound", status: "New" }
   });
 
   const createMutation = useCreateLead({
@@ -88,71 +90,142 @@ export function LeadsList() {
               <Plus className="h-4 w-4 mr-2" /> New Lead
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md p-6">
-            <DialogHeader className="mb-4">
-              <DialogTitle className="text-xl font-bold tracking-tight">Create New Lead</DialogTitle>
+          <DialogContent className="max-w-2xl p-0 gap-0 overflow-hidden">
+            <DialogHeader className="px-6 py-5 border-b border-gray-100 bg-gray-50/50">
+              <DialogTitle className="text-xl font-bold tracking-tight">New Lead</DialogTitle>
+              <p className="text-sm text-gray-500 mt-0.5">Fill in all details to qualify this lead properly.</p>
             </DialogHeader>
+            <div className="overflow-y-auto max-h-[75vh] px-6 py-5">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit((d) => createMutation.mutate({ data: { ...d, status: "New" } }))} className="space-y-5">
-                <FormField control={form.control} name="companyName" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700">Company Name</FormLabel>
-                    <FormControl><Input className="h-10 bg-gray-50" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FormField control={form.control} name="contactName" render={({ field }) => (
+              <form onSubmit={form.handleSubmit((d) => createMutation.mutate({ data: d }))} className="space-y-5">
+
+                {/* Company & Contact */}
+                <div>
+                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">Company &amp; Contact</p>
+                  <div className="space-y-4">
+                    <FormField control={form.control} name="companyName" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700">Company Name *</FormLabel>
+                        <FormControl><Input className="h-10 bg-gray-50" placeholder="e.g. Sunrise Infra Pvt Ltd" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <FormField control={form.control} name="contactName" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700">Contact Person *</FormLabel>
+                          <FormControl><Input className="h-10 bg-gray-50" placeholder="Full name" {...field} /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={form.control} name="contactPhone" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700">Phone</FormLabel>
+                          <FormControl><Input className="h-10 bg-gray-50" placeholder="+91 98765 43210" {...field} /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                    </div>
+                    <FormField control={form.control} name="contactEmail" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700">Email</FormLabel>
+                        <FormControl><Input className="h-10 bg-gray-50" type="email" placeholder="contact@company.com" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+                </div>
+
+                {/* Lead Qualification */}
+                <div className="border-t border-gray-100 pt-5">
+                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">Qualification</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField control={form.control} name="status" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700">Stage</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl><SelectTrigger className="h-10 bg-gray-50"><SelectValue /></SelectTrigger></FormControl>
+                          <SelectContent>
+                            <SelectItem value="New">New</SelectItem>
+                            <SelectItem value="Contacted">Contacted</SelectItem>
+                            <SelectItem value="Qualified">Qualified</SelectItem>
+                            <SelectItem value="Proposal">Proposal</SelectItem>
+                            <SelectItem value="Negotiation">Negotiation</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="source" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700">Lead Source *</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl><SelectTrigger className="h-10 bg-gray-50"><SelectValue /></SelectTrigger></FormControl>
+                          <SelectContent>
+                            <SelectItem value="Inbound">Inbound</SelectItem>
+                            <SelectItem value="Outbound">Outbound</SelectItem>
+                            <SelectItem value="Referral">Referral</SelectItem>
+                            <SelectItem value="Event">Event</SelectItem>
+                            <SelectItem value="Digital">Digital / Social</SelectItem>
+                            <SelectItem value="Tender">Tender / Bid</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="estimatedValue" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700">Est. Value (₹)</FormLabel>
+                        <FormControl><Input className="h-10 bg-gray-50 font-mono" type="number" min="0" placeholder="0" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="territory" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700">Territory / Region</FormLabel>
+                        <FormControl><Input className="h-10 bg-gray-50" placeholder="e.g. Maharashtra" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+                  <div className="mt-4">
+                    <FormField control={form.control} name="productInterest" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700">Product / Capacity Interest</FormLabel>
+                        <FormControl><Input className="h-10 bg-gray-50" placeholder="e.g. 50 kWp Rooftop Solar" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+                </div>
+
+                {/* Notes */}
+                <div className="border-t border-gray-100 pt-5">
+                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">Notes</p>
+                  <FormField control={form.control} name="notes" render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700">Contact Name</FormLabel>
-                      <FormControl><Input className="h-10 bg-gray-50" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="source" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700">Source</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger className="h-10 bg-gray-50"><SelectValue /></SelectTrigger></FormControl>
-                        <SelectContent>
-                          <SelectItem value="Inbound">Inbound</SelectItem>
-                          <SelectItem value="Outbound">Outbound</SelectItem>
-                          <SelectItem value="Referral">Referral</SelectItem>
-                          <SelectItem value="Event">Event</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700">Initial Notes</FormLabel>
+                      <FormControl>
+                        <textarea
+                          {...field}
+                          rows={3}
+                          placeholder="Meeting context, referral background, next steps..."
+                          className="w-full px-3 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-[6px] focus:outline-none focus:ring-1 focus:ring-[#EA580C] focus:border-[#EA580C] resize-none"
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FormField control={form.control} name="contactEmail" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700">Email</FormLabel>
-                      <FormControl><Input className="h-10 bg-gray-50" type="email" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="contactPhone" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700">Phone</FormLabel>
-                      <FormControl><Input className="h-10 bg-gray-50" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
+
+                <div className="pt-2 pb-1">
+                  <Button type="submit" className="w-full h-11 bg-[#0A0F2C] hover:bg-[#0A0F2C]/90 text-white font-bold rounded-[8px]" disabled={createMutation.isPending}>
+                    {createMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Creating…</> : "Create Lead"}
+                  </Button>
                 </div>
-                <FormField control={form.control} name="estimatedValue" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700">Est. Value (₹)</FormLabel>
-                    <FormControl><Input className="h-10 bg-gray-50 font-mono" type="number" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <Button type="submit" className="w-full h-11 bg-[#0A0F2C] hover:bg-[#0A0F2C]/90 text-white font-bold rounded-[8px] mt-2" disabled={createMutation.isPending}>
-                  {createMutation.isPending ? "Creating..." : "Create Lead"}
-                </Button>
               </form>
             </Form>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
