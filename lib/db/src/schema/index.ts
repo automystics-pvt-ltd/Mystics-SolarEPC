@@ -10,3 +10,7 @@ export * from "./inventory";
 export * from "./engineering";
 export * from "./commissioning";
 export * from "./oam";
+export * from "./vendors";
+export * from "./materials";
+export * from "./proc_quotations";
+export * from "./proc_pos";

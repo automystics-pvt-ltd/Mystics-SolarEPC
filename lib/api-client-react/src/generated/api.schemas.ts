@@ -1244,6 +1244,371 @@ export interface ResolveTicketInput {
   resolution: string;
 }
 
+export interface VendorContact {
+  id?: number;
+  vendorId?: number;
+  name?: string;
+  designation?: string;
+  email?: string;
+  phone?: string;
+  isPrimary?: boolean;
+  createdAt?: string;
+}
+
+export interface VendorContactInput {
+  name: string;
+  designation?: string;
+  email?: string;
+  phone?: string;
+  isPrimary?: boolean;
+}
+
+export interface Vendor {
+  id?: number;
+  code?: string;
+  name?: string;
+  tradeName?: string;
+  status?: string;
+  gstin?: string;
+  pan?: string;
+  gstRegisteredState?: string;
+  gstStateCode?: string;
+  isMsme?: boolean;
+  msmeNumber?: string;
+  billingAddress?: string;
+  billingCity?: string;
+  billingState?: string;
+  billingPincode?: string;
+  billingCountry?: string;
+  primaryEmail?: string;
+  primaryPhone?: string;
+  website?: string;
+  bankName?: string;
+  bankBranch?: string;
+  bankAccountNumber?: string;
+  bankIfsc?: string;
+  bankAccountType?: string;
+  upiId?: string;
+  paymentTerms?: string;
+  creditLimit?: string;
+  tags?: string[];
+  notes?: string;
+  contacts?: VendorContact[];
+  createdBy?: number;
+  updatedBy?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface VendorInput {
+  name: string;
+  tradeName?: string;
+  status?: string;
+  gstin?: string;
+  pan?: string;
+  gstRegisteredState?: string;
+  gstStateCode?: string;
+  isMsme?: boolean;
+  msmeNumber?: string;
+  billingAddress?: string;
+  billingCity?: string;
+  billingState?: string;
+  billingPincode?: string;
+  billingCountry?: string;
+  primaryEmail?: string;
+  primaryPhone?: string;
+  website?: string;
+  bankName?: string;
+  bankBranch?: string;
+  bankAccountNumber?: string;
+  bankIfsc?: string;
+  bankAccountType?: string;
+  upiId?: string;
+  paymentTerms?: string;
+  creditLimit?: string;
+  notes?: string;
+  contacts?: VendorContactInput[];
+}
+
+export interface MaterialCategory {
+  id?: number;
+  name?: string;
+  code?: string;
+  description?: string;
+  parentId?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface MaterialCategoryInput {
+  name: string;
+  code?: string;
+  description?: string;
+  parentId?: number;
+}
+
+export interface Material {
+  id?: number;
+  code?: string;
+  name?: string;
+  description?: string;
+  categoryId?: number;
+  uom?: string;
+  hsnSacCode?: string;
+  gstRate?: number;
+  cessRate?: number;
+  basePrice?: number;
+  lastPurchasePrice?: number;
+  currency?: string;
+  brand?: string;
+  model?: string;
+  specifications?: string;
+  minOrderQty?: number;
+  leadTimeDays?: number;
+  isActive?: boolean;
+  createdBy?: number;
+  updatedBy?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface MaterialInput {
+  name: string;
+  description?: string;
+  categoryId?: number;
+  uom?: string;
+  hsnSacCode?: string;
+  gstRate?: number;
+  cessRate?: number;
+  basePrice?: number;
+  currency?: string;
+  brand?: string;
+  model?: string;
+  specifications?: string;
+  minOrderQty?: number;
+  leadTimeDays?: number;
+  isActive?: boolean;
+}
+
+export interface ProcurementQuotationItem {
+  id?: number;
+  quotationId?: number;
+  lineNo?: number;
+  materialId?: number;
+  materialCode?: string;
+  materialName?: string;
+  description?: string;
+  uom?: string;
+  hsnSacCode?: string;
+  brand?: string;
+  qty?: number;
+  unitPrice?: number;
+  discountPct?: number;
+  discountAmount?: number;
+  taxableAmount?: number;
+  gstRate?: number;
+  cgstAmount?: number;
+  sgstAmount?: number;
+  igstAmount?: number;
+  totalGst?: number;
+  lineTotal?: number;
+  deliveryDays?: number;
+  remarks?: string;
+}
+
+export type QuotationVersionSnapshot = { [key: string]: unknown };
+
+export interface QuotationVersion {
+  id?: number;
+  quotationId?: number;
+  version?: number;
+  snapshot?: QuotationVersionSnapshot;
+  changedBy?: number;
+  changedByName?: string;
+  changeSummary?: string;
+  createdAt?: string;
+}
+
+export type QuotationAuditLogOldValues = { [key: string]: unknown };
+
+export type QuotationAuditLogNewValues = { [key: string]: unknown };
+
+export interface QuotationAuditLog {
+  id?: number;
+  quotationId?: number;
+  action?: string;
+  performedBy?: number;
+  performedByName?: string;
+  performedByRole?: string;
+  oldValues?: QuotationAuditLogOldValues;
+  newValues?: QuotationAuditLogNewValues;
+  remarks?: string;
+  createdAt?: string;
+}
+
+export interface ProcurementQuotation {
+  id?: number;
+  referenceId?: string;
+  version?: number;
+  status?: string;
+  mrId?: number;
+  vendorId?: number;
+  vendorSnapshotName?: string;
+  quotationDate?: string;
+  validityDate?: string;
+  currency?: string;
+  paymentTerms?: string;
+  deliveryTerms?: string;
+  deliveryLeadDays?: number;
+  warrantyMonths?: number;
+  subtotal?: number;
+  totalDiscount?: number;
+  totalGst?: number;
+  freightCharges?: number;
+  otherCharges?: number;
+  totalAmount?: number;
+  fileUrl?: string;
+  fileOriginalName?: string;
+  vendorRemarks?: string;
+  internalNotes?: string;
+  submittedAt?: string;
+  submittedBy?: number;
+  submittedByName?: string;
+  reviewedAt?: string;
+  reviewedBy?: number;
+  reviewedByName?: string;
+  approvedAt?: string;
+  approvedBy?: number;
+  approvedByName?: string;
+  rejectedAt?: string;
+  rejectedBy?: number;
+  rejectedByName?: string;
+  approvalRemarks?: string;
+  isL1?: boolean;
+  isRecommended?: boolean;
+  recommendationNotes?: string;
+  poGenerated?: boolean;
+  createdBy?: number;
+  createdByName?: string;
+  updatedBy?: number;
+  updatedByName?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  items?: ProcurementQuotationItem[];
+  versions?: QuotationVersion[];
+  auditLogs?: QuotationAuditLog[];
+}
+
+export interface ProcurementQuotationInput {
+  mrId?: number;
+  vendorId?: number;
+  vendorSnapshotName?: string;
+  quotationDate?: string;
+  validityDate?: string;
+  paymentTerms?: string;
+  deliveryTerms?: string;
+  deliveryLeadDays?: number;
+  warrantyMonths?: number;
+  freightCharges?: number;
+  otherCharges?: number;
+  fileUrl?: string;
+  fileOriginalName?: string;
+  vendorRemarks?: string;
+  internalNotes?: string;
+  changeSummary?: string;
+  userName?: string;
+  userId?: number;
+  userRole?: string;
+  items?: ProcurementQuotationItem[];
+}
+
+export interface WorkflowActionInput {
+  userName?: string;
+  userId?: number;
+  userRole?: string;
+  remarks?: string;
+}
+
+export interface ProcurementPOItem {
+  id?: number;
+  poId?: number;
+  lineNo?: number;
+  materialId?: number;
+  materialCode?: string;
+  materialName?: string;
+  description?: string;
+  uom?: string;
+  hsnSacCode?: string;
+  brand?: string;
+  qty?: number;
+  unitPrice?: number;
+  discountPct?: number;
+  discountAmount?: number;
+  taxableAmount?: number;
+  gstRate?: number;
+  totalGst?: number;
+  lineTotal?: number;
+  deliveredQty?: number;
+  remarks?: string;
+}
+
+export interface ProcurementPO {
+  id?: number;
+  poNumber?: string;
+  quotationId?: number;
+  vendorId?: number;
+  vendorName?: string;
+  vendorGstin?: string;
+  vendorAddress?: string;
+  vendorContact?: string;
+  status?: string;
+  poDate?: string;
+  deliveryDeadline?: string;
+  deliveryAddress?: string;
+  paymentTerms?: string;
+  warrantyMonths?: number;
+  freightCharges?: number;
+  otherCharges?: number;
+  subtotal?: number;
+  totalGst?: number;
+  totalAmount?: number;
+  specialTerms?: string;
+  internalNotes?: string;
+  approvedBy?: number;
+  approvedByName?: string;
+  approvedAt?: string;
+  acknowledgedAt?: string;
+  closedAt?: string;
+  createdBy?: number;
+  createdByName?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  items?: ProcurementPOItem[];
+}
+
+export interface ApproveQuotationResponse {
+  quotation?: ProcurementQuotation;
+  po?: ProcurementPO;
+}
+
+export type QuotationComparisonResultMaterialLowest = { [key: string]: unknown };
+
+export interface QuotationComparisonResult {
+  quotations?: ProcurementQuotation[];
+  materialNames?: string[];
+  materialLowest?: QuotationComparisonResultMaterialLowest;
+  l1VendorId?: number;
+  l1ReferenceId?: string;
+  l1Amount?: number;
+}
+
+export interface ProcurementPOUpdate {
+  status?: string;
+  deliveryAddress?: string;
+  specialTerms?: string;
+  internalNotes?: string;
+}
+
 export type GetDashboardParams = {
 role?: string;
 };
@@ -1363,5 +1728,32 @@ amcContractId?: number;
 export type GetServiceTicketsParams = {
 projectId?: number;
 status?: string;
+};
+
+export type GetVendorsParams = {
+search?: string;
+status?: string;
+};
+
+export type GetMaterialsParams = {
+search?: string;
+categoryId?: number;
+isActive?: string;
+};
+
+export type GetProcurementQuotationsParams = {
+mrId?: number;
+vendorId?: number;
+status?: string;
+};
+
+export type AddProcurementQuotationComment200 = {
+  ok?: boolean;
+  logs?: QuotationAuditLog[];
+};
+
+export type GetProcurementPOsParams = {
+status?: string;
+vendorId?: number;
 };
 

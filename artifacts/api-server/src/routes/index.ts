@@ -13,6 +13,10 @@ import inventoryRouter from "./inventory";
 import engineeringRouter from "./engineering";
 import commissioningRouter from "./commissioning";
 import oamRouter from "./oam";
+import vendorsRouter from "./vendors";
+import materialsRouter from "./materials";
+import procQuotationsRouter from "./proc_quotations";
+import procPOsRouter from "./proc_pos";
 
 const router: IRouter = Router();
 
@@ -30,5 +34,9 @@ router.use(inventoryRouter);
 router.use(engineeringRouter);
 router.use(commissioningRouter);
 router.use(oamRouter);
+router.use(vendorsRouter);
+router.use(materialsRouter);
+router.use(procQuotationsRouter);
+router.use(procPOsRouter);
 
 export default router;

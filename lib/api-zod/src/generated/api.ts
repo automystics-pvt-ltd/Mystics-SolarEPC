@@ -3138,3 +3138,2141 @@ export const UpdateServiceTicketResponse = zod.object({
 })
 
 
+/**
+ * @summary List vendors
+ */
+export const GetVendorsQueryParams = zod.object({
+  "search": zod.coerce.string().optional(),
+  "status": zod.coerce.string().optional()
+})
+
+export const GetVendorsResponseItem = zod.object({
+  "id": zod.number().optional(),
+  "code": zod.string().optional(),
+  "name": zod.string().optional(),
+  "tradeName": zod.string().optional(),
+  "status": zod.string().optional(),
+  "gstin": zod.string().optional(),
+  "pan": zod.string().optional(),
+  "gstRegisteredState": zod.string().optional(),
+  "gstStateCode": zod.string().optional(),
+  "isMsme": zod.boolean().optional(),
+  "msmeNumber": zod.string().optional(),
+  "billingAddress": zod.string().optional(),
+  "billingCity": zod.string().optional(),
+  "billingState": zod.string().optional(),
+  "billingPincode": zod.string().optional(),
+  "billingCountry": zod.string().optional(),
+  "primaryEmail": zod.string().optional(),
+  "primaryPhone": zod.string().optional(),
+  "website": zod.string().optional(),
+  "bankName": zod.string().optional(),
+  "bankBranch": zod.string().optional(),
+  "bankAccountNumber": zod.string().optional(),
+  "bankIfsc": zod.string().optional(),
+  "bankAccountType": zod.string().optional(),
+  "upiId": zod.string().optional(),
+  "paymentTerms": zod.string().optional(),
+  "creditLimit": zod.string().optional(),
+  "tags": zod.array(zod.string()).optional(),
+  "notes": zod.string().optional(),
+  "contacts": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "name": zod.string().optional(),
+  "designation": zod.string().optional(),
+  "email": zod.string().optional(),
+  "phone": zod.string().optional(),
+  "isPrimary": zod.boolean().optional(),
+  "createdAt": zod.string().optional()
+})).optional(),
+  "createdBy": zod.number().optional(),
+  "updatedBy": zod.number().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional()
+})
+export const GetVendorsResponse = zod.array(GetVendorsResponseItem)
+
+
+/**
+ * @summary Create vendor
+ */
+export const CreateVendorBody = zod.object({
+  "name": zod.string(),
+  "tradeName": zod.string().optional(),
+  "status": zod.string().optional(),
+  "gstin": zod.string().optional(),
+  "pan": zod.string().optional(),
+  "gstRegisteredState": zod.string().optional(),
+  "gstStateCode": zod.string().optional(),
+  "isMsme": zod.boolean().optional(),
+  "msmeNumber": zod.string().optional(),
+  "billingAddress": zod.string().optional(),
+  "billingCity": zod.string().optional(),
+  "billingState": zod.string().optional(),
+  "billingPincode": zod.string().optional(),
+  "billingCountry": zod.string().optional(),
+  "primaryEmail": zod.string().optional(),
+  "primaryPhone": zod.string().optional(),
+  "website": zod.string().optional(),
+  "bankName": zod.string().optional(),
+  "bankBranch": zod.string().optional(),
+  "bankAccountNumber": zod.string().optional(),
+  "bankIfsc": zod.string().optional(),
+  "bankAccountType": zod.string().optional(),
+  "upiId": zod.string().optional(),
+  "paymentTerms": zod.string().optional(),
+  "creditLimit": zod.string().optional(),
+  "notes": zod.string().optional(),
+  "contacts": zod.array(zod.object({
+  "name": zod.string(),
+  "designation": zod.string().optional(),
+  "email": zod.string().optional(),
+  "phone": zod.string().optional(),
+  "isPrimary": zod.boolean().optional()
+})).optional()
+})
+
+export const CreateVendorResponse = zod.object({
+  "id": zod.number().optional(),
+  "code": zod.string().optional(),
+  "name": zod.string().optional(),
+  "tradeName": zod.string().optional(),
+  "status": zod.string().optional(),
+  "gstin": zod.string().optional(),
+  "pan": zod.string().optional(),
+  "gstRegisteredState": zod.string().optional(),
+  "gstStateCode": zod.string().optional(),
+  "isMsme": zod.boolean().optional(),
+  "msmeNumber": zod.string().optional(),
+  "billingAddress": zod.string().optional(),
+  "billingCity": zod.string().optional(),
+  "billingState": zod.string().optional(),
+  "billingPincode": zod.string().optional(),
+  "billingCountry": zod.string().optional(),
+  "primaryEmail": zod.string().optional(),
+  "primaryPhone": zod.string().optional(),
+  "website": zod.string().optional(),
+  "bankName": zod.string().optional(),
+  "bankBranch": zod.string().optional(),
+  "bankAccountNumber": zod.string().optional(),
+  "bankIfsc": zod.string().optional(),
+  "bankAccountType": zod.string().optional(),
+  "upiId": zod.string().optional(),
+  "paymentTerms": zod.string().optional(),
+  "creditLimit": zod.string().optional(),
+  "tags": zod.array(zod.string()).optional(),
+  "notes": zod.string().optional(),
+  "contacts": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "name": zod.string().optional(),
+  "designation": zod.string().optional(),
+  "email": zod.string().optional(),
+  "phone": zod.string().optional(),
+  "isPrimary": zod.boolean().optional(),
+  "createdAt": zod.string().optional()
+})).optional(),
+  "createdBy": zod.number().optional(),
+  "updatedBy": zod.number().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Get vendor
+ */
+export const GetVendorParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetVendorResponse = zod.object({
+  "id": zod.number().optional(),
+  "code": zod.string().optional(),
+  "name": zod.string().optional(),
+  "tradeName": zod.string().optional(),
+  "status": zod.string().optional(),
+  "gstin": zod.string().optional(),
+  "pan": zod.string().optional(),
+  "gstRegisteredState": zod.string().optional(),
+  "gstStateCode": zod.string().optional(),
+  "isMsme": zod.boolean().optional(),
+  "msmeNumber": zod.string().optional(),
+  "billingAddress": zod.string().optional(),
+  "billingCity": zod.string().optional(),
+  "billingState": zod.string().optional(),
+  "billingPincode": zod.string().optional(),
+  "billingCountry": zod.string().optional(),
+  "primaryEmail": zod.string().optional(),
+  "primaryPhone": zod.string().optional(),
+  "website": zod.string().optional(),
+  "bankName": zod.string().optional(),
+  "bankBranch": zod.string().optional(),
+  "bankAccountNumber": zod.string().optional(),
+  "bankIfsc": zod.string().optional(),
+  "bankAccountType": zod.string().optional(),
+  "upiId": zod.string().optional(),
+  "paymentTerms": zod.string().optional(),
+  "creditLimit": zod.string().optional(),
+  "tags": zod.array(zod.string()).optional(),
+  "notes": zod.string().optional(),
+  "contacts": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "name": zod.string().optional(),
+  "designation": zod.string().optional(),
+  "email": zod.string().optional(),
+  "phone": zod.string().optional(),
+  "isPrimary": zod.boolean().optional(),
+  "createdAt": zod.string().optional()
+})).optional(),
+  "createdBy": zod.number().optional(),
+  "updatedBy": zod.number().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Update vendor
+ */
+export const UpdateVendorParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateVendorBody = zod.object({
+  "name": zod.string(),
+  "tradeName": zod.string().optional(),
+  "status": zod.string().optional(),
+  "gstin": zod.string().optional(),
+  "pan": zod.string().optional(),
+  "gstRegisteredState": zod.string().optional(),
+  "gstStateCode": zod.string().optional(),
+  "isMsme": zod.boolean().optional(),
+  "msmeNumber": zod.string().optional(),
+  "billingAddress": zod.string().optional(),
+  "billingCity": zod.string().optional(),
+  "billingState": zod.string().optional(),
+  "billingPincode": zod.string().optional(),
+  "billingCountry": zod.string().optional(),
+  "primaryEmail": zod.string().optional(),
+  "primaryPhone": zod.string().optional(),
+  "website": zod.string().optional(),
+  "bankName": zod.string().optional(),
+  "bankBranch": zod.string().optional(),
+  "bankAccountNumber": zod.string().optional(),
+  "bankIfsc": zod.string().optional(),
+  "bankAccountType": zod.string().optional(),
+  "upiId": zod.string().optional(),
+  "paymentTerms": zod.string().optional(),
+  "creditLimit": zod.string().optional(),
+  "notes": zod.string().optional(),
+  "contacts": zod.array(zod.object({
+  "name": zod.string(),
+  "designation": zod.string().optional(),
+  "email": zod.string().optional(),
+  "phone": zod.string().optional(),
+  "isPrimary": zod.boolean().optional()
+})).optional()
+})
+
+export const UpdateVendorResponse = zod.object({
+  "id": zod.number().optional(),
+  "code": zod.string().optional(),
+  "name": zod.string().optional(),
+  "tradeName": zod.string().optional(),
+  "status": zod.string().optional(),
+  "gstin": zod.string().optional(),
+  "pan": zod.string().optional(),
+  "gstRegisteredState": zod.string().optional(),
+  "gstStateCode": zod.string().optional(),
+  "isMsme": zod.boolean().optional(),
+  "msmeNumber": zod.string().optional(),
+  "billingAddress": zod.string().optional(),
+  "billingCity": zod.string().optional(),
+  "billingState": zod.string().optional(),
+  "billingPincode": zod.string().optional(),
+  "billingCountry": zod.string().optional(),
+  "primaryEmail": zod.string().optional(),
+  "primaryPhone": zod.string().optional(),
+  "website": zod.string().optional(),
+  "bankName": zod.string().optional(),
+  "bankBranch": zod.string().optional(),
+  "bankAccountNumber": zod.string().optional(),
+  "bankIfsc": zod.string().optional(),
+  "bankAccountType": zod.string().optional(),
+  "upiId": zod.string().optional(),
+  "paymentTerms": zod.string().optional(),
+  "creditLimit": zod.string().optional(),
+  "tags": zod.array(zod.string()).optional(),
+  "notes": zod.string().optional(),
+  "contacts": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "name": zod.string().optional(),
+  "designation": zod.string().optional(),
+  "email": zod.string().optional(),
+  "phone": zod.string().optional(),
+  "isPrimary": zod.boolean().optional(),
+  "createdAt": zod.string().optional()
+})).optional(),
+  "createdBy": zod.number().optional(),
+  "updatedBy": zod.number().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Delete vendor
+ */
+export const DeleteVendorParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteVendorResponse = zod.object({
+  "success": zod.boolean()
+})
+
+
+/**
+ * @summary Add contact to vendor
+ */
+export const AddVendorContactParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const AddVendorContactBody = zod.object({
+  "name": zod.string(),
+  "designation": zod.string().optional(),
+  "email": zod.string().optional(),
+  "phone": zod.string().optional(),
+  "isPrimary": zod.boolean().optional()
+})
+
+export const AddVendorContactResponse = zod.object({
+  "id": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "name": zod.string().optional(),
+  "designation": zod.string().optional(),
+  "email": zod.string().optional(),
+  "phone": zod.string().optional(),
+  "isPrimary": zod.boolean().optional(),
+  "createdAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Delete vendor contact
+ */
+export const DeleteVendorContactParams = zod.object({
+  "id": zod.coerce.number(),
+  "cid": zod.coerce.number()
+})
+
+export const DeleteVendorContactResponse = zod.object({
+  "success": zod.boolean()
+})
+
+
+/**
+ * @summary List material categories
+ */
+export const GetMaterialCategoriesResponseItem = zod.object({
+  "id": zod.number().optional(),
+  "name": zod.string().optional(),
+  "code": zod.string().optional(),
+  "description": zod.string().optional(),
+  "parentId": zod.number().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional()
+})
+export const GetMaterialCategoriesResponse = zod.array(GetMaterialCategoriesResponseItem)
+
+
+/**
+ * @summary Create material category
+ */
+export const CreateMaterialCategoryBody = zod.object({
+  "name": zod.string(),
+  "code": zod.string().optional(),
+  "description": zod.string().optional(),
+  "parentId": zod.number().optional()
+})
+
+export const CreateMaterialCategoryResponse = zod.object({
+  "id": zod.number().optional(),
+  "name": zod.string().optional(),
+  "code": zod.string().optional(),
+  "description": zod.string().optional(),
+  "parentId": zod.number().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Update material category
+ */
+export const UpdateMaterialCategoryParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateMaterialCategoryBody = zod.object({
+  "name": zod.string(),
+  "code": zod.string().optional(),
+  "description": zod.string().optional(),
+  "parentId": zod.number().optional()
+})
+
+export const UpdateMaterialCategoryResponse = zod.object({
+  "id": zod.number().optional(),
+  "name": zod.string().optional(),
+  "code": zod.string().optional(),
+  "description": zod.string().optional(),
+  "parentId": zod.number().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Delete material category
+ */
+export const DeleteMaterialCategoryParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteMaterialCategoryResponse = zod.object({
+  "success": zod.boolean()
+})
+
+
+/**
+ * @summary List materials
+ */
+export const GetMaterialsQueryParams = zod.object({
+  "search": zod.coerce.string().optional(),
+  "categoryId": zod.coerce.number().optional(),
+  "isActive": zod.coerce.string().optional()
+})
+
+export const GetMaterialsResponseItem = zod.object({
+  "id": zod.number().optional(),
+  "code": zod.string().optional(),
+  "name": zod.string().optional(),
+  "description": zod.string().optional(),
+  "categoryId": zod.number().optional(),
+  "uom": zod.string().optional(),
+  "hsnSacCode": zod.string().optional(),
+  "gstRate": zod.number().optional(),
+  "cessRate": zod.number().optional(),
+  "basePrice": zod.number().optional(),
+  "lastPurchasePrice": zod.number().optional(),
+  "currency": zod.string().optional(),
+  "brand": zod.string().optional(),
+  "model": zod.string().optional(),
+  "specifications": zod.string().optional(),
+  "minOrderQty": zod.number().optional(),
+  "leadTimeDays": zod.number().optional(),
+  "isActive": zod.boolean().optional(),
+  "createdBy": zod.number().optional(),
+  "updatedBy": zod.number().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional()
+})
+export const GetMaterialsResponse = zod.array(GetMaterialsResponseItem)
+
+
+/**
+ * @summary Create material
+ */
+export const CreateMaterialBody = zod.object({
+  "name": zod.string(),
+  "description": zod.string().optional(),
+  "categoryId": zod.number().optional(),
+  "uom": zod.string().optional(),
+  "hsnSacCode": zod.string().optional(),
+  "gstRate": zod.number().optional(),
+  "cessRate": zod.number().optional(),
+  "basePrice": zod.number().optional(),
+  "currency": zod.string().optional(),
+  "brand": zod.string().optional(),
+  "model": zod.string().optional(),
+  "specifications": zod.string().optional(),
+  "minOrderQty": zod.number().optional(),
+  "leadTimeDays": zod.number().optional(),
+  "isActive": zod.boolean().optional()
+})
+
+export const CreateMaterialResponse = zod.object({
+  "id": zod.number().optional(),
+  "code": zod.string().optional(),
+  "name": zod.string().optional(),
+  "description": zod.string().optional(),
+  "categoryId": zod.number().optional(),
+  "uom": zod.string().optional(),
+  "hsnSacCode": zod.string().optional(),
+  "gstRate": zod.number().optional(),
+  "cessRate": zod.number().optional(),
+  "basePrice": zod.number().optional(),
+  "lastPurchasePrice": zod.number().optional(),
+  "currency": zod.string().optional(),
+  "brand": zod.string().optional(),
+  "model": zod.string().optional(),
+  "specifications": zod.string().optional(),
+  "minOrderQty": zod.number().optional(),
+  "leadTimeDays": zod.number().optional(),
+  "isActive": zod.boolean().optional(),
+  "createdBy": zod.number().optional(),
+  "updatedBy": zod.number().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Get material
+ */
+export const GetMaterialParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetMaterialResponse = zod.object({
+  "id": zod.number().optional(),
+  "code": zod.string().optional(),
+  "name": zod.string().optional(),
+  "description": zod.string().optional(),
+  "categoryId": zod.number().optional(),
+  "uom": zod.string().optional(),
+  "hsnSacCode": zod.string().optional(),
+  "gstRate": zod.number().optional(),
+  "cessRate": zod.number().optional(),
+  "basePrice": zod.number().optional(),
+  "lastPurchasePrice": zod.number().optional(),
+  "currency": zod.string().optional(),
+  "brand": zod.string().optional(),
+  "model": zod.string().optional(),
+  "specifications": zod.string().optional(),
+  "minOrderQty": zod.number().optional(),
+  "leadTimeDays": zod.number().optional(),
+  "isActive": zod.boolean().optional(),
+  "createdBy": zod.number().optional(),
+  "updatedBy": zod.number().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Update material
+ */
+export const UpdateMaterialParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateMaterialBody = zod.object({
+  "name": zod.string(),
+  "description": zod.string().optional(),
+  "categoryId": zod.number().optional(),
+  "uom": zod.string().optional(),
+  "hsnSacCode": zod.string().optional(),
+  "gstRate": zod.number().optional(),
+  "cessRate": zod.number().optional(),
+  "basePrice": zod.number().optional(),
+  "currency": zod.string().optional(),
+  "brand": zod.string().optional(),
+  "model": zod.string().optional(),
+  "specifications": zod.string().optional(),
+  "minOrderQty": zod.number().optional(),
+  "leadTimeDays": zod.number().optional(),
+  "isActive": zod.boolean().optional()
+})
+
+export const UpdateMaterialResponse = zod.object({
+  "id": zod.number().optional(),
+  "code": zod.string().optional(),
+  "name": zod.string().optional(),
+  "description": zod.string().optional(),
+  "categoryId": zod.number().optional(),
+  "uom": zod.string().optional(),
+  "hsnSacCode": zod.string().optional(),
+  "gstRate": zod.number().optional(),
+  "cessRate": zod.number().optional(),
+  "basePrice": zod.number().optional(),
+  "lastPurchasePrice": zod.number().optional(),
+  "currency": zod.string().optional(),
+  "brand": zod.string().optional(),
+  "model": zod.string().optional(),
+  "specifications": zod.string().optional(),
+  "minOrderQty": zod.number().optional(),
+  "leadTimeDays": zod.number().optional(),
+  "isActive": zod.boolean().optional(),
+  "createdBy": zod.number().optional(),
+  "updatedBy": zod.number().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Delete material
+ */
+export const DeleteMaterialParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteMaterialResponse = zod.object({
+  "success": zod.boolean()
+})
+
+
+/**
+ * @summary List procurement quotations
+ */
+export const GetProcurementQuotationsQueryParams = zod.object({
+  "mrId": zod.coerce.number().optional(),
+  "vendorId": zod.coerce.number().optional(),
+  "status": zod.coerce.string().optional()
+})
+
+export const GetProcurementQuotationsResponseItem = zod.object({
+  "id": zod.number().optional(),
+  "referenceId": zod.string().optional(),
+  "version": zod.number().optional(),
+  "status": zod.string().optional(),
+  "mrId": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "vendorSnapshotName": zod.string().optional(),
+  "quotationDate": zod.string().optional(),
+  "validityDate": zod.string().optional(),
+  "currency": zod.string().optional(),
+  "paymentTerms": zod.string().optional(),
+  "deliveryTerms": zod.string().optional(),
+  "deliveryLeadDays": zod.number().optional(),
+  "warrantyMonths": zod.number().optional(),
+  "subtotal": zod.number().optional(),
+  "totalDiscount": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "freightCharges": zod.number().optional(),
+  "otherCharges": zod.number().optional(),
+  "totalAmount": zod.number().optional(),
+  "fileUrl": zod.string().optional(),
+  "fileOriginalName": zod.string().optional(),
+  "vendorRemarks": zod.string().optional(),
+  "internalNotes": zod.string().optional(),
+  "submittedAt": zod.string().optional(),
+  "submittedBy": zod.number().optional(),
+  "submittedByName": zod.string().optional(),
+  "reviewedAt": zod.string().optional(),
+  "reviewedBy": zod.number().optional(),
+  "reviewedByName": zod.string().optional(),
+  "approvedAt": zod.string().optional(),
+  "approvedBy": zod.number().optional(),
+  "approvedByName": zod.string().optional(),
+  "rejectedAt": zod.string().optional(),
+  "rejectedBy": zod.number().optional(),
+  "rejectedByName": zod.string().optional(),
+  "approvalRemarks": zod.string().optional(),
+  "isL1": zod.boolean().optional(),
+  "isRecommended": zod.boolean().optional(),
+  "recommendationNotes": zod.string().optional(),
+  "poGenerated": zod.boolean().optional(),
+  "createdBy": zod.number().optional(),
+  "createdByName": zod.string().optional(),
+  "updatedBy": zod.number().optional(),
+  "updatedByName": zod.string().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional(),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "quotationId": zod.number().optional(),
+  "lineNo": zod.number().optional(),
+  "materialId": zod.number().optional(),
+  "materialCode": zod.string().optional(),
+  "materialName": zod.string().optional(),
+  "description": zod.string().optional(),
+  "uom": zod.string().optional(),
+  "hsnSacCode": zod.string().optional(),
+  "brand": zod.string().optional(),
+  "qty": zod.number().optional(),
+  "unitPrice": zod.number().optional(),
+  "discountPct": zod.number().optional(),
+  "discountAmount": zod.number().optional(),
+  "taxableAmount": zod.number().optional(),
+  "gstRate": zod.number().optional(),
+  "cgstAmount": zod.number().optional(),
+  "sgstAmount": zod.number().optional(),
+  "igstAmount": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "lineTotal": zod.number().optional(),
+  "deliveryDays": zod.number().optional(),
+  "remarks": zod.string().optional()
+})).optional(),
+  "versions": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "quotationId": zod.number().optional(),
+  "version": zod.number().optional(),
+  "snapshot": zod.looseObject({
+
+}).optional(),
+  "changedBy": zod.number().optional(),
+  "changedByName": zod.string().optional(),
+  "changeSummary": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional(),
+  "auditLogs": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "quotationId": zod.number().optional(),
+  "action": zod.string().optional(),
+  "performedBy": zod.number().optional(),
+  "performedByName": zod.string().optional(),
+  "performedByRole": zod.string().optional(),
+  "oldValues": zod.looseObject({
+
+}).optional(),
+  "newValues": zod.looseObject({
+
+}).optional(),
+  "remarks": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional()
+})
+export const GetProcurementQuotationsResponse = zod.array(GetProcurementQuotationsResponseItem)
+
+
+/**
+ * @summary Create procurement quotation
+ */
+export const CreateProcurementQuotationBody = zod.object({
+  "mrId": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "vendorSnapshotName": zod.string().optional(),
+  "quotationDate": zod.string().optional(),
+  "validityDate": zod.string().optional(),
+  "paymentTerms": zod.string().optional(),
+  "deliveryTerms": zod.string().optional(),
+  "deliveryLeadDays": zod.number().optional(),
+  "warrantyMonths": zod.number().optional(),
+  "freightCharges": zod.number().optional(),
+  "otherCharges": zod.number().optional(),
+  "fileUrl": zod.string().optional(),
+  "fileOriginalName": zod.string().optional(),
+  "vendorRemarks": zod.string().optional(),
+  "internalNotes": zod.string().optional(),
+  "changeSummary": zod.string().optional(),
+  "userName": zod.string().optional(),
+  "userId": zod.number().optional(),
+  "userRole": zod.string().optional(),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "quotationId": zod.number().optional(),
+  "lineNo": zod.number().optional(),
+  "materialId": zod.number().optional(),
+  "materialCode": zod.string().optional(),
+  "materialName": zod.string().optional(),
+  "description": zod.string().optional(),
+  "uom": zod.string().optional(),
+  "hsnSacCode": zod.string().optional(),
+  "brand": zod.string().optional(),
+  "qty": zod.number().optional(),
+  "unitPrice": zod.number().optional(),
+  "discountPct": zod.number().optional(),
+  "discountAmount": zod.number().optional(),
+  "taxableAmount": zod.number().optional(),
+  "gstRate": zod.number().optional(),
+  "cgstAmount": zod.number().optional(),
+  "sgstAmount": zod.number().optional(),
+  "igstAmount": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "lineTotal": zod.number().optional(),
+  "deliveryDays": zod.number().optional(),
+  "remarks": zod.string().optional()
+})).optional()
+})
+
+export const CreateProcurementQuotationResponse = zod.object({
+  "id": zod.number().optional(),
+  "referenceId": zod.string().optional(),
+  "version": zod.number().optional(),
+  "status": zod.string().optional(),
+  "mrId": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "vendorSnapshotName": zod.string().optional(),
+  "quotationDate": zod.string().optional(),
+  "validityDate": zod.string().optional(),
+  "currency": zod.string().optional(),
+  "paymentTerms": zod.string().optional(),
+  "deliveryTerms": zod.string().optional(),
+  "deliveryLeadDays": zod.number().optional(),
+  "warrantyMonths": zod.number().optional(),
+  "subtotal": zod.number().optional(),
+  "totalDiscount": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "freightCharges": zod.number().optional(),
+  "otherCharges": zod.number().optional(),
+  "totalAmount": zod.number().optional(),
+  "fileUrl": zod.string().optional(),
+  "fileOriginalName": zod.string().optional(),
+  "vendorRemarks": zod.string().optional(),
+  "internalNotes": zod.string().optional(),
+  "submittedAt": zod.string().optional(),
+  "submittedBy": zod.number().optional(),
+  "submittedByName": zod.string().optional(),
+  "reviewedAt": zod.string().optional(),
+  "reviewedBy": zod.number().optional(),
+  "reviewedByName": zod.string().optional(),
+  "approvedAt": zod.string().optional(),
+  "approvedBy": zod.number().optional(),
+  "approvedByName": zod.string().optional(),
+  "rejectedAt": zod.string().optional(),
+  "rejectedBy": zod.number().optional(),
+  "rejectedByName": zod.string().optional(),
+  "approvalRemarks": zod.string().optional(),
+  "isL1": zod.boolean().optional(),
+  "isRecommended": zod.boolean().optional(),
+  "recommendationNotes": zod.string().optional(),
+  "poGenerated": zod.boolean().optional(),
+  "createdBy": zod.number().optional(),
+  "createdByName": zod.string().optional(),
+  "updatedBy": zod.number().optional(),
+  "updatedByName": zod.string().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional(),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "quotationId": zod.number().optional(),
+  "lineNo": zod.number().optional(),
+  "materialId": zod.number().optional(),
+  "materialCode": zod.string().optional(),
+  "materialName": zod.string().optional(),
+  "description": zod.string().optional(),
+  "uom": zod.string().optional(),
+  "hsnSacCode": zod.string().optional(),
+  "brand": zod.string().optional(),
+  "qty": zod.number().optional(),
+  "unitPrice": zod.number().optional(),
+  "discountPct": zod.number().optional(),
+  "discountAmount": zod.number().optional(),
+  "taxableAmount": zod.number().optional(),
+  "gstRate": zod.number().optional(),
+  "cgstAmount": zod.number().optional(),
+  "sgstAmount": zod.number().optional(),
+  "igstAmount": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "lineTotal": zod.number().optional(),
+  "deliveryDays": zod.number().optional(),
+  "remarks": zod.string().optional()
+})).optional(),
+  "versions": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "quotationId": zod.number().optional(),
+  "version": zod.number().optional(),
+  "snapshot": zod.looseObject({
+
+}).optional(),
+  "changedBy": zod.number().optional(),
+  "changedByName": zod.string().optional(),
+  "changeSummary": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional(),
+  "auditLogs": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "quotationId": zod.number().optional(),
+  "action": zod.string().optional(),
+  "performedBy": zod.number().optional(),
+  "performedByName": zod.string().optional(),
+  "performedByRole": zod.string().optional(),
+  "oldValues": zod.looseObject({
+
+}).optional(),
+  "newValues": zod.looseObject({
+
+}).optional(),
+  "remarks": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional()
+})
+
+
+/**
+ * @summary Get quotation with items, versions, audit log
+ */
+export const GetProcurementQuotationParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetProcurementQuotationResponse = zod.object({
+  "id": zod.number().optional(),
+  "referenceId": zod.string().optional(),
+  "version": zod.number().optional(),
+  "status": zod.string().optional(),
+  "mrId": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "vendorSnapshotName": zod.string().optional(),
+  "quotationDate": zod.string().optional(),
+  "validityDate": zod.string().optional(),
+  "currency": zod.string().optional(),
+  "paymentTerms": zod.string().optional(),
+  "deliveryTerms": zod.string().optional(),
+  "deliveryLeadDays": zod.number().optional(),
+  "warrantyMonths": zod.number().optional(),
+  "subtotal": zod.number().optional(),
+  "totalDiscount": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "freightCharges": zod.number().optional(),
+  "otherCharges": zod.number().optional(),
+  "totalAmount": zod.number().optional(),
+  "fileUrl": zod.string().optional(),
+  "fileOriginalName": zod.string().optional(),
+  "vendorRemarks": zod.string().optional(),
+  "internalNotes": zod.string().optional(),
+  "submittedAt": zod.string().optional(),
+  "submittedBy": zod.number().optional(),
+  "submittedByName": zod.string().optional(),
+  "reviewedAt": zod.string().optional(),
+  "reviewedBy": zod.number().optional(),
+  "reviewedByName": zod.string().optional(),
+  "approvedAt": zod.string().optional(),
+  "approvedBy": zod.number().optional(),
+  "approvedByName": zod.string().optional(),
+  "rejectedAt": zod.string().optional(),
+  "rejectedBy": zod.number().optional(),
+  "rejectedByName": zod.string().optional(),
+  "approvalRemarks": zod.string().optional(),
+  "isL1": zod.boolean().optional(),
+  "isRecommended": zod.boolean().optional(),
+  "recommendationNotes": zod.string().optional(),
+  "poGenerated": zod.boolean().optional(),
+  "createdBy": zod.number().optional(),
+  "createdByName": zod.string().optional(),
+  "updatedBy": zod.number().optional(),
+  "updatedByName": zod.string().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional(),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "quotationId": zod.number().optional(),
+  "lineNo": zod.number().optional(),
+  "materialId": zod.number().optional(),
+  "materialCode": zod.string().optional(),
+  "materialName": zod.string().optional(),
+  "description": zod.string().optional(),
+  "uom": zod.string().optional(),
+  "hsnSacCode": zod.string().optional(),
+  "brand": zod.string().optional(),
+  "qty": zod.number().optional(),
+  "unitPrice": zod.number().optional(),
+  "discountPct": zod.number().optional(),
+  "discountAmount": zod.number().optional(),
+  "taxableAmount": zod.number().optional(),
+  "gstRate": zod.number().optional(),
+  "cgstAmount": zod.number().optional(),
+  "sgstAmount": zod.number().optional(),
+  "igstAmount": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "lineTotal": zod.number().optional(),
+  "deliveryDays": zod.number().optional(),
+  "remarks": zod.string().optional()
+})).optional(),
+  "versions": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "quotationId": zod.number().optional(),
+  "version": zod.number().optional(),
+  "snapshot": zod.looseObject({
+
+}).optional(),
+  "changedBy": zod.number().optional(),
+  "changedByName": zod.string().optional(),
+  "changeSummary": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional(),
+  "auditLogs": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "quotationId": zod.number().optional(),
+  "action": zod.string().optional(),
+  "performedBy": zod.number().optional(),
+  "performedByName": zod.string().optional(),
+  "performedByRole": zod.string().optional(),
+  "oldValues": zod.looseObject({
+
+}).optional(),
+  "newValues": zod.looseObject({
+
+}).optional(),
+  "remarks": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional()
+})
+
+
+/**
+ * @summary Update quotation (Draft/RevisionRequested only)
+ */
+export const UpdateProcurementQuotationParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateProcurementQuotationBody = zod.object({
+  "mrId": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "vendorSnapshotName": zod.string().optional(),
+  "quotationDate": zod.string().optional(),
+  "validityDate": zod.string().optional(),
+  "paymentTerms": zod.string().optional(),
+  "deliveryTerms": zod.string().optional(),
+  "deliveryLeadDays": zod.number().optional(),
+  "warrantyMonths": zod.number().optional(),
+  "freightCharges": zod.number().optional(),
+  "otherCharges": zod.number().optional(),
+  "fileUrl": zod.string().optional(),
+  "fileOriginalName": zod.string().optional(),
+  "vendorRemarks": zod.string().optional(),
+  "internalNotes": zod.string().optional(),
+  "changeSummary": zod.string().optional(),
+  "userName": zod.string().optional(),
+  "userId": zod.number().optional(),
+  "userRole": zod.string().optional(),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "quotationId": zod.number().optional(),
+  "lineNo": zod.number().optional(),
+  "materialId": zod.number().optional(),
+  "materialCode": zod.string().optional(),
+  "materialName": zod.string().optional(),
+  "description": zod.string().optional(),
+  "uom": zod.string().optional(),
+  "hsnSacCode": zod.string().optional(),
+  "brand": zod.string().optional(),
+  "qty": zod.number().optional(),
+  "unitPrice": zod.number().optional(),
+  "discountPct": zod.number().optional(),
+  "discountAmount": zod.number().optional(),
+  "taxableAmount": zod.number().optional(),
+  "gstRate": zod.number().optional(),
+  "cgstAmount": zod.number().optional(),
+  "sgstAmount": zod.number().optional(),
+  "igstAmount": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "lineTotal": zod.number().optional(),
+  "deliveryDays": zod.number().optional(),
+  "remarks": zod.string().optional()
+})).optional()
+})
+
+export const UpdateProcurementQuotationResponse = zod.object({
+  "id": zod.number().optional(),
+  "referenceId": zod.string().optional(),
+  "version": zod.number().optional(),
+  "status": zod.string().optional(),
+  "mrId": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "vendorSnapshotName": zod.string().optional(),
+  "quotationDate": zod.string().optional(),
+  "validityDate": zod.string().optional(),
+  "currency": zod.string().optional(),
+  "paymentTerms": zod.string().optional(),
+  "deliveryTerms": zod.string().optional(),
+  "deliveryLeadDays": zod.number().optional(),
+  "warrantyMonths": zod.number().optional(),
+  "subtotal": zod.number().optional(),
+  "totalDiscount": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "freightCharges": zod.number().optional(),
+  "otherCharges": zod.number().optional(),
+  "totalAmount": zod.number().optional(),
+  "fileUrl": zod.string().optional(),
+  "fileOriginalName": zod.string().optional(),
+  "vendorRemarks": zod.string().optional(),
+  "internalNotes": zod.string().optional(),
+  "submittedAt": zod.string().optional(),
+  "submittedBy": zod.number().optional(),
+  "submittedByName": zod.string().optional(),
+  "reviewedAt": zod.string().optional(),
+  "reviewedBy": zod.number().optional(),
+  "reviewedByName": zod.string().optional(),
+  "approvedAt": zod.string().optional(),
+  "approvedBy": zod.number().optional(),
+  "approvedByName": zod.string().optional(),
+  "rejectedAt": zod.string().optional(),
+  "rejectedBy": zod.number().optional(),
+  "rejectedByName": zod.string().optional(),
+  "approvalRemarks": zod.string().optional(),
+  "isL1": zod.boolean().optional(),
+  "isRecommended": zod.boolean().optional(),
+  "recommendationNotes": zod.string().optional(),
+  "poGenerated": zod.boolean().optional(),
+  "createdBy": zod.number().optional(),
+  "createdByName": zod.string().optional(),
+  "updatedBy": zod.number().optional(),
+  "updatedByName": zod.string().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional(),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "quotationId": zod.number().optional(),
+  "lineNo": zod.number().optional(),
+  "materialId": zod.number().optional(),
+  "materialCode": zod.string().optional(),
+  "materialName": zod.string().optional(),
+  "description": zod.string().optional(),
+  "uom": zod.string().optional(),
+  "hsnSacCode": zod.string().optional(),
+  "brand": zod.string().optional(),
+  "qty": zod.number().optional(),
+  "unitPrice": zod.number().optional(),
+  "discountPct": zod.number().optional(),
+  "discountAmount": zod.number().optional(),
+  "taxableAmount": zod.number().optional(),
+  "gstRate": zod.number().optional(),
+  "cgstAmount": zod.number().optional(),
+  "sgstAmount": zod.number().optional(),
+  "igstAmount": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "lineTotal": zod.number().optional(),
+  "deliveryDays": zod.number().optional(),
+  "remarks": zod.string().optional()
+})).optional(),
+  "versions": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "quotationId": zod.number().optional(),
+  "version": zod.number().optional(),
+  "snapshot": zod.looseObject({
+
+}).optional(),
+  "changedBy": zod.number().optional(),
+  "changedByName": zod.string().optional(),
+  "changeSummary": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional(),
+  "auditLogs": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "quotationId": zod.number().optional(),
+  "action": zod.string().optional(),
+  "performedBy": zod.number().optional(),
+  "performedByName": zod.string().optional(),
+  "performedByRole": zod.string().optional(),
+  "oldValues": zod.looseObject({
+
+}).optional(),
+  "newValues": zod.looseObject({
+
+}).optional(),
+  "remarks": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional()
+})
+
+
+/**
+ * @summary Delete quotation (Draft only)
+ */
+export const DeleteProcurementQuotationParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteProcurementQuotationResponse = zod.object({
+  "success": zod.boolean()
+})
+
+
+/**
+ * @summary Submit quotation for review
+ */
+export const SubmitProcurementQuotationParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const SubmitProcurementQuotationBody = zod.object({
+  "userName": zod.string().optional(),
+  "userId": zod.number().optional(),
+  "userRole": zod.string().optional(),
+  "remarks": zod.string().optional()
+})
+
+export const SubmitProcurementQuotationResponse = zod.object({
+  "id": zod.number().optional(),
+  "referenceId": zod.string().optional(),
+  "version": zod.number().optional(),
+  "status": zod.string().optional(),
+  "mrId": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "vendorSnapshotName": zod.string().optional(),
+  "quotationDate": zod.string().optional(),
+  "validityDate": zod.string().optional(),
+  "currency": zod.string().optional(),
+  "paymentTerms": zod.string().optional(),
+  "deliveryTerms": zod.string().optional(),
+  "deliveryLeadDays": zod.number().optional(),
+  "warrantyMonths": zod.number().optional(),
+  "subtotal": zod.number().optional(),
+  "totalDiscount": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "freightCharges": zod.number().optional(),
+  "otherCharges": zod.number().optional(),
+  "totalAmount": zod.number().optional(),
+  "fileUrl": zod.string().optional(),
+  "fileOriginalName": zod.string().optional(),
+  "vendorRemarks": zod.string().optional(),
+  "internalNotes": zod.string().optional(),
+  "submittedAt": zod.string().optional(),
+  "submittedBy": zod.number().optional(),
+  "submittedByName": zod.string().optional(),
+  "reviewedAt": zod.string().optional(),
+  "reviewedBy": zod.number().optional(),
+  "reviewedByName": zod.string().optional(),
+  "approvedAt": zod.string().optional(),
+  "approvedBy": zod.number().optional(),
+  "approvedByName": zod.string().optional(),
+  "rejectedAt": zod.string().optional(),
+  "rejectedBy": zod.number().optional(),
+  "rejectedByName": zod.string().optional(),
+  "approvalRemarks": zod.string().optional(),
+  "isL1": zod.boolean().optional(),
+  "isRecommended": zod.boolean().optional(),
+  "recommendationNotes": zod.string().optional(),
+  "poGenerated": zod.boolean().optional(),
+  "createdBy": zod.number().optional(),
+  "createdByName": zod.string().optional(),
+  "updatedBy": zod.number().optional(),
+  "updatedByName": zod.string().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional(),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "quotationId": zod.number().optional(),
+  "lineNo": zod.number().optional(),
+  "materialId": zod.number().optional(),
+  "materialCode": zod.string().optional(),
+  "materialName": zod.string().optional(),
+  "description": zod.string().optional(),
+  "uom": zod.string().optional(),
+  "hsnSacCode": zod.string().optional(),
+  "brand": zod.string().optional(),
+  "qty": zod.number().optional(),
+  "unitPrice": zod.number().optional(),
+  "discountPct": zod.number().optional(),
+  "discountAmount": zod.number().optional(),
+  "taxableAmount": zod.number().optional(),
+  "gstRate": zod.number().optional(),
+  "cgstAmount": zod.number().optional(),
+  "sgstAmount": zod.number().optional(),
+  "igstAmount": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "lineTotal": zod.number().optional(),
+  "deliveryDays": zod.number().optional(),
+  "remarks": zod.string().optional()
+})).optional(),
+  "versions": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "quotationId": zod.number().optional(),
+  "version": zod.number().optional(),
+  "snapshot": zod.looseObject({
+
+}).optional(),
+  "changedBy": zod.number().optional(),
+  "changedByName": zod.string().optional(),
+  "changeSummary": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional(),
+  "auditLogs": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "quotationId": zod.number().optional(),
+  "action": zod.string().optional(),
+  "performedBy": zod.number().optional(),
+  "performedByName": zod.string().optional(),
+  "performedByRole": zod.string().optional(),
+  "oldValues": zod.looseObject({
+
+}).optional(),
+  "newValues": zod.looseObject({
+
+}).optional(),
+  "remarks": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional()
+})
+
+
+/**
+ * @summary Start review (approver action)
+ */
+export const StartProcurementQuotationReviewParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const StartProcurementQuotationReviewBody = zod.object({
+  "userName": zod.string().optional(),
+  "userId": zod.number().optional(),
+  "userRole": zod.string().optional(),
+  "remarks": zod.string().optional()
+})
+
+export const StartProcurementQuotationReviewResponse = zod.object({
+  "id": zod.number().optional(),
+  "referenceId": zod.string().optional(),
+  "version": zod.number().optional(),
+  "status": zod.string().optional(),
+  "mrId": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "vendorSnapshotName": zod.string().optional(),
+  "quotationDate": zod.string().optional(),
+  "validityDate": zod.string().optional(),
+  "currency": zod.string().optional(),
+  "paymentTerms": zod.string().optional(),
+  "deliveryTerms": zod.string().optional(),
+  "deliveryLeadDays": zod.number().optional(),
+  "warrantyMonths": zod.number().optional(),
+  "subtotal": zod.number().optional(),
+  "totalDiscount": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "freightCharges": zod.number().optional(),
+  "otherCharges": zod.number().optional(),
+  "totalAmount": zod.number().optional(),
+  "fileUrl": zod.string().optional(),
+  "fileOriginalName": zod.string().optional(),
+  "vendorRemarks": zod.string().optional(),
+  "internalNotes": zod.string().optional(),
+  "submittedAt": zod.string().optional(),
+  "submittedBy": zod.number().optional(),
+  "submittedByName": zod.string().optional(),
+  "reviewedAt": zod.string().optional(),
+  "reviewedBy": zod.number().optional(),
+  "reviewedByName": zod.string().optional(),
+  "approvedAt": zod.string().optional(),
+  "approvedBy": zod.number().optional(),
+  "approvedByName": zod.string().optional(),
+  "rejectedAt": zod.string().optional(),
+  "rejectedBy": zod.number().optional(),
+  "rejectedByName": zod.string().optional(),
+  "approvalRemarks": zod.string().optional(),
+  "isL1": zod.boolean().optional(),
+  "isRecommended": zod.boolean().optional(),
+  "recommendationNotes": zod.string().optional(),
+  "poGenerated": zod.boolean().optional(),
+  "createdBy": zod.number().optional(),
+  "createdByName": zod.string().optional(),
+  "updatedBy": zod.number().optional(),
+  "updatedByName": zod.string().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional(),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "quotationId": zod.number().optional(),
+  "lineNo": zod.number().optional(),
+  "materialId": zod.number().optional(),
+  "materialCode": zod.string().optional(),
+  "materialName": zod.string().optional(),
+  "description": zod.string().optional(),
+  "uom": zod.string().optional(),
+  "hsnSacCode": zod.string().optional(),
+  "brand": zod.string().optional(),
+  "qty": zod.number().optional(),
+  "unitPrice": zod.number().optional(),
+  "discountPct": zod.number().optional(),
+  "discountAmount": zod.number().optional(),
+  "taxableAmount": zod.number().optional(),
+  "gstRate": zod.number().optional(),
+  "cgstAmount": zod.number().optional(),
+  "sgstAmount": zod.number().optional(),
+  "igstAmount": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "lineTotal": zod.number().optional(),
+  "deliveryDays": zod.number().optional(),
+  "remarks": zod.string().optional()
+})).optional(),
+  "versions": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "quotationId": zod.number().optional(),
+  "version": zod.number().optional(),
+  "snapshot": zod.looseObject({
+
+}).optional(),
+  "changedBy": zod.number().optional(),
+  "changedByName": zod.string().optional(),
+  "changeSummary": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional(),
+  "auditLogs": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "quotationId": zod.number().optional(),
+  "action": zod.string().optional(),
+  "performedBy": zod.number().optional(),
+  "performedByName": zod.string().optional(),
+  "performedByRole": zod.string().optional(),
+  "oldValues": zod.looseObject({
+
+}).optional(),
+  "newValues": zod.looseObject({
+
+}).optional(),
+  "remarks": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional()
+})
+
+
+/**
+ * @summary Request revision with mandatory remarks
+ */
+export const RequestProcurementQuotationRevisionParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const RequestProcurementQuotationRevisionBody = zod.object({
+  "userName": zod.string().optional(),
+  "userId": zod.number().optional(),
+  "userRole": zod.string().optional(),
+  "remarks": zod.string().optional()
+})
+
+export const RequestProcurementQuotationRevisionResponse = zod.object({
+  "id": zod.number().optional(),
+  "referenceId": zod.string().optional(),
+  "version": zod.number().optional(),
+  "status": zod.string().optional(),
+  "mrId": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "vendorSnapshotName": zod.string().optional(),
+  "quotationDate": zod.string().optional(),
+  "validityDate": zod.string().optional(),
+  "currency": zod.string().optional(),
+  "paymentTerms": zod.string().optional(),
+  "deliveryTerms": zod.string().optional(),
+  "deliveryLeadDays": zod.number().optional(),
+  "warrantyMonths": zod.number().optional(),
+  "subtotal": zod.number().optional(),
+  "totalDiscount": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "freightCharges": zod.number().optional(),
+  "otherCharges": zod.number().optional(),
+  "totalAmount": zod.number().optional(),
+  "fileUrl": zod.string().optional(),
+  "fileOriginalName": zod.string().optional(),
+  "vendorRemarks": zod.string().optional(),
+  "internalNotes": zod.string().optional(),
+  "submittedAt": zod.string().optional(),
+  "submittedBy": zod.number().optional(),
+  "submittedByName": zod.string().optional(),
+  "reviewedAt": zod.string().optional(),
+  "reviewedBy": zod.number().optional(),
+  "reviewedByName": zod.string().optional(),
+  "approvedAt": zod.string().optional(),
+  "approvedBy": zod.number().optional(),
+  "approvedByName": zod.string().optional(),
+  "rejectedAt": zod.string().optional(),
+  "rejectedBy": zod.number().optional(),
+  "rejectedByName": zod.string().optional(),
+  "approvalRemarks": zod.string().optional(),
+  "isL1": zod.boolean().optional(),
+  "isRecommended": zod.boolean().optional(),
+  "recommendationNotes": zod.string().optional(),
+  "poGenerated": zod.boolean().optional(),
+  "createdBy": zod.number().optional(),
+  "createdByName": zod.string().optional(),
+  "updatedBy": zod.number().optional(),
+  "updatedByName": zod.string().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional(),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "quotationId": zod.number().optional(),
+  "lineNo": zod.number().optional(),
+  "materialId": zod.number().optional(),
+  "materialCode": zod.string().optional(),
+  "materialName": zod.string().optional(),
+  "description": zod.string().optional(),
+  "uom": zod.string().optional(),
+  "hsnSacCode": zod.string().optional(),
+  "brand": zod.string().optional(),
+  "qty": zod.number().optional(),
+  "unitPrice": zod.number().optional(),
+  "discountPct": zod.number().optional(),
+  "discountAmount": zod.number().optional(),
+  "taxableAmount": zod.number().optional(),
+  "gstRate": zod.number().optional(),
+  "cgstAmount": zod.number().optional(),
+  "sgstAmount": zod.number().optional(),
+  "igstAmount": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "lineTotal": zod.number().optional(),
+  "deliveryDays": zod.number().optional(),
+  "remarks": zod.string().optional()
+})).optional(),
+  "versions": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "quotationId": zod.number().optional(),
+  "version": zod.number().optional(),
+  "snapshot": zod.looseObject({
+
+}).optional(),
+  "changedBy": zod.number().optional(),
+  "changedByName": zod.string().optional(),
+  "changeSummary": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional(),
+  "auditLogs": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "quotationId": zod.number().optional(),
+  "action": zod.string().optional(),
+  "performedBy": zod.number().optional(),
+  "performedByName": zod.string().optional(),
+  "performedByRole": zod.string().optional(),
+  "oldValues": zod.looseObject({
+
+}).optional(),
+  "newValues": zod.looseObject({
+
+}).optional(),
+  "remarks": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional()
+})
+
+
+/**
+ * @summary Approve quotation and auto-generate PO
+ */
+export const ApproveProcurementQuotationParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ApproveProcurementQuotationBody = zod.object({
+  "userName": zod.string().optional(),
+  "userId": zod.number().optional(),
+  "userRole": zod.string().optional(),
+  "remarks": zod.string().optional()
+})
+
+export const ApproveProcurementQuotationResponse = zod.object({
+  "quotation": zod.object({
+  "id": zod.number().optional(),
+  "referenceId": zod.string().optional(),
+  "version": zod.number().optional(),
+  "status": zod.string().optional(),
+  "mrId": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "vendorSnapshotName": zod.string().optional(),
+  "quotationDate": zod.string().optional(),
+  "validityDate": zod.string().optional(),
+  "currency": zod.string().optional(),
+  "paymentTerms": zod.string().optional(),
+  "deliveryTerms": zod.string().optional(),
+  "deliveryLeadDays": zod.number().optional(),
+  "warrantyMonths": zod.number().optional(),
+  "subtotal": zod.number().optional(),
+  "totalDiscount": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "freightCharges": zod.number().optional(),
+  "otherCharges": zod.number().optional(),
+  "totalAmount": zod.number().optional(),
+  "fileUrl": zod.string().optional(),
+  "fileOriginalName": zod.string().optional(),
+  "vendorRemarks": zod.string().optional(),
+  "internalNotes": zod.string().optional(),
+  "submittedAt": zod.string().optional(),
+  "submittedBy": zod.number().optional(),
+  "submittedByName": zod.string().optional(),
+  "reviewedAt": zod.string().optional(),
+  "reviewedBy": zod.number().optional(),
+  "reviewedByName": zod.string().optional(),
+  "approvedAt": zod.string().optional(),
+  "approvedBy": zod.number().optional(),
+  "approvedByName": zod.string().optional(),
+  "rejectedAt": zod.string().optional(),
+  "rejectedBy": zod.number().optional(),
+  "rejectedByName": zod.string().optional(),
+  "approvalRemarks": zod.string().optional(),
+  "isL1": zod.boolean().optional(),
+  "isRecommended": zod.boolean().optional(),
+  "recommendationNotes": zod.string().optional(),
+  "poGenerated": zod.boolean().optional(),
+  "createdBy": zod.number().optional(),
+  "createdByName": zod.string().optional(),
+  "updatedBy": zod.number().optional(),
+  "updatedByName": zod.string().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional(),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "quotationId": zod.number().optional(),
+  "lineNo": zod.number().optional(),
+  "materialId": zod.number().optional(),
+  "materialCode": zod.string().optional(),
+  "materialName": zod.string().optional(),
+  "description": zod.string().optional(),
+  "uom": zod.string().optional(),
+  "hsnSacCode": zod.string().optional(),
+  "brand": zod.string().optional(),
+  "qty": zod.number().optional(),
+  "unitPrice": zod.number().optional(),
+  "discountPct": zod.number().optional(),
+  "discountAmount": zod.number().optional(),
+  "taxableAmount": zod.number().optional(),
+  "gstRate": zod.number().optional(),
+  "cgstAmount": zod.number().optional(),
+  "sgstAmount": zod.number().optional(),
+  "igstAmount": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "lineTotal": zod.number().optional(),
+  "deliveryDays": zod.number().optional(),
+  "remarks": zod.string().optional()
+})).optional(),
+  "versions": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "quotationId": zod.number().optional(),
+  "version": zod.number().optional(),
+  "snapshot": zod.looseObject({
+
+}).optional(),
+  "changedBy": zod.number().optional(),
+  "changedByName": zod.string().optional(),
+  "changeSummary": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional(),
+  "auditLogs": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "quotationId": zod.number().optional(),
+  "action": zod.string().optional(),
+  "performedBy": zod.number().optional(),
+  "performedByName": zod.string().optional(),
+  "performedByRole": zod.string().optional(),
+  "oldValues": zod.looseObject({
+
+}).optional(),
+  "newValues": zod.looseObject({
+
+}).optional(),
+  "remarks": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional()
+}).optional(),
+  "po": zod.object({
+  "id": zod.number().optional(),
+  "poNumber": zod.string().optional(),
+  "quotationId": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "vendorName": zod.string().optional(),
+  "vendorGstin": zod.string().optional(),
+  "vendorAddress": zod.string().optional(),
+  "vendorContact": zod.string().optional(),
+  "status": zod.string().optional(),
+  "poDate": zod.string().optional(),
+  "deliveryDeadline": zod.string().optional(),
+  "deliveryAddress": zod.string().optional(),
+  "paymentTerms": zod.string().optional(),
+  "warrantyMonths": zod.number().optional(),
+  "freightCharges": zod.number().optional(),
+  "otherCharges": zod.number().optional(),
+  "subtotal": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "totalAmount": zod.number().optional(),
+  "specialTerms": zod.string().optional(),
+  "internalNotes": zod.string().optional(),
+  "approvedBy": zod.number().optional(),
+  "approvedByName": zod.string().optional(),
+  "approvedAt": zod.string().optional(),
+  "acknowledgedAt": zod.string().optional(),
+  "closedAt": zod.string().optional(),
+  "createdBy": zod.number().optional(),
+  "createdByName": zod.string().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional(),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "poId": zod.number().optional(),
+  "lineNo": zod.number().optional(),
+  "materialId": zod.number().optional(),
+  "materialCode": zod.string().optional(),
+  "materialName": zod.string().optional(),
+  "description": zod.string().optional(),
+  "uom": zod.string().optional(),
+  "hsnSacCode": zod.string().optional(),
+  "brand": zod.string().optional(),
+  "qty": zod.number().optional(),
+  "unitPrice": zod.number().optional(),
+  "discountPct": zod.number().optional(),
+  "discountAmount": zod.number().optional(),
+  "taxableAmount": zod.number().optional(),
+  "gstRate": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "lineTotal": zod.number().optional(),
+  "deliveredQty": zod.number().optional(),
+  "remarks": zod.string().optional()
+})).optional()
+}).optional()
+})
+
+
+/**
+ * @summary Reject quotation with mandatory remarks
+ */
+export const RejectProcurementQuotationParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const RejectProcurementQuotationBody = zod.object({
+  "userName": zod.string().optional(),
+  "userId": zod.number().optional(),
+  "userRole": zod.string().optional(),
+  "remarks": zod.string().optional()
+})
+
+export const RejectProcurementQuotationResponse = zod.object({
+  "id": zod.number().optional(),
+  "referenceId": zod.string().optional(),
+  "version": zod.number().optional(),
+  "status": zod.string().optional(),
+  "mrId": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "vendorSnapshotName": zod.string().optional(),
+  "quotationDate": zod.string().optional(),
+  "validityDate": zod.string().optional(),
+  "currency": zod.string().optional(),
+  "paymentTerms": zod.string().optional(),
+  "deliveryTerms": zod.string().optional(),
+  "deliveryLeadDays": zod.number().optional(),
+  "warrantyMonths": zod.number().optional(),
+  "subtotal": zod.number().optional(),
+  "totalDiscount": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "freightCharges": zod.number().optional(),
+  "otherCharges": zod.number().optional(),
+  "totalAmount": zod.number().optional(),
+  "fileUrl": zod.string().optional(),
+  "fileOriginalName": zod.string().optional(),
+  "vendorRemarks": zod.string().optional(),
+  "internalNotes": zod.string().optional(),
+  "submittedAt": zod.string().optional(),
+  "submittedBy": zod.number().optional(),
+  "submittedByName": zod.string().optional(),
+  "reviewedAt": zod.string().optional(),
+  "reviewedBy": zod.number().optional(),
+  "reviewedByName": zod.string().optional(),
+  "approvedAt": zod.string().optional(),
+  "approvedBy": zod.number().optional(),
+  "approvedByName": zod.string().optional(),
+  "rejectedAt": zod.string().optional(),
+  "rejectedBy": zod.number().optional(),
+  "rejectedByName": zod.string().optional(),
+  "approvalRemarks": zod.string().optional(),
+  "isL1": zod.boolean().optional(),
+  "isRecommended": zod.boolean().optional(),
+  "recommendationNotes": zod.string().optional(),
+  "poGenerated": zod.boolean().optional(),
+  "createdBy": zod.number().optional(),
+  "createdByName": zod.string().optional(),
+  "updatedBy": zod.number().optional(),
+  "updatedByName": zod.string().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional(),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "quotationId": zod.number().optional(),
+  "lineNo": zod.number().optional(),
+  "materialId": zod.number().optional(),
+  "materialCode": zod.string().optional(),
+  "materialName": zod.string().optional(),
+  "description": zod.string().optional(),
+  "uom": zod.string().optional(),
+  "hsnSacCode": zod.string().optional(),
+  "brand": zod.string().optional(),
+  "qty": zod.number().optional(),
+  "unitPrice": zod.number().optional(),
+  "discountPct": zod.number().optional(),
+  "discountAmount": zod.number().optional(),
+  "taxableAmount": zod.number().optional(),
+  "gstRate": zod.number().optional(),
+  "cgstAmount": zod.number().optional(),
+  "sgstAmount": zod.number().optional(),
+  "igstAmount": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "lineTotal": zod.number().optional(),
+  "deliveryDays": zod.number().optional(),
+  "remarks": zod.string().optional()
+})).optional(),
+  "versions": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "quotationId": zod.number().optional(),
+  "version": zod.number().optional(),
+  "snapshot": zod.looseObject({
+
+}).optional(),
+  "changedBy": zod.number().optional(),
+  "changedByName": zod.string().optional(),
+  "changeSummary": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional(),
+  "auditLogs": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "quotationId": zod.number().optional(),
+  "action": zod.string().optional(),
+  "performedBy": zod.number().optional(),
+  "performedByName": zod.string().optional(),
+  "performedByRole": zod.string().optional(),
+  "oldValues": zod.looseObject({
+
+}).optional(),
+  "newValues": zod.looseObject({
+
+}).optional(),
+  "remarks": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional()
+})
+
+
+/**
+ * @summary Add comment/note to quotation audit trail
+ */
+export const AddProcurementQuotationCommentParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const AddProcurementQuotationCommentBody = zod.object({
+  "userName": zod.string().optional(),
+  "userId": zod.number().optional(),
+  "userRole": zod.string().optional(),
+  "remarks": zod.string().optional()
+})
+
+export const AddProcurementQuotationCommentResponse = zod.object({
+  "ok": zod.boolean().optional(),
+  "logs": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "quotationId": zod.number().optional(),
+  "action": zod.string().optional(),
+  "performedBy": zod.number().optional(),
+  "performedByName": zod.string().optional(),
+  "performedByRole": zod.string().optional(),
+  "oldValues": zod.looseObject({
+
+}).optional(),
+  "newValues": zod.looseObject({
+
+}).optional(),
+  "remarks": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional()
+})
+
+
+/**
+ * @summary L1 comparison for all quotations against an MR
+ */
+export const GetQuotationComparisonParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetQuotationComparisonResponse = zod.object({
+  "quotations": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "referenceId": zod.string().optional(),
+  "version": zod.number().optional(),
+  "status": zod.string().optional(),
+  "mrId": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "vendorSnapshotName": zod.string().optional(),
+  "quotationDate": zod.string().optional(),
+  "validityDate": zod.string().optional(),
+  "currency": zod.string().optional(),
+  "paymentTerms": zod.string().optional(),
+  "deliveryTerms": zod.string().optional(),
+  "deliveryLeadDays": zod.number().optional(),
+  "warrantyMonths": zod.number().optional(),
+  "subtotal": zod.number().optional(),
+  "totalDiscount": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "freightCharges": zod.number().optional(),
+  "otherCharges": zod.number().optional(),
+  "totalAmount": zod.number().optional(),
+  "fileUrl": zod.string().optional(),
+  "fileOriginalName": zod.string().optional(),
+  "vendorRemarks": zod.string().optional(),
+  "internalNotes": zod.string().optional(),
+  "submittedAt": zod.string().optional(),
+  "submittedBy": zod.number().optional(),
+  "submittedByName": zod.string().optional(),
+  "reviewedAt": zod.string().optional(),
+  "reviewedBy": zod.number().optional(),
+  "reviewedByName": zod.string().optional(),
+  "approvedAt": zod.string().optional(),
+  "approvedBy": zod.number().optional(),
+  "approvedByName": zod.string().optional(),
+  "rejectedAt": zod.string().optional(),
+  "rejectedBy": zod.number().optional(),
+  "rejectedByName": zod.string().optional(),
+  "approvalRemarks": zod.string().optional(),
+  "isL1": zod.boolean().optional(),
+  "isRecommended": zod.boolean().optional(),
+  "recommendationNotes": zod.string().optional(),
+  "poGenerated": zod.boolean().optional(),
+  "createdBy": zod.number().optional(),
+  "createdByName": zod.string().optional(),
+  "updatedBy": zod.number().optional(),
+  "updatedByName": zod.string().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional(),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "quotationId": zod.number().optional(),
+  "lineNo": zod.number().optional(),
+  "materialId": zod.number().optional(),
+  "materialCode": zod.string().optional(),
+  "materialName": zod.string().optional(),
+  "description": zod.string().optional(),
+  "uom": zod.string().optional(),
+  "hsnSacCode": zod.string().optional(),
+  "brand": zod.string().optional(),
+  "qty": zod.number().optional(),
+  "unitPrice": zod.number().optional(),
+  "discountPct": zod.number().optional(),
+  "discountAmount": zod.number().optional(),
+  "taxableAmount": zod.number().optional(),
+  "gstRate": zod.number().optional(),
+  "cgstAmount": zod.number().optional(),
+  "sgstAmount": zod.number().optional(),
+  "igstAmount": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "lineTotal": zod.number().optional(),
+  "deliveryDays": zod.number().optional(),
+  "remarks": zod.string().optional()
+})).optional(),
+  "versions": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "quotationId": zod.number().optional(),
+  "version": zod.number().optional(),
+  "snapshot": zod.looseObject({
+
+}).optional(),
+  "changedBy": zod.number().optional(),
+  "changedByName": zod.string().optional(),
+  "changeSummary": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional(),
+  "auditLogs": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "quotationId": zod.number().optional(),
+  "action": zod.string().optional(),
+  "performedBy": zod.number().optional(),
+  "performedByName": zod.string().optional(),
+  "performedByRole": zod.string().optional(),
+  "oldValues": zod.looseObject({
+
+}).optional(),
+  "newValues": zod.looseObject({
+
+}).optional(),
+  "remarks": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional()
+})).optional(),
+  "materialNames": zod.array(zod.string()).optional(),
+  "materialLowest": zod.looseObject({
+
+}).optional(),
+  "l1VendorId": zod.number().optional(),
+  "l1ReferenceId": zod.string().optional(),
+  "l1Amount": zod.number().optional()
+})
+
+
+/**
+ * @summary List procurement POs
+ */
+export const GetProcurementPOsQueryParams = zod.object({
+  "status": zod.coerce.string().optional(),
+  "vendorId": zod.coerce.number().optional()
+})
+
+export const GetProcurementPOsResponseItem = zod.object({
+  "id": zod.number().optional(),
+  "poNumber": zod.string().optional(),
+  "quotationId": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "vendorName": zod.string().optional(),
+  "vendorGstin": zod.string().optional(),
+  "vendorAddress": zod.string().optional(),
+  "vendorContact": zod.string().optional(),
+  "status": zod.string().optional(),
+  "poDate": zod.string().optional(),
+  "deliveryDeadline": zod.string().optional(),
+  "deliveryAddress": zod.string().optional(),
+  "paymentTerms": zod.string().optional(),
+  "warrantyMonths": zod.number().optional(),
+  "freightCharges": zod.number().optional(),
+  "otherCharges": zod.number().optional(),
+  "subtotal": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "totalAmount": zod.number().optional(),
+  "specialTerms": zod.string().optional(),
+  "internalNotes": zod.string().optional(),
+  "approvedBy": zod.number().optional(),
+  "approvedByName": zod.string().optional(),
+  "approvedAt": zod.string().optional(),
+  "acknowledgedAt": zod.string().optional(),
+  "closedAt": zod.string().optional(),
+  "createdBy": zod.number().optional(),
+  "createdByName": zod.string().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional(),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "poId": zod.number().optional(),
+  "lineNo": zod.number().optional(),
+  "materialId": zod.number().optional(),
+  "materialCode": zod.string().optional(),
+  "materialName": zod.string().optional(),
+  "description": zod.string().optional(),
+  "uom": zod.string().optional(),
+  "hsnSacCode": zod.string().optional(),
+  "brand": zod.string().optional(),
+  "qty": zod.number().optional(),
+  "unitPrice": zod.number().optional(),
+  "discountPct": zod.number().optional(),
+  "discountAmount": zod.number().optional(),
+  "taxableAmount": zod.number().optional(),
+  "gstRate": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "lineTotal": zod.number().optional(),
+  "deliveredQty": zod.number().optional(),
+  "remarks": zod.string().optional()
+})).optional()
+})
+export const GetProcurementPOsResponse = zod.array(GetProcurementPOsResponseItem)
+
+
+/**
+ * @summary Get PO with items
+ */
+export const GetProcurementPOParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetProcurementPOResponse = zod.object({
+  "id": zod.number().optional(),
+  "poNumber": zod.string().optional(),
+  "quotationId": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "vendorName": zod.string().optional(),
+  "vendorGstin": zod.string().optional(),
+  "vendorAddress": zod.string().optional(),
+  "vendorContact": zod.string().optional(),
+  "status": zod.string().optional(),
+  "poDate": zod.string().optional(),
+  "deliveryDeadline": zod.string().optional(),
+  "deliveryAddress": zod.string().optional(),
+  "paymentTerms": zod.string().optional(),
+  "warrantyMonths": zod.number().optional(),
+  "freightCharges": zod.number().optional(),
+  "otherCharges": zod.number().optional(),
+  "subtotal": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "totalAmount": zod.number().optional(),
+  "specialTerms": zod.string().optional(),
+  "internalNotes": zod.string().optional(),
+  "approvedBy": zod.number().optional(),
+  "approvedByName": zod.string().optional(),
+  "approvedAt": zod.string().optional(),
+  "acknowledgedAt": zod.string().optional(),
+  "closedAt": zod.string().optional(),
+  "createdBy": zod.number().optional(),
+  "createdByName": zod.string().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional(),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "poId": zod.number().optional(),
+  "lineNo": zod.number().optional(),
+  "materialId": zod.number().optional(),
+  "materialCode": zod.string().optional(),
+  "materialName": zod.string().optional(),
+  "description": zod.string().optional(),
+  "uom": zod.string().optional(),
+  "hsnSacCode": zod.string().optional(),
+  "brand": zod.string().optional(),
+  "qty": zod.number().optional(),
+  "unitPrice": zod.number().optional(),
+  "discountPct": zod.number().optional(),
+  "discountAmount": zod.number().optional(),
+  "taxableAmount": zod.number().optional(),
+  "gstRate": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "lineTotal": zod.number().optional(),
+  "deliveredQty": zod.number().optional(),
+  "remarks": zod.string().optional()
+})).optional()
+})
+
+
+/**
+ * @summary Update PO status or details
+ */
+export const UpdateProcurementPOParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateProcurementPOBody = zod.object({
+  "status": zod.string().optional(),
+  "deliveryAddress": zod.string().optional(),
+  "specialTerms": zod.string().optional(),
+  "internalNotes": zod.string().optional()
+})
+
+export const UpdateProcurementPOResponse = zod.object({
+  "id": zod.number().optional(),
+  "poNumber": zod.string().optional(),
+  "quotationId": zod.number().optional(),
+  "vendorId": zod.number().optional(),
+  "vendorName": zod.string().optional(),
+  "vendorGstin": zod.string().optional(),
+  "vendorAddress": zod.string().optional(),
+  "vendorContact": zod.string().optional(),
+  "status": zod.string().optional(),
+  "poDate": zod.string().optional(),
+  "deliveryDeadline": zod.string().optional(),
+  "deliveryAddress": zod.string().optional(),
+  "paymentTerms": zod.string().optional(),
+  "warrantyMonths": zod.number().optional(),
+  "freightCharges": zod.number().optional(),
+  "otherCharges": zod.number().optional(),
+  "subtotal": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "totalAmount": zod.number().optional(),
+  "specialTerms": zod.string().optional(),
+  "internalNotes": zod.string().optional(),
+  "approvedBy": zod.number().optional(),
+  "approvedByName": zod.string().optional(),
+  "approvedAt": zod.string().optional(),
+  "acknowledgedAt": zod.string().optional(),
+  "closedAt": zod.string().optional(),
+  "createdBy": zod.number().optional(),
+  "createdByName": zod.string().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional(),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "poId": zod.number().optional(),
+  "lineNo": zod.number().optional(),
+  "materialId": zod.number().optional(),
+  "materialCode": zod.string().optional(),
+  "materialName": zod.string().optional(),
+  "description": zod.string().optional(),
+  "uom": zod.string().optional(),
+  "hsnSacCode": zod.string().optional(),
+  "brand": zod.string().optional(),
+  "qty": zod.number().optional(),
+  "unitPrice": zod.number().optional(),
+  "discountPct": zod.number().optional(),
+  "discountAmount": zod.number().optional(),
+  "taxableAmount": zod.number().optional(),
+  "gstRate": zod.number().optional(),
+  "totalGst": zod.number().optional(),
+  "lineTotal": zod.number().optional(),
+  "deliveredQty": zod.number().optional(),
+  "remarks": zod.string().optional()
+})).optional()
+})
+
+

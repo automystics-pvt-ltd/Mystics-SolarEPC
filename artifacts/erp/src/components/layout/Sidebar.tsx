@@ -3,7 +3,8 @@ import {
   LayoutDashboard, Users, FileText, FileCheck, FilePlus, CheckSquare,
   AlertTriangle, FolderKanban, HardHat, Warehouse, Boxes, Truck,
   BookOpen, Scale, ClipboardCheck, ChevronLeft, ChevronRight,
-  LogOut, Zap, Layers, CheckSquare2, Wrench,
+  LogOut, Zap, Layers, CheckSquare2, Wrench, Building2, Package,
+  ClipboardList, ShoppingCart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
@@ -65,6 +66,15 @@ const MODULES = [
       { name: "AMC Contracts", href: "/oam/amc", icon: Wrench },
       { name: "Maintenance", href: "/oam/maintenance", icon: Wrench },
       { name: "Service Tickets", href: "/oam/tickets", icon: AlertTriangle },
+    ],
+  },
+  {
+    section: "PROCUREMENT",
+    items: [
+      { name: "Vendors", href: "/procurement/vendors", icon: Building2 },
+      { name: "Materials", href: "/procurement/materials", icon: Package },
+      { name: "Vendor Quotations", href: "/procurement/quotations", icon: ClipboardList },
+      { name: "Purchase Orders", href: "/procurement/pos", icon: ShoppingCart },
     ],
   },
 ];

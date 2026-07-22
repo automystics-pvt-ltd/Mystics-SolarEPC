@@ -38,6 +38,17 @@ import CommissioningDetail from '@/pages/commissioning/CommissioningDetail';
 // O&M & AMC
 import OamPages from '@/pages/oam/OamPages';
 
+// Procurement
+import VendorsList from '@/pages/procurement/VendorsList';
+import VendorDetail from '@/pages/procurement/VendorDetail';
+import MaterialsList from '@/pages/procurement/MaterialsList';
+import ProcurementQuotationsList from '@/pages/procurement/ProcurementQuotationsList';
+import ProcurementQuotationDetail from '@/pages/procurement/ProcurementQuotationDetail';
+import ProcurementQuotationForm from '@/pages/procurement/ProcurementQuotationForm';
+import QuotationComparisonView from '@/pages/procurement/QuotationComparisonView';
+import ProcurementPOsList from '@/pages/procurement/ProcurementPOsList';
+import ProcurementPODetail from '@/pages/procurement/ProcurementPODetail';
+
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ component: Component, ...rest }: any) {
@@ -113,6 +124,18 @@ function Router() {
       <Route path="/oam/amc">{() => <ProtectedRoute component={OamPages} />}</Route>
       <Route path="/oam/maintenance">{() => <ProtectedRoute component={OamPages} />}</Route>
       <Route path="/oam/tickets">{() => <ProtectedRoute component={OamPages} />}</Route>
+
+      {/* Procurement */}
+      <Route path="/procurement/vendors">{() => <ProtectedRoute component={VendorsList} />}</Route>
+      <Route path="/procurement/vendors/:id">{(p) => <ProtectedRoute component={VendorDetail} id={p.id} />}</Route>
+      <Route path="/procurement/materials">{() => <ProtectedRoute component={MaterialsList} />}</Route>
+      <Route path="/procurement/quotations">{() => <ProtectedRoute component={ProcurementQuotationsList} />}</Route>
+      <Route path="/procurement/quotations/new">{() => <ProtectedRoute component={ProcurementQuotationForm} />}</Route>
+      <Route path="/procurement/quotations/:id/edit">{(p) => <ProtectedRoute component={ProcurementQuotationForm} editId={p.id} />}</Route>
+      <Route path="/procurement/material-requests/:mrId/compare">{(p) => <ProtectedRoute component={QuotationComparisonView} mrId={p.mrId} />}</Route>
+      <Route path="/procurement/quotations/:id">{(p) => <ProtectedRoute component={ProcurementQuotationDetail} id={p.id} />}</Route>
+      <Route path="/procurement/pos">{() => <ProtectedRoute component={ProcurementPOsList} />}</Route>
+      <Route path="/procurement/pos/:id">{(p) => <ProtectedRoute component={ProcurementPODetail} id={p.id} />}</Route>
 
       <Route component={NotFound} />
     </Switch>

@@ -66,6 +66,14 @@ tags:
     description: Inventory — Stock Ledger & Valuation
   - name: inventory-audits
     description: Inventory — Audits
+  - name: vendors
+    description: Procurement — Vendor Master
+  - name: materials
+    description: Procurement — Material Master
+  - name: proc-quotations
+    description: Procurement — Vendor Quotation Workflow
+  - name: proc-pos
+    description: Procurement — Purchase Orders (from approved quotations)
 
 paths:
   /healthz:
@@ -2406,6 +2414,652 @@ paths:
               schema:
                 $ref: "#/components/schemas/ServiceTicket"
 
+  # ── VENDORS ────────────────────────────────────────────────────────────────
+  /vendors:
+    get:
+      operationId: getVendors
+      tags: [vendors]
+      summary: List vendors
+      parameters:
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Vendors
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Vendor"
+    post:
+      operationId: createVendor
+      tags: [vendors]
+      summary: Create vendor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VendorInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vendor"
+
+  /vendors/{id}:
+    get:
+      operationId: getVendor
+      tags: [vendors]
+      summary: Get vendor
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Vendor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vendor"
+    patch:
+      operationId: updateVendor
+      tags: [vendors]
+      summary: Update vendor
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VendorInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vendor"
+    delete:
+      operationId: deleteVendor
+      tags: [vendors]
+      summary: Delete vendor
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResponse"
+
+  /vendors/{id}/contacts:
+    post:
+      operationId: addVendorContact
+      tags: [vendors]
+      summary: Add contact to vendor
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VendorContactInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VendorContact"
+
+  /vendors/{id}/contacts/{cid}:
+    delete:
+      operationId: deleteVendorContact
+      tags: [vendors]
+      summary: Delete vendor contact
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: cid
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResponse"
+
+  # ── MATERIAL CATEGORIES ────────────────────────────────────────────────────
+  /material-categories:
+    get:
+      operationId: getMaterialCategories
+      tags: [materials]
+      summary: List material categories
+      responses:
+        "200":
+          description: Categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MaterialCategory"
+    post:
+      operationId: createMaterialCategory
+      tags: [materials]
+      summary: Create material category
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MaterialCategoryInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaterialCategory"
+
+  /material-categories/{id}:
+    patch:
+      operationId: updateMaterialCategory
+      tags: [materials]
+      summary: Update material category
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MaterialCategoryInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaterialCategory"
+    delete:
+      operationId: deleteMaterialCategory
+      tags: [materials]
+      summary: Delete material category
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResponse"
+
+  # ── MATERIALS ──────────────────────────────────────────────────────────────
+  /materials:
+    get:
+      operationId: getMaterials
+      tags: [materials]
+      summary: List materials
+      parameters:
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: categoryId
+          in: query
+          schema: { type: integer }
+        - name: isActive
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Materials
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Material"
+    post:
+      operationId: createMaterial
+      tags: [materials]
+      summary: Create material
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MaterialInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Material"
+
+  /materials/{id}:
+    get:
+      operationId: getMaterial
+      tags: [materials]
+      summary: Get material
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Material
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Material"
+    patch:
+      operationId: updateMaterial
+      tags: [materials]
+      summary: Update material
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MaterialInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Material"
+    delete:
+      operationId: deleteMaterial
+      tags: [materials]
+      summary: Delete material
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResponse"
+
+  # ── PROCUREMENT QUOTATIONS ─────────────────────────────────────────────────
+  /procurement-quotations:
+    get:
+      operationId: getProcurementQuotations
+      tags: [proc-quotations]
+      summary: List procurement quotations
+      parameters:
+        - name: mrId
+          in: query
+          schema: { type: integer }
+        - name: vendorId
+          in: query
+          schema: { type: integer }
+        - name: status
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Quotations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProcurementQuotation"
+    post:
+      operationId: createProcurementQuotation
+      tags: [proc-quotations]
+      summary: Create procurement quotation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProcurementQuotationInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcurementQuotation"
+
+  /procurement-quotations/{id}:
+    get:
+      operationId: getProcurementQuotation
+      tags: [proc-quotations]
+      summary: Get quotation with items, versions, audit log
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Quotation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcurementQuotation"
+    patch:
+      operationId: updateProcurementQuotation
+      tags: [proc-quotations]
+      summary: Update quotation (Draft/RevisionRequested only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProcurementQuotationInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcurementQuotation"
+    delete:
+      operationId: deleteProcurementQuotation
+      tags: [proc-quotations]
+      summary: Delete quotation (Draft only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResponse"
+
+  /procurement-quotations/{id}/submit:
+    post:
+      operationId: submitProcurementQuotation
+      tags: [proc-quotations]
+      summary: Submit quotation for review
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowActionInput"
+      responses:
+        "200":
+          description: Submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcurementQuotation"
+
+  /procurement-quotations/{id}/start-review:
+    post:
+      operationId: startProcurementQuotationReview
+      tags: [proc-quotations]
+      summary: Start review (approver action)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowActionInput"
+      responses:
+        "200":
+          description: Under review
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcurementQuotation"
+
+  /procurement-quotations/{id}/request-revision:
+    post:
+      operationId: requestProcurementQuotationRevision
+      tags: [proc-quotations]
+      summary: Request revision with mandatory remarks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowActionInput"
+      responses:
+        "200":
+          description: Revision requested
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcurementQuotation"
+
+  /procurement-quotations/{id}/approve:
+    post:
+      operationId: approveProcurementQuotation
+      tags: [proc-quotations]
+      summary: Approve quotation and auto-generate PO
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowActionInput"
+      responses:
+        "200":
+          description: Approved + PO generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApproveQuotationResponse"
+
+  /procurement-quotations/{id}/reject:
+    post:
+      operationId: rejectProcurementQuotation
+      tags: [proc-quotations]
+      summary: Reject quotation with mandatory remarks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowActionInput"
+      responses:
+        "200":
+          description: Rejected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcurementQuotation"
+
+  /procurement-quotations/{id}/comment:
+    post:
+      operationId: addProcurementQuotationComment
+      tags: [proc-quotations]
+      summary: Add comment/note to quotation audit trail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowActionInput"
+      responses:
+        "200":
+          description: Comment added
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  logs:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/QuotationAuditLog"
+
+  /material-requests/{id}/quotation-comparison:
+    get:
+      operationId: getQuotationComparison
+      tags: [proc-quotations]
+      summary: L1 comparison for all quotations against an MR
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Comparison data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuotationComparisonResult"
+
+  # ── PROCUREMENT POs ─────────────────────────────────────────────────────────
+  /procurement-pos:
+    get:
+      operationId: getProcurementPOs
+      tags: [proc-pos]
+      summary: List procurement POs
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: vendorId
+          in: query
+          schema: { type: integer }
+      responses:
+        "200":
+          description: POs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProcurementPO"
+
+  /procurement-pos/{id}:
+    get:
+      operationId: getProcurementPO
+      tags: [proc-pos]
+      summary: Get PO with items
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: PO
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcurementPO"
+    patch:
+      operationId: updateProcurementPO
+      tags: [proc-pos]
+      summary: Update PO status or details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProcurementPOUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcurementPO"
+
+
 components:
   schemas:
     HealthStatus:
@@ -4505,3 +5159,415 @@ components:
       properties:
         resolution:
           type: string
+
+    # ── NEW SCHEMAS ─────────────────────────────────────────────────────────
+    VendorContact:
+      type: object
+      properties:
+        id: { type: integer }
+        vendorId: { type: integer }
+        name: { type: string }
+        designation: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        isPrimary: { type: boolean }
+        createdAt: { type: string }
+
+    VendorContactInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        designation: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        isPrimary: { type: boolean }
+
+    Vendor:
+      type: object
+      properties:
+        id: { type: integer }
+        code: { type: string }
+        name: { type: string }
+        tradeName: { type: string }
+        status: { type: string }
+        gstin: { type: string }
+        pan: { type: string }
+        gstRegisteredState: { type: string }
+        gstStateCode: { type: string }
+        isMsme: { type: boolean }
+        msmeNumber: { type: string }
+        billingAddress: { type: string }
+        billingCity: { type: string }
+        billingState: { type: string }
+        billingPincode: { type: string }
+        billingCountry: { type: string }
+        primaryEmail: { type: string }
+        primaryPhone: { type: string }
+        website: { type: string }
+        bankName: { type: string }
+        bankBranch: { type: string }
+        bankAccountNumber: { type: string }
+        bankIfsc: { type: string }
+        bankAccountType: { type: string }
+        upiId: { type: string }
+        paymentTerms: { type: string }
+        creditLimit: { type: string }
+        tags:
+          type: array
+          items: { type: string }
+        notes: { type: string }
+        contacts:
+          type: array
+          items:
+            $ref: "#/components/schemas/VendorContact"
+        createdBy: { type: integer }
+        updatedBy: { type: integer }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+
+    VendorInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        tradeName: { type: string }
+        status: { type: string }
+        gstin: { type: string }
+        pan: { type: string }
+        gstRegisteredState: { type: string }
+        gstStateCode: { type: string }
+        isMsme: { type: boolean }
+        msmeNumber: { type: string }
+        billingAddress: { type: string }
+        billingCity: { type: string }
+        billingState: { type: string }
+        billingPincode: { type: string }
+        billingCountry: { type: string }
+        primaryEmail: { type: string }
+        primaryPhone: { type: string }
+        website: { type: string }
+        bankName: { type: string }
+        bankBranch: { type: string }
+        bankAccountNumber: { type: string }
+        bankIfsc: { type: string }
+        bankAccountType: { type: string }
+        upiId: { type: string }
+        paymentTerms: { type: string }
+        creditLimit: { type: string }
+        notes: { type: string }
+        contacts:
+          type: array
+          items:
+            $ref: "#/components/schemas/VendorContactInput"
+
+    MaterialCategory:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        code: { type: string }
+        description: { type: string }
+        parentId: { type: integer }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+
+    MaterialCategoryInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        code: { type: string }
+        description: { type: string }
+        parentId: { type: integer }
+
+    Material:
+      type: object
+      properties:
+        id: { type: integer }
+        code: { type: string }
+        name: { type: string }
+        description: { type: string }
+        categoryId: { type: integer }
+        uom: { type: string }
+        hsnSacCode: { type: string }
+        gstRate: { type: number }
+        cessRate: { type: number }
+        basePrice: { type: number }
+        lastPurchasePrice: { type: number }
+        currency: { type: string }
+        brand: { type: string }
+        model: { type: string }
+        specifications: { type: string }
+        minOrderQty: { type: number }
+        leadTimeDays: { type: integer }
+        isActive: { type: boolean }
+        createdBy: { type: integer }
+        updatedBy: { type: integer }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+
+    MaterialInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        description: { type: string }
+        categoryId: { type: integer }
+        uom: { type: string }
+        hsnSacCode: { type: string }
+        gstRate: { type: number }
+        cessRate: { type: number }
+        basePrice: { type: number }
+        currency: { type: string }
+        brand: { type: string }
+        model: { type: string }
+        specifications: { type: string }
+        minOrderQty: { type: number }
+        leadTimeDays: { type: integer }
+        isActive: { type: boolean }
+
+    ProcurementQuotationItem:
+      type: object
+      properties:
+        id: { type: integer }
+        quotationId: { type: integer }
+        lineNo: { type: integer }
+        materialId: { type: integer }
+        materialCode: { type: string }
+        materialName: { type: string }
+        description: { type: string }
+        uom: { type: string }
+        hsnSacCode: { type: string }
+        brand: { type: string }
+        qty: { type: number }
+        unitPrice: { type: number }
+        discountPct: { type: number }
+        discountAmount: { type: number }
+        taxableAmount: { type: number }
+        gstRate: { type: number }
+        cgstAmount: { type: number }
+        sgstAmount: { type: number }
+        igstAmount: { type: number }
+        totalGst: { type: number }
+        lineTotal: { type: number }
+        deliveryDays: { type: integer }
+        remarks: { type: string }
+
+    QuotationVersion:
+      type: object
+      properties:
+        id: { type: integer }
+        quotationId: { type: integer }
+        version: { type: integer }
+        snapshot: { type: object }
+        changedBy: { type: integer }
+        changedByName: { type: string }
+        changeSummary: { type: string }
+        createdAt: { type: string }
+
+    QuotationAuditLog:
+      type: object
+      properties:
+        id: { type: integer }
+        quotationId: { type: integer }
+        action: { type: string }
+        performedBy: { type: integer }
+        performedByName: { type: string }
+        performedByRole: { type: string }
+        oldValues: { type: object }
+        newValues: { type: object }
+        remarks: { type: string }
+        createdAt: { type: string }
+
+    ProcurementQuotation:
+      type: object
+      properties:
+        id: { type: integer }
+        referenceId: { type: string }
+        version: { type: integer }
+        status: { type: string }
+        mrId: { type: integer }
+        vendorId: { type: integer }
+        vendorSnapshotName: { type: string }
+        quotationDate: { type: string }
+        validityDate: { type: string }
+        currency: { type: string }
+        paymentTerms: { type: string }
+        deliveryTerms: { type: string }
+        deliveryLeadDays: { type: integer }
+        warrantyMonths: { type: integer }
+        subtotal: { type: number }
+        totalDiscount: { type: number }
+        totalGst: { type: number }
+        freightCharges: { type: number }
+        otherCharges: { type: number }
+        totalAmount: { type: number }
+        fileUrl: { type: string }
+        fileOriginalName: { type: string }
+        vendorRemarks: { type: string }
+        internalNotes: { type: string }
+        submittedAt: { type: string }
+        submittedBy: { type: integer }
+        submittedByName: { type: string }
+        reviewedAt: { type: string }
+        reviewedBy: { type: integer }
+        reviewedByName: { type: string }
+        approvedAt: { type: string }
+        approvedBy: { type: integer }
+        approvedByName: { type: string }
+        rejectedAt: { type: string }
+        rejectedBy: { type: integer }
+        rejectedByName: { type: string }
+        approvalRemarks: { type: string }
+        isL1: { type: boolean }
+        isRecommended: { type: boolean }
+        recommendationNotes: { type: string }
+        poGenerated: { type: boolean }
+        createdBy: { type: integer }
+        createdByName: { type: string }
+        updatedBy: { type: integer }
+        updatedByName: { type: string }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProcurementQuotationItem"
+        versions:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuotationVersion"
+        auditLogs:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuotationAuditLog"
+
+    ProcurementQuotationInput:
+      type: object
+      properties:
+        mrId: { type: integer }
+        vendorId: { type: integer }
+        vendorSnapshotName: { type: string }
+        quotationDate: { type: string }
+        validityDate: { type: string }
+        paymentTerms: { type: string }
+        deliveryTerms: { type: string }
+        deliveryLeadDays: { type: integer }
+        warrantyMonths: { type: integer }
+        freightCharges: { type: number }
+        otherCharges: { type: number }
+        fileUrl: { type: string }
+        fileOriginalName: { type: string }
+        vendorRemarks: { type: string }
+        internalNotes: { type: string }
+        changeSummary: { type: string }
+        userName: { type: string }
+        userId: { type: integer }
+        userRole: { type: string }
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProcurementQuotationItem"
+
+    WorkflowActionInput:
+      type: object
+      properties:
+        userName: { type: string }
+        userId: { type: integer }
+        userRole: { type: string }
+        remarks: { type: string }
+
+    ApproveQuotationResponse:
+      type: object
+      properties:
+        quotation:
+          $ref: "#/components/schemas/ProcurementQuotation"
+        po:
+          $ref: "#/components/schemas/ProcurementPO"
+
+    QuotationComparisonResult:
+      type: object
+      properties:
+        quotations:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProcurementQuotation"
+        materialNames:
+          type: array
+          items: { type: string }
+        materialLowest:
+          type: object
+        l1VendorId: { type: integer }
+        l1ReferenceId: { type: string }
+        l1Amount: { type: number }
+
+    ProcurementPOItem:
+      type: object
+      properties:
+        id: { type: integer }
+        poId: { type: integer }
+        lineNo: { type: integer }
+        materialId: { type: integer }
+        materialCode: { type: string }
+        materialName: { type: string }
+        description: { type: string }
+        uom: { type: string }
+        hsnSacCode: { type: string }
+        brand: { type: string }
+        qty: { type: number }
+        unitPrice: { type: number }
+        discountPct: { type: number }
+        discountAmount: { type: number }
+        taxableAmount: { type: number }
+        gstRate: { type: number }
+        totalGst: { type: number }
+        lineTotal: { type: number }
+        deliveredQty: { type: number }
+        remarks: { type: string }
+
+    ProcurementPO:
+      type: object
+      properties:
+        id: { type: integer }
+        poNumber: { type: string }
+        quotationId: { type: integer }
+        vendorId: { type: integer }
+        vendorName: { type: string }
+        vendorGstin: { type: string }
+        vendorAddress: { type: string }
+        vendorContact: { type: string }
+        status: { type: string }
+        poDate: { type: string }
+        deliveryDeadline: { type: string }
+        deliveryAddress: { type: string }
+        paymentTerms: { type: string }
+        warrantyMonths: { type: integer }
+        freightCharges: { type: number }
+        otherCharges: { type: number }
+        subtotal: { type: number }
+        totalGst: { type: number }
+        totalAmount: { type: number }
+        specialTerms: { type: string }
+        internalNotes: { type: string }
+        approvedBy: { type: integer }
+        approvedByName: { type: string }
+        approvedAt: { type: string }
+        acknowledgedAt: { type: string }
+        closedAt: { type: string }
+        createdBy: { type: integer }
+        createdByName: { type: string }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProcurementPOItem"
+
+    ProcurementPOUpdate:
+      type: object
+      properties:
+        status: { type: string }
+        deliveryAddress: { type: string }
+        specialTerms: { type: string }
+        internalNotes: { type: string }
