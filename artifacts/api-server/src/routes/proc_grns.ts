@@ -98,11 +98,15 @@ router.post("/proc-grns", async (req, res): Promise<void> => {
   if (!po) { res.status(404).json({ error: "PO not found" }); return; }
 
   // Only allow GRN creation against POs that have been issued to the vendor.
-  // Allowlist: Issued, Acknowledged, PartiallyReceived, FullyReceived.
-  const ALLOWED_GRN_STATUSES = ["Issued", "Acknowledged", "PartiallyReceived", "FullyReceived"];
+  // Allowlist: Issued, Acknowledged, PartiallyReceived.
+  // FullyReceived is excluded — all items are already fully delivered.
+  const ALLOWED_GRN_STATUSES = ["Issued", "Acknowledged", "PartiallyReceived"];
   if (!ALLOWED_GRN_STATUSES.includes(po.status)) {
+    const fullyReceivedMsg = po.status === "FullyReceived"
+      ? "All items on this PO are already fully delivered."
+      : `Allowed statuses: ${ALLOWED_GRN_STATUSES.join(", ")}.`;
     res.status(400).json({
-      error: `Cannot create a GRN against PO ${po.poNumber} because it is ${po.status}. Allowed statuses: ${ALLOWED_GRN_STATUSES.join(", ")}.`,
+      error: `Cannot create a GRN against PO ${po.poNumber} because it is ${po.status}. ${fullyReceivedMsg}`,
     });
     return;
   }

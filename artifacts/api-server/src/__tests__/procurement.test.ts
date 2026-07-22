@@ -1161,15 +1161,16 @@ describe("GRN creation guard — blocked against Cancelled or Closed PO", () => 
     expect(res.body.grnNumber).toMatch(/^GRN-/);
   });
 
-  it("returns 201 when the PO is FullyReceived (allowed status)", async () => {
+  it("returns 400 when the PO is FullyReceived (all items already delivered)", async () => {
     const pid = await createDraftPO("GRN FullyReceived PO Guard");
     await api.patch(`/api/procurement-pos/${pid}`).send({ status: "Issued", ...actor });
     await api.patch(`/api/procurement-pos/${pid}`).send({ status: "Acknowledged", ...actor });
     await api.patch(`/api/procurement-pos/${pid}`).send({ status: "FullyReceived", ...actor });
 
     const res = await api.post("/api/proc-grns").send(grnPayload(pid));
-    expect(res.status).toBe(201);
-    expect(res.body.grnNumber).toMatch(/^GRN-/);
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/All items on this PO are already fully delivered/i);
+    expect(res.body.error).toMatch(/PO-/);
   });
 });
 
