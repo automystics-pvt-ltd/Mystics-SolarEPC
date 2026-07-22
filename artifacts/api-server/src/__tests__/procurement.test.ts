@@ -1172,3 +1172,149 @@ describe("GRN creation guard — blocked against Cancelled or Closed PO", () => 
     expect(res.body.grnNumber).toMatch(/^GRN-/);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe("Multi-GRN accumulation — two GRNs against a PartiallyReceived PO", () => {
+  /**
+   * Scenario:
+   *   PO has one line item: qty 10
+   *   GRN-1 delivers 6 → PO becomes PartiallyReceived, deliveredQty = 6
+   *   GRN-2 delivers 4 → PO becomes FullyReceived, deliveredQty = 10 (accumulated)
+   */
+  let accumPoId: number;
+  let accumPoItemId: number;
+  let grn1Id: number;
+  let grn2Id: number;
+
+  it("creates a PO with qty 10 and advances it to Acknowledged", async () => {
+    const qRes = await api.post("/api/procurement-quotations").send({
+      ...actor,
+      vendorId,
+      mrId,
+      items: [{ materialName: "Accumulation Test Item", uom: "Nos", qty: 10, unitPrice: 500, gstRate: 18, discountPct: 0 }],
+    });
+    expect(qRes.status).toBe(201);
+    const qid = qRes.body.id;
+
+    await api.post(`/api/procurement-quotations/${qid}/submit`).send(actor);
+    await api.post(`/api/procurement-quotations/${qid}/start-review`).send(actor);
+    const approveRes = await api
+      .post(`/api/procurement-quotations/${qid}/approve`)
+      .send({ ...actor, remarks: "Accumulation test approval" });
+    expect(approveRes.status).toBe(200);
+
+    accumPoId = approveRes.body.po.id;
+    expect(accumPoId).toBeDefined();
+
+    // Advance to Acknowledged
+    await api.patch(`/api/procurement-pos/${accumPoId}`).send({ status: "Issued", ...actor });
+    const ackRes = await api.patch(`/api/procurement-pos/${accumPoId}`).send({ status: "Acknowledged", ...actor });
+    expect(ackRes.status).toBe(200);
+    expect(ackRes.body.status).toBe("Acknowledged");
+
+    // Capture the PO item id for use in GRN items
+    const poDetail = await api.get(`/api/procurement-pos/${accumPoId}`);
+    expect(poDetail.status).toBe(200);
+    expect(poDetail.body.items).toHaveLength(1);
+    accumPoItemId = poDetail.body.items[0].id;
+    expect(accumPoItemId).toBeDefined();
+  });
+
+  it("creates GRN-1 (partial: 6 of 10) and submits it", async () => {
+    const res = await api.post("/api/proc-grns").send({
+      ...actor,
+      poId: accumPoId,
+      deliveryDate: "2026-07-22",
+      items: [{
+        poItemId: accumPoItemId,
+        materialName: "Accumulation Test Item",
+        uom: "Nos",
+        orderedQty: 10,
+        receivedQty: 6,
+        acceptedQty: 6,
+        rejectedQty: 0,
+        damagedQty: 0,
+        unitPrice: 500,
+      }],
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.grnNumber).toMatch(/^GRN-/);
+    grn1Id = res.body.id;
+    expect(grn1Id).toBeDefined();
+
+    // Submit for inspection
+    const submitRes = await api.post(`/api/proc-grns/${grn1Id}/submit`).send(actor);
+    expect(submitRes.status).toBe(200);
+    expect(submitRes.body.status).toBe("Submitted");
+  });
+
+  it("approves GRN-1 — PO transitions to PartiallyReceived with deliveredQty = 6", async () => {
+    const approveRes = await api
+      .post(`/api/proc-grns/${grn1Id}/approve`)
+      .send({ ...actor, remarks: "First partial delivery accepted" });
+    expect(approveRes.status).toBe(200);
+
+    // GRN itself should be PartiallyAccepted (accepted < ordered)
+    expect(approveRes.body.status).toBe("PartiallyAccepted");
+
+    // PO status should now be PartiallyReceived
+    const poRes = await api.get(`/api/procurement-pos/${accumPoId}`);
+    expect(poRes.status).toBe(200);
+    expect(poRes.body.status).toBe("PartiallyReceived");
+
+    // deliveredQty on the PO item should be 6
+    const item = poRes.body.items[0];
+    expect(Number(item.deliveredQty)).toBe(6);
+  });
+
+  it("creates GRN-2 (remainder: 4 of 10) against the PartiallyReceived PO and submits it", async () => {
+    // GRN creation must be allowed against a PartiallyReceived PO
+    const res = await api.post("/api/proc-grns").send({
+      ...actor,
+      poId: accumPoId,
+      deliveryDate: "2026-07-25",
+      items: [{
+        poItemId: accumPoItemId,
+        materialName: "Accumulation Test Item",
+        uom: "Nos",
+        orderedQty: 10,
+        receivedQty: 4,
+        acceptedQty: 4,
+        rejectedQty: 0,
+        damagedQty: 0,
+        unitPrice: 500,
+      }],
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.grnNumber).toMatch(/^GRN-/);
+    grn2Id = res.body.id;
+    expect(grn2Id).toBeDefined();
+    // GRN-1 and GRN-2 must be distinct records
+    expect(grn2Id).not.toBe(grn1Id);
+
+    // Submit for inspection
+    const submitRes = await api.post(`/api/proc-grns/${grn2Id}/submit`).send(actor);
+    expect(submitRes.status).toBe(200);
+    expect(submitRes.body.status).toBe("Submitted");
+  });
+
+  it("approves GRN-2 — PO transitions to FullyReceived with deliveredQty = 10 (accumulated)", async () => {
+    const approveRes = await api
+      .post(`/api/proc-grns/${grn2Id}/approve`)
+      .send({ ...actor, remarks: "Final delivery accepted — order complete" });
+    expect(approveRes.status).toBe(200);
+
+    // GRN-2 accepted 4 of the 10 originally ordered, so the GRN itself is PartiallyAccepted.
+    // The key result to verify is the PO-level accumulation below.
+    expect(["Accepted", "PartiallyAccepted"]).toContain(approveRes.body.status);
+
+    // PO status should now be FullyReceived
+    const poRes = await api.get(`/api/procurement-pos/${accumPoId}`);
+    expect(poRes.status).toBe(200);
+    expect(poRes.body.status).toBe("FullyReceived");
+
+    // deliveredQty on the PO item must reflect the combined quantity from both GRNs (6 + 4 = 10)
+    const item = poRes.body.items[0];
+    expect(Number(item.deliveredQty)).toBe(10);
+  });
+});
