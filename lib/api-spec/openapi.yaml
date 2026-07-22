@@ -3,20 +3,66 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Mystics ERP API — Sales & CRM, Project Management, Inventory & Warehouse Management
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: dashboard
+    description: Role-based dashboards
+  - name: leads
+    description: Sales & CRM — Leads
+  - name: quotations
+    description: Sales & CRM — Quotations
+  - name: client-pos
+    description: Sales & CRM — Client Purchase Orders
+  - name: crm-invoices
+    description: Sales & CRM — Invoices
+  - name: tasks
+    description: Tasks across modules
+  - name: escalations
+    description: Escalations across modules
+  - name: projects
+    description: Project Management — Projects
+  - name: activities
+    description: Project Management — Activities & Gantt
+  - name: material-requests
+    description: Project Management — Material Requests
+  - name: vendor-quotations
+    description: Project Management — Vendor Quotations
+  - name: purchase-orders
+    description: Project Management — Purchase Orders
+  - name: dprs
+    description: Project Management — Daily Progress Reports
+  - name: milestones
+    description: Project Management — Payment Milestones
+  - name: expenses
+    description: Project Management — Expenses
+  - name: budgets
+    description: Project Management — Budgets
+  - name: contractors
+    description: Project Management — Contractors
+  - name: warehouses
+    description: Inventory — Warehouses
+  - name: grns
+    description: Inventory — Goods Receipt Notes
+  - name: delivery-challans
+    description: Inventory — Delivery Challans
+  - name: stock
+    description: Inventory — Stock Ledger & Valuation
+  - name: inventory-audits
+    description: Inventory — Audits
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +70,1679 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ── AUTH ───────────────────────────────────────────────────────────────────
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login and get JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user profile
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  # ── DASHBOARD ──────────────────────────────────────────────────────────────
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [dashboard]
+      summary: Role-based home dashboard KPIs
+      parameters:
+        - name: role
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardData"
+
+  /dashboard/combined:
+    get:
+      operationId: getCombinedDashboard
+      tags: [dashboard]
+      summary: Combined CRM + Project dashboard
+      responses:
+        "200":
+          description: Combined dashboard
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CombinedDashboardData"
+
+  # ── LEADS ──────────────────────────────────────────────────────────────────
+  /leads:
+    get:
+      operationId: getLeads
+      tags: [leads]
+      summary: List and filter leads
+      parameters:
+        - name: stage
+          in: query
+          schema:
+            type: string
+        - name: owner
+          in: query
+          schema:
+            type: string
+        - name: territory
+          in: query
+          schema:
+            type: string
+        - name: source
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of leads
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Lead"
+    post:
+      operationId: createLead
+      tags: [leads]
+      summary: Create a new lead
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeadInput"
+      responses:
+        "201":
+          description: Created lead
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+
+  /leads/{id}:
+    get:
+      operationId: getLead
+      tags: [leads]
+      summary: Get a lead by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Lead
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+    patch:
+      operationId: updateLead
+      tags: [leads]
+      summary: Update a lead
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeadUpdate"
+      responses:
+        "200":
+          description: Updated lead
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+    delete:
+      operationId: deleteLead
+      tags: [leads]
+      summary: Delete a lead
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResponse"
+
+  /leads/{id}/assign:
+    post:
+      operationId: assignLead
+      tags: [leads]
+      summary: Assign lead and compute score
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeadAssignInput"
+      responses:
+        "200":
+          description: Lead assigned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+
+  /leads/pipeline-summary:
+    get:
+      operationId: getLeadsPipelineSummary
+      tags: [leads]
+      summary: Pipeline summary — count and value by stage
+      responses:
+        "200":
+          description: Pipeline summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PipelineSummary"
+
+  # ── QUOTATIONS ─────────────────────────────────────────────────────────────
+  /quotations:
+    get:
+      operationId: getQuotations
+      tags: [quotations]
+      summary: List quotations
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: leadId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Quotations list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Quotation"
+    post:
+      operationId: createQuotation
+      tags: [quotations]
+      summary: Create a quotation against a lead
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuotationInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Quotation"
+
+  /quotations/{id}:
+    get:
+      operationId: getQuotation
+      tags: [quotations]
+      summary: Get a quotation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Quotation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Quotation"
+    patch:
+      operationId: updateQuotation
+      tags: [quotations]
+      summary: Update a quotation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuotationUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Quotation"
+
+  /quotations/{id}/approve:
+    post:
+      operationId: approveQuotation
+      tags: [quotations]
+      summary: Approve a quotation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApprovalInput"
+      responses:
+        "200":
+          description: Approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Quotation"
+
+  /quotations/{id}/log-client-po:
+    post:
+      operationId: logClientPO
+      tags: [quotations]
+      summary: Log client PO and auto-create project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientPOInput"
+      responses:
+        "201":
+          description: Client PO logged and project created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientPOWithProject"
+
+  # ── CLIENT POs ─────────────────────────────────────────────────────────────
+  /client-pos:
+    get:
+      operationId: getClientPOs
+      tags: [client-pos]
+      summary: List client POs
+      responses:
+        "200":
+          description: Client POs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ClientPO"
+
+  /client-pos/{id}:
+    get:
+      operationId: getClientPO
+      tags: [client-pos]
+      summary: Get a client PO
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Client PO
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientPO"
+
+  # ── CRM INVOICES ───────────────────────────────────────────────────────────
+  /crm-invoices:
+    get:
+      operationId: getCrmInvoices
+      tags: [crm-invoices]
+      summary: List CRM invoices
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: clientPoId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Invoices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CrmInvoice"
+    post:
+      operationId: createCrmInvoice
+      tags: [crm-invoices]
+      summary: Create a client invoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CrmInvoiceInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CrmInvoice"
+
+  /crm-invoices/{id}/mark-paid:
+    post:
+      operationId: markCrmInvoicePaid
+      tags: [crm-invoices]
+      summary: Mark invoice as paid
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MarkPaidInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CrmInvoice"
+
+  /crm-invoices/aging-summary:
+    get:
+      operationId: getInvoiceAgingSummary
+      tags: [crm-invoices]
+      summary: Invoice aging summary — overdue buckets
+      responses:
+        "200":
+          description: Aging summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgingSummary"
+
+  # ── TASKS ──────────────────────────────────────────────────────────────────
+  /tasks:
+    get:
+      operationId: getTasks
+      tags: [tasks]
+      summary: List tasks
+      parameters:
+        - name: module
+          in: query
+          schema:
+            type: string
+        - name: ownerId
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Task"
+    post:
+      operationId: createTask
+      tags: [tasks]
+      summary: Create a task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+
+  /tasks/{id}:
+    patch:
+      operationId: updateTask
+      tags: [tasks]
+      summary: Update task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+
+  # ── ESCALATIONS ────────────────────────────────────────────────────────────
+  /escalations:
+    get:
+      operationId: getEscalations
+      tags: [escalations]
+      summary: List escalations
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: projectId
+          in: query
+          schema:
+            type: integer
+        - name: module
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Escalations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Escalation"
+    post:
+      operationId: createEscalation
+      tags: [escalations]
+      summary: Raise an escalation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EscalationInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Escalation"
+
+  /escalations/{id}/resolve:
+    post:
+      operationId: resolveEscalation
+      tags: [escalations]
+      summary: Resolve an escalation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResolveEscalationInput"
+      responses:
+        "200":
+          description: Resolved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Escalation"
+
+  # ── PROJECTS ───────────────────────────────────────────────────────────────
+  /projects:
+    get:
+      operationId: getProjects
+      tags: [projects]
+      summary: List all projects
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: pmOwnerId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+    post:
+      operationId: createProject
+      tags: [projects]
+      summary: Create a project manually
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+
+  /projects/{id}:
+    get:
+      operationId: getProject
+      tags: [projects]
+      summary: Get a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+    patch:
+      operationId: updateProject
+      tags: [projects]
+      summary: Update a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+
+  /projects/{id}/dashboard:
+    get:
+      operationId: getProjectDashboard
+      tags: [projects]
+      summary: Single-project KPI dashboard
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Project dashboard
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectDashboard"
+
+  /projects/{id}/budget-vs-actual:
+    get:
+      operationId: getProjectBudgetVsActual
+      tags: [projects]
+      summary: Budget vs actual for a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Budget variance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetVsActual"
+
+  /projects/portfolio-summary:
+    get:
+      operationId: getPortfolioSummary
+      tags: [projects]
+      summary: Portfolio-level summary across all projects
+      responses:
+        "200":
+          description: Portfolio summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioSummary"
+
+  # ── ACTIVITIES (GANTT) ─────────────────────────────────────────────────────
+  /projects/{id}/activities:
+    get:
+      operationId: getProjectActivities
+      tags: [activities]
+      summary: Get activities / Gantt data for a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Activities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Activity"
+    post:
+      operationId: createActivity
+      tags: [activities]
+      summary: Add activity to a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActivityInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Activity"
+
+  /activities/{id}:
+    patch:
+      operationId: updateActivity
+      tags: [activities]
+      summary: Update an activity
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActivityUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Activity"
+
+  # ── MATERIAL REQUESTS ──────────────────────────────────────────────────────
+  /material-requests:
+    get:
+      operationId: getMaterialRequests
+      tags: [material-requests]
+      summary: List material requests
+      parameters:
+        - name: projectId
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Material requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MaterialRequest"
+    post:
+      operationId: createMaterialRequest
+      tags: [material-requests]
+      summary: Raise a material request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MaterialRequestInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaterialRequest"
+
+  /material-requests/{id}:
+    get:
+      operationId: getMaterialRequest
+      tags: [material-requests]
+      summary: Get a material request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Material request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaterialRequest"
+
+  /material-requests/{id}/vendor-quotations:
+    post:
+      operationId: addVendorQuotation
+      tags: [material-requests]
+      summary: Add a vendor quotation to a material request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VendorQuotationInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VendorQuotation"
+
+  # ── VENDOR QUOTATIONS ──────────────────────────────────────────────────────
+  /vendor-quotations:
+    get:
+      operationId: getVendorQuotations
+      tags: [vendor-quotations]
+      summary: List vendor quotations
+      parameters:
+        - name: mrId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Vendor quotations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VendorQuotation"
+
+  /vendor-quotations/{id}/review:
+    post:
+      operationId: reviewVendorQuotation
+      tags: [vendor-quotations]
+      summary: Submit manager/MD review
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VendorQuotationReviewInput"
+      responses:
+        "200":
+          description: Reviewed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VendorQuotation"
+
+  /vendor-quotations/{id}/approve-l1:
+    post:
+      operationId: approveVendorQuotationL1
+      tags: [vendor-quotations]
+      summary: L1 approval on a vendor quotation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/L1ApprovalInput"
+      responses:
+        "200":
+          description: Approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VendorQuotation"
+
+  /vendor-quotations/{id}/generate-po:
+    post:
+      operationId: generatePOFromQuotation
+      tags: [vendor-quotations]
+      summary: Generate PO from L1-approved vendor quotation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GeneratePOInput"
+      responses:
+        "201":
+          description: PO created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseOrder"
+
+  # ── PURCHASE ORDERS ────────────────────────────────────────────────────────
+  /purchase-orders:
+    get:
+      operationId: getPurchaseOrders
+      tags: [purchase-orders]
+      summary: List purchase orders
+      parameters:
+        - name: projectId
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Purchase orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PurchaseOrder"
+
+  /purchase-orders/{id}:
+    get:
+      operationId: getPurchaseOrder
+      tags: [purchase-orders]
+      summary: Get a purchase order
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: PO
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseOrder"
+
+  /purchase-orders/{id}/delivery-status:
+    get:
+      operationId: getPODeliveryStatus
+      tags: [purchase-orders]
+      summary: PO delivery status (received vs pending)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Delivery status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PODeliveryStatus"
+
+  /purchase-orders/{id}/vendor-invoice:
+    post:
+      operationId: attachVendorInvoice
+      tags: [purchase-orders]
+      summary: Attach vendor invoice to PO
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VendorInvoiceInput"
+      responses:
+        "201":
+          description: Invoice attached
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VendorInvoice"
+
+  # ── DPRs ───────────────────────────────────────────────────────────────────
+  /dprs:
+    get:
+      operationId: getDPRs
+      tags: [dprs]
+      summary: List DPRs for a project
+      parameters:
+        - name: projectId
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: DPRs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DPR"
+    post:
+      operationId: createDPR
+      tags: [dprs]
+      summary: Submit a daily progress report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DPRInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DPR"
+
+  # ── PAYMENT MILESTONES ─────────────────────────────────────────────────────
+  /projects/{id}/payment-milestones:
+    get:
+      operationId: getPaymentMilestones
+      tags: [milestones]
+      summary: List payment milestones for a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Milestones
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PaymentMilestone"
+    post:
+      operationId: createPaymentMilestone
+      tags: [milestones]
+      summary: Create a payment milestone
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentMilestoneInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentMilestone"
+
+  /payment-milestones/{id}/trigger:
+    post:
+      operationId: triggerPaymentMilestone
+      tags: [milestones]
+      summary: Mark milestone complete and fire billing event to CRM
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Triggered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentMilestone"
+
+  # ── EXPENSES ───────────────────────────────────────────────────────────────
+  /expenses:
+    get:
+      operationId: getExpenses
+      tags: [expenses]
+      summary: List expenses
+      parameters:
+        - name: projectId
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Expenses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Expense"
+    post:
+      operationId: createExpense
+      tags: [expenses]
+      summary: Submit an expense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExpenseInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Expense"
+
+  /expenses/{id}/approve:
+    post:
+      operationId: approveExpense
+      tags: [expenses]
+      summary: Approve or reject an expense
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApprovalInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Expense"
+
+  # ── BUDGETS ────────────────────────────────────────────────────────────────
+  /budgets:
+    get:
+      operationId: getBudgets
+      tags: [budgets]
+      summary: List budget lines
+      parameters:
+        - name: projectId
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Budgets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Budget"
+    post:
+      operationId: createBudget
+      tags: [budgets]
+      summary: Create a budget line
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BudgetInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Budget"
+
+  # ── CONTRACTORS ────────────────────────────────────────────────────────────
+  /contractors:
+    get:
+      operationId: getContractors
+      tags: [contractors]
+      summary: List contractors
+      responses:
+        "200":
+          description: Contractors
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Contractor"
+    post:
+      operationId: createContractor
+      tags: [contractors]
+      summary: Register a contractor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContractorInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contractor"
+
+  # ── WAREHOUSES ─────────────────────────────────────────────────────────────
+  /warehouses:
+    get:
+      operationId: getWarehouses
+      tags: [warehouses]
+      summary: List warehouses
+      parameters:
+        - name: projectId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Warehouses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Warehouse"
+    post:
+      operationId: createWarehouse
+      tags: [warehouses]
+      summary: Register a warehouse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WarehouseInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Warehouse"
+
+  /warehouses/{id}/locations:
+    get:
+      operationId: getWarehouseLocations
+      tags: [warehouses]
+      summary: List warehouse locations
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Locations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WarehouseLocation"
+    post:
+      operationId: createWarehouseLocation
+      tags: [warehouses]
+      summary: Add a warehouse location (zone/rack/bin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WarehouseLocationInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WarehouseLocation"
+
+  /warehouses/{id}/stock-summary:
+    get:
+      operationId: getWarehouseStockSummary
+      tags: [warehouses]
+      summary: Current stock summary for a warehouse
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Stock summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WarehouseStockSummary"
+
+  # ── GRNs ───────────────────────────────────────────────────────────────────
+  /grns:
+    get:
+      operationId: getGRNs
+      tags: [grns]
+      summary: List GRNs
+      parameters:
+        - name: poId
+          in: query
+          schema:
+            type: integer
+        - name: warehouseId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: GRNs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GRN"
+    post:
+      operationId: createGRN
+      tags: [grns]
+      summary: Record a goods receipt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GRNInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GRN"
+
+  /grns/{id}:
+    get:
+      operationId: getGRN
+      tags: [grns]
+      summary: Get a GRN
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: GRN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GRN"
+
+  /grns/{id}/qc-check:
+    post:
+      operationId: createQCCheck
+      tags: [grns]
+      summary: Submit inward quality check for a GRN
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QCCheckInput"
+      responses:
+        "201":
+          description: QC check recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QCCheck"
+
+  # ── DELIVERY CHALLANS ──────────────────────────────────────────────────────
+  /delivery-challans:
+    get:
+      operationId: getDeliveryChallans
+      tags: [delivery-challans]
+      summary: List delivery challans
+      parameters:
+        - name: warehouseId
+          in: query
+          schema:
+            type: integer
+        - name: projectId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Delivery challans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DeliveryChallan"
+    post:
+      operationId: createDeliveryChallan
+      tags: [delivery-challans]
+      summary: Create an outward delivery challan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeliveryChallanInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeliveryChallan"
+
+  # ── STOCK ──────────────────────────────────────────────────────────────────
+  /stock-ledger:
+    get:
+      operationId: getStockLedger
+      tags: [stock]
+      summary: Query the stock ledger
+      parameters:
+        - name: warehouseId
+          in: query
+          schema:
+            type: integer
+        - name: itemId
+          in: query
+          schema:
+            type: integer
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Stock ledger entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StockLedgerEntry"
+
+  /stock-valuation:
+    get:
+      operationId: getStockValuation
+      tags: [stock]
+      summary: Stock valuation summary
+      parameters:
+        - name: warehouseId
+          in: query
+          schema:
+            type: integer
+        - name: asOf
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Valuation summary
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StockValuationEntry"
+
+  # ── INVENTORY AUDITS ───────────────────────────────────────────────────────
+  /inventory-audits:
+    get:
+      operationId: getInventoryAudits
+      tags: [inventory-audits]
+      summary: List inventory audits
+      parameters:
+        - name: warehouseId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Audits
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InventoryAudit"
+    post:
+      operationId: createInventoryAudit
+      tags: [inventory-audits]
+      summary: Record a physical audit / cycle count
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InventoryAuditInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryAudit"
+
+  /inventory-audits/{id}/reconcile:
+    post:
+      operationId: reconcileInventoryAudit
+      tags: [inventory-audits]
+      summary: Reconcile variance and close audit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuditReconcileInput"
+      responses:
+        "200":
+          description: Reconciled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryAudit"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +1750,1531 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    DeleteResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+      required: [success]
+
+    # ── AUTH ─────────────────────────────────────────────────────────────────
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      required: [token, user]
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+
+    User:
+      type: object
+      required: [id, name, email, role]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+        orgId:
+          type: integer
+
+    # ── DASHBOARD ─────────────────────────────────────────────────────────────
+    DashboardData:
+      type: object
+      properties:
+        role:
+          type: string
+        leadsCount:
+          type: integer
+        activeProjectsCount:
+          type: integer
+        pendingApprovalsCount:
+          type: integer
+        overdueTasksCount:
+          type: integer
+        totalContractValue:
+          type: number
+        invoiceOutstanding:
+          type: number
+        recentLeads:
+          type: array
+          items:
+            $ref: "#/components/schemas/Lead"
+        recentProjects:
+          type: array
+          items:
+            $ref: "#/components/schemas/Project"
+        openEscalations:
+          type: array
+          items:
+            $ref: "#/components/schemas/Escalation"
+
+    CombinedDashboardData:
+      type: object
+      properties:
+        pipeline:
+          $ref: "#/components/schemas/PipelineSummary"
+        portfolioSummary:
+          $ref: "#/components/schemas/PortfolioSummary"
+        recentDPRs:
+          type: array
+          items:
+            $ref: "#/components/schemas/DPR"
+        pendingMilestones:
+          type: array
+          items:
+            $ref: "#/components/schemas/PaymentMilestone"
+        openEscalations:
+          type: array
+          items:
+            $ref: "#/components/schemas/Escalation"
+
+    PipelineSummary:
+      type: object
+      properties:
+        stages:
+          type: array
+          items:
+            type: object
+            properties:
+              stage:
+                type: string
+              count:
+                type: integer
+              value:
+                type: number
+            required: [stage, count, value]
+        totalLeads:
+          type: integer
+        totalValue:
+          type: number
+      required: [stages, totalLeads, totalValue]
+
+    PortfolioSummary:
+      type: object
+      properties:
+        totalProjects:
+          type: integer
+        activeProjects:
+          type: integer
+        completedProjects:
+          type: integer
+        totalBudget:
+          type: number
+        totalActualSpend:
+          type: number
+        onTrackCount:
+          type: integer
+        delayedCount:
+          type: integer
+      required: [totalProjects, activeProjects, completedProjects, totalBudget, totalActualSpend, onTrackCount, delayedCount]
+
+    AgingSummary:
+      type: object
+      properties:
+        current:
+          type: number
+        overdue30:
+          type: number
+        overdue60:
+          type: number
+        overdue90Plus:
+          type: number
+        totalOutstanding:
+          type: number
+      required: [current, overdue30, overdue60, overdue90Plus, totalOutstanding]
+
+    # ── LEADS ─────────────────────────────────────────────────────────────────
+    Lead:
+      type: object
+      required: [id, source, status, createdAt]
+      properties:
+        id:
+          type: integer
+        source:
+          type: string
+        ownerId:
+          type: ["integer", "null"]
+        ownerName:
+          type: ["string", "null"]
+        territory:
+          type: ["string", "null"]
+        companyName:
+          type: ["string", "null"]
+        contactName:
+          type: ["string", "null"]
+        contactPhone:
+          type: ["string", "null"]
+        contactEmail:
+          type: ["string", "null"]
+        productInterest:
+          type: ["string", "null"]
+        estimatedValue:
+          type: ["number", "null"]
+        score:
+          type: ["integer", "null"]
+        status:
+          type: string
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    LeadInput:
+      type: object
+      required: [source, status]
+      properties:
+        source:
+          type: string
+        companyName:
+          type: string
+        contactName:
+          type: string
+        contactPhone:
+          type: string
+        contactEmail:
+          type: string
+        territory:
+          type: string
+        productInterest:
+          type: string
+        estimatedValue:
+          type: number
+        status:
+          type: string
+        notes:
+          type: string
+
+    LeadUpdate:
+      type: object
+      properties:
+        companyName:
+          type: string
+        contactName:
+          type: string
+        contactPhone:
+          type: string
+        contactEmail:
+          type: string
+        territory:
+          type: string
+        productInterest:
+          type: string
+        estimatedValue:
+          type: number
+        status:
+          type: string
+        notes:
+          type: string
+        ownerId:
+          type: integer
+
+    LeadAssignInput:
+      type: object
+      required: [ownerId]
+      properties:
+        ownerId:
+          type: integer
+
+    # ── QUOTATIONS ────────────────────────────────────────────────────────────
+    Quotation:
+      type: object
+      required: [id, leadId, version, approvalStatus, createdAt]
+      properties:
+        id:
+          type: integer
+        leadId:
+          type: integer
+        boqItems:
+          type: array
+          items:
+            $ref: "#/components/schemas/BOQItem"
+        version:
+          type: integer
+        markupPct:
+          type: number
+        totalAmount:
+          type: ["number", "null"]
+        approvalStatus:
+          type: string
+        validTill:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    BOQItem:
+      type: object
+      required: [description, qty, unit, unitPrice]
+      properties:
+        description:
+          type: string
+        qty:
+          type: number
+        unit:
+          type: string
+        unitPrice:
+          type: number
+        amount:
+          type: number
+
+    QuotationInput:
+      type: object
+      required: [leadId]
+      properties:
+        leadId:
+          type: integer
+        boqItems:
+          type: array
+          items:
+            $ref: "#/components/schemas/BOQItem"
+        markupPct:
+          type: number
+        validTill:
+          type: string
+        notes:
+          type: string
+
+    QuotationUpdate:
+      type: object
+      properties:
+        boqItems:
+          type: array
+          items:
+            $ref: "#/components/schemas/BOQItem"
+        markupPct:
+          type: number
+        validTill:
+          type: string
+        notes:
+          type: string
+
+    ApprovalInput:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+        remarks:
+          type: string
+
+    ClientPOInput:
+      type: object
+      required: [clientPoNumber, contractValue]
+      properties:
+        clientPoNumber:
+          type: string
+        clientPoFileUrl:
+          type: string
+        contractValue:
+          type: number
+        paymentTerms:
+          type: string
+
+    ClientPOWithProject:
+      type: object
+      required: [clientPO, project]
+      properties:
+        clientPO:
+          $ref: "#/components/schemas/ClientPO"
+        project:
+          $ref: "#/components/schemas/Project"
+
+    ClientPO:
+      type: object
+      required: [id, quotationId, clientPoNumber, contractValue, status, createdAt]
+      properties:
+        id:
+          type: integer
+        quotationId:
+          type: integer
+        clientPoNumber:
+          type: string
+        clientPoFileUrl:
+          type: ["string", "null"]
+        contractValue:
+          type: number
+        paymentTerms:
+          type: ["string", "null"]
+        status:
+          type: string
+        projectId:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+
+    # ── CRM INVOICES ──────────────────────────────────────────────────────────
+    CrmInvoice:
+      type: object
+      required: [id, clientPoId, type, amount, paymentStatus, createdAt]
+      properties:
+        id:
+          type: integer
+        clientPoId:
+          type: integer
+        projectId:
+          type: ["integer", "null"]
+        type:
+          type: string
+        amount:
+          type: number
+        taxDetails:
+          type: ["string", "null"]
+        dueDate:
+          type: ["string", "null"]
+        paymentStatus:
+          type: string
+        createdAt:
+          type: string
+
+    CrmInvoiceInput:
+      type: object
+      required: [clientPoId, type, amount]
+      properties:
+        clientPoId:
+          type: integer
+        projectId:
+          type: integer
+        type:
+          type: string
+        amount:
+          type: number
+        taxDetails:
+          type: string
+        dueDate:
+          type: string
+
+    MarkPaidInput:
+      type: object
+      required: [paidAmount, paidDate]
+      properties:
+        paidAmount:
+          type: number
+        paidDate:
+          type: string
+
+    # ── TASKS ─────────────────────────────────────────────────────────────────
+    Task:
+      type: object
+      required: [id, title, status, createdAt]
+      properties:
+        id:
+          type: integer
+        sourceModule:
+          type: ["string", "null"]
+        sourceRefId:
+          type: ["integer", "null"]
+        title:
+          type: string
+        ownerId:
+          type: ["integer", "null"]
+        ownerName:
+          type: ["string", "null"]
+        priority:
+          type: string
+        dueDate:
+          type: ["string", "null"]
+        status:
+          type: string
+        createdAt:
+          type: string
+
+    TaskInput:
+      type: object
+      required: [title, status]
+      properties:
+        title:
+          type: string
+        sourceModule:
+          type: string
+        sourceRefId:
+          type: integer
+        ownerId:
+          type: integer
+        priority:
+          type: string
+        dueDate:
+          type: string
+        status:
+          type: string
+
+    TaskUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        priority:
+          type: string
+        dueDate:
+          type: string
+        status:
+          type: string
+        ownerId:
+          type: integer
+
+    # ── ESCALATIONS ───────────────────────────────────────────────────────────
+    Escalation:
+      type: object
+      required: [id, reason, severity, status, createdAt]
+      properties:
+        id:
+          type: integer
+        sourceEntityType:
+          type: ["string", "null"]
+        sourceEntityId:
+          type: ["integer", "null"]
+        projectId:
+          type: ["integer", "null"]
+        module:
+          type: ["string", "null"]
+        raisedBy:
+          type: ["integer", "null"]
+        raisedByName:
+          type: ["string", "null"]
+        reason:
+          type: string
+        severity:
+          type: string
+        assignedTo:
+          type: ["integer", "null"]
+        assignedToName:
+          type: ["string", "null"]
+        status:
+          type: string
+        resolvedAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    EscalationInput:
+      type: object
+      required: [reason, severity]
+      properties:
+        sourceEntityType:
+          type: string
+        sourceEntityId:
+          type: integer
+        projectId:
+          type: integer
+        module:
+          type: string
+        reason:
+          type: string
+        severity:
+          type: string
+        assignedTo:
+          type: integer
+
+    ResolveEscalationInput:
+      type: object
+      required: [resolution]
+      properties:
+        resolution:
+          type: string
+
+    # ── PROJECTS ──────────────────────────────────────────────────────────────
+    Project:
+      type: object
+      required: [id, name, status, createdAt]
+      properties:
+        id:
+          type: integer
+        clientPoId:
+          type: ["integer", "null"]
+        name:
+          type: string
+        siteLocation:
+          type: ["string", "null"]
+        pmOwnerId:
+          type: ["integer", "null"]
+        pmOwnerName:
+          type: ["string", "null"]
+        startDate:
+          type: ["string", "null"]
+        plannedEnd:
+          type: ["string", "null"]
+        status:
+          type: string
+        parentProjectId:
+          type: ["integer", "null"]
+        contractValue:
+          type: ["number", "null"]
+        percentComplete:
+          type: ["number", "null"]
+        createdAt:
+          type: string
+
+    ProjectInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        clientPoId:
+          type: integer
+        siteLocation:
+          type: string
+        pmOwnerId:
+          type: integer
+        startDate:
+          type: string
+        plannedEnd:
+          type: string
+        contractValue:
+          type: number
+        parentProjectId:
+          type: integer
+
+    ProjectUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        siteLocation:
+          type: string
+        pmOwnerId:
+          type: integer
+        startDate:
+          type: string
+        plannedEnd:
+          type: string
+        status:
+          type: string
+        percentComplete:
+          type: number
+
+    ProjectDashboard:
+      type: object
+      properties:
+        project:
+          $ref: "#/components/schemas/Project"
+        budgetSummary:
+          $ref: "#/components/schemas/BudgetVsActual"
+        activitiesCount:
+          type: integer
+        openMRsCount:
+          type: integer
+        pendingPOsCount:
+          type: integer
+        openEscalationsCount:
+          type: integer
+        lastDPR:
+          $ref: "#/components/schemas/DPR"
+        upcomingMilestones:
+          type: array
+          items:
+            $ref: "#/components/schemas/PaymentMilestone"
+
+    BudgetVsActual:
+      type: object
+      properties:
+        projectId:
+          type: integer
+        lines:
+          type: array
+          items:
+            type: object
+            properties:
+              costHead:
+                type: string
+              budgeted:
+                type: number
+              committed:
+                type: number
+              actual:
+                type: number
+              variance:
+                type: number
+            required: [costHead, budgeted, committed, actual, variance]
+        totalBudgeted:
+          type: number
+        totalCommitted:
+          type: number
+        totalActual:
+          type: number
+        totalVariance:
+          type: number
+      required: [projectId, lines, totalBudgeted, totalCommitted, totalActual, totalVariance]
+
+    # ── ACTIVITIES ────────────────────────────────────────────────────────────
+    Activity:
+      type: object
+      required: [id, projectId, name, status]
+      properties:
+        id:
+          type: integer
+        projectId:
+          type: integer
+        wbsCode:
+          type: ["string", "null"]
+        name:
+          type: string
+        plannedStart:
+          type: ["string", "null"]
+        plannedEnd:
+          type: ["string", "null"]
+        actualStart:
+          type: ["string", "null"]
+        actualEnd:
+          type: ["string", "null"]
+        dependencyIds:
+          type: array
+          items:
+            type: integer
+        percentComplete:
+          type: number
+        status:
+          type: string
+
+    ActivityInput:
+      type: object
+      required: [name]
+      properties:
+        wbsCode:
+          type: string
+        name:
+          type: string
+        plannedStart:
+          type: string
+        plannedEnd:
+          type: string
+        dependencyIds:
+          type: array
+          items:
+            type: integer
+        status:
+          type: string
+
+    ActivityUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        plannedStart:
+          type: string
+        plannedEnd:
+          type: string
+        actualStart:
+          type: string
+        actualEnd:
+          type: string
+        percentComplete:
+          type: number
+        status:
+          type: string
+
+    # ── MATERIAL REQUESTS ─────────────────────────────────────────────────────
+    MaterialRequest:
+      type: object
+      required: [id, projectId, status, createdAt]
+      properties:
+        id:
+          type: integer
+        projectId:
+          type: integer
+        activityId:
+          type: ["integer", "null"]
+        raisedBy:
+          type: ["integer", "null"]
+        raisedByName:
+          type: ["string", "null"]
+        mrNumber:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/MRItem"
+        requiredByDate:
+          type: ["string", "null"]
+        status:
+          type: string
+        vendorQuotations:
+          type: array
+          items:
+            $ref: "#/components/schemas/VendorQuotation"
+        createdAt:
+          type: string
+
+    MRItem:
+      type: object
+      required: [itemName, qty, unit]
+      properties:
+        itemName:
+          type: string
+        itemCode:
+          type: ["string", "null"]
+        qty:
+          type: number
+        unit:
+          type: string
+        specifications:
+          type: ["string", "null"]
+
+    MaterialRequestInput:
+      type: object
+      required: [projectId, items]
+      properties:
+        projectId:
+          type: integer
+        activityId:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/MRItem"
+        requiredByDate:
+          type: string
+
+    # ── VENDOR QUOTATIONS ─────────────────────────────────────────────────────
+    VendorQuotation:
+      type: object
+      required: [id, mrId, vendorName, quotedAmount, status, createdAt]
+      properties:
+        id:
+          type: integer
+        mrId:
+          type: integer
+        vendorId:
+          type: ["integer", "null"]
+        vendorName:
+          type: string
+        quotationNumber:
+          type: string
+        quotedAmount:
+          type: number
+        itemPriceBreakup:
+          type: array
+          items:
+            type: object
+            properties:
+              itemName:
+                type: string
+              qty:
+                type: number
+              unitPrice:
+                type: number
+              amount:
+                type: number
+            required: [itemName, qty, unitPrice, amount]
+        validityDate:
+          type: ["string", "null"]
+        quotationFileUrl:
+          type: ["string", "null"]
+        managerRemarks:
+          type: ["string", "null"]
+        mdRemarks:
+          type: ["string", "null"]
+        isRecommended:
+          type: boolean
+        l1Status:
+          type: string
+        status:
+          type: string
+        createdAt:
+          type: string
+
+    VendorQuotationInput:
+      type: object
+      required: [vendorName, quotationNumber, quotedAmount]
+      properties:
+        vendorId:
+          type: integer
+        vendorName:
+          type: string
+        quotationNumber:
+          type: string
+        quotedAmount:
+          type: number
+        itemPriceBreakup:
+          type: array
+          items:
+            type: object
+            properties:
+              itemName:
+                type: string
+              qty:
+                type: number
+              unitPrice:
+                type: number
+              amount:
+                type: number
+            required: [itemName, qty, unitPrice, amount]
+        validityDate:
+          type: string
+        quotationFileUrl:
+          type: string
+
+    VendorQuotationReviewInput:
+      type: object
+      properties:
+        managerRemarks:
+          type: string
+        mdRemarks:
+          type: string
+        isRecommended:
+          type: boolean
+
+    L1ApprovalInput:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+        remarks:
+          type: string
+
+    GeneratePOInput:
+      type: object
+      properties:
+        expectedDeliveryDate:
+          type: string
+        deliveryTerms:
+          type: string
+        warehouseId:
+          type: integer
+
+    # ── PURCHASE ORDERS ───────────────────────────────────────────────────────
+    PurchaseOrder:
+      type: object
+      required: [id, vendorName, poNumber, amount, status, createdAt]
+      properties:
+        id:
+          type: integer
+        vendorQuotationId:
+          type: integer
+        vendorId:
+          type: ["integer", "null"]
+        vendorName:
+          type: string
+        projectId:
+          type: ["integer", "null"]
+        poNumber:
+          type: string
+        poDate:
+          type: string
+        expectedDeliveryDate:
+          type: ["string", "null"]
+        amount:
+          type: number
+        deliveryTerms:
+          type: ["string", "null"]
+        status:
+          type: string
+        createdAt:
+          type: string
+
+    PODeliveryStatus:
+      type: object
+      required: [poId, lines]
+      properties:
+        poId:
+          type: integer
+        lines:
+          type: array
+          items:
+            type: object
+            properties:
+              itemName:
+                type: string
+              orderedQty:
+                type: number
+              receivedQty:
+                type: number
+              pendingQty:
+                type: number
+            required: [itemName, orderedQty, receivedQty, pendingQty]
+        totalGRNs:
+          type: integer
+        isFullyReceived:
+          type: boolean
+
+    VendorInvoice:
+      type: object
+      required: [id, poId, invoiceNumber, invoiceAmount, approvalStatus, createdAt]
+      properties:
+        id:
+          type: integer
+        poId:
+          type: integer
+        invoiceNumber:
+          type: string
+        scannedFileUrl:
+          type: ["string", "null"]
+        invoiceAmount:
+          type: number
+        invoiceDate:
+          type: ["string", "null"]
+        dueDate:
+          type: ["string", "null"]
+        approvalStatus:
+          type: string
+        createdAt:
+          type: string
+
+    VendorInvoiceInput:
+      type: object
+      required: [invoiceNumber, invoiceAmount]
+      properties:
+        invoiceNumber:
+          type: string
+        scannedFileUrl:
+          type: string
+        invoiceAmount:
+          type: number
+        invoiceDate:
+          type: string
+        creditTermDays:
+          type: integer
+
+    # ── DPRS ──────────────────────────────────────────────────────────────────
+    DPR:
+      type: object
+      required: [id, projectId, reportDate, createdAt]
+      properties:
+        id:
+          type: integer
+        projectId:
+          type: integer
+        reportDate:
+          type: string
+        submittedBy:
+          type: ["integer", "null"]
+        submittedByName:
+          type: ["string", "null"]
+        workSummary:
+          type: ["string", "null"]
+        manpowerCount:
+          type: ["integer", "null"]
+        weather:
+          type: ["string", "null"]
+        percentComplete:
+          type: ["number", "null"]
+        photos:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+
+    DPRInput:
+      type: object
+      required: [projectId, reportDate]
+      properties:
+        projectId:
+          type: integer
+        reportDate:
+          type: string
+        workSummary:
+          type: string
+        manpowerCount:
+          type: integer
+        weather:
+          type: string
+        percentComplete:
+          type: number
+        photos:
+          type: array
+          items:
+            type: string
+
+    # ── PAYMENT MILESTONES ────────────────────────────────────────────────────
+    PaymentMilestone:
+      type: object
+      required: [id, projectId, milestoneName, amount, status]
+      properties:
+        id:
+          type: integer
+        projectId:
+          type: integer
+        milestoneName:
+          type: string
+        triggerCondition:
+          type: ["string", "null"]
+        amount:
+          type: number
+        dueDate:
+          type: ["string", "null"]
+        status:
+          type: string
+        invoiceRef:
+          type: ["integer", "null"]
+
+    PaymentMilestoneInput:
+      type: object
+      required: [milestoneName, amount]
+      properties:
+        milestoneName:
+          type: string
+        triggerCondition:
+          type: string
+        amount:
+          type: number
+        dueDate:
+          type: string
+
+    # ── EXPENSES ──────────────────────────────────────────────────────────────
+    Expense:
+      type: object
+      required: [id, projectId, category, amount, approvalStatus, createdAt]
+      properties:
+        id:
+          type: integer
+        projectId:
+          type: integer
+        category:
+          type: string
+        amount:
+          type: number
+        incurredBy:
+          type: ["integer", "null"]
+        incurredByName:
+          type: ["string", "null"]
+        date:
+          type: string
+        receiptUrl:
+          type: ["string", "null"]
+        approvalStatus:
+          type: string
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    ExpenseInput:
+      type: object
+      required: [projectId, category, amount, date]
+      properties:
+        projectId:
+          type: integer
+        category:
+          type: string
+        amount:
+          type: number
+        date:
+          type: string
+        receiptUrl:
+          type: string
+        notes:
+          type: string
+
+    # ── BUDGETS ───────────────────────────────────────────────────────────────
+    Budget:
+      type: object
+      required: [id, projectId, costHead, budgetedAmount]
+      properties:
+        id:
+          type: integer
+        projectId:
+          type: integer
+        costHead:
+          type: string
+        budgetedAmount:
+          type: number
+        committedAmount:
+          type: number
+        actualAmount:
+          type: number
+        revisionNo:
+          type: integer
+
+    BudgetInput:
+      type: object
+      required: [projectId, costHead, budgetedAmount]
+      properties:
+        projectId:
+          type: integer
+        costHead:
+          type: string
+        budgetedAmount:
+          type: number
+
+    # ── CONTRACTORS ───────────────────────────────────────────────────────────
+    Contractor:
+      type: object
+      required: [id, name, trade]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        trade:
+          type: string
+        contractValue:
+          type: ["number", "null"]
+        contact:
+          type: ["string", "null"]
+        rating:
+          type: ["number", "null"]
+
+    ContractorInput:
+      type: object
+      required: [name, trade]
+      properties:
+        name:
+          type: string
+        trade:
+          type: string
+        contractValue:
+          type: number
+        contact:
+          type: string
+        rating:
+          type: number
+
+    # ── WAREHOUSES ────────────────────────────────────────────────────────────
+    Warehouse:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        projectId:
+          type: ["integer", "null"]
+        location:
+          type: ["string", "null"]
+        custodianId:
+          type: ["integer", "null"]
+        capacity:
+          type: ["string", "null"]
+        type:
+          type: string
+
+    WarehouseInput:
+      type: object
+      required: [name, type]
+      properties:
+        name:
+          type: string
+        projectId:
+          type: integer
+        location:
+          type: string
+        custodianId:
+          type: integer
+        capacity:
+          type: string
+        type:
+          type: string
+
+    WarehouseLocation:
+      type: object
+      required: [id, warehouseId, zone, rack, bin]
+      properties:
+        id:
+          type: integer
+        warehouseId:
+          type: integer
+        zone:
+          type: string
+        rack:
+          type: string
+        bin:
+          type: string
+        currentItemId:
+          type: ["integer", "null"]
+        currentItemName:
+          type: ["string", "null"]
+
+    WarehouseLocationInput:
+      type: object
+      required: [zone, rack, bin]
+      properties:
+        zone:
+          type: string
+        rack:
+          type: string
+        bin:
+          type: string
+
+    WarehouseStockSummary:
+      type: object
+      required: [warehouseId, items]
+      properties:
+        warehouseId:
+          type: integer
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              itemId:
+                type: integer
+              itemName:
+                type: string
+              balanceQty:
+                type: number
+              unit:
+                type: string
+              unitValue:
+                type: number
+              totalValue:
+                type: number
+            required: [itemId, itemName, balanceQty, unit, unitValue, totalValue]
+        totalValue:
+          type: number
+
+    # ── GRNs ──────────────────────────────────────────────────────────────────
+    GRN:
+      type: object
+      required: [id, poId, warehouseId, grnNumber, receivedDate, qcStatus]
+      properties:
+        id:
+          type: integer
+        poId:
+          type: integer
+        warehouseId:
+          type: integer
+        grnNumber:
+          type: string
+        receivedDate:
+          type: string
+        lineItems:
+          type: array
+          items:
+            $ref: "#/components/schemas/GRNLineItem"
+        qcStatus:
+          type: string
+        notes:
+          type: ["string", "null"]
+
+    GRNLineItem:
+      type: object
+      required: [itemName, poQty, receivedQty, pendingQty]
+      properties:
+        itemName:
+          type: string
+        poQty:
+          type: number
+        receivedQty:
+          type: number
+        pendingQty:
+          type: number
+        unit:
+          type: string
+
+    GRNInput:
+      type: object
+      required: [poId, warehouseId, receivedDate, lineItems]
+      properties:
+        poId:
+          type: integer
+        warehouseId:
+          type: integer
+        receivedDate:
+          type: string
+        lineItems:
+          type: array
+          items:
+            $ref: "#/components/schemas/GRNLineItem"
+        notes:
+          type: string
+
+    QCCheck:
+      type: object
+      required: [id, grnId, status]
+      properties:
+        id:
+          type: integer
+        grnId:
+          type: integer
+        inspectedBy:
+          type: integer
+        acceptedQty:
+          type: number
+        rejectedQty:
+          type: number
+        rejectionReason:
+          type: ["string", "null"]
+        status:
+          type: string
+
+    QCCheckInput:
+      type: object
+      required: [acceptedQty, rejectedQty, status]
+      properties:
+        acceptedQty:
+          type: number
+        rejectedQty:
+          type: number
+        rejectionReason:
+          type: string
+        checklistJson:
+          type: string
+        status:
+          type: string
+
+    # ── DELIVERY CHALLANS ─────────────────────────────────────────────────────
+    DeliveryChallan:
+      type: object
+      required: [id, warehouseId, issuedDate, purpose]
+      properties:
+        id:
+          type: integer
+        warehouseId:
+          type: integer
+        projectId:
+          type: ["integer", "null"]
+        challanNumber:
+          type: string
+        issuedTo:
+          type: ["string", "null"]
+        lineItems:
+          type: array
+          items:
+            type: object
+            properties:
+              itemName:
+                type: string
+              qty:
+                type: number
+              unit:
+                type: string
+            required: [itemName, qty, unit]
+        issuedDate:
+          type: string
+        purpose:
+          type: string
+        referenceDoc:
+          type: ["string", "null"]
+
+    DeliveryChallanInput:
+      type: object
+      required: [warehouseId, issuedDate, purpose, lineItems]
+      properties:
+        warehouseId:
+          type: integer
+        projectId:
+          type: integer
+        issuedTo:
+          type: string
+        lineItems:
+          type: array
+          items:
+            type: object
+            properties:
+              itemName:
+                type: string
+              qty:
+                type: number
+              unit:
+                type: string
+            required: [itemName, qty, unit]
+        issuedDate:
+          type: string
+        purpose:
+          type: string
+        referenceDoc:
+          type: string
+
+    # ── STOCK LEDGER ──────────────────────────────────────────────────────────
+    StockLedgerEntry:
+      type: object
+      required: [id, warehouseId, itemName, txnType, qty, balanceQty, date]
+      properties:
+        id:
+          type: integer
+        warehouseId:
+          type: integer
+        itemId:
+          type: ["integer", "null"]
+        itemName:
+          type: string
+        txnType:
+          type: string
+        qty:
+          type: number
+        balanceQty:
+          type: number
+        refDocType:
+          type: ["string", "null"]
+        refDocId:
+          type: ["integer", "null"]
+        date:
+          type: string
+
+    StockValuationEntry:
+      type: object
+      required: [warehouseId, itemName, unitValue, totalValue, asOfDate]
+      properties:
+        warehouseId:
+          type: integer
+        itemId:
+          type: ["integer", "null"]
+        itemName:
+          type: string
+        valuationMethod:
+          type: string
+        unitValue:
+          type: number
+        totalValue:
+          type: number
+        balanceQty:
+          type: number
+        asOfDate:
+          type: string
+
+    # ── INVENTORY AUDITS ──────────────────────────────────────────────────────
+    InventoryAudit:
+      type: object
+      required: [id, warehouseId, auditDate, status]
+      properties:
+        id:
+          type: integer
+        warehouseId:
+          type: integer
+        auditDate:
+          type: string
+        auditorId:
+          type: ["integer", "null"]
+        systemQty:
+          type: ["number", "null"]
+        physicalQty:
+          type: ["number", "null"]
+        varianceQty:
+          type: ["number", "null"]
+        varianceValue:
+          type: ["number", "null"]
+        status:
+          type: string
+        notes:
+          type: ["string", "null"]
+
+    InventoryAuditInput:
+      type: object
+      required: [warehouseId, auditDate]
+      properties:
+        warehouseId:
+          type: integer
+        auditDate:
+          type: string
+        systemQty:
+          type: number
+        physicalQty:
+          type: number
+
+    AuditReconcileInput:
+      type: object
+      required: [physicalQty]
+      properties:
+        physicalQty:
+          type: number
+        notes:
+          type: string

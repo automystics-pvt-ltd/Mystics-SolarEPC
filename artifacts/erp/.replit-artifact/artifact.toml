@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "Mystics ERP"
+version = "1.0.0"
+id = "artifacts/erp"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18996
+
+[services.development]
+run = "pnpm --filter @workspace/erp run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/erp", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/erp/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18996"
+BASE_PATH = "/"
