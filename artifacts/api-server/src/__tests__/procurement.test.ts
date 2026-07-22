@@ -1746,3 +1746,132 @@ describe("GRN with zero accepted qty on all lines — PO status must remain unch
     expect(Number(item2.deliveredQty)).toBe(0);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe("Mixed-line GRN — some lines accepted, some zero → PO becomes PartiallyReceived", () => {
+  /**
+   * Scenario:
+   *   PO has TWO line items: line 1 qty 5, line 2 qty 5. Both start at 0 delivered.
+   *   A single GRN is submitted covering both lines:
+   *     - line 1: acceptedQty = 5  (fully delivered)
+   *     - line 2: acceptedQty = 0  (nothing accepted, e.g. all damaged)
+   *   After approval:
+   *     - line 1 deliveredQty = 5
+   *     - line 2 deliveredQty = 0
+   *     - PO status = PartiallyReceived  (NOT FullyReceived, because line 2 is still 0)
+   */
+  let mixPoId: number;
+  let mixPoItem1Id: number;
+  let mixPoItem2Id: number;
+  let mixGrnId: number;
+
+  it("creates a two-line PO (qty 5 each) and advances it to Acknowledged", async () => {
+    const qRes = await api.post("/api/procurement-quotations").send({
+      ...actor,
+      vendorId,
+      mrId,
+      items: [
+        { materialName: "Mixed GRN Item A", uom: "Nos", qty: 5, unitPrice: 400, gstRate: 18, discountPct: 0 },
+        { materialName: "Mixed GRN Item B", uom: "Nos", qty: 5, unitPrice: 250, gstRate: 18, discountPct: 0 },
+      ],
+    });
+    expect(qRes.status).toBe(201);
+    const qid = qRes.body.id;
+
+    await api.post(`/api/procurement-quotations/${qid}/submit`).send(actor);
+    await api.post(`/api/procurement-quotations/${qid}/start-review`).send(actor);
+    const approveRes = await api
+      .post(`/api/procurement-quotations/${qid}/approve`)
+      .send({ ...actor, remarks: "Mixed-line GRN test approval" });
+    expect(approveRes.status).toBe(200);
+
+    mixPoId = approveRes.body.po.id;
+    expect(mixPoId).toBeDefined();
+
+    // Advance to Acknowledged
+    await api.patch(`/api/procurement-pos/${mixPoId}`).send({ status: "Issued", ...actor });
+    const ackRes = await api.patch(`/api/procurement-pos/${mixPoId}`).send({ status: "Acknowledged", ...actor });
+    expect(ackRes.status).toBe(200);
+    expect(ackRes.body.status).toBe("Acknowledged");
+
+    // Capture both PO item ids (ordered by lineNo)
+    const poDetail = await api.get(`/api/procurement-pos/${mixPoId}`);
+    expect(poDetail.status).toBe(200);
+    expect(poDetail.body.items).toHaveLength(2);
+    mixPoItem1Id = poDetail.body.items[0].id;
+    mixPoItem2Id = poDetail.body.items[1].id;
+    expect(mixPoItem1Id).toBeDefined();
+    expect(mixPoItem2Id).toBeDefined();
+  });
+
+  it("creates a single GRN covering both lines (line 1: accepted 5, line 2: accepted 0) and submits it", async () => {
+    const res = await api.post("/api/proc-grns").send({
+      ...actor,
+      poId: mixPoId,
+      deliveryDate: "2026-07-22",
+      items: [
+        {
+          poItemId: mixPoItem1Id,
+          materialName: "Mixed GRN Item A",
+          uom: "Nos",
+          orderedQty: 5,
+          receivedQty: 5,
+          acceptedQty: 5,  // fully accepted
+          rejectedQty: 0,
+          damagedQty: 0,
+          unitPrice: 400,
+        },
+        {
+          poItemId: mixPoItem2Id,
+          materialName: "Mixed GRN Item B",
+          uom: "Nos",
+          orderedQty: 5,
+          receivedQty: 5,
+          acceptedQty: 0,  // all rejected / damaged — nothing accepted
+          rejectedQty: 5,
+          damagedQty: 0,
+          unitPrice: 250,
+        },
+      ],
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.grnNumber).toMatch(/^GRN-/);
+    mixGrnId = res.body.id;
+    expect(mixGrnId).toBeDefined();
+
+    // Verify per-item qcStatus
+    const itemA = res.body.items.find((i: any) => i.poItemId === mixPoItem1Id);
+    const itemB = res.body.items.find((i: any) => i.poItemId === mixPoItem2Id);
+    expect(itemA.qcStatus).toBe("Accepted");   // accepted > 0, rejected = 0
+    expect(itemB.qcStatus).toBe("Rejected");   // accepted = 0, rejected > 0
+
+    // GRN totals: 5 accepted out of 10 ordered
+    expect(Number(res.body.totalAcceptedQty)).toBe(5);
+
+    // Submit for inspection
+    const submitRes = await api.post(`/api/proc-grns/${mixGrnId}/submit`).send(actor);
+    expect(submitRes.status).toBe(200);
+    expect(submitRes.body.status).toBe("Submitted");
+  });
+
+  it("approves the mixed GRN — PO becomes PartiallyReceived, line 1 deliveredQty = 5, line 2 deliveredQty = 0", async () => {
+    const approveRes = await api
+      .post(`/api/proc-grns/${mixGrnId}/approve`)
+      .send({ ...actor, remarks: "Mixed acceptance: line 1 ok, line 2 all rejected" });
+    expect(approveRes.status).toBe(200);
+
+    // GRN itself: acceptedQty (5) < totalOrderedQty (10) → PartiallyAccepted
+    expect(approveRes.body.status).toBe("PartiallyAccepted");
+
+    // PO must be PartiallyReceived — NOT FullyReceived, because line 2 still has 0 delivered
+    const poRes = await api.get(`/api/procurement-pos/${mixPoId}`);
+    expect(poRes.status).toBe(200);
+    expect(poRes.body.status).toBe("PartiallyReceived");
+
+    // Per-line deliveredQty verification
+    const item1 = poRes.body.items.find((i: any) => i.id === mixPoItem1Id);
+    const item2 = poRes.body.items.find((i: any) => i.id === mixPoItem2Id);
+    expect(Number(item1.deliveredQty)).toBe(5);  // fully accepted in this GRN
+    expect(Number(item2.deliveredQty)).toBe(0);  // nothing was accepted for this line
+  });
+});
