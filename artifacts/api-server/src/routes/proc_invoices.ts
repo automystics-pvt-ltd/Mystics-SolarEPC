@@ -219,6 +219,10 @@ router.post("/proc-invoices/:id/approve", async (req, res): Promise<void> => {
   const [existing] = await db.select().from(procInvoicesTable).where(eq(procInvoicesTable.id, id));
   if (!existing) { res.status(404).json({ error: "Invoice not found" }); return; }
   if (existing.status !== "PendingApproval") { res.status(400).json({ error: "Invoice must be in PendingApproval to approve" }); return; }
+  // Task 9: Prevent approval when 3-way match mismatch has not been explicitly signed off
+  if (existing.matchStatus === "MismatchPending" && !existing.mismatchApprovedAt) {
+    res.status(400).json({ error: "This invoice has a 3-way match mismatch that has not been signed off. Use 'Approve Mismatch' first before approving the invoice." }); return;
+  }
   const [inv] = await db.update(procInvoicesTable).set({
     status: "Approved", approvedAt: new Date(), approvedBy: userId, approvedByName: userName,
     approvalRemarks: remarks, updatedAt: new Date(),

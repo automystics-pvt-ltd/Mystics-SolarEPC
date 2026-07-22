@@ -8,6 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -99,10 +103,27 @@ export default function ProcurementPODetail({ id }: { id: string }) {
   const isOverdue = p.isOverdue || (deadline && deadline < today && !["Closed", "Cancelled", "FullyReceived"].includes(p.status));
   const daysOverdue = deadline ? Math.floor((new Date().getTime() - new Date(deadline).getTime()) / (1000 * 60 * 60 * 24)) : 0;
 
+  // Task 18: Track cancel confirmation dialog
+  const [showCancelWarning, setShowCancelWarning] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState<string | null>(null);
+
+  const handleStatusChange = (status: string) => {
+    // If cancelling and there are active GRNs, show an explicit warning dialog first
+    if (status === "Cancelled" && (p.grns ?? []).length > 0) {
+      setPendingStatus(status);
+      setShowCancelWarning(true);
+      return;
+    }
+    updateStatus(status);
+  };
+
   const updateStatus = (status: string) => {
     updateMut.mutate({ id: poId, data: { status, userName: user.name, userId: user.id } as any }, {
       onSuccess: () => { invalidate(); toast({ title: `PO status updated to ${status}` }); },
-      onError: (e: any) => toast({ title: "Failed", description: e?.message, variant: "destructive" }),
+      onError: (e: any) => {
+        const msg = (e as any)?.response?.data?.error ?? (e as any)?.message ?? "An error occurred";
+        toast({ title: "Cannot update PO", description: msg, variant: "destructive" });
+      },
     });
   };
 
@@ -153,7 +174,7 @@ export default function ProcurementPODetail({ id }: { id: string }) {
             </Button>
             <div className="print:hidden">
               {nextStatuses.length > 0 && (
-                <Select onValueChange={updateStatus} disabled={updateMut.isPending}>
+                <Select onValueChange={handleStatusChange} disabled={updateMut.isPending}>
                   <SelectTrigger className="w-44 h-9 text-sm">
                     <SelectValue placeholder="Change status…" />
                   </SelectTrigger>
@@ -405,6 +426,42 @@ export default function ProcurementPODetail({ id }: { id: string }) {
           </div>
         </div>
       )}
+      {/* Task 18: Cancel warning dialog — shown when staff try to cancel a PO that has active GRNs */}
+      <AlertDialog open={showCancelWarning} onOpenChange={setShowCancelWarning}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-red-700">⚠️ Active Deliveries Detected</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>This PO has <strong>{(p.grns ?? []).length} GRN(s)</strong> with active delivery records. Cancelling it may create reconciliation issues.</p>
+                {(p.grns ?? []).length > 0 && (
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 mt-2">
+                    <p className="text-xs font-bold text-slate-600 mb-2 uppercase tracking-wide">Active GRNs</p>
+                    <div className="space-y-1">
+                      {(p.grns as any[]).map((g: any) => (
+                        <div key={g.id} className="flex items-center justify-between text-sm">
+                          <span className="font-mono font-semibold text-slate-800">{g.grnNumber}</span>
+                          <span className="text-xs text-slate-500">{g.status}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <p className="text-sm text-slate-600">Are you sure you want to proceed with cancellation?</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep PO Active</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={() => { setShowCancelWarning(false); if (pendingStatus) updateStatus(pendingStatus); }}
+            >
+              Cancel PO Anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </motion.div>
   );
 }

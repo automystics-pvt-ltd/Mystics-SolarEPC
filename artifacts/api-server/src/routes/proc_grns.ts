@@ -114,6 +114,31 @@ router.post("/proc-grns", async (req, res): Promise<void> => {
   // Fetch PO items to get ordered quantities
   const poItems = await db.select().from(procPOItemsTable).where(eq(procPOItemsTable.poId, Number(poId))).orderBy(procPOItemsTable.lineNo);
 
+  // Task 29: Block GRN creation when every individual line is already fully delivered
+  // (handles the case where PO status hasn't flipped to FullyReceived yet)
+  if (poItems.length > 0 && poItems.every(p => Number(p.deliveredQty) >= Number(p.qty))) {
+    res.status(400).json({
+      error: `All line items on PO ${po.poNumber} are already fully delivered. No additional GRN can be created.`,
+    });
+    return;
+  }
+
+  // Task 25: Prevent over-delivery — accepted qty per line must not exceed what remains
+  for (const item of itemsBody) {
+    if (!item.poItemId) continue;
+    const poItem = poItems.find(p => p.id === Number(item.poItemId));
+    if (!poItem) continue;
+    const alreadyDelivered = Number(poItem.deliveredQty) || 0;
+    const remaining = Number(poItem.qty) - alreadyDelivered;
+    const accepting = Number(item.acceptedQty) || 0;
+    if (accepting > remaining + 0.001) {
+      res.status(400).json({
+        error: `Over-delivery not allowed for "${poItem.materialName}": ordered ${poItem.qty}, already delivered ${alreadyDelivered}, attempting to accept ${accepting} (remaining allowance: ${remaining.toFixed(3)}).`,
+      });
+      return;
+    }
+  }
+
   const year = new Date().getFullYear();
   const grnNumber = `GRN-${year}-${String(grnCounter++).padStart(4, "0")}`;
   const now = new Date();
@@ -204,36 +229,42 @@ router.post("/proc-grns/:id/approve", async (req, res): Promise<void> => {
   if (!existing) { res.status(404).json({ error: "GRN not found" }); return; }
   if (existing.status !== "Submitted") { res.status(400).json({ error: "GRN must be in Submitted status to approve" }); return; }
 
-  // Determine accepted vs total to decide partial or full
+  // Determine accepted vs total to decide partial, full, or fully-rejected
+  // Task 24: When all items are rejected (totalAccepted === 0) the GRN is Rejected,
+  // not PartiallyAccepted — and PO quantities must NOT be updated.
   const totalOrdered = Number(existing.totalOrderedQty) || 0;
   const totalAccepted = Number(existing.totalAcceptedQty) || 0;
-  const newStatus: "Accepted" | "PartiallyAccepted" = totalAccepted >= totalOrdered ? "Accepted" : "PartiallyAccepted";
+  const newStatus: "Accepted" | "PartiallyAccepted" | "Rejected" =
+    totalAccepted === 0 ? "Rejected" :
+    totalAccepted >= totalOrdered ? "Accepted" : "PartiallyAccepted";
 
   const [grn] = await db.update(procGRNsTable).set({
     status: newStatus, approvedAt: new Date(), approvedBy: userId, approvedByName: userName,
     approvalRemarks: remarks, updatedAt: new Date(),
   }).where(eq(procGRNsTable.id, id)).returning();
 
-  // Update PO items deliveredQty and PO status
+  // Task 8: Update PO items deliveredQty and PO status only when goods were actually accepted.
+  // A fully-rejected GRN must not change PO delivery quantities or trigger PO status transitions.
   const grnItems = await db.select().from(procGRNItemsTable).where(eq(procGRNItemsTable.grnId, id));
-  for (const item of grnItems) {
-    if (item.poItemId) {
-      const [poItem] = await db.select().from(procPOItemsTable).where(eq(procPOItemsTable.id, item.poItemId));
-      if (poItem) {
-        const newDelivered = (Number(poItem.deliveredQty) || 0) + (Number(item.acceptedQty) || 0);
-        await db.update(procPOItemsTable).set({ deliveredQty: newDelivered.toString() }).where(eq(procPOItemsTable.id, item.poItemId));
+  if (newStatus !== "Rejected") {
+    for (const item of grnItems) {
+      if (item.poItemId) {
+        const [poItem] = await db.select().from(procPOItemsTable).where(eq(procPOItemsTable.id, item.poItemId));
+        if (poItem) {
+          const newDelivered = (Number(poItem.deliveredQty) || 0) + (Number(item.acceptedQty) || 0);
+          await db.update(procPOItemsTable).set({ deliveredQty: newDelivered.toString() }).where(eq(procPOItemsTable.id, item.poItemId));
+        }
       }
     }
-  }
-
-  // Update PO status based on all items' delivery progress
-  const poItems = await db.select().from(procPOItemsTable).where(eq(procPOItemsTable.poId, existing.poId));
-  const allFull = poItems.every(i => Number(i.deliveredQty) >= Number(i.qty));
-  const anyDelivered = poItems.some(i => Number(i.deliveredQty) > 0);
-  const newPOStatus = allFull ? "FullyReceived" : anyDelivered ? "PartiallyReceived" : undefined;
-  if (newPOStatus) {
-    await db.update(procurementPOsTable).set({ status: newPOStatus, updatedAt: new Date() }).where(eq(procurementPOsTable.id, existing.poId));
-    await logPOAudit(existing.poId, newPOStatus, userName, userId, `Updated via GRN ${existing.grnNumber} approval`);
+    // Update PO status based on all items' delivery progress
+    const poItems = await db.select().from(procPOItemsTable).where(eq(procPOItemsTable.poId, existing.poId));
+    const allFull = poItems.every(i => Number(i.deliveredQty) >= Number(i.qty));
+    const anyDelivered = poItems.some(i => Number(i.deliveredQty) > 0);
+    const newPOStatus = allFull ? "FullyReceived" : anyDelivered ? "PartiallyReceived" : undefined;
+    if (newPOStatus) {
+      await db.update(procurementPOsTable).set({ status: newPOStatus, updatedAt: new Date() }).where(eq(procurementPOsTable.id, existing.poId));
+      await logPOAudit(existing.poId, newPOStatus, userName, userId, `Updated via GRN ${existing.grnNumber} approval`);
+    }
   }
 
   await logGRNAudit(id, "Approved", userName, userId, remarks, { status: existing.status }, { status: newStatus });

@@ -245,6 +245,30 @@ router.delete("/procurement-quotations/:id", async (req, res): Promise<void> => 
 router.post("/procurement-quotations/:id/submit", async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const { userName = "System", userId, userRole } = req.body;
+
+  // Task 13: If status is RevisionRequested, block re-submission unless the quotation
+  // was actually edited (version incremented by a PATCH) after the revision was requested.
+  const [current] = await db.select({ status: procurementQuotationsTable.status, version: procurementQuotationsTable.version })
+    .from(procurementQuotationsTable).where(eq(procurementQuotationsTable.id, id));
+  if (!current) { res.status(404).json({ error: "Quotation not found" }); return; }
+
+  if (current.status === "RevisionRequested") {
+    const [revLog] = await db.select({ oldValues: quotationAuditLogsTable.oldValues })
+      .from(quotationAuditLogsTable)
+      .where(and(
+        eq(quotationAuditLogsTable.quotationId, id),
+        eq(quotationAuditLogsTable.action, "RevisionRequested" as any),
+      ))
+      .orderBy(desc(quotationAuditLogsTable.createdAt))
+      .limit(1);
+    const revisionVersion = revLog?.oldValues ? (revLog.oldValues as any).version : null;
+    if (revisionVersion !== null && (current.version ?? 1) <= revisionVersion) {
+      res.status(400).json({
+        error: "Quotation has not been updated since the revision was requested. Please make the required changes before re-submitting.",
+      }); return;
+    }
+  }
+
   // Atomically transition only when current status is Draft or RevisionRequested.
   // The status predicate lives in the WHERE clause of the UPDATE so there is no
   // read-then-write race window — a concurrent state change between a prior
@@ -288,16 +312,23 @@ router.post("/procurement-quotations/:id/request-revision", async (req, res): Pr
   const id = Number(req.params.id);
   const { userName = "System", userId, userRole, remarks } = req.body;
   if (!remarks) { res.status(400).json({ error: "Remarks are required for revision request" }); return; }
-  const [existing] = await db.select().from(procurementQuotationsTable).where(eq(procurementQuotationsTable.id, id));
-  if (!existing) { res.status(404).json({ error: "Not found" }); return; }
-  if (!["Submitted", "UnderReview"].includes(existing.status ?? "")) {
-    res.status(400).json({ error: `Cannot request revision: quotation must be in Submitted or UnderReview status (currently ${existing.status})` }); return;
-  }
+  // Task 14: Atomic update — WHERE clause prevents concurrent requests from leaving
+  // the quotation in an inconsistent state (no read-then-write race window).
   const [q] = await db.update(procurementQuotationsTable).set({
     status: "RevisionRequested", approvalRemarks: remarks, updatedAt: new Date(),
-  }).where(eq(procurementQuotationsTable.id, id)).returning();
-  if (!q) { res.status(404).json({ error: "Not found" }); return; }
-  await logAudit(id, "RevisionRequested", userName, userId, userRole, remarks);
+  }).where(and(
+    eq(procurementQuotationsTable.id, id),
+    inArray(procurementQuotationsTable.status, ["Submitted", "UnderReview"]),
+  )).returning();
+  if (!q) {
+    const [existing] = await db.select({ id: procurementQuotationsTable.id, status: procurementQuotationsTable.status, version: procurementQuotationsTable.version })
+      .from(procurementQuotationsTable).where(eq(procurementQuotationsTable.id, id));
+    if (!existing) { res.status(404).json({ error: "Not found" }); return; }
+    res.status(400).json({ error: `Cannot request revision: quotation must be in Submitted or UnderReview status (currently ${existing.status})` }); return;
+  }
+  // Task 13: Store current version in oldValues so the submit endpoint can detect
+  // that the quotation was not edited before re-submission.
+  await logAudit(id, "RevisionRequested", userName, userId, userRole, remarks, { version: q.version }, null);
   res.json(fmtQ(q));
 });
 
@@ -311,52 +342,69 @@ router.post("/procurement-quotations/:id/approve", async (req, res): Promise<voi
   if (existing.status !== "UnderReview") {
     res.status(400).json({ error: `Cannot approve: quotation must be in UnderReview status (currently ${existing.status})` }); return;
   }
-  const [q] = await db.update(procurementQuotationsTable).set({
-    status: "Approved", approvedAt: new Date(), approvedBy: userId, approvedByName: userName,
-    approvalRemarks: remarks, updatedAt: new Date(),
-  }).where(eq(procurementQuotationsTable.id, id)).returning();
-  if (!q) { res.status(404).json({ error: "Not found" }); return; }
-  await logAudit(id, "Approved", userName, userId, userRole, remarks, null, { status: "Approved" });
 
-  // Auto-generate PO
+  // Pre-fetch items and vendor before the transaction to keep the tx tight
   const items = await db.select().from(procQuotationItemsTable).where(eq(procQuotationItemsTable.quotationId, id)).orderBy(procQuotationItemsTable.lineNo);
   let vendor: typeof vendorsTable.$inferSelect | null = null;
-  if (q.vendorId) {
-    const [v] = await db.select().from(vendorsTable).where(eq(vendorsTable.id, q.vendorId));
+  if (existing.vendorId) {
+    const [v] = await db.select().from(vendorsTable).where(eq(vendorsTable.id, existing.vendorId));
     vendor = v ?? null;
   }
   const year = new Date().getFullYear();
   const poNumber = `PO-${year}-${String(poProcCounter++).padStart(4, "0")}`;
   const today = new Date().toISOString().split("T")[0];
-  const [po] = await db.insert(procurementPOsTable).values({
-    poNumber, quotationId: id, vendorId: q.vendorId,
-    vendorName: q.vendorSnapshotName ?? vendor?.name ?? "Unknown",
-    vendorGstin: vendor?.gstin ?? null, vendorAddress: vendor?.billingAddress ?? null,
-    vendorContact: vendor?.primaryPhone ?? null,
-    status: "Draft", poDate: today,
-    paymentTerms: q.paymentTerms, warrantyMonths: q.warrantyMonths,
-    freightCharges: q.freightCharges, otherCharges: q.otherCharges,
-    subtotal: q.subtotal, totalGst: q.totalGst, totalAmount: q.totalAmount,
-    approvedBy: userId, approvedByName: userName, approvedAt: new Date(),
-    createdBy: userId, createdByName: userName,
-  }).returning();
 
-  if (items.length > 0) {
-    await db.insert(procPOItemsTable).values(items.map(item => ({
-      poId: po.id, lineNo: item.lineNo, materialId: item.materialId,
-      materialCode: item.materialCode, materialName: item.materialName, description: item.description,
-      uom: item.uom, hsnSacCode: item.hsnSacCode, brand: item.brand,
-      qty: item.qty, unitPrice: item.unitPrice, discountPct: item.discountPct,
-      discountAmount: item.discountAmount, taxableAmount: item.taxableAmount,
-      gstRate: item.gstRate, totalGst: item.totalGst, lineTotal: item.lineTotal,
-    })));
+  // Task 3: Wrap quotation approval + auto-PO generation in a single transaction so a
+  // PO creation failure cannot leave the quotation stuck in Approved state without a PO.
+  let qFresh: typeof procurementQuotationsTable.$inferSelect;
+  let po: typeof procurementPOsTable.$inferSelect;
+  try {
+    [qFresh, po] = await db.transaction(async (tx) => {
+      const [q] = await tx.update(procurementQuotationsTable).set({
+        status: "Approved", approvedAt: new Date(), approvedBy: userId, approvedByName: userName,
+        approvalRemarks: remarks, updatedAt: new Date(),
+      }).where(eq(procurementQuotationsTable.id, id)).returning();
+      if (!q) throw new Error("Quotation not found");
+
+      const [newPO] = await tx.insert(procurementPOsTable).values({
+        poNumber, quotationId: id, vendorId: existing.vendorId,
+        vendorName: existing.vendorSnapshotName ?? vendor?.name ?? "Unknown",
+        vendorGstin: vendor?.gstin ?? null, vendorAddress: vendor?.billingAddress ?? null,
+        vendorContact: vendor?.primaryPhone ?? null,
+        status: "Draft", poDate: today,
+        paymentTerms: existing.paymentTerms, warrantyMonths: existing.warrantyMonths,
+        freightCharges: existing.freightCharges, otherCharges: existing.otherCharges,
+        subtotal: existing.subtotal, totalGst: existing.totalGst, totalAmount: existing.totalAmount,
+        approvedBy: userId, approvedByName: userName, approvedAt: new Date(),
+        createdBy: userId, createdByName: userName,
+      }).returning();
+
+      if (items.length > 0) {
+        await tx.insert(procPOItemsTable).values(items.map(item => ({
+          poId: newPO.id, lineNo: item.lineNo, materialId: item.materialId,
+          materialCode: item.materialCode, materialName: item.materialName, description: item.description,
+          uom: item.uom, hsnSacCode: item.hsnSacCode, brand: item.brand,
+          qty: item.qty, unitPrice: item.unitPrice, discountPct: item.discountPct,
+          discountAmount: item.discountAmount, taxableAmount: item.taxableAmount,
+          gstRate: item.gstRate, totalGst: item.totalGst, lineTotal: item.lineTotal,
+        })));
+      }
+
+      const [qUpdated] = await tx.update(procurementQuotationsTable)
+        .set({ poGenerated: true })
+        .where(eq(procurementQuotationsTable.id, id))
+        .returning();
+
+      return [qUpdated ?? q, newPO];
+    });
+  } catch (err: any) {
+    // Transaction rolled back — quotation remains in its prior state
+    res.status(500).json({ error: `Approval failed: ${err?.message ?? "PO generation error"}. No changes were saved. Please try again.` }); return;
   }
 
-  await db.update(procurementQuotationsTable).set({ poGenerated: true }).where(eq(procurementQuotationsTable.id, id));
+  await logAudit(id, "Approved", userName, userId, userRole, remarks, null, { status: "Approved" });
   await logAudit(id, "POGenerated", userName, userId, userRole, `PO ${poNumber} generated`);
 
-  // Return with fresh data
-  const [qFresh] = await db.select().from(procurementQuotationsTable).where(eq(procurementQuotationsTable.id, id));
   const [auditLogs, versions] = await Promise.all([
     db.select().from(quotationAuditLogsTable).where(eq(quotationAuditLogsTable.quotationId, id)).orderBy(desc(quotationAuditLogsTable.createdAt)),
     db.select().from(quotationVersionsTable).where(eq(quotationVersionsTable.quotationId, id)).orderBy(desc(quotationVersionsTable.version)),

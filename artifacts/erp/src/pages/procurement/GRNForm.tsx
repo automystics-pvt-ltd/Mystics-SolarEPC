@@ -50,6 +50,7 @@ export default function GRNForm({ poId: initPoId }: { poId?: string }) {
         hsnSacCode: item.hsnSacCode,
         unitPrice: item.unitPrice,
         orderedQty: item.qty,
+        deliveredQty: item.deliveredQty ?? 0,  // already delivered on prior GRNs
         receivedQty: "",
         acceptedQty: "",
         rejectedQty: "0",
@@ -187,6 +188,17 @@ export default function GRNForm({ poId: initPoId }: { poId?: string }) {
         </div>
       </div>
 
+      {/* Task 29: Fully-delivered banner — block GRN creation when every line is already fully received */}
+      {lineItems.length > 0 && lineItems.every(it => Number(it.deliveredQty) >= Number(it.orderedQty)) && (
+        <div className="flex items-start gap-3 bg-amber-50 border border-amber-300 rounded-xl px-5 py-4">
+          <span className="text-amber-600 text-lg leading-none">⚠️</span>
+          <div>
+            <p className="font-bold text-amber-800">All items on this PO are fully delivered</p>
+            <p className="text-sm text-amber-700 mt-0.5">Every line item has already met or exceeded its ordered quantity. No additional GRN can be created for this PO.</p>
+          </div>
+        </div>
+      )}
+
       {/* Line Items QC */}
       {lineItems.length > 0 && (
         <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
@@ -194,34 +206,99 @@ export default function GRNForm({ poId: initPoId }: { poId?: string }) {
             <h2 className="font-bold text-slate-900">Item-wise Inspection</h2>
             <p className="text-xs text-slate-500 mt-0.5">Record received, accepted, and rejected quantities per item</p>
           </div>
-          <div className="overflow-x-auto">
+
+          {/* Desktop table — hidden on small screens */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm min-w-max">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
-                  {["Material", "UOM", "Ordered Qty", "Received Qty", "Accepted Qty", "Rejected Qty", "Damaged Qty", "Rejection Reason", "Remarks"].map(h => (
+                  {["Material", "UOM", "Ordered", "Delivered", "Remaining", "Received Qty", "Accepted Qty", "Rejected", "Damaged", "Rejection Reason", "Remarks"].map(h => (
                     <th key={h} className="text-left px-4 py-2.5 text-xs font-bold text-slate-500 uppercase whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {lineItems.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50">
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-slate-900 max-w-48 truncate">{item.materialName}</p>
-                      {item.materialCode && <p className="text-xs text-slate-400">{item.materialCode}</p>}
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">{item.uom}</td>
-                    <td className="px-4 py-3 font-mono text-slate-700">{item.orderedQty}</td>
-                    <td className="px-4 py-3"><Input type="number" min="0" value={item.receivedQty} onChange={e => updateItem(idx, "receivedQty", e.target.value)} className="h-8 w-24 font-mono" /></td>
-                    <td className="px-4 py-3"><Input type="number" min="0" value={item.acceptedQty} onChange={e => updateItem(idx, "acceptedQty", e.target.value)} className="h-8 w-24 font-mono" /></td>
-                    <td className="px-4 py-3 font-mono text-red-600">{item.rejectedQty || 0}</td>
-                    <td className="px-4 py-3"><Input type="number" min="0" value={item.damagedQty} onChange={e => updateItem(idx, "damagedQty", e.target.value)} className="h-8 w-24 font-mono" /></td>
-                    <td className="px-4 py-3"><Input value={item.rejectionReason} onChange={e => updateItem(idx, "rejectionReason", e.target.value)} placeholder="Reason…" className="h-8 w-36" /></td>
-                    <td className="px-4 py-3"><Input value={item.itemRemarks} onChange={e => updateItem(idx, "itemRemarks", e.target.value)} placeholder="Notes…" className="h-8 w-36" /></td>
-                  </tr>
-                ))}
+                {lineItems.map((item, idx) => {
+                  const remaining = Number(item.orderedQty) - Number(item.deliveredQty);
+                  const accepted = Number(item.acceptedQty) || 0;
+                  const isOverDelivery = accepted > remaining + 0.001;
+                  return (
+                    <tr key={idx} className={isOverDelivery ? "bg-red-50" : "hover:bg-slate-50"}>
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-slate-900 max-w-48 truncate">{item.materialName}</p>
+                        {item.materialCode && <p className="text-xs text-slate-400">{item.materialCode}</p>}
+                      </td>
+                      <td className="px-4 py-3 text-slate-600">{item.uom}</td>
+                      <td className="px-4 py-3 font-mono text-slate-700">{item.orderedQty}</td>
+                      <td className="px-4 py-3 font-mono text-slate-500">{Number(item.deliveredQty) || 0}</td>
+                      <td className="px-4 py-3">
+                        <span className={`font-mono font-bold ${remaining <= 0 ? "text-slate-400 line-through" : "text-emerald-700"}`}>
+                          {Math.max(0, remaining)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3"><Input type="number" min="0" max={remaining} value={item.receivedQty} onChange={e => updateItem(idx, "receivedQty", e.target.value)} className="h-8 w-24 font-mono" /></td>
+                      <td className="px-4 py-3">
+                        <div>
+                          <Input type="number" min="0" max={remaining} value={item.acceptedQty} onChange={e => updateItem(idx, "acceptedQty", e.target.value)} className={`h-8 w-24 font-mono ${isOverDelivery ? "border-red-400 focus-visible:ring-red-400" : ""}`} />
+                          {isOverDelivery && (
+                            <p className="text-xs text-red-600 mt-0.5 whitespace-nowrap">Exceeds remaining ({remaining})</p>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 font-mono text-red-600">{item.rejectedQty || 0}</td>
+                      <td className="px-4 py-3"><Input type="number" min="0" value={item.damagedQty} onChange={e => updateItem(idx, "damagedQty", e.target.value)} className="h-8 w-24 font-mono" /></td>
+                      <td className="px-4 py-3"><Input value={item.rejectionReason} onChange={e => updateItem(idx, "rejectionReason", e.target.value)} placeholder="Reason…" className="h-8 w-36" /></td>
+                      <td className="px-4 py-3"><Input value={item.itemRemarks} onChange={e => updateItem(idx, "itemRemarks", e.target.value)} placeholder="Notes…" className="h-8 w-36" /></td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
+          </div>
+
+          {/* Task 10: Mobile card view — shown only on small screens */}
+          <div className="sm:hidden divide-y divide-slate-100">
+            {lineItems.map((item, idx) => {
+              const remaining = Number(item.orderedQty) - Number(item.deliveredQty);
+              const accepted = Number(item.acceptedQty) || 0;
+              const isOverDelivery = accepted > remaining + 0.001;
+              return (
+                <div key={idx} className={`p-4 space-y-3 ${isOverDelivery ? "bg-red-50" : ""}`}>
+                  <div>
+                    <p className="font-bold text-slate-900">{item.materialName}</p>
+                    {item.materialCode && <p className="text-xs text-slate-400">{item.materialCode}</p>}
+                    <div className="flex flex-wrap gap-3 mt-1.5 text-xs">
+                      <span className="text-slate-500">Ordered: <strong className="text-slate-800">{item.orderedQty} {item.uom}</strong></span>
+                      <span className="text-slate-500">Delivered: <strong className="text-slate-800">{Number(item.deliveredQty) || 0}</strong></span>
+                      <span className="text-slate-500">Remaining: <strong className={remaining <= 0 ? "text-slate-400 line-through" : "text-emerald-700"}>{Math.max(0, remaining)}</strong></span>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs text-slate-500 mb-1 block">Received Qty</Label>
+                      <Input type="number" min="0" max={remaining} value={item.receivedQty} onChange={e => updateItem(idx, "receivedQty", e.target.value)} className="h-9 font-mono" />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-slate-500 mb-1 block">Accepted Qty</Label>
+                      <Input type="number" min="0" max={remaining} value={item.acceptedQty} onChange={e => updateItem(idx, "acceptedQty", e.target.value)} className={`h-9 font-mono ${isOverDelivery ? "border-red-400" : ""}`} />
+                      {isOverDelivery && <p className="text-xs text-red-600 mt-0.5">Exceeds remaining ({remaining})</p>}
+                    </div>
+                    <div>
+                      <Label className="text-xs text-slate-500 mb-1 block">Damaged Qty</Label>
+                      <Input type="number" min="0" value={item.damagedQty} onChange={e => updateItem(idx, "damagedQty", e.target.value)} className="h-9 font-mono" />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-slate-500 mb-1 block">Rejected: {item.rejectedQty || 0}</Label>
+                      <Input value={item.rejectionReason} onChange={e => updateItem(idx, "rejectionReason", e.target.value)} placeholder="Rejection reason…" className="h-9" />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-slate-500 mb-1 block">Item Remarks</Label>
+                    <Input value={item.itemRemarks} onChange={e => updateItem(idx, "itemRemarks", e.target.value)} placeholder="Notes…" className="h-9" />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -235,7 +312,21 @@ export default function GRNForm({ poId: initPoId }: { poId?: string }) {
 
       <div className="flex justify-end gap-3">
         <Button variant="outline" onClick={() => setLocation("/procurement/grns")}>Cancel</Button>
-        <Button className="gap-2 bg-orange-500 hover:bg-orange-600" onClick={() => setShowConfirm(true)} disabled={createMut.isPending || !selectedPoId}>
+        <Button
+          className="gap-2 bg-orange-500 hover:bg-orange-600"
+          onClick={() => setShowConfirm(true)}
+          disabled={
+            createMut.isPending ||
+            !selectedPoId ||
+            // Task 29: Disable submit when every PO line is already fully delivered
+            (lineItems.length > 0 && lineItems.every(it => Number(it.deliveredQty) >= Number(it.orderedQty))) ||
+            // Task 25: Disable submit if any line has an over-delivery entry
+            lineItems.some(it => {
+              const remaining = Number(it.orderedQty) - Number(it.deliveredQty);
+              return Number(it.acceptedQty) > remaining + 0.001;
+            })
+          }
+        >
           <Save className="w-4 h-4" /> {createMut.isPending ? "Saving…" : "Create GRN"}
         </Button>
       </div>
