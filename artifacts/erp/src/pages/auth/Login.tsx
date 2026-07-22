@@ -147,7 +147,7 @@ export function Login() {
             </div>
             <div>
               <div className="font-bold text-lg leading-tight">Mystics ERP</div>
-              <div className="text-[11px] opacity-60">Powered by Automystics</div>
+              <div className="text-[11px] opacity-60">ERP &amp; Project Management</div>
             </div>
           </div>
 
@@ -195,7 +195,7 @@ export function Login() {
 
           <div className="mb-7">
             <h1 className="text-[22px] font-bold text-gray-900">Sign in to your account</h1>
-            <p className="text-[13px] text-gray-500 mt-1">Solar EPC Control Platform</p>
+            <p className="text-[13px] text-gray-500 mt-1">ERP &amp; Project Management</p>
           </div>
 
           <div className="bg-white rounded-2xl border border-orange-100 shadow-sm p-7">

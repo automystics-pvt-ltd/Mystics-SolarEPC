@@ -82,7 +82,7 @@ export function Sidebar({ className }: { className?: string }) {
         {!isCollapsed && (
           <div className="min-w-0">
             <div className="font-bold text-[13px] text-white leading-tight">Mystics ERP</div>
-            <div className="text-[10px] leading-tight" style={{ color: "#f59e0b99" }}>Solar &amp; EPC Control</div>
+            <div className="text-[10px] leading-tight" style={{ color: "#f59e0b99" }}>ERP &amp; Project Management</div>
           </div>
         )}
       </div>
@@ -96,7 +96,7 @@ export function Sidebar({ className }: { className?: string }) {
           <span className="text-[11px]" style={{ color: "#94a3b8" }}>
             <span className="font-semibold capitalize" style={{ color: "#f59e0b" }}>{user?.role || "User"}</span>
             <span className="mx-1 opacity-40">›</span>
-            Automystics
+            Mystics ERP
           </span>
         </div>
       )}
