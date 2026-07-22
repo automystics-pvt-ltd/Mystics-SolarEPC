@@ -1619,3 +1619,129 @@ describe("Multi-line PO — FullyReceived only when ALL lines are fully delivere
     expect(Number(item2.deliveredQty)).toBe(5);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe("GRN with zero accepted qty on all lines — PO status must remain unchanged", () => {
+  /**
+   * Scenario:
+   *   PO has TWO line items (qty 5 each) and is Acknowledged.
+   *   A GRN is submitted with acceptedQty = 0 on every line (e.g. all items
+   *   damaged / rejected at item level but the GRN was still submitted).
+   *   Approving that GRN must NOT alter the PO status — it should stay at
+   *   Acknowledged — and every PO item's deliveredQty must remain 0.
+   */
+  let zeroPoId: number;
+  let zeroPoItem1Id: number;
+  let zeroPoItem2Id: number;
+  let zeroGrnId: number;
+
+  it("creates a multi-line PO (two lines, qty 5 each) and advances it to Acknowledged", async () => {
+    const qRes = await api.post("/api/procurement-quotations").send({
+      ...actor,
+      vendorId,
+      mrId,
+      items: [
+        { materialName: "Zero Accept Item A", uom: "Nos", qty: 5, unitPrice: 300, gstRate: 18, discountPct: 0 },
+        { materialName: "Zero Accept Item B", uom: "Nos", qty: 5, unitPrice: 200, gstRate: 18, discountPct: 0 },
+      ],
+    });
+    expect(qRes.status).toBe(201);
+    const qid = qRes.body.id;
+
+    await api.post(`/api/procurement-quotations/${qid}/submit`).send(actor);
+    await api.post(`/api/procurement-quotations/${qid}/start-review`).send(actor);
+    const approveRes = await api
+      .post(`/api/procurement-quotations/${qid}/approve`)
+      .send({ ...actor, remarks: "Zero-accept GRN test approval" });
+    expect(approveRes.status).toBe(200);
+
+    zeroPoId = approveRes.body.po.id;
+    expect(zeroPoId).toBeDefined();
+
+    // Advance to Acknowledged
+    await api.patch(`/api/procurement-pos/${zeroPoId}`).send({ status: "Issued", ...actor });
+    const ackRes = await api.patch(`/api/procurement-pos/${zeroPoId}`).send({ status: "Acknowledged", ...actor });
+    expect(ackRes.status).toBe(200);
+    expect(ackRes.body.status).toBe("Acknowledged");
+
+    // Capture PO item ids
+    const poDetail = await api.get(`/api/procurement-pos/${zeroPoId}`);
+    expect(poDetail.status).toBe(200);
+    expect(poDetail.body.items).toHaveLength(2);
+    zeroPoItem1Id = poDetail.body.items[0].id;
+    zeroPoItem2Id = poDetail.body.items[1].id;
+    expect(zeroPoItem1Id).toBeDefined();
+    expect(zeroPoItem2Id).toBeDefined();
+  });
+
+  it("creates a GRN with acceptedQty = 0 on every line and submits it for inspection", async () => {
+    const res = await api.post("/api/proc-grns").send({
+      ...actor,
+      poId: zeroPoId,
+      deliveryDate: "2026-07-22",
+      items: [
+        {
+          poItemId: zeroPoItem1Id,
+          materialName: "Zero Accept Item A",
+          uom: "Nos",
+          orderedQty: 5,
+          receivedQty: 5,
+          acceptedQty: 0,   // all rejected / damaged
+          rejectedQty: 5,
+          damagedQty: 0,
+          unitPrice: 300,
+        },
+        {
+          poItemId: zeroPoItem2Id,
+          materialName: "Zero Accept Item B",
+          uom: "Nos",
+          orderedQty: 5,
+          receivedQty: 5,
+          acceptedQty: 0,   // all rejected / damaged
+          rejectedQty: 5,
+          damagedQty: 0,
+          unitPrice: 200,
+        },
+      ],
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.grnNumber).toMatch(/^GRN-/);
+    zeroGrnId = res.body.id;
+    expect(zeroGrnId).toBeDefined();
+
+    // Both items should be Rejected (accepted=0, rejected>0)
+    for (const item of res.body.items) {
+      expect(item.qcStatus).toBe("Rejected");
+      expect(Number(item.acceptedQty)).toBe(0);
+    }
+
+    // GRN total accepted qty must be 0
+    expect(Number(res.body.totalAcceptedQty)).toBe(0);
+
+    // Submit for inspection
+    const submitRes = await api.post(`/api/proc-grns/${zeroGrnId}/submit`).send(actor);
+    expect(submitRes.status).toBe(200);
+    expect(submitRes.body.status).toBe("Submitted");
+  });
+
+  it("approves the all-zero GRN — PO status must remain Acknowledged, no deliveredQty changes", async () => {
+    const approveRes = await api
+      .post(`/api/proc-grns/${zeroGrnId}/approve`)
+      .send({ ...actor, remarks: "All items rejected — zero accepted" });
+    expect(approveRes.status).toBe(200);
+
+    // GRN itself should be PartiallyAccepted or Accepted based on server logic;
+    // what matters is the PO-side effect below.
+
+    // PO status must NOT have moved away from Acknowledged
+    const poRes = await api.get(`/api/procurement-pos/${zeroPoId}`);
+    expect(poRes.status).toBe(200);
+    expect(poRes.body.status).toBe("Acknowledged");
+
+    // Every PO item deliveredQty must still be 0 (nothing was accepted)
+    const item1 = poRes.body.items.find((i: any) => i.id === zeroPoItem1Id);
+    const item2 = poRes.body.items.find((i: any) => i.id === zeroPoItem2Id);
+    expect(Number(item1.deliveredQty)).toBe(0);
+    expect(Number(item2.deliveredQty)).toBe(0);
+  });
+});
