@@ -1,19 +1,18 @@
 import { useState } from "react";
 import { useGetProjects, useCreateProject, useGetPortfolioSummary, getGetProjectsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Plus, Search, Filter, FolderKanban } from "lucide-react";
+import { Loader2, Plus, Search, FolderKanban, MapPin, UserCircle } from "lucide-react";
 import { Link } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { format } from "date-fns";
+import { motion } from "framer-motion";
 
 const createProjectSchema = z.object({
   name: z.string().min(1, "Project name is required"),
@@ -26,6 +25,16 @@ const createProjectSchema = z.object({
 function formatCurrency(amount?: number) {
   if (!amount) return "$0";
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(amount);
+}
+
+function getStatusColor(status: string) {
+  switch (status) {
+    case 'Active': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+    case 'Completed': return 'bg-blue-100 text-blue-800 border-blue-200';
+    case 'On Hold': return 'bg-amber-100 text-amber-800 border-amber-200';
+    case 'Cancelled': return 'bg-red-100 text-red-800 border-red-200';
+    default: return 'bg-gray-100 text-gray-800 border-gray-200';
+  }
 }
 
 export function ProjectsList() {
@@ -41,9 +50,7 @@ export function ProjectsList() {
 
   const form = useForm<z.infer<typeof createProjectSchema>>({
     resolver: zodResolver(createProjectSchema),
-    defaultValues: {
-      name: "",
-    }
+    defaultValues: { name: "" }
   });
 
   const createMutation = useCreateProject({
@@ -62,83 +69,65 @@ export function ProjectsList() {
   );
 
   return (
-    <div className="space-y-4 pb-3">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
+      
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Project Portfolio</h2>
-          <p className="text-muted-foreground mt-1">Manage execution, budgets, and milestones.</p>
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Project Hub</h1>
+          <p className="text-sm font-medium text-gray-500 mt-1">Manage execution, budgets, and site milestones.</p>
         </div>
         
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" /> New Project
+            <Button className="bg-[#0C1445] hover:bg-[#0A0F2C] text-white font-bold tracking-wide rounded-[8px] h-10 px-5 shadow-sm">
+              <Plus className="h-4 w-4 mr-2" /> New Project
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Create New Project</DialogTitle>
+          <DialogContent className="max-w-md p-6">
+            <DialogHeader className="mb-4">
+              <DialogTitle className="text-xl font-bold tracking-tight">Create New Project</DialogTitle>
             </DialogHeader>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit((d) => createMutation.mutate({ data: d }))} className="space-y-4 mt-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Project Name</FormLabel>
-                      <FormControl><Input {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="siteLocation"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Site Location</FormLabel>
-                      <FormControl><Input {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="contractValue"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Contract Value ($)</FormLabel>
-                      <FormControl><Input type="number" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <form onSubmit={form.handleSubmit((d) => createMutation.mutate({ data: d }))} className="space-y-5">
+                <FormField control={form.control} name="name" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700">Project Name</FormLabel>
+                    <FormControl><Input className="h-10 bg-gray-50" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="siteLocation" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700">Site Location</FormLabel>
+                    <FormControl><Input className="h-10 bg-gray-50" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="contractValue" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700">Contract Value ($)</FormLabel>
+                    <FormControl><Input className="h-10 bg-gray-50 font-mono" type="number" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
                 <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="startDate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Start Date</FormLabel>
-                        <FormControl><Input type="date" {...field} /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="plannedEnd"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Planned End</FormLabel>
-                        <FormControl><Input type="date" {...field} /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <FormField control={form.control} name="startDate" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700">Start Date</FormLabel>
+                      <FormControl><Input className="h-10 bg-gray-50" type="date" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="plannedEnd" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700">Planned End</FormLabel>
+                      <FormControl><Input className="h-10 bg-gray-50" type="date" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
                 </div>
-                <Button type="submit" className="w-full" disabled={createMutation.isPending}>
+                <Button type="submit" className="w-full h-11 bg-[#EA580C] hover:bg-[#C2410C] text-white font-bold rounded-[8px] mt-2" disabled={createMutation.isPending}>
                   {createMutation.isPending ? "Creating..." : "Create Project"}
                 </Button>
               </form>
@@ -147,121 +136,123 @@ export function ProjectsList() {
         </Dialog>
       </div>
 
+      {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="shadow-sm">
-          <CardContent className="p-4">
-            <p className="text-muted-foreground text-sm font-medium">Active Projects</p>
-            <p className="text-2xl font-bold mt-1">{summary?.activeProjects || 0}</p>
-          </CardContent>
-        </Card>
-        <Card className="shadow-sm">
-          <CardContent className="p-4">
-            <p className="text-muted-foreground text-sm font-medium">Total Budget</p>
-            <p className="text-2xl font-bold mt-1">{formatCurrency(summary?.totalBudget)}</p>
-          </CardContent>
-        </Card>
-        <Card className="shadow-sm border-emerald-500/20">
-          <CardContent className="p-4 bg-emerald-500/5">
-            <p className="text-emerald-700 dark:text-emerald-400 text-sm font-medium">On Track</p>
-            <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400 mt-1">{summary?.onTrackCount || 0}</p>
-          </CardContent>
-        </Card>
-        <Card className="shadow-sm border-destructive/20">
-          <CardContent className="p-4 bg-destructive/5">
-            <p className="text-destructive text-sm font-medium">Delayed</p>
-            <p className="text-2xl font-bold text-destructive mt-1">{summary?.delayedCount || 0}</p>
-          </CardContent>
-        </Card>
+        <div className="bg-white rounded-[12px] premium-shadow border border-gray-100 p-5 flex flex-col justify-between h-[100px]">
+          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Active Projects</p>
+          <p className="text-3xl font-bold tracking-tight text-gray-900">{summary?.activeProjects || 0}</p>
+        </div>
+        <div className="bg-white rounded-[12px] premium-shadow border border-gray-100 p-5 flex flex-col justify-between h-[100px]">
+          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Total Budget</p>
+          <p className="text-2xl font-bold tracking-tight text-gray-900 font-mono">{formatCurrency(summary?.totalBudget)}</p>
+        </div>
+        <div className="bg-emerald-50 rounded-[12px] border border-emerald-100 p-5 flex flex-col justify-between h-[100px]">
+          <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-widest">On Track</p>
+          <p className="text-3xl font-bold tracking-tight text-emerald-700">{summary?.onTrackCount || 0}</p>
+        </div>
+        <div className="bg-red-50 rounded-[12px] border border-red-100 p-5 flex flex-col justify-between h-[100px]">
+          <p className="text-[11px] font-bold text-red-600 uppercase tracking-widest">Delayed</p>
+          <p className="text-3xl font-bold tracking-tight text-red-700">{summary?.delayedCount || 0}</p>
+        </div>
       </div>
 
-      <Card className="shadow-sm">
-        <CardHeader className="p-4 border-b">
+      {/* List Area */}
+      <div className="bg-white rounded-[12px] premium-shadow border border-gray-100 overflow-hidden">
+        <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
           <div className="relative w-full max-w-sm">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input 
-              placeholder="Search projects..." 
-              className="pl-9"
+              placeholder="Search projects by name or location..." 
+              className="pl-9 h-10 bg-white border-gray-200 text-sm focus-visible:ring-[#EA580C] shadow-sm rounded-[8px]"
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
           </div>
-        </CardHeader>
-        <CardContent className="p-0">
+        </div>
+        
+        <div className="overflow-x-auto">
           {isLoading ? (
-            <div className="flex justify-center p-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+            <div className="flex justify-center p-12"><Loader2 className="h-8 w-8 animate-spin text-gray-300" /></div>
           ) : (
             <Table>
-              <TableHeader className="bg-muted/50">
-                <TableRow>
-                  <TableHead className="w-[300px]">Project Name</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Value</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Progress</TableHead>
-                  <TableHead>Manager</TableHead>
+              <TableHeader>
+                <TableRow className="border-b border-gray-100 bg-white hover:bg-white">
+                  <TableHead className="h-12 text-xs font-bold uppercase tracking-wider text-gray-500 bg-white px-5 w-[300px]">Project</TableHead>
+                  <TableHead className="h-12 text-xs font-bold uppercase tracking-wider text-gray-500 bg-white">Location</TableHead>
+                  <TableHead className="h-12 text-xs font-bold uppercase tracking-wider text-gray-500 bg-white text-right">Value</TableHead>
+                  <TableHead className="h-12 text-xs font-bold uppercase tracking-wider text-gray-500 bg-white px-6">Status</TableHead>
+                  <TableHead className="h-12 text-xs font-bold uppercase tracking-wider text-gray-500 bg-white w-[140px] text-center">Progress</TableHead>
+                  <TableHead className="h-12 text-xs font-bold uppercase tracking-wider text-gray-500 bg-white px-5">Manager</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredProjects?.map((project) => (
-                  <TableRow key={project.id} className="hover:bg-muted/30 cursor-pointer transition-colors">
-                    <TableCell>
+                  <TableRow key={project.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors group">
+                    <TableCell className="px-5 py-4">
                       <Link href={`/projects/${project.id}`} className="block">
-                        <div className="font-medium text-foreground">{project.name}</div>
-                        <div className="text-xs text-muted-foreground font-mono">PRJ-{project.id.toString().padStart(4, '0')}</div>
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-md bg-orange-50 text-[#EA580C] flex items-center justify-center shrink-0">
+                            <FolderKanban className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <div className="font-bold text-gray-900 text-sm group-hover:text-[#EA580C] transition-colors leading-tight">{project.name}</div>
+                            <div className="text-[11px] font-bold text-gray-400 font-mono mt-0.5 uppercase tracking-wider">PRJ-{project.id.toString().padStart(4, '0')}</div>
+                          </div>
+                        </div>
                       </Link>
                     </TableCell>
-                    <TableCell>
-                      <Link href={`/projects/${project.id}`} className="block text-sm text-muted-foreground">
-                        {project.siteLocation || 'HQ'}
+                    <TableCell className="py-4">
+                      <Link href={`/projects/${project.id}`} className="block text-sm font-bold text-gray-600 flex items-center gap-1.5">
+                        <MapPin className="h-3.5 w-3.5 text-gray-400" /> {project.siteLocation || 'HQ'}
                       </Link>
                     </TableCell>
-                    <TableCell>
-                      <Link href={`/projects/${project.id}`} className="block font-medium">
-                        {formatCurrency(project.contractValue)}
+                    <TableCell className="py-4 text-right">
+                      <Link href={`/projects/${project.id}`} className="block font-mono font-bold text-[15px] text-gray-900">
+                        {formatCurrency(project.contractValue ?? undefined)}
                       </Link>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="py-4 px-6">
                       <Link href={`/projects/${project.id}`} className="block">
-                        <Badge variant={
-                          project.status === 'Completed' ? 'default' : 
-                          project.status === 'On Hold' ? 'destructive' : 'secondary'
-                        }>
+                        <Badge variant="outline" className={`font-bold text-[10px] uppercase tracking-wide border px-2 py-0.5 rounded-[4px] ${getStatusColor(project.status)}`}>
                           {project.status}
                         </Badge>
                       </Link>
                     </TableCell>
-                    <TableCell>
-                      <Link href={`/projects/${project.id}`} className="block">
-                        <div className="flex items-center gap-2">
-                          <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
+                    <TableCell className="py-4">
+                      <Link href={`/projects/${project.id}`} className="flex justify-center">
+                        <div className="flex items-center gap-2 w-full">
+                          <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
                             <div 
-                              className="h-full bg-primary" 
+                              className="h-full bg-[#0C1445]" 
                               style={{ width: `${project.percentComplete || 0}%` }} 
                             />
                           </div>
-                          <span className="text-xs font-mono">{project.percentComplete || 0}%</span>
+                          <span className="text-[11px] font-bold font-mono text-gray-600 w-8 text-right">{project.percentComplete || 0}%</span>
                         </div>
                       </Link>
                     </TableCell>
-                    <TableCell>
-                      <Link href={`/projects/${project.id}`} className="block text-sm">
-                        {project.pmOwnerName || 'Unassigned'}
+                    <TableCell className="px-5 py-4">
+                      <Link href={`/projects/${project.id}`} className="block text-sm font-bold text-gray-600 flex items-center gap-1.5">
+                        <UserCircle className="h-4 w-4 text-gray-400" /> {project.pmOwnerName || 'Unassigned'}
                       </Link>
                     </TableCell>
                   </TableRow>
                 ))}
                 {!filteredProjects?.length && (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                      No projects found.
+                    <TableCell colSpan={6} className="h-32 text-center">
+                      <div className="flex flex-col items-center justify-center text-gray-400">
+                        <FolderKanban className="h-8 w-8 mb-2 opacity-20" />
+                        <span className="text-sm font-medium">No projects found.</span>
+                      </div>
                     </TableCell>
                   </TableRow>
                 )}
               </TableBody>
             </Table>
           )}
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </div>
+    </motion.div>
   );
 }

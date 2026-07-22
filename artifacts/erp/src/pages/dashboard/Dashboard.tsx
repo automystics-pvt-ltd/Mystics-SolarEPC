@@ -3,6 +3,7 @@ import {
   Loader2, TrendingUp, Users, FolderKanban, AlertCircle, FileCheck,
   CircleDollarSign, CheckCircle2, ChevronRight, FileText, Package,
   ClipboardList, Boxes, BarChart3, HardHat, Warehouse, Zap,
+  ArrowUpRight, ArrowDownRight, LayoutTemplate
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { format } from "date-fns";
@@ -10,12 +11,14 @@ import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/lib/auth";
 import { useLocation } from "wouter";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
 
 function formatCurrency(amount?: number | null) {
-  if (!amount) return "₹0";
-  if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(2)}Cr`;
-  if (amount >= 100000) return `₹${(amount / 100000).toFixed(2)}L`;
-  return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(amount);
+  if (!amount) return "$0";
+  if (amount >= 1000000) return `$${(amount / 1000000).toFixed(2)}M`;
+  if (amount >= 1000) return `$${(amount / 1000).toFixed(1)}k`;
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(amount);
 }
 
 export function Dashboard() {
@@ -27,17 +30,14 @@ export function Dashboard() {
   const today = new Date();
   const fyStart = today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
   const fyEnd = fyStart + 1;
-  const dateRange = `${fyStart}-04-01 → ${fyEnd}-03-31`;
+  const dateRange = `${fyStart}-04-01 to ${fyEnd}-03-31`;
 
   if (isDashboardLoading || isCombinedLoading) {
     return (
       <div className="h-[60vh] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-12 w-12 rounded-full flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg, #f59e0b, #ea580c)", boxShadow: "0 0 20px rgba(245,158,11,0.4)" }}>
-            <Zap className="h-6 w-6 text-white animate-pulse" />
-          </div>
-          <Loader2 className="h-5 w-5 animate-spin text-amber-500" />
+          <Loader2 className="h-6 w-6 animate-spin text-[#EA580C]" />
+          <span className="text-sm font-medium text-gray-500">Loading metrics...</span>
         </div>
       </div>
     );
@@ -46,311 +46,243 @@ export function Dashboard() {
   const pipelineData = combined?.pipeline?.stages || [];
 
   const quickActions = [
-    { label: "New Lead", icon: Users, color: "#ea580c", bg: "#fff7ed", href: "/crm/leads" },
-    { label: "New Quote", icon: FileText, color: "#0891b2", bg: "#ecfeff", href: "/crm/quotations/new" },
-    { label: "Log Client PO", icon: FileCheck, color: "#059669", bg: "#ecfdf5", href: "/crm/client-pos" },
-    { label: "New MR", icon: Package, color: "#7c3aed", bg: "#f5f3ff", href: "/inventory/grns" },
-    { label: "Create DPR", icon: ClipboardList, color: "#0284c7", bg: "#eff6ff", href: "/projects" },
-    { label: "Add GRN", icon: Boxes, color: "#db2777", bg: "#fdf2f8", href: "/inventory/grns" },
-    { label: "Contractors", icon: HardHat, color: "#d97706", bg: "#fffbeb", href: "/projects/contractors" },
-    { label: "Reports", icon: BarChart3, color: "#f59e0b", bg: "#fffbeb", href: "/crm/invoices" },
+    { label: "New Lead", icon: Users, href: "/crm/leads" },
+    { label: "Create Quote", icon: FileText, href: "/crm/quotations/new" },
+    { label: "Log PO", icon: FileCheck, href: "/crm/client-pos" },
+    { label: "Issue GRN", icon: Boxes, href: "/inventory/grns" },
+    { label: "Submit DPR", icon: ClipboardList, href: "/projects" },
+    { label: "Contractors", icon: HardHat, href: "/projects/contractors" },
   ];
 
   return (
-    <div className="space-y-3 pb-4">
-      {/* Heading */}
-      <div className="flex items-start justify-between">
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="space-y-6 pb-10"
+    >
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-            <span className="flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full text-amber-700"
-              style={{ background: "linear-gradient(90deg, #fef3c7, #fed7aa)" }}>
-              ☀ Solar EPC
-            </span>
-          </div>
-          <p className="text-[13px] text-gray-500 mt-0.5">
-            Welcome back, <span className="font-semibold text-gray-700">{user?.name?.split(" ")[0]}</span> — FY {fyStart}-{String(fyEnd).slice(-2)} overview.
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Overview</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Welcome back, <span className="font-semibold text-gray-700">{user?.name?.split(" ")[0]}</span>. Here's what's happening today.
           </p>
         </div>
-        <span className="hidden sm:block text-[12px] text-gray-400 font-mono pt-1">{dateRange}</span>
+        <div className="flex items-center gap-3">
+          <Badge variant="outline" className="bg-white px-3 py-1 font-mono text-xs text-gray-500 rounded-[6px]">
+            {dateRange}
+          </Badge>
+        </div>
       </div>
 
-      {/* 4 Gradient KPI cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-        <GradientCard
-          gradient="linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)"
-          glow="rgba(245,158,11,0.35)"
-          icon={<FolderKanban className="h-5 w-5 text-white" />}
-          label="Active Projects"
-          value={String(dashboard?.activeProjectsCount ?? 0)}
-          sub={`${combined?.portfolioSummary?.onTrackCount ?? 0} on track · ${combined?.portfolioSummary?.delayedCount ?? 0} delayed`}
-          trend="☀ Solar EPC"
+      {/* KPI Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KpiCard
+          title="Active Projects"
+          value={dashboard?.activeProjectsCount ?? 0}
+          icon={FolderKanban}
+          trend="+2 this month"
+          trendUp={true}
         />
-        <GradientCard
-          gradient="linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%)"
-          glow="rgba(14,165,233,0.3)"
-          icon={<TrendingUp className="h-5 w-5 text-white" />}
-          label="Contract Value"
+        <KpiCard
+          title="Contract Value"
           value={formatCurrency(dashboard?.totalContractValue)}
-          sub={`Actual spend: ${formatCurrency(combined?.portfolioSummary?.totalActualSpend)}`}
-          trend="Active"
+          icon={TrendingUp}
+          trend="vs Last Year"
+          trendUp={true}
         />
-        <GradientCard
-          gradient="linear-gradient(135deg, #16a34a 0%, #15803d 100%)"
-          glow="rgba(22,163,74,0.3)"
-          icon={<FileCheck className="h-5 w-5 text-white" />}
-          label="Pending Approvals"
-          value={String(dashboard?.pendingApprovalsCount ?? 0)}
-          sub="Vendor quotations & expenses"
+        <KpiCard
+          title="A/R Outstanding"
+          value={formatCurrency(dashboard?.invoiceOutstanding)}
+          icon={CircleDollarSign}
+          trend="12 Invoices"
+          trendUp={false}
+          alert={true}
         />
-        <GradientCard
-          gradient="linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)"
-          glow="rgba(124,58,237,0.3)"
-          icon={<AlertCircle className="h-5 w-5 text-white" />}
-          label="Open Escalations"
-          value={String(dashboard?.openEscalations?.length ?? 0)}
-          sub={`${dashboard?.overdueTasksCount ?? 0} tasks overdue`}
-          urgent={!!dashboard?.openEscalations?.length}
+        <KpiCard
+          title="Open Escalations"
+          value={dashboard?.openEscalations?.length ?? 0}
+          icon={AlertCircle}
+          trend={`${dashboard?.overdueTasksCount ?? 0} Overdue Tasks`}
+          trendUp={false}
+          alert={(dashboard?.openEscalations?.length ?? 0) > 0}
         />
       </div>
 
-      {/* 6 Mini stat cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2">
-        <MiniStatCard icon={<Users className="h-4 w-4" />} iconColor="text-orange-500" iconBg="bg-orange-50" label="Active Leads" value={dashboard?.leadsCount ?? 0} href="/crm/leads" />
-        <MiniStatCard icon={<FileText className="h-4 w-4" />} iconColor="text-sky-500" iconBg="bg-sky-50" label="Quotations" value={0} href="/crm/quotations" />
-        <MiniStatCard icon={<FileCheck className="h-4 w-4" />} iconColor="text-emerald-500" iconBg="bg-emerald-50" label="Client POs" value={0} href="/crm/client-pos" />
-        <MiniStatCard icon={<AlertCircle className="h-4 w-4" />} iconColor="text-red-500" iconBg="bg-red-50" label="Overdue Tasks" value={dashboard?.overdueTasksCount ?? 0} href="/crm/tasks" />
-        <MiniStatCard icon={<HardHat className="h-4 w-4" />} iconColor="text-amber-600" iconBg="bg-amber-50" label="Contractors" value={0} href="/projects/contractors" />
-        <MiniStatCard icon={<Warehouse className="h-4 w-4" />} iconColor="text-teal-500" iconBg="bg-teal-50" label="Warehouses" value={0} href="/inventory/warehouses" />
-      </div>
-
-      {/* Quick Actions */}
-      <div className="bg-white rounded-xl border border-orange-100 shadow-sm p-3">
-        <p className="text-[10px] font-semibold text-orange-400 uppercase tracking-widest mb-2">Quick Actions</p>
-        <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
-          {quickActions.map((action) => (
-            <button key={action.label} onClick={() => setLocation(action.href)}
-              className="flex flex-col items-center gap-1.5 py-2 px-2 rounded-lg hover:bg-orange-50/60 transition-colors group cursor-pointer">
-              <div className="h-10 w-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
-                style={{ backgroundColor: action.bg }}>
-                <action.icon className="h-5 w-5" style={{ color: action.color }} />
+      {/* Main Grid */}
+      <div className="grid lg:grid-cols-3 gap-6">
+        
+        {/* Left Col: Charts & Pipeline */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="bg-white rounded-[12px] premium-shadow p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-base font-bold text-gray-900 tracking-tight">Sales Pipeline</h3>
+                <p className="text-sm text-gray-500">{combined?.pipeline?.totalLeads ?? 0} active leads</p>
               </div>
-              <span className="text-[11px] text-gray-600 font-medium text-center leading-tight">{action.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
+              <Button variant="ghost" size="sm" className="text-[#EA580C] hover:text-[#C2410C] hover:bg-orange-50 font-semibold" onClick={() => setLocation("/crm/leads")}>
+                View Pipeline <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
+            <div className="h-[240px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={pipelineData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                  <XAxis dataKey="stage" axisLine={false} tickLine={false} tick={{ fill: "#6B7280", fontSize: 12, fontWeight: 500 }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: "#6B7280", fontSize: 12, fontWeight: 500 }} />
+                  <Tooltip 
+                    cursor={{ fill: "#F3F4F6" }}
+                    contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)", fontSize: 13, fontWeight: 600 }} 
+                  />
+                  <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={60}>
+                    {pipelineData.map((entry: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={entry.stage === "Closed Won" ? "#10B981" : "#EA580C"} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
 
-      {/* Charts Row */}
-      <div className="grid gap-3 lg:grid-cols-7">
-        {/* Sales Pipeline */}
-        <div className="lg:col-span-4 bg-white rounded-xl border border-orange-100 shadow-sm p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <h3 className="text-[14px] font-semibold text-gray-800">Sales Pipeline</h3>
-              <p className="text-[12px] text-gray-400">{combined?.pipeline?.totalLeads ?? 0} active leads across all stages</p>
-            </div>
-            <Link href="/crm/leads">
-              <span className="text-[12px] text-orange-600 font-medium hover:underline flex items-center gap-0.5">
-                View All <ChevronRight className="h-3.5 w-3.5" />
-              </span>
-            </Link>
-          </div>
-          <div className="h-[190px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={pipelineData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#fef3c7" />
-                <XAxis dataKey="stage" axisLine={false} tickLine={false} tick={{ fill: "#9ca3af", fontSize: 11 }} dy={8} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: "#9ca3af", fontSize: 11 }} />
-                <Tooltip cursor={{ fill: "#fff7ed" }}
-                  contentStyle={{ borderRadius: "8px", border: "1px solid #fed7aa", fontSize: 12, boxShadow: "0 4px 6px -1px rgba(234,88,12,0.1)" }} />
-                <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                  {pipelineData.map((entry: any, index: number) => (
-                    <Cell key={`cell-${index}`} fill={entry.stage === "Closed Won" ? "#ea580c" : "#fed7aa"} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Portfolio Summary */}
-        <div className="lg:col-span-3 bg-white rounded-xl border border-orange-100 shadow-sm p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <h3 className="text-[14px] font-semibold text-gray-800">Project Portfolio</h3>
-              <p className="text-[12px] text-gray-400">Solar EPC execution health</p>
-            </div>
-            <Link href="/projects">
-              <span className="text-[12px] text-orange-600 font-medium hover:underline flex items-center gap-0.5">
-                All <ChevronRight className="h-3.5 w-3.5" />
-              </span>
-            </Link>
-          </div>
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-lg p-3" style={{ background: "#fff7ed", border: "1px solid #fed7aa" }}>
-                <p className="text-[11px] text-orange-600 mb-1">Total Budget</p>
-                <p className="text-[17px] font-bold text-gray-900">{formatCurrency(combined?.portfolioSummary?.totalBudget)}</p>
-              </div>
-              <div className="rounded-lg p-3" style={{ background: "#fff7ed", border: "1px solid #fed7aa" }}>
-                <p className="text-[11px] text-orange-600 mb-1">Actual Spend</p>
-                <p className="text-[17px] font-bold text-gray-900">{formatCurrency(combined?.portfolioSummary?.totalActualSpend)}</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-lg bg-emerald-50 border border-emerald-100 p-3">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                  <span className="text-[11px] font-medium text-emerald-700">On Track</span>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="bg-white rounded-[12px] premium-shadow p-5 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <LayoutTemplate className="h-5 w-5 text-gray-400" />
+                  <h3 className="text-sm font-bold text-gray-900 tracking-tight">Portfolio Health</h3>
                 </div>
-                <p className="text-2xl font-bold text-emerald-600">{combined?.portfolioSummary?.onTrackCount ?? 0}</p>
-              </div>
-              <div className="rounded-lg bg-red-50 border border-red-100 p-3">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <AlertCircle className="h-3.5 w-3.5 text-red-500" />
-                  <span className="text-[11px] font-medium text-red-600">Delayed</span>
+                <div className="flex items-baseline gap-2 mt-4">
+                  <span className="text-3xl font-bold tracking-tight text-gray-900">{combined?.portfolioSummary?.activeProjects ?? 0}</span>
+                  <span className="text-sm font-medium text-gray-500">Active</span>
                 </div>
-                <p className="text-2xl font-bold text-red-500">{combined?.portfolioSummary?.delayedCount ?? 0}</p>
               </div>
-            </div>
-            <div className="rounded-lg p-3" style={{ background: "linear-gradient(90deg, #fff7ed, #fef3c7)", border: "1px solid #fde68a" }}>
-              <div className="flex items-center justify-between">
+              <div className="mt-6 pt-4 border-t border-gray-100 grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-[11px] text-amber-700 font-medium">A/R Outstanding</p>
-                  <p className="text-[20px] font-bold text-amber-800">{formatCurrency(dashboard?.invoiceOutstanding)}</p>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">On Track</p>
+                  <p className="text-lg font-bold text-emerald-600">{combined?.portfolioSummary?.onTrackCount ?? 0}</p>
                 </div>
-                <CircleDollarSign className="h-7 w-7 text-amber-400" />
+                <div>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Delayed</p>
+                  <p className="text-lg font-bold text-red-500">{combined?.portfolioSummary?.delayedCount ?? 0}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-[12px] premium-shadow p-5 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <CircleDollarSign className="h-5 w-5 text-gray-400" />
+                  <h3 className="text-sm font-bold text-gray-900 tracking-tight">Budget vs Spend</h3>
+                </div>
+                <div className="flex items-baseline gap-2 mt-4">
+                  <span className="text-3xl font-bold tracking-tight text-gray-900">{formatCurrency(combined?.portfolioSummary?.totalActualSpend)}</span>
+                </div>
+                <p className="text-sm font-medium text-gray-500 mt-1">Total Actual Spend</p>
+              </div>
+              <div className="mt-6 pt-4 border-t border-gray-100">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Total Budget</p>
+                <p className="text-sm font-bold text-gray-900">{formatCurrency(combined?.portfolioSummary?.totalBudget)}</p>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Recent Items */}
-      <div className="grid gap-3 md:grid-cols-3">
-        <div className="bg-white rounded-xl border border-orange-100 shadow-sm p-4">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-[14px] font-semibold text-gray-800">Recent Leads</h3>
-            <Link href="/crm/leads"><span className="text-[12px] text-orange-600 hover:underline">View All</span></Link>
+        {/* Right Col: Actions & Feed */}
+        <div className="space-y-6">
+          {/* Quick Actions */}
+          <div className="bg-white rounded-[12px] premium-shadow p-5">
+            <h3 className="text-sm font-bold text-gray-900 tracking-tight mb-4">Quick Actions</h3>
+            <div className="grid grid-cols-3 gap-3">
+              {quickActions.map((action) => (
+                <button key={action.label} onClick={() => setLocation(action.href)}
+                  className="flex flex-col items-center justify-center p-3 rounded-[8px] bg-gray-50 hover:bg-orange-50 border border-transparent hover:border-orange-100 transition-all group">
+                  <action.icon className="h-5 w-5 text-gray-400 group-hover:text-[#EA580C] mb-2 transition-colors" />
+                  <span className="text-[11px] font-bold text-gray-600 group-hover:text-gray-900 text-center leading-tight">{action.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="space-y-2">
-            {dashboard?.recentLeads?.map((lead: any) => (
-              <Link key={lead.id} href={`/crm/leads/${lead.id}`}>
-                <div className="flex items-center justify-between py-2 px-2.5 rounded-lg hover:bg-orange-50/50 cursor-pointer transition-colors">
-                  <div>
-                    <p className="text-[13px] font-medium text-gray-800">{lead.companyName || "Unknown"}</p>
-                    <p className="text-[11px] text-gray-400">{lead.contactName}</p>
-                  </div>
-                  <Badge variant={lead.status === "Closed Won" ? "default" : "secondary"} className="text-[10px] px-1.5">
-                    {lead.status}
-                  </Badge>
-                </div>
-              </Link>
-            ))}
-            {!dashboard?.recentLeads?.length && (
-              <p className="text-[12px] text-gray-400 text-center py-4">No recent leads</p>
-            )}
-          </div>
-        </div>
 
-        <div className="bg-white rounded-xl border border-orange-100 shadow-sm p-4">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-[14px] font-semibold text-gray-800">Active Projects</h3>
-            <Link href="/projects"><span className="text-[12px] text-orange-600 hover:underline">View All</span></Link>
-          </div>
-          <div className="space-y-3">
-            {dashboard?.recentProjects?.map((project: any) => (
-              <Link key={project.id} href={`/projects/${project.id}`}>
-                <div className="py-2 px-2.5 rounded-lg hover:bg-orange-50/50 cursor-pointer transition-colors">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <p className="text-[13px] font-medium text-gray-800 truncate pr-2">{project.name}</p>
-                    <span className="text-[11px] font-semibold text-orange-600 whitespace-nowrap">{project.percentComplete ?? 0}%</span>
-                  </div>
-                  <div className="h-1.5 bg-orange-50 rounded-full overflow-hidden border border-orange-100">
-                    <div className="h-full rounded-full transition-all"
-                      style={{ width: `${project.percentComplete ?? 0}%`, background: "linear-gradient(90deg, #f59e0b, #ea580c)" }} />
-                  </div>
-                </div>
-              </Link>
-            ))}
-            {!dashboard?.recentProjects?.length && (
-              <p className="text-[12px] text-gray-400 text-center py-4">No active projects</p>
-            )}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-red-100 shadow-sm p-4">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-[14px] font-semibold text-gray-800 flex items-center gap-1.5">
-              <AlertCircle className="h-4 w-4 text-red-500" /> Open Escalations
-            </h3>
-          </div>
-          <div className="space-y-2">
-            {dashboard?.openEscalations?.map((esc: any) => (
-              <div key={esc.id} className="rounded-lg border border-red-100 bg-red-50/50 p-2.5">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-[12px] font-medium text-gray-800 leading-tight">{esc.reason}</p>
-                  <Badge variant={esc.severity === "Critical" ? "destructive" : "secondary"} className="text-[9px] px-1.5 shrink-0">
-                    {esc.severity}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between mt-1">
-                  <span className="text-[10px] text-gray-400">{esc.module}</span>
-                  <span className="text-[10px] text-gray-400">{format(new Date(esc.createdAt), "MMM d")}</span>
-                </div>
+          {/* Escalations Alert */}
+          {dashboard?.openEscalations && dashboard.openEscalations.length > 0 && (
+            <div className="bg-red-50 rounded-[12px] border border-red-100 p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <AlertCircle className="h-5 w-5 text-red-600" />
+                <h3 className="text-sm font-bold text-red-900 tracking-tight">Active Escalations</h3>
               </div>
-            ))}
-            {!dashboard?.openEscalations?.length && (
-              <div className="flex flex-col items-center justify-center py-5">
-                <CheckCircle2 className="h-7 w-7 text-emerald-300 mb-1.5" />
-                <p className="text-[12px] text-gray-400">No active escalations</p>
+              <div className="space-y-3">
+                {dashboard.openEscalations.slice(0,3).map((esc: any) => (
+                  <div key={esc.id} className="bg-white/60 p-3 rounded-[8px] border border-red-100/50">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-sm font-semibold text-gray-900 leading-snug">{esc.reason}</p>
+                      <Badge variant="outline" className="text-[10px] font-bold text-red-600 border-red-200 bg-white shrink-0 uppercase">
+                        {esc.severity}
+                      </Badge>
+                    </div>
+                    <p className="text-xs font-medium text-gray-500 mt-1">{esc.module}</p>
+                  </div>
+                ))}
               </div>
-            )}
+            </div>
+          )}
+
+          {/* Recent Activity */}
+          <div className="bg-white rounded-[12px] premium-shadow p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold text-gray-900 tracking-tight">Recent Projects</h3>
+              <Button variant="link" size="sm" className="text-[#EA580C] h-auto p-0 text-xs font-semibold" onClick={() => setLocation("/projects")}>View All</Button>
+            </div>
+            <div className="space-y-4">
+              {dashboard?.recentProjects?.map((project: any) => (
+                <Link key={project.id} href={`/projects/${project.id}`}>
+                  <div className="group cursor-pointer">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <p className="text-sm font-bold text-gray-900 group-hover:text-[#EA580C] transition-colors truncate pr-2">{project.name}</p>
+                      <span className="text-xs font-mono font-bold text-gray-500">{project.percentComplete ?? 0}%</span>
+                    </div>
+                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-gray-900 rounded-full transition-all"
+                        style={{ width: `${project.percentComplete ?? 0}%` }} />
+                    </div>
+                  </div>
+                </Link>
+              ))}
+              {!dashboard?.recentProjects?.length && (
+                <p className="text-sm font-medium text-gray-400 text-center py-4">No active projects</p>
+              )}
+            </div>
           </div>
+
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
-/* ── Sub-components ────────────────────────────────────────────── */
-
-function GradientCard({ gradient, glow, icon, label, value, sub, trend, urgent }: {
-  gradient: string; glow?: string; icon: React.ReactNode; label: string;
-  value: string; sub?: string; trend?: string; urgent?: boolean;
-}) {
+function KpiCard({ title, value, icon: Icon, trend, trendUp, alert }: any) {
   return (
-    <div className="rounded-xl p-4 text-white shadow-sm relative overflow-hidden"
-      style={{ background: gradient, boxShadow: glow ? `0 8px 24px ${glow}` : undefined }}>
-      <div className="absolute -right-5 -bottom-5 h-28 w-28 rounded-full bg-white/10" />
-      <div className="absolute right-3 top-3 h-14 w-14 rounded-full bg-white/5" />
-      <div className="relative z-10 flex items-start justify-between mb-2">
-        <div className="h-9 w-9 rounded-xl bg-white/25 flex items-center justify-center backdrop-blur-sm">{icon}</div>
-        {trend && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/20">{trend}</span>}
+    <div className="bg-white rounded-[12px] premium-shadow p-5 relative overflow-hidden">
+      <div className="flex justify-between items-start mb-4">
+        <div className={`h-10 w-10 rounded-[8px] flex items-center justify-center ${alert ? 'bg-red-50 text-red-600' : 'bg-gray-50 text-gray-900'}`}>
+          <Icon className="h-5 w-5" />
+        </div>
+        <span className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-[6px] ${
+          alert ? 'bg-red-50 text-red-600' : 
+          trendUp ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-50 text-gray-600'
+        }`}>
+          {trendUp ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+          {trend}
+        </span>
       </div>
-      <p className="relative z-10 text-[12px] font-medium text-white/80 mb-1">{label}</p>
-      <p className="relative z-10 text-[28px] font-bold leading-tight tracking-tight">{value}</p>
-      {sub && <p className="relative z-10 text-[11px] text-white/70 mt-1 truncate">{sub}</p>}
+      <div>
+        <p className="text-3xl font-bold text-gray-900 tracking-tight">{value}</p>
+        <p className="text-sm font-medium text-gray-500 mt-1">{title}</p>
+      </div>
+      {/* Subtle decorative element */}
+      <div className="absolute -bottom-6 -right-6 text-gray-50/50 pointer-events-none">
+        <Icon className="h-24 w-24" />
+      </div>
     </div>
-  );
-}
-
-function MiniStatCard({ icon, iconColor, iconBg, label, value, href }: {
-  icon: React.ReactNode; iconColor: string; iconBg: string; label: string; value: number; href: string;
-}) {
-  return (
-    <Link href={href}>
-      <div className="bg-white rounded-xl border border-orange-100 shadow-sm p-2.5 flex items-center gap-2.5 cursor-pointer hover:shadow-md hover:border-orange-200 transition-all group">
-        <div className={`h-9 w-9 rounded-lg ${iconBg} flex items-center justify-center shrink-0`}>
-          <span className={iconColor}>{icon}</span>
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-[11px] text-gray-400 leading-tight">{label}</p>
-          <p className="text-[18px] font-bold text-gray-900 leading-tight">{value}</p>
-        </div>
-        <ChevronRight className="h-3.5 w-3.5 text-gray-300 group-hover:text-orange-400 transition-colors shrink-0" />
-      </div>
-    </Link>
   );
 }
