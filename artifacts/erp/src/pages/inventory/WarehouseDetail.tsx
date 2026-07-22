@@ -53,7 +53,7 @@ export function WarehouseDetail({ id }: { id: string }) {
   if (!wh) return <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
   return (
-    <div className="space-y-6 pb-10">
+    <div className="space-y-4 pb-3">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => setLocation("/inventory/warehouses")}>

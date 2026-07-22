@@ -62,7 +62,7 @@ export function ProjectsList() {
   );
 
   return (
-    <div className="space-y-6 pb-10">
+    <div className="space-y-4 pb-3">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Project Portfolio</h2>

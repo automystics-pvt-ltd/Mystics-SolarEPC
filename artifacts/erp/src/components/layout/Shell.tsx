@@ -347,12 +347,10 @@ export function Shell({ children }: ShellProps) {
 
         {/* Page content */}
         <main
-          className="flex-1 overflow-y-auto p-4"
+          className="flex-1 overflow-y-auto px-3 py-3 sm:px-5 sm:py-4"
           style={{ position: "relative", zIndex: 1, backgroundColor: "transparent" }}
         >
-          <div className="mx-auto max-w-7xl">
-            {children}
-          </div>
+          {children}
         </main>
       </div>
     </div>

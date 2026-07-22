@@ -80,7 +80,7 @@ export function LeadDetail({ id }: { id: string }) {
   };
 
   return (
-    <div className="space-y-6 pb-10">
+    <div className="space-y-4 pb-3">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center gap-4">
@@ -121,7 +121,7 @@ export function LeadDetail({ id }: { id: string }) {
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-3">
         {/* Left Column: Details */}
         <div className="space-y-6 md:col-span-1">
           <Card className="shadow-sm">

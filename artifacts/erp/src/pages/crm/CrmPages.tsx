@@ -18,7 +18,7 @@ export function ClientPOsList() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Client POs</h2>
         <p className="text-muted-foreground mt-1">Purchase orders received from clients.</p>
@@ -88,7 +88,7 @@ export function CrmInvoicesList() {
   const { data, isLoading } = useGetCrmInvoices();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Accounts Receivable</h2>
         <p className="text-muted-foreground mt-1">Client invoices and payment tracking.</p>
@@ -136,7 +136,7 @@ export function TasksList() {
   const { data, isLoading } = useGetTasks();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Tasks</h2>
         <p className="text-muted-foreground mt-1">To-dos and action items.</p>
@@ -184,7 +184,7 @@ export function EscalationsList() {
   const { data, isLoading } = useGetEscalations();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
         <h2 className="text-3xl font-bold tracking-tight text-destructive">Escalations</h2>
         <p className="text-muted-foreground mt-1">Issues requiring immediate attention.</p>

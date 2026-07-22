@@ -18,7 +18,7 @@ export function ProjectOverview({ projectId }: { projectId: number }) {
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
       <Card className="shadow-sm">
-        <CardContent className="p-6">
+        <CardContent className="p-4">
           <div className="flex items-center justify-between pb-2">
             <p className="text-sm font-medium text-muted-foreground">Budget Health</p>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -31,7 +31,7 @@ export function ProjectOverview({ projectId }: { projectId: number }) {
       </Card>
 
       <Card className="shadow-sm">
-        <CardContent className="p-6">
+        <CardContent className="p-4">
           <div className="flex items-center justify-between pb-2">
             <p className="text-sm font-medium text-muted-foreground">Activities</p>
             <ClipboardCheck className="h-4 w-4 text-muted-foreground" />
@@ -42,7 +42,7 @@ export function ProjectOverview({ projectId }: { projectId: number }) {
       </Card>
 
       <Card className="shadow-sm border-destructive/20">
-        <CardContent className="p-6">
+        <CardContent className="p-4">
           <div className="flex items-center justify-between pb-2">
             <p className="text-sm font-medium text-destructive">Open Issues</p>
             <AlertTriangle className="h-4 w-4 text-destructive" />
@@ -53,7 +53,7 @@ export function ProjectOverview({ projectId }: { projectId: number }) {
       </Card>
 
       <Card className="shadow-sm border-accent/20">
-        <CardContent className="p-6 bg-accent/5">
+        <CardContent className="p-4 bg-accent/5">
           <div className="flex items-center justify-between pb-2">
             <p className="text-sm font-medium text-accent-foreground">Pending Procurement</p>
             <FileCheck className="h-4 w-4 text-accent" />

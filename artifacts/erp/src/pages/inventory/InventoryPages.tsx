@@ -11,7 +11,7 @@ export function GRNsList() {
   const { data, isLoading } = useGetGRNs();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Goods Receipt Notes (GRN)</h2>
         <p className="text-muted-foreground mt-1">Track inbound material receipts against POs.</p>
@@ -59,7 +59,7 @@ export function DeliveryChallansList() {
   const { data, isLoading } = useGetDeliveryChallans();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Delivery Challans</h2>
         <p className="text-muted-foreground mt-1">Track outbound material dispatches.</p>
@@ -103,7 +103,7 @@ export function StockLedgerList() {
   const { data, isLoading } = useGetStockLedger();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Stock Ledger</h2>
         <p className="text-muted-foreground mt-1">Chronological log of inventory movements.</p>
@@ -155,7 +155,7 @@ export function StockValuationList() {
   const { data, isLoading } = useGetStockValuation();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Stock Valuation</h2>
         <p className="text-muted-foreground mt-1">Financial value of inventory on hand.</p>
@@ -201,7 +201,7 @@ export function InventoryAuditsList() {
   const { data, isLoading } = useGetInventoryAudits();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Inventory Audits</h2>
         <p className="text-muted-foreground mt-1">Physical stock reconciliation logs.</p>
