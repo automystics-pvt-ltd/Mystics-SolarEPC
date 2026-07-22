@@ -26,7 +26,7 @@ import { ContractorsList } from '@/pages/projects/ContractorsList';
 // Inventory
 import { WarehousesList } from '@/pages/inventory/WarehousesList';
 import { WarehouseDetail } from '@/pages/inventory/WarehouseDetail';
-import { GRNsList, DeliveryChallansList, StockLedgerList, StockValuationList, InventoryAuditsList } from '@/pages/inventory/InventoryPages';
+import { DeliveryChallansList, StockLedgerList, StockValuationList, InventoryAuditsList } from '@/pages/inventory/InventoryPages';
 
 // Engineering & Design
 import DesignDocsList from '@/pages/engineering/DesignDocsList';
@@ -140,7 +140,6 @@ function Router() {
 
       <Route path="/inventory/warehouses">{() => <ProtectedRoute component={WarehousesList} />}</Route>
       <Route path="/inventory/warehouses/:id">{(p) => <ProtectedRoute component={WarehouseDetail} id={p.id} />}</Route>
-      <Route path="/inventory/grns">{() => <ProtectedRoute component={GRNsList} />}</Route>
       <Route path="/inventory/stock-transfers">{() => <ProtectedRoute component={StockTransfers} />}</Route>
       <Route path="/inventory/delivery-challans">{() => <ProtectedRoute component={DeliveryChallansList} />}</Route>
       <Route path="/inventory/stock-ledger">{() => <ProtectedRoute component={StockLedgerList} />}</Route>

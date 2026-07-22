@@ -45,7 +45,6 @@ const MODULES: NavSection[] = [
     section: "INVENTORY",
     items: [
       { name: "Warehouses", href: "/inventory/warehouses", icon: Warehouse },
-      { name: "GRNs", href: "/inventory/grns", icon: Boxes },
       { name: "Stock Transfers", href: "/inventory/stock-transfers", icon: ArrowRightLeft },
       { name: "Delivery Challans", href: "/inventory/delivery-challans", icon: Truck },
       { name: "Stock Ledger", href: "/inventory/stock-ledger", icon: BookOpen },
