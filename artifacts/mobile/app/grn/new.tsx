@@ -152,6 +152,7 @@ export default function NewGRNScreen() {
         title="Select Purchase Order"
         items={poItems}
         loading={posLoading}
+        isOffline={!isOnline}
         onSelect={(item) => {
           setSelectedPo(item);
           setPoPickerOpen(false);
@@ -165,6 +166,7 @@ export default function NewGRNScreen() {
         title="Select Warehouse"
         items={warehouseItems}
         loading={warehousesLoading}
+        isOffline={!isOnline}
         onSelect={(item) => {
           setSelectedWarehouse(item);
           setWarehousePickerOpen(false);
@@ -219,7 +221,11 @@ export default function NewGRNScreen() {
                 </>
               ) : (
                 <Text style={[styles.pickerPlaceholder, { color: colors.mutedForeground }]}>
-                  {posLoading ? 'Loading orders…' : 'Select purchase order'}
+                  {posLoading
+                    ? 'Loading orders…'
+                    : !isOnline && poItems.length === 0
+                    ? 'Unavailable offline'
+                    : 'Select purchase order'}
                 </Text>
               )}
             </View>
@@ -247,7 +253,11 @@ export default function NewGRNScreen() {
                 </>
               ) : (
                 <Text style={[styles.pickerPlaceholder, { color: colors.mutedForeground }]}>
-                  {warehousesLoading ? 'Loading warehouses…' : 'Select warehouse'}
+                  {warehousesLoading
+                    ? 'Loading warehouses…'
+                    : !isOnline && warehouseItems.length === 0
+                    ? 'Unavailable offline'
+                    : 'Select warehouse'}
                 </Text>
               )}
             </View>

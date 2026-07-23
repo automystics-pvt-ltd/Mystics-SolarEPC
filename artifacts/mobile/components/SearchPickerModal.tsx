@@ -26,6 +26,8 @@ interface SearchPickerModalProps {
   onSelect: (item: PickerItem) => void;
   onClose: () => void;
   loading?: boolean;
+  /** Pass true when the device is offline so empty lists show a network-specific message. */
+  isOffline?: boolean;
 }
 
 export function SearchPickerModal({
@@ -35,6 +37,7 @@ export function SearchPickerModal({
   onSelect,
   onClose,
   loading = false,
+  isOffline = false,
 }: SearchPickerModalProps) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -116,9 +119,24 @@ export function SearchPickerModal({
             </View>
           ) : filtered.length === 0 ? (
             <View style={styles.emptyState}>
+              <Feather
+                name={isOffline && items.length === 0 ? 'wifi-off' : 'inbox'}
+                size={28}
+                color={colors.mutedForeground}
+                style={styles.emptyIcon}
+              />
               <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-                {items.length === 0 ? 'No items available' : 'No results found'}
+                {isOffline && items.length === 0
+                  ? 'No cached data available'
+                  : items.length === 0
+                  ? 'No items available'
+                  : 'No results found'}
               </Text>
+              {isOffline && items.length === 0 && (
+                <Text style={[styles.emptyHint, { color: colors.mutedForeground }]}>
+                  Connect to the internet to load {title.toLowerCase()}
+                </Text>
+              )}
             </View>
           ) : (
             <FlatList
@@ -207,6 +225,8 @@ const styles = StyleSheet.create({
   rowContent: { flex: 1, gap: 2 },
   rowLabel: { fontSize: 14, fontFamily: 'Inter_500Medium' },
   rowSublabel: { fontSize: 12, fontFamily: 'Inter_400Regular' },
-  emptyState: { alignItems: 'center', paddingVertical: 40 },
-  emptyText: { fontSize: 14, fontFamily: 'Inter_400Regular' },
+  emptyState: { alignItems: 'center', paddingVertical: 40, paddingHorizontal: 24 },
+  emptyIcon: { marginBottom: 12 },
+  emptyText: { fontSize: 14, fontFamily: 'Inter_500Medium', textAlign: 'center' },
+  emptyHint: { fontSize: 12, fontFamily: 'Inter_400Regular', textAlign: 'center', marginTop: 6, opacity: 0.75 },
 });

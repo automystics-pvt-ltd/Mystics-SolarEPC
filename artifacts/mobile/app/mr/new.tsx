@@ -127,6 +127,7 @@ export default function NewMRScreen() {
         title="Select Project"
         items={projectItems}
         loading={projectsLoading}
+        isOffline={!isOnline}
         onSelect={(item) => {
           setSelectedProject(item);
           setProjectPickerOpen(false);
@@ -169,7 +170,11 @@ export default function NewMRScreen() {
                 </>
               ) : (
                 <Text style={[styles.pickerPlaceholder, { color: colors.mutedForeground }]}>
-                  {projectsLoading ? 'Loading projects…' : 'Select project'}
+                  {projectsLoading
+                    ? 'Loading projects…'
+                    : !isOnline && projectItems.length === 0
+                    ? 'Unavailable offline'
+                    : 'Select project'}
                 </Text>
               )}
             </View>
