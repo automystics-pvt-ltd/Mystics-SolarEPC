@@ -2,23 +2,44 @@ import { useState } from "react";
 import { useGetAmcContracts, useCreateAmcContract, getGetAmcContractsQueryKey } from "@workspace/api-client-react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useQueryClient } from "@tanstack/react-query";
-import { FileCheck, Plus, Calendar, IndianRupee } from "lucide-react";
+import { FileCheck, Plus, IndianRupee } from "lucide-react";
 import { motion } from "framer-motion";
+import type { ColumnDef } from "@tanstack/react-table";
+import { PageHeader, StatCard, DataTable } from "@/components/shared";
 
 const FREQUENCIES = ["Monthly", "Quarterly", "HalfYearly", "Annual"];
 
 const statusColors: Record<string, string> = {
-  Active: "bg-emerald-50 text-emerald-700",
-  Draft: "bg-slate-100 text-slate-600",
-  Expired: "bg-red-50 text-red-700",
-  Terminated: "bg-stone-50 text-stone-600",
+  Active: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  Draft: "bg-slate-100 text-slate-600 border-slate-200",
+  Expired: "bg-red-50 text-red-700 border-red-200",
+  Terminated: "bg-stone-50 text-stone-600 border-stone-200",
+};
+
+const STATUS_OPTIONS = [
+  { label: "Active", value: "Active" },
+  { label: "Draft", value: "Draft" },
+  { label: "Expired", value: "Expired" },
+  { label: "Terminated", value: "Terminated" },
+];
+
+type AmcContract = {
+  id: number;
+  contractNumber: string;
+  clientName: string;
+  projectId: number;
+  startDate: string;
+  endDate: string;
+  annualValue: number;
+  visitFrequency?: string;
+  status: string;
 };
 
 export default function AmcContractsList() {
@@ -37,98 +58,163 @@ export default function AmcContractsList() {
   const totalValue = contracts.reduce((s, c) => s + Number(c.annualValue), 0);
   const active = contracts.filter(c => c.status === "Active").length;
 
-  return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div className="grid grid-cols-3 gap-3 flex-1 mr-6">
-          {[
-            { label: "Total Contracts", value: contracts.length },
-            { label: "Active", value: active },
-            { label: "Annual Value", value: `₹${(totalValue / 100000).toFixed(1)}L` },
-          ].map((s, i) => (
-            <Card key={i} className="premium-card">
-              <CardContent className="p-4">
-                <p className="text-xs text-slate-500 mb-1">{s.label}</p>
-                <p className="text-xl font-semibold text-slate-900">{s.value}</p>
-              </CardContent>
-            </Card>
-          ))}
+  const columns: ColumnDef<AmcContract, any>[] = [
+    {
+      accessorKey: "clientName",
+      header: "Client Name",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-md bg-emerald-50 flex items-center justify-center shrink-0">
+            <FileCheck className="w-4 h-4 text-emerald-600" />
+          </div>
+          <div>
+            <div className="font-semibold text-sm text-foreground leading-tight">
+              {row.original.clientName}
+            </div>
+            <div className="text-[11px] text-muted-foreground font-mono mt-0.5">
+              {row.original.contractNumber}
+            </div>
+          </div>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm" className="gap-1.5 shrink-0"><Plus className="w-3.5 h-3.5" /> New AMC Contract</Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-lg">
-            <DialogHeader><DialogTitle>New AMC Contract</DialogTitle></DialogHeader>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-2">
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label>Project ID</Label><Input {...register("projectId")} placeholder="e.g. 4" className="mt-1" /></div>
-                <div><Label>Client Name</Label><Input {...register("clientName")} placeholder="Client company name" className="mt-1" /></div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label>Start Date</Label><Input {...register("startDate")} type="date" className="mt-1" /></div>
-                <div><Label>End Date</Label><Input {...register("endDate")} type="date" className="mt-1" /></div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label>Annual Value (₹)</Label><Input {...register("annualValue")} type="number" placeholder="e.g. 75000" className="mt-1" /></div>
-                <div>
-                  <Label>Visit Frequency</Label>
-                  <Select onValueChange={v => setValue("visitFrequency", v)} defaultValue="Quarterly">
-                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                    <SelectContent>{FREQUENCIES.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div><Label>Terms & Conditions</Label><Textarea {...register("terms")} placeholder="Scope of work, exclusions, etc." className="mt-1 min-h-[80px]" /></div>
-              <div className="flex justify-end gap-2 pt-2">
-                <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-                <Button type="submit" disabled={createMut.isPending}>{createMut.isPending ? "Creating…" : "Create"}</Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+      ),
+    },
+    {
+      accessorKey: "projectId",
+      header: "Project",
+      cell: ({ row }) => (
+        <span className="text-sm text-muted-foreground font-mono">
+          #{row.original.projectId}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "startDate",
+      header: "Start Date",
+      cell: ({ row }) => (
+        <span className="text-sm text-muted-foreground tabular-nums">
+          {row.original.startDate}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "endDate",
+      header: "End Date",
+      cell: ({ row }) => (
+        <span className="text-sm text-muted-foreground tabular-nums">
+          {row.original.endDate}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "annualValue",
+      header: "Annual Value",
+      cell: ({ row }) => (
+        <span className="font-mono font-semibold text-sm text-foreground tabular-nums">
+          ₹{Number(row.original.annualValue).toLocaleString("en-IN")}/yr
+        </span>
+      ),
+    },
+    {
+      accessorKey: "visitFrequency",
+      header: "Frequency",
+      cell: ({ row }) => (
+        <span className="text-sm text-muted-foreground">
+          {row.original.visitFrequency || "—"}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => (
+        <Badge variant="outline" className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[4px] border ${statusColors[row.original.status] ?? "bg-slate-100 text-slate-600 border-slate-200"}`}>
+          {row.original.status}
+        </Badge>
+      ),
+    },
+  ];
+
+  const newContractDialog = (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" className="gap-1.5 shrink-0"><Plus className="w-3.5 h-3.5" /> New AMC Contract</Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader><DialogTitle>New AMC Contract</DialogTitle></DialogHeader>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-2">
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label>Project ID</Label><Input {...register("projectId")} placeholder="e.g. 4" className="mt-1" /></div>
+            <div><Label>Client Name</Label><Input {...register("clientName")} placeholder="Client company name" className="mt-1" /></div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label>Start Date</Label><Input {...register("startDate")} type="date" className="mt-1" /></div>
+            <div><Label>End Date</Label><Input {...register("endDate")} type="date" className="mt-1" /></div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label>Annual Value (₹)</Label><Input {...register("annualValue")} type="number" placeholder="e.g. 75000" className="mt-1" /></div>
+            <div>
+              <Label>Visit Frequency</Label>
+              <Select onValueChange={v => setValue("visitFrequency", v)} defaultValue="Quarterly">
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>{FREQUENCIES.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div><Label>Terms & Conditions</Label><Textarea {...register("terms")} placeholder="Scope of work, exclusions, etc." className="mt-1 min-h-[80px]" /></div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button type="submit" disabled={createMut.isPending}>{createMut.isPending ? "Creating…" : "Create"}</Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+      <PageHeader
+        title="AMC Contracts"
+        subtitle="Active maintenance agreements"
+        actions={newContractDialog}
+      />
+
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+        <StatCard
+          label="Total Contracts"
+          value={contracts.length}
+          icon={FileCheck}
+          iconBg="bg-blue-50"
+          iconColor="text-blue-600"
+        />
+        <StatCard
+          label="Active"
+          value={active}
+          icon={FileCheck}
+          iconBg="bg-emerald-50"
+          iconColor="text-emerald-600"
+        />
+        <StatCard
+          label="Annual Value"
+          value={`₹${(totalValue / 100000).toFixed(1)}L`}
+          icon={IndianRupee}
+          iconBg="bg-purple-50"
+          iconColor="text-purple-600"
+        />
       </div>
 
-      {isLoading ? (
-        <div className="space-y-2">{[...Array(4)].map((_, i) => <div key={i} className="h-20 bg-slate-100 rounded-xl animate-pulse" />)}</div>
-      ) : contracts.length === 0 ? (
-        <Card className="premium-card">
-          <CardContent className="flex flex-col items-center justify-center py-14 gap-3">
-            <FileCheck className="w-10 h-10 text-slate-300" />
-            <p className="text-slate-500 font-medium">No AMC contracts yet</p>
-            <p className="text-slate-400 text-sm">Create annual maintenance contracts for commissioned projects</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-2">
-          {contracts.map((c, i) => (
-            <motion.div key={c.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-              <Card className="premium-card hover:shadow-md transition-shadow">
-                <CardContent className="p-4 flex items-center gap-4">
-                  <div className="w-9 h-9 rounded-lg bg-green-50 flex items-center justify-center shrink-0">
-                    <FileCheck className="w-4.5 h-4.5 text-green-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium text-slate-900">{c.clientName}</p>
-                      <span className="font-mono text-xs text-slate-400">{c.contractNumber}</span>
-                    </div>
-                    <div className="flex items-center gap-3 mt-0.5">
-                      <span className="flex items-center gap-1 text-xs text-slate-400">
-                        <Calendar className="w-3 h-3" /> {c.startDate} → {c.endDate}
-                      </span>
-                      <span className="flex items-center gap-1 text-xs text-slate-400">
-                        <IndianRupee className="w-3 h-3" /> {Number(c.annualValue).toLocaleString("en-IN")}/yr · {c.visitFrequency}
-                      </span>
-                    </div>
-                  </div>
-                  <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${statusColors[c.status] ?? "bg-slate-100 text-slate-600"}`}>{c.status}</span>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
-      )}
-    </div>
+      <DataTable
+        data={contracts as AmcContract[]}
+        columns={columns}
+        loading={isLoading}
+        searchPlaceholder="Search contracts..."
+        exportFilename="amc-contracts"
+        filterOptions={[
+          { key: "status", label: "Status", options: STATUS_OPTIONS },
+        ]}
+        emptyIcon={FileCheck}
+        emptyTitle="No AMC contracts yet"
+        emptyDescription="Create annual maintenance contracts for commissioned projects"
+      />
+    </motion.div>
   );
 }

@@ -1,10 +1,10 @@
-import { useState } from "react";
 import { useLocation } from "wouter";
 import AmcContractsList from "./AmcContractsList";
 import MaintenanceList from "./MaintenanceList";
 import ServiceTicketsList from "./ServiceTicketsList";
 import { Wrench, FileCheck, Ticket } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 const TABS = [
   { id: "amc", label: "AMC Contracts", icon: FileCheck, path: "/oam/amc" },
@@ -17,15 +17,9 @@ export default function OamPages() {
   const active = location.includes("maintenance") ? "maintenance" : location.includes("tickets") ? "tickets" : "amc";
 
   return (
-    <div className="space-y-5">
-      {/* Page header */}
-      <div>
-        <h1 className="text-xl font-semibold text-slate-900">O&M & AMC</h1>
-        <p className="text-sm text-slate-500 mt-0.5">Preventive maintenance, service tickets, and AMC contract management</p>
-      </div>
-
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5 pb-10">
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-slate-200">
+      <div className="flex gap-1 border-b border-border">
         {TABS.map(tab => (
           <button
             key={tab.id}
@@ -34,7 +28,7 @@ export default function OamPages() {
               "flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px",
               active === tab.id
                 ? "border-primary text-primary"
-                : "border-transparent text-slate-500 hover:text-slate-700"
+                : "border-transparent text-muted-foreground hover:text-foreground"
             )}
           >
             <tab.icon className="w-3.5 h-3.5" />
@@ -46,6 +40,6 @@ export default function OamPages() {
       {active === "amc" && <AmcContractsList />}
       {active === "maintenance" && <MaintenanceList />}
       {active === "tickets" && <ServiceTicketsList />}
-    </div>
+    </motion.div>
   );
 }

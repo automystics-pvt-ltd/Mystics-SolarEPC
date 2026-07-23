@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useGetMaintenanceSchedules, useCreateMaintenanceSchedule, useCompleteMaintenanceSchedule, getGetMaintenanceSchedulesQueryKey } from "@workspace/api-client-react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,13 +11,32 @@ import { Textarea } from "@/components/ui/textarea";
 import { useQueryClient } from "@tanstack/react-query";
 import { Wrench, Plus, Calendar, CheckCircle2, User } from "lucide-react";
 import { motion } from "framer-motion";
+import type { ColumnDef } from "@tanstack/react-table";
+import { PageHeader, StatCard, DataTable } from "@/components/shared";
 
 const VISIT_TYPES = ["Preventive", "Corrective", "Emergency"];
 const statusColors: Record<string, string> = {
-  Scheduled: "bg-blue-50 text-blue-700",
-  InProgress: "bg-amber-50 text-amber-700",
-  Completed: "bg-emerald-50 text-emerald-700",
-  Cancelled: "bg-slate-100 text-slate-500",
+  Scheduled: "bg-blue-50 text-blue-700 border-blue-200",
+  InProgress: "bg-amber-50 text-amber-700 border-amber-200",
+  Completed: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  Cancelled: "bg-slate-100 text-slate-500 border-slate-200",
+};
+
+const STATUS_OPTIONS = [
+  { label: "Scheduled", value: "Scheduled" },
+  { label: "In Progress", value: "InProgress" },
+  { label: "Completed", value: "Completed" },
+  { label: "Cancelled", value: "Cancelled" },
+];
+
+type MaintenanceSchedule = {
+  id: number;
+  projectId: number;
+  visitType: string;
+  status: string;
+  scheduledDate: string;
+  assignedTechnicianName?: string | null;
+  amcContractId?: number | null;
 };
 
 export default function MaintenanceList() {
@@ -44,56 +63,132 @@ export default function MaintenanceList() {
     });
   };
 
+  const today = new Date().toISOString().split("T")[0];
   const upcoming = schedules.filter(s => s.status === "Scheduled").length;
-  const overdue = schedules.filter(s => s.status === "Scheduled" && s.scheduledDate < new Date().toISOString().split("T")[0]).length;
+  const overdue = schedules.filter(s => s.status === "Scheduled" && s.scheduledDate < today).length;
+
+  const columns: ColumnDef<MaintenanceSchedule, any>[] = [
+    {
+      accessorKey: "visitType",
+      header: "Visit Type",
+      cell: ({ row }) => {
+        const isOverdue = row.original.status === "Scheduled" && row.original.scheduledDate < today;
+        return (
+          <div className="flex items-center gap-3">
+            <div className={`w-8 h-8 rounded-md flex items-center justify-center shrink-0 ${row.original.visitType === "Emergency" ? "bg-red-50" : "bg-blue-50"}`}>
+              <Wrench className={`w-4 h-4 ${row.original.visitType === "Emergency" ? "text-red-500" : "text-blue-500"}`} />
+            </div>
+            <div>
+              <div className="font-semibold text-sm text-foreground leading-tight">
+                Project #{row.original.projectId} — {row.original.visitType}
+              </div>
+              {isOverdue && (
+                <span className="text-[10px] bg-red-50 text-red-600 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Overdue</span>
+              )}
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "projectId",
+      header: "Project",
+      cell: ({ row }) => (
+        <span className="text-sm text-muted-foreground font-mono">#{row.original.projectId}</span>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => (
+        <Badge variant="outline" className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[4px] border ${statusColors[row.original.status] ?? "bg-slate-100 text-slate-600 border-slate-200"}`}>
+          {row.original.status}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: "assignedTechnicianName",
+      header: "Assigned To",
+      cell: ({ row }) => (
+        <span className="text-sm text-muted-foreground flex items-center gap-1.5">
+          <User className="w-3.5 h-3.5 text-muted-foreground/60" />
+          {row.original.assignedTechnicianName || "—"}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "scheduledDate",
+      header: "Scheduled Date",
+      cell: ({ row }) => (
+        <span className="text-sm text-muted-foreground flex items-center gap-1.5 tabular-nums">
+          <Calendar className="w-3.5 h-3.5 text-muted-foreground/60" />
+          {row.original.scheduledDate}
+        </span>
+      ),
+    },
+    {
+      id: "actions",
+      header: "",
+      enableSorting: false,
+      cell: ({ row }) =>
+        row.original.status === "Scheduled" ? (
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 text-xs"
+            onClick={(e) => { e.stopPropagation(); setCompleteId(row.original.id); }}
+          >
+            <CheckCircle2 className="w-3 h-3 mr-1" /> Complete
+          </Button>
+        ) : null,
+    },
+  ];
+
+  const scheduleVisitDialog = (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" className="gap-1.5 shrink-0"><Plus className="w-3.5 h-3.5" /> Schedule Visit</Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader><DialogTitle>Schedule Maintenance Visit</DialogTitle></DialogHeader>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-2">
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label>Project ID</Label><Input {...register("projectId")} placeholder="e.g. 4" className="mt-1" /></div>
+            <div><Label>AMC Contract ID</Label><Input {...register("amcContractId")} placeholder="Optional" className="mt-1" /></div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Visit Type</Label>
+              <Select onValueChange={v => setValue("visitType", v)} defaultValue="Preventive">
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>{VISIT_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div><Label>Scheduled Date</Label><Input {...register("scheduledDate")} type="date" className="mt-1" /></div>
+          </div>
+          <div><Label>Assigned Technician</Label><Input {...register("assignedTechnicianName")} placeholder="Technician name" className="mt-1" /></div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button type="submit" disabled={createMut.isPending}>{createMut.isPending ? "Scheduling…" : "Schedule"}</Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div className="grid grid-cols-4 gap-3 flex-1 mr-6">
-          {[
-            { label: "Total Visits", value: schedules.length },
-            { label: "Upcoming", value: upcoming },
-            { label: "Overdue", value: overdue },
-            { label: "Completed", value: schedules.filter(s => s.status === "Completed").length },
-          ].map((s, i) => (
-            <Card key={i} className="premium-card">
-              <CardContent className="p-4">
-                <p className="text-xs text-slate-500 mb-1">{s.label}</p>
-                <p className={`text-xl font-semibold ${i === 2 && s.value > 0 ? "text-red-600" : "text-slate-900"}`}>{s.value}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm" className="gap-1.5 shrink-0"><Plus className="w-3.5 h-3.5" /> Schedule Visit</Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader><DialogTitle>Schedule Maintenance Visit</DialogTitle></DialogHeader>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-2">
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label>Project ID</Label><Input {...register("projectId")} placeholder="e.g. 4" className="mt-1" /></div>
-                <div><Label>AMC Contract ID</Label><Input {...register("amcContractId")} placeholder="Optional" className="mt-1" /></div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Visit Type</Label>
-                  <Select onValueChange={v => setValue("visitType", v)} defaultValue="Preventive">
-                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                    <SelectContent>{VISIT_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <div><Label>Scheduled Date</Label><Input {...register("scheduledDate")} type="date" className="mt-1" /></div>
-              </div>
-              <div><Label>Assigned Technician</Label><Input {...register("assignedTechnicianName")} placeholder="Technician name" className="mt-1" /></div>
-              <div className="flex justify-end gap-2 pt-2">
-                <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-                <Button type="submit" disabled={createMut.isPending}>{createMut.isPending ? "Scheduling…" : "Schedule"}</Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+      <PageHeader
+        title="Maintenance Schedule"
+        subtitle="Scheduled preventive maintenance"
+        actions={scheduleVisitDialog}
+      />
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard label="Total Visits" value={schedules.length} icon={Wrench} iconBg="bg-blue-50" iconColor="text-blue-600" />
+        <StatCard label="Upcoming" value={upcoming} icon={Calendar} iconBg="bg-amber-50" iconColor="text-amber-600" />
+        <StatCard label="Overdue" value={overdue} icon={Wrench} iconBg="bg-red-50" iconColor="text-red-600" />
+        <StatCard label="Completed" value={schedules.filter(s => s.status === "Completed").length} icon={CheckCircle2} iconBg="bg-emerald-50" iconColor="text-emerald-600" />
       </div>
 
       {/* Complete dialog */}
@@ -113,51 +208,20 @@ export default function MaintenanceList() {
         </DialogContent>
       </Dialog>
 
-      {isLoading ? (
-        <div className="space-y-2">{[...Array(5)].map((_, i) => <div key={i} className="h-16 bg-slate-100 rounded-xl animate-pulse" />)}</div>
-      ) : schedules.length === 0 ? (
-        <Card className="premium-card">
-          <CardContent className="flex flex-col items-center justify-center py-14 gap-3">
-            <Wrench className="w-10 h-10 text-slate-300" />
-            <p className="text-slate-500 font-medium">No maintenance visits scheduled</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-2">
-          {schedules.map((s, i) => {
-            const isOverdue = s.status === "Scheduled" && s.scheduledDate < new Date().toISOString().split("T")[0];
-            return (
-              <motion.div key={s.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                <Card className={`premium-card ${isOverdue ? "border-red-200" : ""}`}>
-                  <CardContent className="p-4 flex items-center gap-4">
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${s.visitType === "Emergency" ? "bg-red-50" : "bg-blue-50"}`}>
-                      <Wrench className={`w-4.5 h-4.5 ${s.visitType === "Emergency" ? "text-red-500" : "text-blue-500"}`} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium text-slate-900">Project #{s.projectId} — {s.visitType}</p>
-                        {isOverdue && <span className="text-xs bg-red-50 text-red-600 px-1.5 py-0.5 rounded font-medium">Overdue</span>}
-                      </div>
-                      <div className="flex items-center gap-3 mt-0.5">
-                        <span className="flex items-center gap-1 text-xs text-slate-400"><Calendar className="w-3 h-3" /> {s.scheduledDate}</span>
-                        {s.assignedTechnicianName && <span className="flex items-center gap-1 text-xs text-slate-400"><User className="w-3 h-3" /> {s.assignedTechnicianName}</span>}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${statusColors[s.status] ?? "bg-slate-100 text-slate-600"}`}>{s.status}</span>
-                      {s.status === "Scheduled" && (
-                        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setCompleteId(s.id)}>
-                          <CheckCircle2 className="w-3 h-3 mr-1" /> Complete
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            );
-          })}
-        </div>
-      )}
-    </div>
+      <DataTable
+        data={schedules as MaintenanceSchedule[]}
+        columns={columns}
+        loading={isLoading}
+        searchPlaceholder="Search maintenance visits..."
+        exportFilename="maintenance-schedules"
+        filterOptions={[
+          { key: "status", label: "Status", options: STATUS_OPTIONS },
+          { key: "visitType", label: "Type", options: VISIT_TYPES.map(t => ({ label: t, value: t })) },
+        ]}
+        emptyIcon={Wrench}
+        emptyTitle="No maintenance visits scheduled"
+        emptyDescription="Schedule preventive maintenance visits for your projects"
+      />
+    </motion.div>
   );
 }

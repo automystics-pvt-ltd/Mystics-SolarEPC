@@ -1,287 +1,424 @@
 import { useGetGRNs, useGetDeliveryChallans, useGetStockLedger, useGetStockValuation, useGetInventoryAudits } from "@workspace/api-client-react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Boxes, Truck, BookOpen, Scale, ClipboardCheck } from "lucide-react";
+import { Boxes, Truck, BookOpen, Scale, ClipboardCheck } from "lucide-react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
+import { PageHeader, DataTable } from "@/components/shared";
+import type { ColumnDef } from "@tanstack/react-table";
+
+// ─── GRNsList ─────────────────────────────────────────────────────────────────
 
 export function GRNsList() {
   const { data, isLoading } = useGetGRNs();
 
+  const columns: ColumnDef<any, any>[] = [
+    {
+      accessorKey: "grnNumber",
+      header: "GRN No.",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center shrink-0">
+            <Boxes className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <span className="font-mono font-bold text-sm text-foreground">{row.original.grnNumber}</span>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "poId",
+      header: "PO Ref",
+      cell: ({ row }) => (
+        <span className="font-mono text-sm font-bold text-muted-foreground">PO-{row.original.poId}</span>
+      ),
+    },
+    {
+      accessorKey: "warehouseId",
+      header: "Warehouse",
+      cell: ({ row }) => (
+        <span className="font-mono text-sm font-bold text-muted-foreground">WH-{row.original.warehouseId}</span>
+      ),
+    },
+    {
+      accessorKey: "receivedDate",
+      header: "Received",
+      cell: ({ row }) => (
+        <span className="text-sm text-muted-foreground">{format(new Date(row.original.receivedDate), "MMM d, yyyy")}</span>
+      ),
+    },
+    {
+      accessorKey: "qcStatus",
+      header: "QC Status",
+      cell: ({ row }) => {
+        const s = row.original.qcStatus;
+        const cls =
+          s === "Approved" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
+          s === "Rejected" ? "bg-red-50 text-red-700 border-red-200" :
+          "bg-muted text-muted-foreground border-border";
+        return <Badge variant="outline" className={cls}>{s}</Badge>;
+      },
+    },
+  ];
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Goods Receipt Notes</h1>
-        <p className="text-sm font-medium text-gray-500 mt-1">Track inbound material receipts against POs.</p>
-      </div>
-
-      <div className="bg-white rounded-[12px] premium-shadow border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          {isLoading ? (
-            <div className="flex justify-center p-12"><Loader2 className="h-8 w-8 animate-spin text-gray-300" /></div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="border-b border-gray-100 bg-white hover:bg-white">
-                  <TableHead className="h-12 text-xs font-bold uppercase tracking-wider text-gray-500 px-5">GRN No.</TableHead>
-                  <TableHead className="h-12 text-xs font-bold uppercase tracking-wider text-gray-500">PO Ref</TableHead>
-                  <TableHead className="h-12 text-xs font-bold uppercase tracking-wider text-gray-500">Warehouse</TableHead>
-                  <TableHead className="h-12 text-xs font-bold uppercase tracking-wider text-gray-500">Received</TableHead>
-                  <TableHead className="h-12 text-xs font-bold uppercase tracking-wider text-gray-500 px-5">QC Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data?.map((g) => (
-                  <TableRow key={g.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                    <TableCell className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-md bg-gray-100 text-gray-500 flex items-center justify-center shrink-0">
-                          <Boxes className="h-4 w-4" />
-                        </div>
-                        <span className="font-mono font-bold text-sm text-gray-900">{g.grnNumber}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-4 font-mono text-sm font-bold text-gray-600">PO-{g.poId}</TableCell>
-                    <TableCell className="py-4 font-mono text-sm font-bold text-gray-600">WH-{g.warehouseId}</TableCell>
-                    <TableCell className="py-4 text-sm font-semibold text-gray-700">{format(new Date(g.receivedDate), 'MMM d, yyyy')}</TableCell>
-                    <TableCell className="px-5 py-4">
-                      <Badge variant="outline" className={`font-bold text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-[4px] border ${
-                        g.qcStatus === 'Approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 
-                        g.qcStatus === 'Rejected' ? 'bg-red-50 text-red-700 border-red-200' : 
-                        'bg-gray-100 text-gray-600 border-gray-200'
-                      }`}>
-                        {g.qcStatus}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </div>
-      </div>
+      <PageHeader
+        title="Goods Receipt Notes"
+        subtitle="Track inbound material receipts against POs."
+      />
+      <DataTable
+        data={data ?? []}
+        columns={columns}
+        loading={isLoading}
+        searchPlaceholder="Search GRNs..."
+        exportFilename="grns"
+        filterOptions={[
+          {
+            key: "qcStatus",
+            label: "QC Status",
+            options: [
+              { label: "Approved", value: "Approved" },
+              { label: "Rejected", value: "Rejected" },
+              { label: "Pending", value: "Pending" },
+            ],
+          },
+        ]}
+        emptyIcon={Boxes}
+        emptyTitle="No GRNs found"
+        emptyDescription="GRNs will appear here once created"
+      />
     </motion.div>
   );
 }
+
+// ─── DeliveryChallansList ─────────────────────────────────────────────────────
 
 export function DeliveryChallansList() {
   const { data, isLoading } = useGetDeliveryChallans();
 
+  const columns: ColumnDef<any, any>[] = [
+    {
+      accessorKey: "challanNumber",
+      header: "DC #",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center shrink-0">
+            <Truck className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <span className="font-mono font-bold text-sm text-foreground">
+            {row.original.challanNumber || `DC-${row.original.id}`}
+          </span>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "projectId",
+      header: "Source",
+      cell: ({ row }) => (
+        <span className="font-mono text-sm text-muted-foreground">
+          {row.original.projectId ? `PRJ-${row.original.projectId}` : "—"}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "issuedTo",
+      header: "Destination",
+      cell: ({ row }) => (
+        <span className="text-sm font-medium text-foreground">{row.original.issuedTo}</span>
+      ),
+    },
+    {
+      accessorKey: "purpose",
+      header: "Items / Purpose",
+      enableSorting: false,
+      cell: ({ row }) => (
+        <span className="text-xs text-muted-foreground">{row.original.purpose}</span>
+      ),
+    },
+    {
+      id: "status",
+      header: "Status",
+      enableSorting: false,
+      cell: () => (
+        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Issued</Badge>
+      ),
+    },
+    {
+      accessorKey: "issuedDate",
+      header: "Date",
+      cell: ({ row }) => (
+        <span className="text-sm text-muted-foreground">
+          {format(new Date(row.original.issuedDate), "MMM d, yyyy")}
+        </span>
+      ),
+    },
+  ];
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Delivery Challans</h1>
-        <p className="text-sm font-medium text-gray-500 mt-1">Track outbound material dispatches.</p>
-      </div>
-
-      <div className="bg-white rounded-[12px] premium-shadow border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          {isLoading ? (
-            <div className="flex justify-center p-12"><Loader2 className="h-8 w-8 animate-spin text-gray-300" /></div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="border-b border-gray-100 bg-white hover:bg-white">
-                  <TableHead className="h-12 text-xs font-bold uppercase tracking-wider text-gray-500 px-5">Challan No.</TableHead>
-                  <TableHead className="h-12 text-xs font-bold uppercase tracking-wider text-gray-500">Project Ref</TableHead>
-                  <TableHead className="h-12 text-xs font-bold uppercase tracking-wider text-gray-500">Issued To</TableHead>
-                  <TableHead className="h-12 text-xs font-bold uppercase tracking-wider text-gray-500">Purpose</TableHead>
-                  <TableHead className="h-12 text-xs font-bold uppercase tracking-wider text-gray-500 px-5">Date</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data?.map((c) => (
-                  <TableRow key={c.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                    <TableCell className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-md bg-gray-100 text-gray-500 flex items-center justify-center shrink-0">
-                          <Truck className="h-4 w-4" />
-                        </div>
-                        <span className="font-mono font-bold text-sm text-gray-900">{c.challanNumber || `DC-${c.id}`}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-4 font-mono text-sm font-bold text-gray-600">{c.projectId ? `PRJ-${c.projectId}` : '-'}</TableCell>
-                    <TableCell className="py-4 text-sm font-bold text-gray-900">{c.issuedTo}</TableCell>
-                    <TableCell className="py-4 text-xs font-semibold text-gray-600">{c.purpose}</TableCell>
-                    <TableCell className="px-5 py-4 text-sm font-semibold text-gray-700">{format(new Date(c.issuedDate), 'MMM d, yyyy')}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </div>
-      </div>
+      <PageHeader
+        title="Delivery Challans"
+        subtitle="Track outbound material dispatches."
+      />
+      <DataTable
+        data={data ?? []}
+        columns={columns}
+        loading={isLoading}
+        searchPlaceholder="Search delivery challans..."
+        exportFilename="delivery-challans"
+        emptyIcon={Truck}
+        emptyTitle="No delivery challans found"
+        emptyDescription="Delivery challans will appear here once created"
+      />
     </motion.div>
   );
 }
 
+// ─── StockLedgerList ──────────────────────────────────────────────────────────
+
 export function StockLedgerList() {
   const { data, isLoading } = useGetStockLedger();
 
+  const columns: ColumnDef<any, any>[] = [
+    {
+      accessorKey: "itemName",
+      header: "Material",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="font-bold text-sm text-foreground">{row.original.itemName}</span>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "warehouseId",
+      header: "Warehouse",
+      cell: ({ row }) => (
+        <span className="font-mono text-xs font-bold text-muted-foreground">WH-{row.original.warehouseId}</span>
+      ),
+    },
+    {
+      accessorKey: "txnType",
+      header: "Txn Type",
+      cell: ({ row }) => {
+        const t = row.original.txnType;
+        const cls = t === "Inward"
+          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+          : "bg-muted text-muted-foreground border-border";
+        return <Badge variant="outline" className={cls}>{t}</Badge>;
+      },
+    },
+    {
+      accessorKey: "qty",
+      header: "Qty",
+      cell: ({ row }) => {
+        const l = row.original;
+        const color = l.txnType === "Inward" ? "text-emerald-600" : "text-foreground";
+        return (
+          <span className={`tabular-nums font-mono font-bold text-sm ${color}`}>
+            {l.txnType === "Inward" ? "+" : "-"}{l.qty}
+          </span>
+        );
+      },
+    },
+    {
+      accessorKey: "balanceQty",
+      header: "Reference / Balance",
+      cell: ({ row }) => (
+        <span className="font-mono font-bold text-foreground">{row.original.balanceQty}</span>
+      ),
+    },
+    {
+      accessorKey: "date",
+      header: "Date",
+      cell: ({ row }) => (
+        <span className="text-xs text-muted-foreground">{row.original.date}</span>
+      ),
+    },
+  ];
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Stock Ledger</h1>
-        <p className="text-sm font-medium text-gray-500 mt-1">Chronological log of inventory movements.</p>
-      </div>
-
-      <div className="bg-white rounded-[12px] premium-shadow border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          {isLoading ? (
-            <div className="flex justify-center p-12"><Loader2 className="h-8 w-8 animate-spin text-gray-300" /></div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="border-b border-gray-100 bg-white hover:bg-white">
-                  <TableHead className="h-12 text-xs font-bold uppercase tracking-wider text-gray-500 px-5">Date</TableHead>
-                  <TableHead className="h-12 text-xs font-bold uppercase tracking-wider text-gray-500">Item</TableHead>
-                  <TableHead className="h-12 text-xs font-bold uppercase tracking-wider text-gray-500">Warehouse</TableHead>
-                  <TableHead className="h-12 text-xs font-bold uppercase tracking-wider text-gray-500">Txn Type</TableHead>
-                  <TableHead className="h-12 text-xs font-bold uppercase tracking-wider text-gray-500 text-right">Qty</TableHead>
-                  <TableHead className="h-12 text-xs font-bold uppercase tracking-wider text-gray-500 text-right px-5">Balance</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data?.map((l) => (
-                  <TableRow key={l.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                    <TableCell className="px-5 py-4 text-xs font-semibold text-gray-500">{l.date}</TableCell>
-                    <TableCell className="py-4">
-                      <div className="flex items-center gap-2">
-                        <BookOpen className="h-3.5 w-3.5 text-gray-400" />
-                        <span className="font-bold text-sm text-gray-900 leading-tight">{l.itemName}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-4 font-mono text-xs font-bold text-gray-600">WH-{l.warehouseId}</TableCell>
-                    <TableCell className="py-4">
-                      <Badge variant="outline" className={`font-bold text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-[4px] border ${
-                        l.txnType === 'Inward' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-100 text-gray-600 border-gray-200'
-                      }`}>
-                        {l.txnType}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className={`py-4 text-right font-mono font-bold text-[15px] ${l.txnType === 'Inward' ? 'text-emerald-600' : 'text-gray-900'}`}>
-                      {l.txnType === 'Inward' ? '+' : '-'}{l.qty}
-                    </TableCell>
-                    <TableCell className="px-5 py-4 text-right font-mono font-bold text-gray-900">{l.balanceQty}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </div>
-      </div>
+      <PageHeader
+        title="Stock Ledger"
+        subtitle="Chronological log of inventory movements."
+      />
+      <DataTable
+        data={data ?? []}
+        columns={columns}
+        loading={isLoading}
+        searchPlaceholder="Search stock ledger..."
+        exportFilename="stock-ledger"
+        filterOptions={[
+          {
+            key: "txnType",
+            label: "Txn Type",
+            options: [
+              { label: "Inward", value: "Inward" },
+              { label: "Outward", value: "Outward" },
+            ],
+          },
+        ]}
+        emptyIcon={BookOpen}
+        emptyTitle="No ledger entries"
+        emptyDescription="Stock movements will appear here"
+      />
     </motion.div>
   );
+}
+
+// ─── StockValuationList ───────────────────────────────────────────────────────
+
+function formatINR(v: number) {
+  return `₹${v.toLocaleString("en-IN")}`;
 }
 
 export function StockValuationList() {
   const { data, isLoading } = useGetStockValuation();
 
+  const columns: ColumnDef<any, any>[] = [
+    {
+      accessorKey: "itemName",
+      header: "Material",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <Scale className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="font-bold text-sm text-foreground">{row.original.itemName}</span>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "warehouseId",
+      header: "Warehouse",
+      cell: ({ row }) => (
+        <span className="font-mono text-xs font-bold text-muted-foreground">WH-{row.original.warehouseId}</span>
+      ),
+    },
+    {
+      accessorKey: "balanceQty",
+      header: "Qty",
+      cell: ({ row }) => (
+        <span className="tabular-nums font-mono font-bold text-sm text-foreground">{row.original.balanceQty}</span>
+      ),
+    },
+    {
+      accessorKey: "unitValue",
+      header: "Unit Cost (₹)",
+      cell: ({ row }) => (
+        <span className="tabular-nums font-mono text-sm text-muted-foreground">{formatINR(row.original.unitValue)}</span>
+      ),
+    },
+    {
+      accessorKey: "totalValue",
+      header: "Total Value (₹)",
+      cell: ({ row }) => (
+        <span className="tabular-nums font-mono font-bold text-sm text-foreground">{formatINR(row.original.totalValue)}</span>
+      ),
+    },
+    {
+      accessorKey: "asOfDate",
+      header: "As Of",
+      cell: ({ row }) => (
+        <span className="text-xs text-muted-foreground">{format(new Date(row.original.asOfDate), "MMM d, yyyy")}</span>
+      ),
+    },
+  ];
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Stock Valuation</h1>
-        <p className="text-sm font-medium text-gray-500 mt-1">Financial value of inventory on hand.</p>
-      </div>
-
-      <div className="bg-white rounded-[12px] premium-shadow border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          {isLoading ? (
-            <div className="flex justify-center p-12"><Loader2 className="h-8 w-8 animate-spin text-gray-300" /></div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="border-b border-gray-100 bg-white hover:bg-white">
-                  <TableHead className="h-12 text-xs font-bold uppercase tracking-wider text-gray-500 px-5">Item</TableHead>
-                  <TableHead className="h-12 text-xs font-bold uppercase tracking-wider text-gray-500">Warehouse</TableHead>
-                  <TableHead className="h-12 text-xs font-bold uppercase tracking-wider text-gray-500 text-right">Balance Qty</TableHead>
-                  <TableHead className="h-12 text-xs font-bold uppercase tracking-wider text-gray-500 text-right">Unit Value</TableHead>
-                  <TableHead className="h-12 text-xs font-bold uppercase tracking-wider text-gray-500 text-right">Total Value</TableHead>
-                  <TableHead className="h-12 text-xs font-bold uppercase tracking-wider text-gray-500 px-5 text-right">As Of</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data?.map((v, i) => (
-                  <TableRow key={i} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                    <TableCell className="px-5 py-4">
-                      <div className="flex items-center gap-2">
-                        <Scale className="h-3.5 w-3.5 text-gray-400" />
-                        <span className="font-bold text-sm text-gray-900 leading-tight">{v.itemName}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-4 font-mono text-xs font-bold text-gray-600">WH-{v.warehouseId}</TableCell>
-                    <TableCell className="py-4 text-right font-mono font-bold text-[15px] text-gray-900">{v.balanceQty}</TableCell>
-                    <TableCell className="py-4 text-right font-mono text-sm font-semibold text-gray-500">₹{v.unitValue.toLocaleString("en-IN")}</TableCell>
-                    <TableCell className="py-4 text-right font-mono font-bold text-[15px] text-[#EA580C]">₹{v.totalValue.toLocaleString("en-IN")}</TableCell>
-                    <TableCell className="px-5 py-4 text-right text-xs font-semibold text-gray-500">{format(new Date(v.asOfDate), 'MMM d, yyyy')}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </div>
-      </div>
+      <PageHeader
+        title="Stock Valuation"
+        subtitle="Financial value of inventory on hand."
+      />
+      <DataTable
+        data={data ?? []}
+        columns={columns}
+        loading={isLoading}
+        searchPlaceholder="Search stock valuation..."
+        exportFilename="stock-valuation"
+        emptyIcon={Scale}
+        emptyTitle="No valuation data"
+        emptyDescription="Stock valuation will appear here"
+      />
     </motion.div>
   );
 }
 
+// ─── InventoryAuditsList ──────────────────────────────────────────────────────
+
 export function InventoryAuditsList() {
   const { data, isLoading } = useGetInventoryAudits();
 
+  const columns: ColumnDef<any, any>[] = [
+    {
+      accessorKey: "id",
+      header: "Audit #",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <ClipboardCheck className="h-4 w-4 text-muted-foreground" />
+          <span className="font-mono font-bold text-sm text-foreground">AUD-{row.original.id}</span>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "warehouseId",
+      header: "Warehouse",
+      cell: ({ row }) => (
+        <span className="font-mono text-xs font-bold text-muted-foreground">WH-{row.original.warehouseId}</span>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => {
+        const s = row.original.status;
+        const cls = s === "Completed"
+          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+          : "bg-muted text-muted-foreground border-border";
+        return <Badge variant="outline" className={cls}>{s}</Badge>;
+      },
+    },
+    {
+      id: "auditor",
+      header: "Auditor",
+      enableSorting: false,
+      cell: () => <span className="text-sm text-muted-foreground">—</span>,
+    },
+    {
+      accessorKey: "auditDate",
+      header: "Date",
+      cell: ({ row }) => (
+        <span className="text-sm text-muted-foreground">{format(new Date(row.original.auditDate), "MMM d, yyyy")}</span>
+      ),
+    },
+  ];
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Inventory Audits</h1>
-        <p className="text-sm font-medium text-gray-500 mt-1">Physical stock reconciliation logs.</p>
-      </div>
-
-      <div className="bg-white rounded-[12px] premium-shadow border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          {isLoading ? (
-            <div className="flex justify-center p-12"><Loader2 className="h-8 w-8 animate-spin text-gray-300" /></div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="border-b border-gray-100 bg-white hover:bg-white">
-                  <TableHead className="h-12 text-xs font-bold uppercase tracking-wider text-gray-500 px-5">Audit ID</TableHead>
-                  <TableHead className="h-12 text-xs font-bold uppercase tracking-wider text-gray-500">Warehouse</TableHead>
-                  <TableHead className="h-12 text-xs font-bold uppercase tracking-wider text-gray-500">Date</TableHead>
-                  <TableHead className="h-12 text-xs font-bold uppercase tracking-wider text-gray-500">Status</TableHead>
-                  <TableHead className="h-12 text-xs font-bold uppercase tracking-wider text-gray-500 text-right">Variance Qty</TableHead>
-                  <TableHead className="h-12 text-xs font-bold uppercase tracking-wider text-gray-500 text-right px-5">Variance Value</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data?.map((a) => (
-                  <TableRow key={a.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                    <TableCell className="px-5 py-4">
-                      <div className="flex items-center gap-2">
-                        <ClipboardCheck className="h-4 w-4 text-gray-400" />
-                        <span className="font-mono font-bold text-sm text-gray-900">AUD-{a.id}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-4 font-mono text-xs font-bold text-gray-600">WH-{a.warehouseId}</TableCell>
-                    <TableCell className="py-4 text-sm font-semibold text-gray-700">{format(new Date(a.auditDate), 'MMM d, yyyy')}</TableCell>
-                    <TableCell className="py-4">
-                      <Badge variant="outline" className={`font-bold text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-[4px] border ${
-                        a.status === 'Completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-100 text-gray-600 border-gray-200'
-                      }`}>
-                        {a.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className={`py-4 text-right font-mono font-bold text-[15px] ${a.varianceQty !== 0 ? 'text-red-600' : 'text-gray-900'}`}>
-                      {a.varianceQty || 0}
-                    </TableCell>
-                    <TableCell className={`px-5 py-4 text-right font-mono font-bold text-[15px] ${a.varianceValue !== 0 ? 'text-red-600' : 'text-gray-900'}`}>
-                      ₹{Number(a.varianceValue || 0).toLocaleString("en-IN")}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </div>
-      </div>
+      <PageHeader
+        title="Inventory Audits"
+        subtitle="Physical stock reconciliation logs."
+      />
+      <DataTable
+        data={data ?? []}
+        columns={columns}
+        loading={isLoading}
+        searchPlaceholder="Search audits..."
+        exportFilename="inventory-audits"
+        filterOptions={[
+          {
+            key: "status",
+            label: "Status",
+            options: [
+              { label: "Completed", value: "Completed" },
+              { label: "Pending", value: "Pending" },
+              { label: "In Progress", value: "In Progress" },
+            ],
+          },
+        ]}
+        emptyIcon={ClipboardCheck}
+        emptyTitle="No audits found"
+        emptyDescription="Inventory audits will appear here"
+      />
     </motion.div>
   );
 }

@@ -8,17 +8,25 @@ interface ShellProps {
 
 export function Shell({ children }: ShellProps) {
   return (
-    <div
-      className="flex h-[100dvh] w-full overflow-hidden bg-[#FAFAFA] print:block print:h-auto print:overflow-visible"
-    >
-      <div className="print:hidden"><Sidebar /></div>
-      <div className="flex flex-1 flex-col overflow-hidden relative print:block print:overflow-visible">
-        <div className="print:hidden"><Topbar /></div>
-        {/* Page content */}
+    <div className="flex h-[100dvh] w-full overflow-hidden bg-background print:block print:h-auto">
+      {/* Sidebar — desktop only (hidden via CSS on mobile) */}
+      <div className="print:hidden">
+        <Sidebar />
+      </div>
+
+      {/* Main area */}
+      <div className="flex flex-1 flex-col overflow-hidden min-w-0 print:block">
+        {/* Sticky topbar */}
+        <div className="print:hidden shrink-0">
+          <Topbar />
+        </div>
+
+        {/* Scrollable page content */}
         <main
-          className="flex-1 overflow-y-auto px-4 py-6 sm:px-8 sm:py-8 w-full print:overflow-visible print:p-6"
+          id="main-content"
+          className="flex-1 overflow-y-auto scrollbar-thin print:overflow-visible"
         >
-          <div className="max-w-[1600px] mx-auto w-full">
+          <div className="mx-auto w-full max-w-[1600px] px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-7 print:px-0 print:py-0">
             {children}
           </div>
         </main>
