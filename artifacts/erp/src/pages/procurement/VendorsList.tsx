@@ -266,7 +266,9 @@ export default function VendorsList() {
                 <div>
                   <Label>Primary Email</Label>
                   <Input
-                    type="email"
+                    type="text"
+                    inputMode="email"
+                    autoComplete="email"
                     value={form.primaryEmail ?? ""}
                     onChange={e => setField("primaryEmail", e.target.value)}
                     onBlur={() => touch("primaryEmail")}

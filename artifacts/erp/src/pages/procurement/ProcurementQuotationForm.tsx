@@ -19,6 +19,7 @@ import { Plus, Trash2, ChevronRight, ChevronLeft, Building2, Package, FileText, 
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { PageHeader, SectionCard } from "@/components/shared";
+import { EMAIL_REGEX } from "@/lib/vendor-validation";
 
 const STEPS = ["Vendor", "Line Items", "Pricing & Terms", "Review"];
 const UOM_OPTIONS = ["Nos", "Pcs", "Set", "Kg", "MT", "Mtr", "Sqm", "Sqft", "Ltr", "Box", "Carton", "Bundle", "KWp", "kWh", "KW", "KVA", "Other"];
@@ -46,6 +47,7 @@ export default function ProcurementQuotationForm({ editId }: Props) {
   const [vendorSearch, setVendorSearch] = useState("");
   const [newVendorOpen, setNewVendorOpen] = useState(false);
   const [newVendorForm, setNewVendorForm] = useState({ name: "", gstin: "", primaryEmail: "", primaryPhone: "" });
+  const [newVendorErrors, setNewVendorErrors] = useState<Record<string, string>>({});
   const [items, setItems] = useState<LineItem[]>([emptyItem()]);
   const [matSearch, setMatSearch] = useState("");
   const [newMatOpen, setNewMatOpen] = useState(false);
@@ -118,11 +120,20 @@ export default function ProcurementQuotationForm({ editId }: Props) {
   }, { subtotal: 0, disc: 0, gst: 0, total: 0 });
 
   const createVendor = () => {
+    const errs: Record<string, string> = {};
+    if (!newVendorForm.name.trim())
+      errs.name = "Vendor name is required.";
+    if (newVendorForm.primaryEmail.trim() && !EMAIL_REGEX.test(newVendorForm.primaryEmail.trim()))
+      errs.primaryEmail = "Please enter a valid email address. Example: name@company.com";
+    setNewVendorErrors(errs);
+    if (Object.keys(errs).length > 0) return;
+
     createVendorMut.mutate({ data: newVendorForm }, {
       onSuccess: (v) => {
         qc.invalidateQueries({ queryKey: getGetVendorsQueryKey() });
         setVendorId(v.id!);
         setNewVendorOpen(false);
+        setNewVendorErrors({});
       }
     });
   };
@@ -352,13 +363,41 @@ export default function ProcurementQuotationForm({ editId }: Props) {
         <DialogContent className="sm:max-w-sm">
           <DialogHeader><DialogTitle>Create New Vendor</DialogTitle></DialogHeader>
           <div className="space-y-3 pt-2">
-            <div><Label>Name *</Label><Input value={newVendorForm.name} onChange={e => setNewVendorForm(f => ({ ...f, name: e.target.value }))} className="mt-1" /></div>
+            <div>
+              <Label>Name *</Label>
+              <Input value={newVendorForm.name} onChange={e => setNewVendorForm(f => ({ ...f, name: e.target.value }))} className={cn("mt-1", newVendorErrors.name && "border-red-400 focus-visible:ring-red-300")} />
+              {newVendorErrors.name && <p className="mt-0.5 text-[11px] text-red-500">{newVendorErrors.name}</p>}
+            </div>
             <div><Label>GSTIN</Label><Input value={newVendorForm.gstin} onChange={e => setNewVendorForm(f => ({ ...f, gstin: e.target.value }))} className="mt-1" /></div>
-            <div><Label>Email</Label><Input type="email" value={newVendorForm.primaryEmail} onChange={e => setNewVendorForm(f => ({ ...f, primaryEmail: e.target.value }))} className="mt-1" /></div>
+            <div>
+              <Label>Email</Label>
+              <Input
+                type="text"
+                inputMode="email"
+                autoComplete="email"
+                value={newVendorForm.primaryEmail}
+                placeholder="vendor@example.com"
+                onChange={e => {
+                  const v = e.target.value;
+                  setNewVendorForm(f => ({ ...f, primaryEmail: v }));
+                  if (newVendorErrors.primaryEmail)
+                    setNewVendorErrors(prev => ({ ...prev, primaryEmail: EMAIL_REGEX.test(v.trim()) ? "" : prev.primaryEmail }));
+                }}
+                onBlur={e => {
+                  const v = e.target.value.trim();
+                  if (v && !EMAIL_REGEX.test(v))
+                    setNewVendorErrors(prev => ({ ...prev, primaryEmail: "Please enter a valid email address. Example: name@company.com" }));
+                  else
+                    setNewVendorErrors(prev => ({ ...prev, primaryEmail: "" }));
+                }}
+                className={cn("mt-1", newVendorErrors.primaryEmail && "border-red-400 focus-visible:ring-red-300")}
+              />
+              {newVendorErrors.primaryEmail && <p className="mt-0.5 text-[11px] text-red-500">{newVendorErrors.primaryEmail}</p>}
+            </div>
             <div><Label>Phone</Label><Input value={newVendorForm.primaryPhone} onChange={e => setNewVendorForm(f => ({ ...f, primaryPhone: e.target.value }))} className="mt-1" /></div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setNewVendorOpen(false)}>Cancel</Button>
-              <Button onClick={createVendor} disabled={!newVendorForm.name || createVendorMut.isPending}>{createVendorMut.isPending ? "Creating…" : "Create & Select"}</Button>
+              <Button variant="outline" onClick={() => { setNewVendorOpen(false); setNewVendorErrors({}); }}>Cancel</Button>
+              <Button onClick={createVendor} disabled={createVendorMut.isPending}>{createVendorMut.isPending ? "Creating…" : "Create & Select"}</Button>
             </div>
           </div>
         </DialogContent>

@@ -527,7 +527,7 @@ export default function VendorDetail({ id }: { id: string }) {
             <div className="grid grid-cols-2 gap-4">
               {renderStatus()}
               {renderField({ label: "Website", field: "website", placeholder: "https://vendor.com" })}
-              {renderField({ label: "Primary Email", field: "primaryEmail", type: "email" })}
+              {renderField({ label: "Primary Email", field: "primaryEmail", placeholder: "vendor@example.com" })}
               {renderPhone({ label: "Primary Phone", field: "primaryPhone" })}
               {renderField({ label: "Payment Terms", field: "paymentTerms", placeholder: "e.g. Net 30" })}
               {renderField({ label: "Credit Limit", field: "creditLimit", placeholder: "e.g. ₹5,00,000" })}
