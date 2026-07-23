@@ -222,7 +222,7 @@ function recentEntryToPaletteItem(entry: RecentEntry): PaletteItem | null {
 }
 
 /* ── Command Palette ─────────────────────────────────────────── */
-function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [query, setQuery] = useState("");
   const [cursor, setCursor] = useState(0);
   const [recentEntries, setRecentEntries] = useState<RecentEntry[]>([]);
