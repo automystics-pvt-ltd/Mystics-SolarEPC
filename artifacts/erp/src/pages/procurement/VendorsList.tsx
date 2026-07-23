@@ -124,12 +124,17 @@ export default function VendorsList() {
       ),
     },
     {
-      accessorKey: "contactPerson",
-      header: "Contact Person",
+      accessorKey: "primaryContactName",
+      header: "Primary Contact",
       cell: ({ row }) => (
-        <span className="text-sm text-muted-foreground">
-          {row.original.contactPerson ?? "—"}
-        </span>
+        <div>
+          <p className="text-sm text-foreground">
+            {row.original.primaryContactName ?? <span className="text-muted-foreground">—</span>}
+          </p>
+          {row.original.primaryContactDesignation && (
+            <p className="text-xs text-muted-foreground">{row.original.primaryContactDesignation}</p>
+          )}
+        </div>
       ),
     },
     {

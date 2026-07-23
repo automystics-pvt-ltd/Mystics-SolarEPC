@@ -20,7 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Edit3, Save, X, Plus, Trash2, Building2, Shield, Phone, Mail, CreditCard, Users, Banknote, Star, AlertCircle } from "lucide-react";
+import { Edit3, Save, X, Plus, Trash2, Building2, Shield, Phone, Mail, CreditCard, Users, Banknote, Star, AlertCircle, User } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { PageHeader, SectionCard, StatusBadge } from "@/components/shared";
 import { addRecentEntry } from "@/lib/recentHistory";
@@ -418,21 +418,68 @@ export default function VendorDetail({ id }: { id: string }) {
       />
 
       {/* Status bar */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3 rounded-xl border border-border bg-card shadow-sm">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
-            <Building2 className="w-4 h-4 text-muted-foreground" />
+      {(() => {
+        const contacts: any[] = (vendor as any).contacts ?? [];
+        const primaryContact = contacts.find((c: any) => c.isPrimary) ?? contacts[0] ?? null;
+        return (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3 rounded-xl border border-border bg-card shadow-sm">
+            {/* Vendor identity */}
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                <Building2 className="w-4 h-4 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="text-[12px] font-semibold text-foreground">{vendor.name}</p>
+                <p className="text-[11px] text-muted-foreground">
+                  {vendor.code}{(vendor as any).tradeName ? ` · ${(vendor as any).tradeName}` : ""}
+                </p>
+              </div>
+            </div>
+
+            <span className="text-muted-foreground/30 select-none">|</span>
+            <StatusBadge status={vendor.status ?? "Active"} />
+
+            {/* Primary contact */}
+            {primaryContact && (
+              <>
+                <span className="text-muted-foreground/30 select-none">|</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-[11px] font-bold text-primary uppercase">
+                    {primaryContact.name?.[0] ?? "?"}
+                  </div>
+                  <div>
+                    <p className="text-[12px] font-semibold text-foreground leading-tight">{primaryContact.name}</p>
+                    <p className="text-[11px] text-muted-foreground leading-tight">
+                      {primaryContact.designation ? `${primaryContact.designation} · ` : ""}Primary Contact
+                    </p>
+                  </div>
+                </div>
+                {primaryContact.phone && (
+                  <a href={`tel:${primaryContact.phone}`} className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors">
+                    <Phone className="w-3 h-3" />{primaryContact.phone}
+                  </a>
+                )}
+                {primaryContact.email && (
+                  <a href={`mailto:${primaryContact.email}`} className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors">
+                    <Mail className="w-3 h-3" />{primaryContact.email}
+                  </a>
+                )}
+              </>
+            )}
+
+            {/* No contacts nudge */}
+            {!primaryContact && (
+              <>
+                <span className="text-muted-foreground/30 select-none">|</span>
+                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                  <User className="w-3.5 h-3.5" />
+                  No contacts added yet
+                </div>
+              </>
+            )}
           </div>
-          <div>
-            <p className="text-[12px] font-semibold text-foreground">{vendor.name}</p>
-            <p className="text-[11px] text-muted-foreground">
-              {vendor.code}{(vendor as any).tradeName ? ` · ${(vendor as any).tradeName}` : ""}
-            </p>
-          </div>
-        </div>
-        <span className="text-muted-foreground/40">·</span>
-        <StatusBadge status={vendor.status ?? "Active"} />
-      </div>
+        );
+      })()}
 
       <Tabs defaultValue="details">
         <TabsList>

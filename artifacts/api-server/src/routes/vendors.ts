@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, vendorsTable, vendorContactsTable } from "@workspace/db";
-import { eq, desc, ilike, or, and, ne } from "drizzle-orm";
+import { eq, desc, ilike, or, and, ne, inArray } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -106,6 +106,7 @@ function fmtVendor(
   v: typeof vendorsTable.$inferSelect,
   contacts: typeof vendorContactsTable.$inferSelect[] = []
 ) {
+  const primaryContact = contacts.find(c => c.isPrimary) ?? contacts[0] ?? null;
   return {
     id: v.id, code: v.code, name: v.name, tradeName: v.tradeName, status: v.status,
     gstin: v.gstin, pan: v.pan, gstRegisteredState: v.gstRegisteredState, gstStateCode: v.gstStateCode,
@@ -116,6 +117,8 @@ function fmtVendor(
     bankName: v.bankName, bankBranch: v.bankBranch, bankAccountNumber: v.bankAccountNumber,
     bankIfsc: v.bankIfsc, bankAccountType: v.bankAccountType, upiId: v.upiId,
     paymentTerms: v.paymentTerms, creditLimit: v.creditLimit, tags: v.tags, notes: v.notes,
+    primaryContactName: primaryContact?.name ?? null,
+    primaryContactDesignation: primaryContact?.designation ?? null,
     contacts,
     createdBy: v.createdBy, updatedBy: v.updatedBy,
     createdAt: v.createdAt.toISOString(), updatedAt: v.updatedAt.toISOString(),
@@ -134,7 +137,20 @@ router.get("/vendors", async (req, res): Promise<void> => {
   if (req.query.status) {
     rows = rows.filter(r => r.status === req.query.status);
   }
-  res.json(rows.map(r => fmtVendor(r)));
+
+  // Batch-fetch contacts for all returned vendors in one query
+  const ids = rows.map(r => r.id);
+  const allContacts = ids.length
+    ? await db.select().from(vendorContactsTable).where(inArray(vendorContactsTable.vendorId, ids))
+    : [];
+  const contactsByVendor = new Map<number, typeof allContacts>();
+  for (const c of allContacts) {
+    const arr = contactsByVendor.get(c.vendorId) ?? [];
+    arr.push(c);
+    contactsByVendor.set(c.vendorId, arr);
+  }
+
+  res.json(rows.map(r => fmtVendor(r, contactsByVendor.get(r.id) ?? [])));
 });
 
 // ── CREATE vendor ─────────────────────────────────────────────────────────────
