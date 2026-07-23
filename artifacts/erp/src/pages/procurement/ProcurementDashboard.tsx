@@ -1,14 +1,14 @@
-import { useState } from "react";
-import { useGetProcurementDashboard } from "@workspace/api-client-react";
+import { useState, useRef, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   ShoppingCart, AlertTriangle, FileText, TrendingUp, TrendingDown,
   ArrowRight, Zap, Clock, Building2, ChevronRight, CheckCircle2,
   AlertCircle, Boxes, FilePlus, DollarSign, ClipboardList, Calendar,
-  Activity, RotateCcw, Minus,
+  Activity, RotateCcw, Minus, ChevronDown, X,
 } from "lucide-react";
 import {
   AreaChart, Area, PieChart, Pie, Cell,
@@ -40,6 +40,203 @@ function relTime(iso: string) {
 function daysSince(iso: string) {
   return Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
 }
+/** Build YYYY-MM-DD from local calendar parts — avoids UTC shift in positive-offset timezones (e.g. IST). */
+function toLocalISO(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+function fmtDate(iso: string) {
+  return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+}
+function monthLabel(yyyymm: string) {
+  const mm = parseInt(yyyymm.split("-")[1] ?? "1", 10);
+  return MONTH_LABELS[mm - 1] ?? yyyymm;
+}
+
+/* ─── Date range helpers ─────────────────────────────────────────────────── */
+type RangePreset = "ytd" | "this-month" | "last-month" | "this-quarter" | "custom";
+
+interface DateRange {
+  preset: RangePreset;
+  from: string; // YYYY-MM-DD
+  to:   string; // YYYY-MM-DD
+}
+
+function computePreset(preset: Exclude<RangePreset, "custom">): { from: string; to: string } {
+  const today = new Date();
+  const y = today.getFullYear();
+  const m = today.getMonth(); // 0-based
+
+  switch (preset) {
+    case "ytd":
+      return { from: `${y}-01-01`, to: toLocalISO(today) };
+    case "this-month": {
+      const first = new Date(y, m, 1);
+      return { from: toLocalISO(first), to: toLocalISO(today) };
+    }
+    case "last-month": {
+      const first = new Date(y, m - 1, 1);
+      const last  = new Date(y, m, 0);   // last day of previous month
+      return { from: toLocalISO(first), to: toLocalISO(last) };
+    }
+    case "this-quarter": {
+      const qStart = Math.floor(m / 3) * 3;
+      const first  = new Date(y, qStart, 1);
+      return { from: toLocalISO(first), to: toLocalISO(today) };
+    }
+  }
+}
+
+const PRESETS: { key: Exclude<RangePreset, "custom">; label: string }[] = [
+  { key: "ytd",          label: "Year to Date"  },
+  { key: "this-month",   label: "This Month"    },
+  { key: "last-month",   label: "Last Month"    },
+  { key: "this-quarter", label: "This Quarter"  },
+];
+
+function rangeLabel(r: DateRange) {
+  const found = PRESETS.find(p => p.key === r.preset);
+  if (found) return found.label;
+  return `${fmtDate(r.from)} – ${fmtDate(r.to)}`;
+}
+
+function defaultRange(): DateRange {
+  const today = new Date();
+  return { preset: "ytd", from: `${today.getFullYear()}-01-01`, to: toLocalISO(today) };
+}
+
+/* ─── Date Range Picker ──────────────────────────────────────────────────── */
+function DateRangePicker({ value, onChange }: {
+  value: DateRange;
+  onChange: (r: DateRange) => void;
+}) {
+  const [open, setOpen]       = useState(false);
+  const [customFrom, setCustomFrom] = useState(value.from);
+  const [customTo,   setCustomTo]   = useState(value.to);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  function applyPreset(preset: Exclude<RangePreset, "custom">) {
+    const { from, to } = computePreset(preset);
+    onChange({ preset, from, to });
+    setCustomFrom(from);
+    setCustomTo(to);
+    setOpen(false);
+  }
+
+  function applyCustom() {
+    if (!customFrom || !customTo || customFrom > customTo) return;
+    onChange({ preset: "custom", from: customFrom, to: customTo });
+    setOpen(false);
+  }
+
+  const isYTD = value.preset === "ytd";
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className={cn(
+          "flex items-center gap-1.5 h-8 px-3 rounded-lg border text-xs font-semibold transition-all",
+          "bg-card hover:bg-muted border-border shadow-sm",
+          open && "ring-1 ring-primary/30",
+          !isYTD && "border-primary/40 text-primary bg-primary/5",
+        )}
+      >
+        <Calendar className="h-3.5 w-3.5 shrink-0" />
+        <span>{rangeLabel(value)}</span>
+        {!isYTD && (
+          <span
+            role="button"
+            tabIndex={0}
+            onClick={e => { e.stopPropagation(); onChange(defaultRange()); }}
+            onKeyDown={e => { if (e.key === "Enter") { e.stopPropagation(); onChange(defaultRange()); } }}
+            className="ml-0.5 rounded-full hover:bg-primary/20 p-0.5 transition-colors"
+          >
+            <X className="h-3 w-3" />
+          </span>
+        )}
+        <ChevronDown className={cn("h-3 w-3 transition-transform", open && "rotate-180")} />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -4, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0,  scale: 1    }}
+            exit={{ opacity: 0, y: -4, scale: 0.97 }}
+            transition={{ duration: 0.15 }}
+            className="absolute right-0 top-[calc(100%+6px)] z-50 w-64 bg-popover border border-border rounded-xl shadow-lg overflow-hidden"
+          >
+            {/* Presets */}
+            <div className="p-2 space-y-0.5">
+              {PRESETS.map(p => (
+                <button
+                  key={p.key}
+                  onClick={() => applyPreset(p.key)}
+                  className={cn(
+                    "w-full text-left px-3 py-2 rounded-lg text-[12px] font-semibold transition-colors",
+                    value.preset === p.key
+                      ? "bg-primary text-primary-foreground"
+                      : "text-foreground hover:bg-muted",
+                  )}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Custom range */}
+            <div className="border-t border-border p-3 space-y-2">
+              <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">Custom range</p>
+              <div className="flex flex-col gap-1.5">
+                <div>
+                  <label className="text-[10px] font-semibold text-muted-foreground mb-1 block">From</label>
+                  <input
+                    type="date"
+                    value={customFrom}
+                    max={customTo || undefined}
+                    onChange={e => setCustomFrom(e.target.value)}
+                    className="w-full text-[12px] px-2.5 py-1.5 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-semibold text-muted-foreground mb-1 block">To</label>
+                  <input
+                    type="date"
+                    value={customTo}
+                    min={customFrom || undefined}
+                    onChange={e => setCustomTo(e.target.value)}
+                    className="w-full text-[12px] px-2.5 py-1.5 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+                  />
+                </div>
+              </div>
+              <Button
+                size="sm"
+                className="w-full h-7 text-xs"
+                disabled={!customFrom || !customTo || customFrom > customTo}
+                onClick={applyCustom}
+              >
+                Apply
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 /* ─── Constants ──────────────────────────────────────────────────────────── */
 const PIPELINE_STAGES = [
@@ -63,7 +260,7 @@ const ACTIVITY_META: Record<string, { icon: React.ElementType; label: string; cl
 
 /* ─── Animation ──────────────────────────────────────────────────────────── */
 const wrap = { hidden: {}, show: { transition: { staggerChildren: 0.055 } } };
-const fade = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0, transition: { duration: 0.28, ease: "easeOut" } } };
+const fade = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0, transition: { duration: 0.28, ease: "easeOut" as const } } };
 
 /* ─── Accent palette ─────────────────────────────────────────────────────── */
 type Accent = "default"|"red"|"amber"|"emerald"|"blue"|"violet";
@@ -249,7 +446,21 @@ export default function ProcurementDashboard() {
   const [chartMode, setChartMode] = useState<"vendor"|"category">("vendor");
   const [selectedVendor, setSelectedVendor]     = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
-  const { data, isLoading } = useGetProcurementDashboard();
+  const [dateRange, setDateRange] = useState<DateRange>(defaultRange);
+
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ["procurement-dashboard", dateRange.from, dateRange.to],
+    queryFn: async ({ signal }) => {
+      const params = new URLSearchParams({ from: dateRange.from, to: dateRange.to });
+      const token  = localStorage.getItem("mystics_token");
+      const res    = await fetch(`/api/procurement-dashboard?${params}`, {
+        signal,
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    },
+  });
 
   if (isLoading) return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
@@ -269,20 +480,22 @@ export default function ProcurementDashboard() {
   const recentActivity: any[]  = d?.recentActivity         ?? [];
   const vendorMonthlySpend: Record<string, any[]>   = d?.vendorMonthlySpend   ?? {};
   const categoryMonthlySpend: Record<string, any[]> = d?.categoryMonthlySpend ?? {};
-  const monthlySpend: any[]    = (d?.monthlySpend ?? []).map((m: any, i: number) => ({
-    month: MONTH_LABELS[i] ?? m.month, amount: m.amount,
+
+  // Map monthly spend using actual month field (not array index) so custom ranges render correctly
+  const monthlySpend: any[] = (d?.monthlySpend ?? []).map((m: any) => ({
+    month: monthLabel(m.month), amount: m.amount,
   }));
   const maxCategorySpend = topCategories[0]?.spend ?? 1;
 
   const chartData: any[] = (() => {
     if (chartMode === "vendor" && selectedVendor && vendorMonthlySpend[selectedVendor]) {
-      return vendorMonthlySpend[selectedVendor].map((m: any, i: number) => ({
-        month: MONTH_LABELS[i] ?? m.month, amount: m.amount,
+      return vendorMonthlySpend[selectedVendor].map((m: any) => ({
+        month: monthLabel(m.month), amount: m.amount,
       }));
     }
     if (chartMode === "category" && selectedCategory && categoryMonthlySpend[selectedCategory]) {
-      return categoryMonthlySpend[selectedCategory].map((m: any, i: number) => ({
-        month: MONTH_LABELS[i] ?? m.month, amount: m.amount,
+      return categoryMonthlySpend[selectedCategory].map((m: any) => ({
+        month: monthLabel(m.month), amount: m.amount,
       }));
     }
     return monthlySpend;
@@ -296,6 +509,9 @@ export default function ProcurementDashboard() {
     .map(([status, count]) => ({ name: status, value: count as number, color: DONUT_COLORS[status] ?? "#94a3b8" }))
     .filter(d => d.value > 0);
   const maxVendorSpend = topVendors[0]?.spend ?? 1;
+
+  const isYTD = dateRange.preset === "ytd";
+  const spendKPILabel = isYTD ? "YTD Spend" : "Period Spend";
 
   /* insights */
   const insights: { icon: React.ElementType; text: string; cls: string }[] = [];
@@ -316,7 +532,7 @@ export default function ProcurementDashboard() {
     const pct = Math.round((topVendors[0].spend / s.ytdSpend) * 100);
     if (pct >= 25)
       insights.push({ icon: Building2, cls: "bg-blue-50 border-blue-200 text-blue-800",
-        text: `${topVendors[0].vendorName} accounts for ${pct}% of YTD spend — consider diversifying` });
+        text: `${topVendors[0].vendorName} accounts for ${pct}% of period spend — consider diversifying` });
   }
   if (s.approachingDeadlines > 0)
     insights.push({ icon: Calendar, cls: "bg-orange-50 border-orange-200 text-orange-800",
@@ -343,6 +559,12 @@ export default function ProcurementDashboard() {
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Date range picker */}
+          <DateRangePicker value={dateRange} onChange={r => {
+            setDateRange(r);
+            setSelectedVendor("");
+            setSelectedCategory("");
+          }} />
           {([
             { label: "POs",      icon: ShoppingCart, href: "/procurement/pos"      },
             { label: "GRNs",     icon: Boxes,        href: "/procurement/grns"     },
@@ -358,7 +580,7 @@ export default function ProcurementDashboard() {
 
       {/* KPI Strip */}
       <motion.div variants={fade} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        <KPICard label="YTD Spend" value={fmt(s.ytdSpend)} icon={DollarSign} accent="amber"
+        <KPICard label={spendKPILabel} value={fmt(s.ytdSpend)} icon={DollarSign} accent="amber"
           sub={s.committedValue > 0 ? `+${fmt(s.committedValue)} committed` : "Received POs"}
           trend={spendDelta != null ? (spendDelta >= 0 ? "up" : "down") : undefined}
           trendLabel={spendDelta != null ? `${spendDelta > 0 ? "+" : ""}${spendDelta.toFixed(1)}% vs last month` : undefined}
@@ -403,7 +625,7 @@ export default function ProcurementDashboard() {
       <motion.div variants={fade} className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <DashCard
           title="Monthly Spend Trend"
-          sub={`${now.getFullYear()} · ${
+          sub={`${rangeLabel(dateRange)} · ${
             chartMode === "vendor"
               ? (selectedVendor || "All vendors")
               : (selectedCategory || "All categories")
@@ -598,7 +820,7 @@ export default function ProcurementDashboard() {
         </DashCard>
 
         <DashCard title={chartMode === "vendor" ? "Top Vendors by Spend" : "Top Categories by Spend"}
-          sub="YTD received POs · click to filter">
+          sub={`${rangeLabel(dateRange)} · click to filter`}>
           {chartMode === "vendor" ? (
             topVendors.length === 0
               ? <div className="py-10 text-center text-muted-foreground text-sm">No spend data yet</div>
@@ -723,16 +945,17 @@ export default function ProcurementDashboard() {
           </div>
         </DashCard>
 
-        <DashCard title="Recent Activity" sub="Latest procurement events"
+        <DashCard title="Recent Activity" sub={`Latest procurement events · ${rangeLabel(dateRange)}`}
           actions={
-            <Button size="sm" variant="ghost" className="text-xs text-muted-foreground h-7 px-2 gap-1">
+            <Button size="sm" variant="ghost" className="text-xs text-muted-foreground h-7 px-2 gap-1"
+              onClick={() => refetch()}>
               <RotateCcw className="h-3 w-3" />Refresh
             </Button>
           }
         >
           <div className="px-4 py-3">
             {recentActivity.length === 0
-              ? <div className="py-8 text-center text-muted-foreground text-sm">No recent activity</div>
+              ? <div className="py-8 text-center text-muted-foreground text-sm">No activity in this period</div>
               : recentActivity.map((e: any) => <ActivityRow key={`${e.type}-${e.id}`} event={e} />)
             }
           </div>
