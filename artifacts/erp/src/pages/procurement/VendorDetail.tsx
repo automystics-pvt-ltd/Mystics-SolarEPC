@@ -34,10 +34,10 @@ import { cn } from "@/lib/utils";
 function FieldError({ msg }: { msg?: string }) {
   if (!msg) return null;
   return (
-    <p className="mt-1 flex items-center gap-1 text-xs text-red-500">
-      <AlertCircle className="h-3 w-3 shrink-0" />
-      {msg}
-    </p>
+    <div className="mt-1.5 flex items-start gap-1.5 rounded-md border border-red-200 bg-red-50 px-2.5 py-1.5 dark:border-red-800/40 dark:bg-red-950/30">
+      <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-500 dark:text-red-400" />
+      <p className="text-xs leading-snug text-red-700 dark:text-red-400">{msg}</p>
+    </div>
   );
 }
 
@@ -351,9 +351,9 @@ export default function VendorDetail({ id }: { id: string }) {
   const editActions = editing ? (
     <>
       {editSubmitted && editErrorCount > 0 && (
-        <span className="flex items-center gap-1 text-xs text-red-500 mr-1">
-          <AlertCircle className="h-3.5 w-3.5" />
-          {editErrorCount} error{editErrorCount !== 1 ? "s" : ""}
+        <span className="flex items-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 dark:border-red-800/40 dark:bg-red-950/30 dark:text-red-400 mr-1">
+          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+          {editErrorCount} field{editErrorCount !== 1 ? "s" : ""} need{editErrorCount === 1 ? "s" : ""} attention
         </span>
       )}
       <Button variant="outline" size="sm" onClick={cancelEdit}><X className="w-3.5 h-3.5 mr-1" /> Cancel</Button>
@@ -570,9 +570,16 @@ export default function VendorDetail({ id }: { id: string }) {
                     </div>
 
                     {contactSubmitted && hasErrors(contactErrors) && (
-                      <div className="rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 px-3 py-2 flex items-center gap-2 text-xs text-red-600 dark:text-red-400">
-                        <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                        Please fix {Object.keys(contactErrors).length} error{Object.keys(contactErrors).length !== 1 ? "s" : ""} before submitting
+                      <div className="rounded-lg border border-red-200 bg-red-50 dark:border-red-800/40 dark:bg-red-950/30 px-3 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <AlertCircle className="h-4 w-4 shrink-0 text-red-600 dark:text-red-400" />
+                          <p className="text-sm font-semibold text-red-700 dark:text-red-400">Please fix the following:</p>
+                        </div>
+                        <ul className="mt-1.5 space-y-0.5 pl-6 list-disc">
+                          {Object.values(contactErrors).map((msg, i) => (
+                            <li key={i} className="text-xs text-red-600 dark:text-red-400">{msg}</li>
+                          ))}
+                        </ul>
                       </div>
                     )}
 

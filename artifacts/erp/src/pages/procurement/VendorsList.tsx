@@ -24,14 +24,14 @@ const STATUS_OPTIONS = [
 
 const EMPTY_FORM = { name: "", status: "Active", billingCountry: "India" } as Record<string, any>;
 
-/* ── Small helper to display a field error ─────────────────────────────── */
+/* ── Inline field error ──────────────────────────────────────────────────── */
 function FieldError({ msg }: { msg?: string }) {
   if (!msg) return null;
   return (
-    <p className="mt-1 flex items-center gap-1 text-xs text-red-500">
-      <AlertCircle className="h-3 w-3 shrink-0" />
-      {msg}
-    </p>
+    <div className="mt-1.5 flex items-start gap-1.5 rounded-md border border-red-200 bg-red-50 px-2.5 py-1.5 dark:border-red-800/40 dark:bg-red-950/30">
+      <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-500 dark:text-red-400" />
+      <p className="text-xs leading-snug text-red-700 dark:text-red-400">{msg}</p>
+    </div>
   );
 }
 
@@ -295,9 +295,16 @@ export default function VendorsList() {
 
                 {/* Error summary + actions */}
                 {anyError && (
-                  <div className="rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 px-3 py-2 flex items-center gap-2 text-xs text-red-600 dark:text-red-400">
-                    <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                    Please fix {Object.keys(errors).length} validation error{Object.keys(errors).length !== 1 ? "s" : ""} before creating
+                  <div className="rounded-lg border border-red-200 bg-red-50 dark:border-red-800/40 dark:bg-red-950/30 px-3 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 shrink-0 text-red-600 dark:text-red-400" />
+                      <p className="text-sm font-semibold text-red-700 dark:text-red-400">Please fix the following before creating:</p>
+                    </div>
+                    <ul className="mt-1.5 space-y-0.5 pl-6 list-disc">
+                      {Object.values(errors).map((msg, i) => (
+                        <li key={i} className="text-xs text-red-600 dark:text-red-400">{msg}</li>
+                      ))}
+                    </ul>
                   </div>
                 )}
 
