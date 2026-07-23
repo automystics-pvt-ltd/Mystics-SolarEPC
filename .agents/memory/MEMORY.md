@@ -1,9 +1,10 @@
 - [Mystics ERP stack decisions](mystics-erp-stack.md) — full-stack EPC ERP; React+Vite frontend at `/`, Express API server, Drizzle/Postgres schema, OpenAPI-first codegen via Orval
 - [Mystics ERP auth setup](mystics-erp-auth.md) — JWT auth with SESSION_SECRET; token stored in localStorage key "mystics_token"; custom-fetch reads it via setAuthTokenGetter
 - [Mystics ERP seed accounts](mystics-erp-seed.md) — seeded users and their passwords for local dev testing
-- [Mystics ERP design system rules](mystics-erp-design-system.md) — StatusBadge covers all 50+ statuses; DetailRow has fullWidth prop; shared component barrel at @/components/shared
+- [Mystics ERP design system rules](mystics-erp-design-system.md) — StatusBadge covers all 50+ statuses; DetailRow has fullWidth prop; shared component barrel at @/components/shared; SectionCard title prop is string only (no JSX)
 - [Mystics ERP navigation system](mystics-erp-nav-system.md) — 56px NavRail + flyout replaced sidebar; Shell/Topbar updated; mobile uses bottom tabs + MobileNavSheet
-- [Mystics ERP shared component contracts](mystics-erp-shared-components.md) — EmptyState accepts heading/message aliases; SkeletonBar+SkeletonCards exist; CompactStatCard exported
+- [Mystics ERP shared component contracts](mystics-erp-shared-components.md) — EmptyState accepts heading/message aliases; SkeletonBar+SkeletonCards exist; CompactStatCard exported; apiDelete only accepts path (no body)
 - [Mystics ERP hooks rule](mystics-erp-hooks-rule.md) — ProcurementDashboard had useMemo/useCallback after an early conditional return; always place ALL hooks before any conditional return in function components
 - [Mystics ERP RBAC system](mystics-erp-rbac.md) — DB-backed RBAC with API middleware, frontend usePermissions hook, PermissionGate, ProtectedRoute module guard, NavRail permission filter, and RBAC admin UI
 - [Mystics ERP Drizzle pool pitfall](mystics-erp-drizzle-pool-pitfall.md) — approval_requests insert must use dedicated pg.Client; Drizzle leaks pool connections on FK errors; users table IDs start at 5
+- [Mystics ERP GRN module](mystics-erp-grn-module.md) — comprehensive GRN schema with Cancelled/Reversed statuses, batch/serial/barcode tracking, grn_comments table, stock ledger write-through on approval, cancel/reverse endpoints

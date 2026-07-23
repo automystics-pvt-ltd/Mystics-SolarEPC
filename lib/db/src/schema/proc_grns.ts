@@ -1,11 +1,11 @@
 import {
-  pgTable, serial, text, varchar, integer, numeric, timestamp, json, pgEnum, index,
+  pgTable, serial, text, varchar, integer, numeric, timestamp, json, pgEnum, index, boolean,
 } from "drizzle-orm/pg-core";
 import { procurementPOsTable } from "./proc_pos";
 import { vendorsTable } from "./vendors";
 
 export const procGRNStatusEnum = pgEnum("proc_grn_status", [
-  "Draft", "Submitted", "Accepted", "PartiallyAccepted", "Rejected",
+  "Draft", "Submitted", "Accepted", "PartiallyAccepted", "Rejected", "Cancelled", "Reversed",
 ]);
 
 export const procGRNItemQCStatusEnum = pgEnum("proc_grn_item_qc_status", [
@@ -19,6 +19,14 @@ export const procGRNsTable = pgTable("proc_grns", {
   vendorId: integer("vendor_id").references(() => vendorsTable.id),
   vendorName: text("vendor_name").notNull(),
   status: procGRNStatusEnum("status").default("Draft").notNull(),
+
+  // Lock — set true once Accepted/PartiallyAccepted; prevents further edits
+  isLocked: boolean("is_locked").default(false).notNull(),
+
+  // Warehouse where goods are received
+  warehouseId: integer("warehouse_id"),
+  warehouseName: text("warehouse_name"),
+  storageLocation: text("storage_location"), // zone/rack/bin freetext
 
   deliveryDate: varchar("delivery_date", { length: 20 }),
   vehicleNumber: varchar("vehicle_number", { length: 30 }),
@@ -41,6 +49,18 @@ export const procGRNsTable = pgTable("proc_grns", {
   rejectedAt: timestamp("rejected_at"),
   approvalRemarks: text("approval_remarks"),
 
+  // Cancellation
+  cancelledAt: timestamp("cancelled_at"),
+  cancelledBy: integer("cancelled_by"),
+  cancelledByName: text("cancelled_by_name"),
+  cancellationReason: text("cancellation_reason"),
+
+  // Reversal (undo an accepted GRN)
+  reversedAt: timestamp("reversed_at"),
+  reversedBy: integer("reversed_by"),
+  reversedByName: text("reversed_by_name"),
+  reversalReason: text("reversal_reason"),
+
   totalOrderedQty: numeric("total_ordered_qty", { precision: 12, scale: 3 }).default("0"),
   totalReceivedQty: numeric("total_received_qty", { precision: 12, scale: 3 }).default("0"),
   totalAcceptedQty: numeric("total_accepted_qty", { precision: 12, scale: 3 }).default("0"),
@@ -55,11 +75,8 @@ export const procGRNsTable = pgTable("proc_grns", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => [
-  // Dashboard: pending GRNs filter (Draft + Submitted)
   index("grn_status_idx").on(table.status),
-  // Dashboard: date-range activity feed
   index("grn_created_at_idx").on(table.createdAt),
-  // GRN list: filter by PO
   index("grn_po_id_idx").on(table.poId),
   index("grn_vendor_id_idx").on(table.vendorId),
 ]);
@@ -89,6 +106,15 @@ export const procGRNItemsTable = pgTable("proc_grn_items", {
   rejectionReason: text("rejection_reason"),
   itemRemarks: text("item_remarks"),
 
+  // Batch / serial / traceability
+  batchNumber: varchar("batch_number", { length: 100 }),
+  serialNumbers: text("serial_numbers"),        // JSON array or comma-separated
+  expiryDate: varchar("expiry_date", { length: 20 }),
+  barcodeData: varchar("barcode_data", { length: 200 }),
+
+  // Storage assignment
+  storageLocation: text("storage_location"),    // zone-rack-bin freetext
+
   unitPrice: numeric("unit_price", { precision: 14, scale: 2 }).default("0"),
   acceptedValue: numeric("accepted_value", { precision: 14, scale: 2 }).default("0"),
 }, (table) => [
@@ -107,4 +133,21 @@ export const procGRNAuditLogsTable = pgTable("proc_grn_audit_logs", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => [
   index("grn_audit_grn_id_idx").on(table.grnId),
+]);
+
+// Comments — threaded, optional attachment
+export const grnCommentsTable = pgTable("grn_comments", {
+  id: serial("id").primaryKey(),
+  grnId: integer("grn_id").notNull().references(() => procGRNsTable.id, { onDelete: "cascade" }),
+  parentId: integer("parent_id"),               // null = top-level
+  userId: integer("user_id"),
+  userName: text("user_name"),
+  userRole: varchar("user_role", { length: 50 }),
+  body: text("body").notNull(),
+  attachmentUrl: text("attachment_url"),
+  attachmentName: text("attachment_name"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("grn_comment_grn_id_idx").on(table.grnId),
 ]);
