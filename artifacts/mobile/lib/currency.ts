@@ -1,17 +1,15 @@
 /**
- * Currency formatting for Mystics Field App (INR / en-IN)
+ * Currency formatting for Mystics Field App — Indian Rupees (INR / en-IN)
+ *
+ * ₹ is prepended manually so it works regardless of ICU data availability.
  */
 
 const LOCALE = 'en-IN';
 
-/** Full INR locale string: ₹12,34,567 */
+/** Full locale string: ₹12,34,567 */
 export function formatINR(v?: number | null): string {
   if (v == null || isNaN(Number(v))) return '₹0';
-  return Number(v).toLocaleString(LOCALE, {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
-  });
+  return `₹${Number(v).toLocaleString(LOCALE, { maximumFractionDigits: 0 })}`;
 }
 
 /** Compact notation: ₹1.20 Cr / ₹45.6 L / ₹1.5k */
