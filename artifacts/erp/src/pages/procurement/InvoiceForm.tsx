@@ -1,5 +1,9 @@
-import { useState, useEffect } from "react";
-import { useGetProcurementPOs, useGetProcurementPO, useGetProcGrns, useGetProcGrn, useCreateProcInvoice, getGetProcInvoicesQueryKey, getGetProcurementPOQueryKey, getGetProcGrnsQueryKey, getGetProcGrnQueryKey } from "@workspace/api-client-react";
+import { useState, useEffect, useRef } from "react";
+import {
+  useGetProcurementPOs, useGetProcurementPO, useGetProcGrns, useGetProcGrn,
+  useCreateProcInvoice, getGetProcInvoicesQueryKey, getGetProcurementPOQueryKey,
+  getGetProcGrnsQueryKey, getGetProcGrnQueryKey,
+} from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -12,7 +16,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Save, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
+import { Save, AlertTriangle, CheckCircle2, Loader2, Building2, Info } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
 import { PageHeader, SectionCard, StatusBadge } from "@/components/shared";
@@ -20,32 +24,64 @@ import { PageHeader, SectionCard, StatusBadge } from "@/components/shared";
 const fmt = (n: number | null | undefined) =>
   n != null ? `₹${Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : "—";
 
+const PAYMENT_TERMS = [
+  { label: "Immediate", value: "Immediate", days: 0 },
+  { label: "Net 15", value: "Net 15", days: 15 },
+  { label: "Net 30", value: "Net 30", days: 30 },
+  { label: "Net 45", value: "Net 45", days: 45 },
+  { label: "Net 60", value: "Net 60", days: 60 },
+  { label: "Net 90", value: "Net 90", days: 90 },
+  { label: "Net 120", value: "Net 120", days: 120 },
+  { label: "Custom", value: "Custom", days: null },
+];
+
+const INVOICE_TYPES = [
+  { label: "Standard Invoice", value: "Standard", desc: "Regular supplier invoice against a PO/GRN" },
+  { label: "Credit Note", value: "CreditNote", desc: "Reduces the amount owed to the supplier" },
+  { label: "Debit Note", value: "DebitNote", desc: "Increases the amount owed (additional charges)" },
+];
+
 export default function InvoiceForm({ poId: initPoId, grnId: initGrnId }: { poId?: string; grnId?: string }) {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const qc = useQueryClient();
   const user = (() => { try { return JSON.parse(localStorage.getItem("mystics_user") ?? "{}"); } catch { return {}; } })();
 
+  const [invoiceType, setInvoiceType] = useState("Standard");
   const [selectedPoId, setSelectedPoId] = useState<string>(initPoId ?? "");
   const [selectedGrnId, setSelectedGrnId] = useState<string>(initGrnId ?? "");
   const [vendorInvoiceNumber, setVendorInvoiceNumber] = useState("");
-  const [vendorInvoiceDate, setVendorInvoiceDate] = useState("");
+  const [vendorInvoiceDate, setVendorInvoiceDate] = useState(new Date().toISOString().slice(0, 10));
+  const [paymentTerms, setPaymentTerms] = useState("");
+  const [paymentTermsDays, setPaymentTermsDays] = useState<string>("");
+  const [dueDate, setDueDate] = useState("");
   const [freightCharges, setFreightCharges] = useState("0");
   const [otherCharges, setOtherCharges] = useState("0");
+  const [discountAmount, setDiscountAmount] = useState("0");
   const [tdsAmount, setTdsAmount] = useState("0");
   const [internalNotes, setInternalNotes] = useState("");
   const [lineItems, setLineItems] = useState<any[]>([]);
-  const [matchPreview, setMatchPreview] = useState<any[]>([]);
+  // Bank details
+  const [bankName, setBankName] = useState("");
+  const [bankAccount, setBankAccount] = useState("");
+  const [bankIfsc, setBankIfsc] = useState("");
+  const [bankBranch, setBankBranch] = useState("");
+  const [showBankDetails, setShowBankDetails] = useState(false);
 
   const { data: allPOs = [] } = useGetProcurementPOs({});
-  const { data: poData } = useGetProcurementPO(Number(selectedPoId), { query: { enabled: !!selectedPoId, queryKey: getGetProcurementPOQueryKey(Number(selectedPoId)) } });
+  const { data: poData } = useGetProcurementPO(Number(selectedPoId), {
+    query: { enabled: !!selectedPoId, queryKey: getGetProcurementPOQueryKey(Number(selectedPoId)) }
+  });
   const { data: poGRNs = [] } = useGetProcGrns(
     selectedPoId ? { poId: Number(selectedPoId) } : {},
     { query: { enabled: !!selectedPoId, queryKey: getGetProcGrnsQueryKey(selectedPoId ? { poId: Number(selectedPoId) } : {}) } }
   );
   const hasGrn = !!selectedGrnId && selectedGrnId !== "none";
-  const { data: grnData } = useGetProcGrn(Number(selectedGrnId), { query: { enabled: hasGrn, queryKey: getGetProcGrnQueryKey(Number(selectedGrnId)) } });
+  const { data: grnData } = useGetProcGrn(Number(selectedGrnId), {
+    query: { enabled: hasGrn, queryKey: getGetProcGrnQueryKey(Number(selectedGrnId)) }
+  });
 
+  // Auto-populate from PO
   useEffect(() => {
     const po = poData as any;
     if (!po?.items?.length) return;
@@ -57,23 +93,36 @@ export default function InvoiceForm({ poId: initPoId, grnId: initGrnId }: { poId
       const invoicedQty = hasGrn ? receivedQty : orderedQty;
       const isMatched = hasGrn ? Math.abs(invoicedQty - receivedQty) < 0.001 : true;
       return {
-        poItemId: poItem.id,
-        grnItemId: grnItem?.id ?? null,
-        materialName: poItem.materialName,
-        materialCode: poItem.materialCode,
-        uom: poItem.uom,
-        hsnSacCode: poItem.hsnSacCode,
-        unitPrice: poItem.unitPrice,
-        gstRate: poItem.gstRate,
-        discountPct: poItem.discountPct ?? 0,
-        orderedQty, receivedQty,
-        invoicedQty: invoicedQty.toString(),
-        isMatched,
+        poItemId: poItem.id, grnItemId: grnItem?.id ?? null,
+        materialName: poItem.materialName, materialCode: poItem.materialCode,
+        uom: poItem.uom, hsnSacCode: poItem.hsnSacCode,
+        unitPrice: poItem.unitPrice, gstRate: poItem.gstRate, discountPct: poItem.discountPct ?? 0,
+        orderedQty, receivedQty, invoicedQty: invoicedQty.toString(), isMatched,
       };
     });
     setLineItems(items);
-    setMatchPreview(items);
+    // Auto-fill payment terms from PO
+    if (po.paymentTerms && !paymentTerms) {
+      setPaymentTerms(po.paymentTerms);
+    }
   }, [poData, grnData, selectedPoId, selectedGrnId]);
+
+  // Auto-calculate due date when payment terms or invoice date changes
+  const prevTermsRef = useRef<string>("");
+  useEffect(() => {
+    if (!vendorInvoiceDate) return;
+    const termDef = PAYMENT_TERMS.find(t => t.value === paymentTerms);
+    if (termDef && termDef.days !== null) {
+      const d = new Date(vendorInvoiceDate);
+      d.setDate(d.getDate() + termDef.days);
+      setDueDate(d.toISOString().slice(0, 10));
+    } else if (paymentTerms === "Custom" && paymentTermsDays) {
+      const d = new Date(vendorInvoiceDate);
+      d.setDate(d.getDate() + Number(paymentTermsDays));
+      setDueDate(d.toISOString().slice(0, 10));
+    }
+    prevTermsRef.current = paymentTerms;
+  }, [paymentTerms, paymentTermsDays, vendorInvoiceDate]);
 
   const updateItem = (idx: number, field: string, value: string) => {
     setLineItems(prev => prev.map((item, i) => {
@@ -98,22 +147,32 @@ export default function InvoiceForm({ poId: initPoId, grnId: initGrnId }: { poId
     const taxable = (Number(i.invoicedQty) || 0) * (Number(i.unitPrice) || 0) * (1 - (Number(i.discountPct) || 0) / 100);
     return s + taxable * (Number(i.gstRate) || 18) / 100;
   }, 0);
-  const totalAmount = subtotal + totalGst + Number(freightCharges) + Number(otherCharges);
+  const totalAmount = subtotal + totalGst + Number(freightCharges) + Number(otherCharges) - Number(discountAmount);
   const netPayable = totalAmount - Number(tdsAmount);
 
   const createMut = useCreateProcInvoice();
 
   const handleSubmit = () => {
     if (!selectedPoId) { toast({ title: "Select a PO", variant: "destructive" }); return; }
+    const termDef = PAYMENT_TERMS.find(t => t.value === paymentTerms);
     createMut.mutate({
       data: {
         poId: Number(selectedPoId),
         grnId: hasGrn ? Number(selectedGrnId) : undefined,
+        invoiceType,
         vendorInvoiceNumber: vendorInvoiceNumber || undefined,
         vendorInvoiceDate: vendorInvoiceDate || undefined,
+        paymentTerms: paymentTerms || undefined,
+        paymentTermsDays: paymentTerms === "Custom" ? Number(paymentTermsDays) : termDef?.days ?? undefined,
+        dueDate: dueDate || undefined,
         freightCharges: Number(freightCharges),
         otherCharges: Number(otherCharges),
+        discountAmount: Number(discountAmount),
         tdsAmount: Number(tdsAmount),
+        bankName: bankName || undefined,
+        bankAccount: bankAccount || undefined,
+        bankIfsc: bankIfsc || undefined,
+        bankBranch: bankBranch || undefined,
         internalNotes: internalNotes || undefined,
         userName: user.name, userId: user.id,
         items: lineItems.map(i => ({
@@ -127,32 +186,58 @@ export default function InvoiceForm({ poId: initPoId, grnId: initGrnId }: { poId
     }, {
       onSuccess: (inv: any) => {
         qc.invalidateQueries({ queryKey: getGetProcInvoicesQueryKey() });
-        toast({ title: `Invoice ${inv.invoiceNumber} created${inv.matchStatus === "MismatchPending" ? " (mismatch flagged)" : ""}` });
+        let msg = `Invoice ${inv.invoiceNumber} created`;
+        if (inv.isDuplicateFlagged) msg += " — DUPLICATE FLAG raised";
+        else if (inv.matchStatus === "MismatchPending") msg += " (mismatch flagged)";
+        toast({ title: msg });
         setLocation(`/procurement/invoices/${inv.id}`);
       },
-      onError: (e: any) => toast({ title: "Failed", description: e?.message, variant: "destructive" }),
+      onError: (e: any) => toast({ title: "Failed", description: e?.response?.data?.error ?? e?.message, variant: "destructive" }),
     });
   };
 
   const [showConfirm, setShowConfirm] = useState(false);
   const acceptedGRNs = (poGRNs as any[]).filter(g => ["Accepted", "PartiallyAccepted"].includes(g.status));
   const selectedPO = (allPOs as any[]).find(p => String(p.id) === selectedPoId);
+  const termsDef = PAYMENT_TERMS.find(t => t.value === paymentTerms);
 
   return (
-    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-10">
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-5 pb-10">
       <PageHeader
         title="New Invoice"
         subtitle="Create invoice against a purchase order and GRN"
         backHref="/procurement/invoices"
       />
 
-      {/* Select References */}
-      <SectionCard title="Select References">
+      {/* Invoice Type */}
+      <SectionCard title="Invoice Type">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {INVOICE_TYPES.map(t => (
+            <button key={t.value} type="button"
+              onClick={() => setInvoiceType(t.value)}
+              className={cn(
+                "flex flex-col gap-1 p-4 rounded-xl border-2 text-left transition-all",
+                invoiceType === t.value
+                  ? "border-primary bg-primary/5"
+                  : "border-border hover:border-primary/40"
+              )}>
+              <div className="flex items-center gap-2">
+                {invoiceType === t.value && <CheckCircle2 className="w-4 h-4 text-primary" />}
+                <span className="text-sm font-semibold text-foreground">{t.label}</span>
+              </div>
+              <span className="text-xs text-muted-foreground">{t.desc}</span>
+            </button>
+          ))}
+        </div>
+      </SectionCard>
+
+      {/* References */}
+      <SectionCard title="Purchase Order & GRN">
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Purchase Order *</Label>
-              <Select value={selectedPoId} onValueChange={v => { setSelectedPoId(v); setSelectedGrnId(""); }}>
+              <Select value={selectedPoId} onValueChange={v => { setSelectedPoId(v); setSelectedGrnId(""); setLineItems([]); }}>
                 <SelectTrigger><SelectValue placeholder="Choose a PO…" /></SelectTrigger>
                 <SelectContent>
                   {(allPOs as any[]).filter(p => !["Draft", "Cancelled"].includes(p.status)).map((po: any) => (
@@ -162,7 +247,7 @@ export default function InvoiceForm({ poId: initPoId, grnId: initGrnId }: { poId
               </Select>
             </div>
             <div>
-              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">GRN (optional — enables 3-way match)</Label>
+              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">GRN (enables 3-way match)</Label>
               <Select value={selectedGrnId} onValueChange={setSelectedGrnId} disabled={!selectedPoId}>
                 <SelectTrigger><SelectValue placeholder={acceptedGRNs.length === 0 ? "No accepted GRNs" : "Select GRN…"} /></SelectTrigger>
                 <SelectContent>
@@ -174,7 +259,6 @@ export default function InvoiceForm({ poId: initPoId, grnId: initGrnId }: { poId
               </Select>
             </div>
           </div>
-
           {selectedPO && (
             <div className="bg-muted/30 rounded-lg p-3 text-sm grid grid-cols-2 md:grid-cols-4 gap-2 border border-border">
               <div><span className="text-muted-foreground">PO#:</span> <span className="font-mono font-medium">{selectedPO.poNumber}</span></div>
@@ -186,37 +270,47 @@ export default function InvoiceForm({ poId: initPoId, grnId: initGrnId }: { poId
         </div>
       </SectionCard>
 
-      {/* Invoice Details */}
+      {/* Invoice Reference Details */}
       <SectionCard title="Invoice Details">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Vendor Invoice Number</Label>
             <Input value={vendorInvoiceNumber} onChange={e => setVendorInvoiceNumber(e.target.value)} placeholder="e.g. VEN/2024/001" className="h-9" />
+            {vendorInvoiceNumber && (
+              <p className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1">
+                <Info className="w-3 h-3" /> Duplicates are checked on submission
+              </p>
+            )}
           </div>
           <div>
             <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Vendor Invoice Date</Label>
             <Input type="date" value={vendorInvoiceDate} onChange={e => setVendorInvoiceDate(e.target.value)} className="h-9" />
           </div>
           <div>
-            <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Freight Charges</Label>
-            <Input type="number" min="0" value={freightCharges} onChange={e => setFreightCharges(e.target.value)} className="h-9" />
+            <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Payment Terms</Label>
+            <Select value={paymentTerms} onValueChange={setPaymentTerms}>
+              <SelectTrigger className="h-9"><SelectValue placeholder="Select terms…" /></SelectTrigger>
+              <SelectContent>
+                {PAYMENT_TERMS.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
+          {paymentTerms === "Custom" && (
+            <div>
+              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Custom Days</Label>
+              <Input type="number" min="0" value={paymentTermsDays} onChange={e => setPaymentTermsDays(e.target.value)} placeholder="e.g. 45" className="h-9" />
+            </div>
+          )}
           <div>
-            <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Other Charges</Label>
-            <Input type="number" min="0" value={otherCharges} onChange={e => setOtherCharges(e.target.value)} className="h-9" />
-          </div>
-          <div>
-            <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">TDS Deduction</Label>
-            <Input type="number" min="0" value={tdsAmount} onChange={e => setTdsAmount(e.target.value)} className="h-9" />
-          </div>
-          <div className="bg-foreground rounded-lg p-3 text-background flex flex-col justify-center">
-            <p className="text-xs text-background/60">Net Payable</p>
-            <p className="text-xl font-bold font-mono">{fmt(netPayable)}</p>
+            <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">
+              Due Date {termsDef?.days !== null && dueDate && <span className="text-emerald-600 font-normal">(auto-calculated)</span>}
+            </Label>
+            <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className="h-9" />
           </div>
         </div>
       </SectionCard>
 
-      {/* 3-Way Match Verification */}
+      {/* 3-Way Match */}
       {lineItems.length > 0 && (
         <SectionCard
           title="3-Way Match Verification"
@@ -232,7 +326,7 @@ export default function InvoiceForm({ poId: initPoId, grnId: initGrnId }: { poId
             <table className="w-full text-sm min-w-max">
               <thead className="bg-muted/40 border-b border-border">
                 <tr>
-                  {["Material", "UOM", "PO Ordered", "GRN Accepted", "Invoiced Qty", "Unit Price", "GST%", "Line Total", "Match"].map(h => (
+                  {["Material", "UOM", "PO Ordered", "GRN Accepted", "Invoiced Qty", "Unit Price", "Disc%", "GST%", "Line Total", "Match"].map(h => (
                     <th key={h} className="text-left px-4 py-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-[0.08em] whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
@@ -244,18 +338,17 @@ export default function InvoiceForm({ poId: initPoId, grnId: initGrnId }: { poId
                   const gstAmt = taxable * (Number(item.gstRate) || 18) / 100;
                   const lineTotal = taxable + gstAmt;
                   return (
-                    <tr key={idx} className={cn(
-                      "hover:bg-muted/20",
-                      !item.isMatched ? "border-l-2 border-l-red-400" : "border-l-2 border-l-emerald-400"
-                    )}>
+                    <tr key={idx} className={cn("hover:bg-muted/20", !item.isMatched ? "border-l-2 border-l-red-400" : "border-l-2 border-l-emerald-400")}>
                       <td className="px-4 py-3"><p className="font-medium text-foreground max-w-40 truncate">{item.materialName}</p></td>
                       <td className="px-4 py-3 text-muted-foreground">{item.uom}</td>
                       <td className="px-4 py-3 font-mono">{item.orderedQty}</td>
                       <td className="px-4 py-3 font-mono text-blue-700 dark:text-blue-400">{item.receivedQty || "—"}</td>
                       <td className="px-4 py-3">
-                        <Input type="number" min="0" value={item.invoicedQty} onChange={e => updateItem(idx, "invoicedQty", e.target.value)} className={cn("h-8 w-24 font-mono", !item.isMatched && "border-red-300 bg-red-50 dark:bg-red-950/20")} />
+                        <Input type="number" min="0" value={item.invoicedQty} onChange={e => updateItem(idx, "invoicedQty", e.target.value)}
+                          className={cn("h-8 w-24 font-mono", !item.isMatched && "border-red-300 bg-red-50 dark:bg-red-950/20")} />
                       </td>
                       <td className="px-4 py-3 font-mono">{fmt(item.unitPrice)}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{item.discountPct > 0 ? `${item.discountPct}%` : "—"}</td>
                       <td className="px-4 py-3">{item.gstRate}%</td>
                       <td className="px-4 py-3 font-mono font-bold">{fmt(lineTotal)}</td>
                       <td className="px-4 py-3 text-center">
@@ -270,6 +363,78 @@ export default function InvoiceForm({ poId: initPoId, grnId: initGrnId }: { poId
         </SectionCard>
       )}
 
+      {/* Charges & Totals */}
+      <SectionCard title="Charges & Summary">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+          <div>
+            <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Freight Charges</Label>
+            <Input type="number" min="0" value={freightCharges} onChange={e => setFreightCharges(e.target.value)} className="h-9" />
+          </div>
+          <div>
+            <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Other Charges</Label>
+            <Input type="number" min="0" value={otherCharges} onChange={e => setOtherCharges(e.target.value)} className="h-9" />
+          </div>
+          <div>
+            <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Invoice Discount (₹)</Label>
+            <Input type="number" min="0" value={discountAmount} onChange={e => setDiscountAmount(e.target.value)} className="h-9" />
+          </div>
+          <div>
+            <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">TDS Deduction</Label>
+            <Input type="number" min="0" value={tdsAmount} onChange={e => setTdsAmount(e.target.value)} className="h-9" />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          {[
+            { label: "Subtotal", value: fmt(subtotal) },
+            { label: "GST", value: fmt(totalGst) },
+            { label: "Discount", value: discountAmount !== "0" ? `-${fmt(Number(discountAmount))}` : "—" },
+            { label: "TDS", value: tdsAmount !== "0" ? `-${fmt(Number(tdsAmount))}` : "—" },
+            { label: "Net Payable", value: fmt(netPayable), highlight: true },
+          ].map(s => (
+            <div key={s.label} className={cn("rounded-xl border p-3 text-center", s.highlight ? "bg-foreground text-background border-foreground" : "bg-card border-border")}>
+              <p className={cn("font-mono font-bold text-sm", s.highlight ? "text-background" : "text-foreground")}>{s.value}</p>
+              <p className={cn("text-[10px] mt-0.5", s.highlight ? "text-background/60" : "text-muted-foreground")}>{s.label}</p>
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+
+      {/* Bank Details (toggle) */}
+      <SectionCard
+        title="Bank Details"
+        subtitle="Optional — capture vendor bank details for payment reference"
+        badge={
+          <button type="button" onClick={() => setShowBankDetails(v => !v)}
+            className="text-[11px] text-primary font-semibold hover:underline">
+            {showBankDetails ? "Hide" : "Add"}
+          </button>
+        }
+      >
+        {showBankDetails && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Bank Name</Label>
+              <Input value={bankName} onChange={e => setBankName(e.target.value)} placeholder="e.g. State Bank of India" className="h-9" />
+            </div>
+            <div>
+              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Account Number</Label>
+              <Input value={bankAccount} onChange={e => setBankAccount(e.target.value)} placeholder="Account number" className="h-9 font-mono" />
+            </div>
+            <div>
+              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">IFSC Code</Label>
+              <Input value={bankIfsc} onChange={e => setBankIfsc(e.target.value.toUpperCase())} placeholder="e.g. SBIN0001234" className="h-9 font-mono uppercase" />
+            </div>
+            <div>
+              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Branch</Label>
+              <Input value={bankBranch} onChange={e => setBankBranch(e.target.value)} placeholder="Branch name" className="h-9" />
+            </div>
+          </div>
+        )}
+        {!showBankDetails && (
+          <p className="text-sm text-muted-foreground">Click "Add" above to capture vendor bank details.</p>
+        )}
+      </SectionCard>
+
       {/* Internal Notes */}
       <SectionCard title="Internal Notes">
         <Textarea value={internalNotes} onChange={e => setInternalNotes(e.target.value)} placeholder="Any internal notes…" className="min-h-16" />
@@ -280,16 +445,17 @@ export default function InvoiceForm({ poId: initPoId, grnId: initGrnId }: { poId
           <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
           <div>
             <p className="font-bold text-red-800 dark:text-red-300">Quantity Mismatch Detected</p>
-            <p className="text-sm text-red-700 dark:text-red-400 mt-0.5">The invoice will be created with a mismatch flag. An approver must approve the mismatch before this invoice can be submitted.</p>
+            <p className="text-sm text-red-700 dark:text-red-400 mt-0.5">The invoice will be created with a mismatch flag. An approver must sign off the mismatch before this invoice can be submitted.</p>
           </div>
         </div>
       )}
 
       <div className="flex justify-end gap-3">
         <Button variant="outline" onClick={() => setLocation("/procurement/invoices")}>Cancel</Button>
-        <Button className="gap-2 bg-orange-500 hover:bg-orange-600" onClick={() => setShowConfirm(true)} disabled={createMut.isPending || !selectedPoId}>
+        <Button className={cn("gap-2", invoiceType === "CreditNote" ? "bg-purple-600 hover:bg-purple-700" : invoiceType === "DebitNote" ? "bg-orange-500 hover:bg-orange-600" : "bg-orange-500 hover:bg-orange-600")}
+          onClick={() => setShowConfirm(true)} disabled={createMut.isPending || !selectedPoId}>
           {createMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          {createMut.isPending ? "Creating…" : "Create Invoice"}
+          {createMut.isPending ? "Creating…" : `Create ${invoiceType === "CreditNote" ? "Credit Note" : invoiceType === "DebitNote" ? "Debit Note" : "Invoice"}`}
         </Button>
       </div>
 
@@ -301,17 +467,9 @@ export default function InvoiceForm({ poId: initPoId, grnId: initGrnId }: { poId
             </AlertDialogTitle>
             <AlertDialogDescription>
               {hasMismatch ? (
-                <>
-                  One or more line items have quantities that don&apos;t match the GRN.
-                  The invoice will be created with a <strong>Mismatch Pending</strong> flag
-                  and will require explicit sign-off before it can be approved.
-                </>
+                <>One or more line items have quantities that don&apos;t match the GRN. The invoice will be created with a <strong>Mismatch Pending</strong> flag and will require explicit sign-off before it can be approved.</>
               ) : (
-                <>
-                  You are about to create an invoice for{" "}
-                  <strong>{fmt(netPayable)}</strong> net payable.
-                  This action cannot be undone.
-                </>
+                <>You are about to create {invoiceType === "CreditNote" ? "a Credit Note" : invoiceType === "DebitNote" ? "a Debit Note" : "an invoice"} for <strong>{fmt(netPayable)}</strong> net payable{dueDate ? ` due on ${dueDate}` : ""} from <strong>{selectedPO?.vendorName}</strong>.</>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -321,7 +479,7 @@ export default function InvoiceForm({ poId: initPoId, grnId: initGrnId }: { poId
               className={hasMismatch ? "bg-red-600 hover:bg-red-700 text-white" : "bg-orange-500 hover:bg-orange-600 text-white"}
               onClick={() => { setShowConfirm(false); handleSubmit(); }}
             >
-              {hasMismatch ? "Create with Mismatch Flag" : "Confirm & Create Invoice"}
+              {hasMismatch ? "Create with Mismatch Flag" : "Confirm & Create"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
