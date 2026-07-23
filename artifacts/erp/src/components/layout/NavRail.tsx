@@ -20,6 +20,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/lib/auth";
 import { addRecentEntry, clearRecentEntries } from "@/lib/recentHistory";
+import { useNavState } from "@/lib/nav-state";
 import { useQuery } from "@tanstack/react-query";
 import { apiGet } from "@/lib/fetch";
 import { cn } from "@/lib/utils";
@@ -647,6 +648,10 @@ export function NavRail() {
     return !e.roles || e.roles.includes(role);
   }) as RailEntry[];
 
+  // Publish flyout open state to Shell via context
+  const { setNavOpen } = useNavState();
+  useEffect(() => { setNavOpen(!!openKey); }, [openKey, setNavOpen]);
+
   // Close flyout on navigation
   useEffect(() => { setOpenKey(null); }, [location]);
 
@@ -789,19 +794,7 @@ export function NavRail() {
       <AnimatePresence>
         {showFlyout && (
           <>
-            {/* Backdrop — starts at rail edge, doesn't cover rail */}
-            <motion.div
-              key="flyout-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className="fixed inset-0 left-[60px] z-[28] hidden lg:block"
-              onClick={closeFlyout}
-              aria-hidden
-            />
-
-            {/* Panel */}
+            {/* Panel — pushes content via Shell margin, no overlay backdrop */}
             <motion.div
               key={`flyout-${openKey}`}
               initial={{ x: -20, opacity: 0 }}

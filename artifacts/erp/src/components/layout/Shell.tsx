@@ -4,6 +4,7 @@ import { Topbar } from "./Topbar";
 import { LayoutDashboard, Users, FolderKanban, ShoppingCart, Warehouse } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
+import { NavStateProvider, useNavState } from "@/lib/nav-state";
 
 /* ── Mobile bottom-nav tabs ──────────────────────────────────────── */
 const BOTTOM_TABS = [
@@ -16,8 +17,9 @@ const BOTTOM_TABS = [
 
 interface ShellProps { children: ReactNode }
 
-export function Shell({ children }: ShellProps) {
+function ShellInner({ children }: ShellProps) {
   const [location] = useLocation();
+  const { navOpen } = useNavState();
 
   return (
     <div className="flex h-[100dvh] w-full overflow-hidden bg-background print:block print:h-auto print:overflow-visible">
@@ -27,8 +29,14 @@ export function Shell({ children }: ShellProps) {
         <NavRail />
       </div>
 
-      {/* ── Main column ── */}
-      <div className="flex flex-1 flex-col overflow-hidden min-w-0 relative print:block print:overflow-visible">
+      {/* ── Main column — shifts right when flyout is open ── */}
+      <div
+        className={cn(
+          "flex flex-1 flex-col overflow-hidden min-w-0 relative print:block print:overflow-visible",
+          "transition-[margin-left] duration-200 ease-out",
+          navOpen ? "lg:ml-60" : "lg:ml-0"
+        )}
+      >
 
         {/* Sticky topbar */}
         <div className="print:hidden shrink-0">
@@ -40,7 +48,7 @@ export function Shell({ children }: ShellProps) {
           id="main-content"
           className="flex-1 overflow-y-auto scrollbar-thin print:overflow-visible pb-[calc(1.5rem+4rem)] lg:pb-0"
         >
-          <div className="mx-auto w-full max-w-[1600px] px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-7 print:px-0 print:py-0">
+          <div className="w-full px-4 py-4 print:px-0 print:py-0">
             {children}
           </div>
         </main>
@@ -81,5 +89,13 @@ export function Shell({ children }: ShellProps) {
         </div>
       </nav>
     </div>
+  );
+}
+
+export function Shell({ children }: ShellProps) {
+  return (
+    <NavStateProvider>
+      <ShellInner>{children}</ShellInner>
+    </NavStateProvider>
   );
 }
