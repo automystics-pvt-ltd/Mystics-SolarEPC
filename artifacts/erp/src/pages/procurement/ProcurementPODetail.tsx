@@ -22,6 +22,16 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
+import { StatusBadge, DetailRow, DetailGrid, SectionCard, PageHeader } from "@/components/shared";
+
+function formatDate(d?: string | null) {
+  if (!d) return "—";
+  try {
+    return new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "short", year: "2-digit" }).format(new Date(d));
+  } catch {
+    return d;
+  }
+}
 
 const STATUS_CONFIG: Record<string, { color: string; label: string }> = {
   Draft:            { color: "bg-slate-100 text-slate-600 border-slate-200",   label: "Draft" },
@@ -105,12 +115,11 @@ export default function ProcurementPODetail({ id }: { id: string }) {
 
   if (isLoading || !po) return (
     <div className="flex h-60 items-center justify-center">
-      <div className="animate-pulse text-slate-400">Loading PO…</div>
+      <div className="animate-pulse text-muted-foreground">Loading PO…</div>
     </div>
   );
 
   const p = po as any;
-  const cfg = STATUS_CONFIG[p.status ?? "Draft"] ?? STATUS_CONFIG["Draft"];
   const fmt = (n: number | null | undefined) =>
     n !== null && n !== undefined ? `₹${Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : "—";
   const deadline = p.deliveryDeadline ?? p.expectedDeliveryDate;
@@ -169,39 +178,17 @@ export default function ProcurementPODetail({ id }: { id: string }) {
   const invUrl   = `/procurement/invoices/new?poId=${p.id}`;
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5 pb-12">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25 }} className="space-y-5 pb-12">
 
-      {/* Overdue banner */}
-      {isOverdue && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3">
-          <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
-          <div>
-            <p className="font-bold text-red-800">Delivery Overdue by {daysOverdue} day{daysOverdue !== 1 ? "s" : ""}</p>
-            <p className="text-sm text-red-700">Deadline was {deadline}. Follow up with the vendor immediately.</p>
-          </div>
-        </div>
-      )}
-
-      {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="bg-white border border-slate-200 rounded-xl p-5">
-        <div className="flex items-start justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="icon" onClick={() => setLocation("/procurement/pos")} className="h-9 w-9 shrink-0">
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-xl font-bold font-mono text-slate-900">{p.poNumber}</h1>
-                <Badge variant="outline" className={cn("text-sm font-semibold", cfg.color)}>{cfg.label}</Badge>
-                {isOverdue && <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">Overdue</Badge>}
-              </div>
-              <p className="text-sm text-slate-500 mt-1">
-                {p.vendorName} · PO date {p.poDate ?? "—"}
-                {p.createdByName ? ` · Created by ${p.createdByName}` : ""}
-              </p>
-            </div>
-          </div>
+      {/* ── Page Header ─────────────────────────────────────────────────────── */}
+      <PageHeader
+        title={p.poNumber}
+        subtitle={`${p.vendorName ?? ""}${p.createdByName ? ` · Created by ${p.createdByName}` : ""}`}
+        actions={
           <div className="flex items-center gap-2 print:hidden">
+            <Button variant="outline" size="sm" onClick={() => setLocation("/procurement/pos")} className="gap-1.5">
+              <ArrowLeft className="w-3.5 h-3.5" /> Back
+            </Button>
             <Button variant="outline" size="sm" className="gap-1.5" onClick={() => window.print()}>
               <Printer className="w-3.5 h-3.5" /> Print
             </Button>
@@ -216,43 +203,65 @@ export default function ProcurementPODetail({ id }: { id: string }) {
               </Button>
             )}
           </div>
-        </div>
+        }
+      />
 
-        {/* Timeline */}
-        <div className="mt-6 pt-4 border-t border-slate-100">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Workflow Timeline</p>
-          <div className="flex items-start overflow-x-auto pb-2">
-            {TIMELINE_STEPS.map((step, idx) => {
-              const state = getStepState(step.key, p);
-              const Icon = step.icon;
-              const isLast = idx === TIMELINE_STEPS.length - 1;
-              return (
-                <div key={step.key} className="flex items-center">
-                  <div className="flex flex-col items-center min-w-[80px]">
-                    <div className={cn(
-                      "w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all",
-                      state === "done"   ? "bg-orange-500 border-orange-500 text-white" :
-                      state === "active" ? "bg-white border-orange-400 text-orange-500" :
-                                          "bg-slate-100 border-slate-200 text-slate-400"
-                    )}>
-                      {state === "done" ? <CheckCircle2 className="w-4 h-4" /> : <Icon className="w-3.5 h-3.5" />}
-                    </div>
-                    <p className={cn("text-[10px] font-medium text-center mt-1.5 max-w-[72px] leading-tight",
-                      state === "done"   ? "text-orange-600" :
-                      state === "active" ? "text-slate-700"  : "text-slate-400"
-                    )}>{step.label}</p>
-                  </div>
-                  {!isLast && (
-                    <div className={cn("h-0.5 w-6 mb-5 shrink-0",
-                      state === "done" ? "bg-orange-300" : "bg-slate-200"
-                    )} />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
+      {/* ── Status Bar ──────────────────────────────────────────────────────── */}
+      <div className="flex items-center flex-wrap gap-3 px-5 py-3 rounded-xl border bg-card">
+        <StatusBadge status={p.status ?? "Draft"} size="md" />
+        {isOverdue && <span className="inline-flex items-center rounded-md border text-[11px] px-2 py-1 font-bold uppercase tracking-wide bg-red-50 text-red-700 border-red-200">Overdue</span>}
+        <div className="h-4 w-px bg-border/60" />
+        <span className="text-[12px] text-muted-foreground">PO Number:</span>
+        <span className="font-mono text-[12px] font-semibold text-foreground">{p.poNumber}</span>
+        <div className="h-4 w-px bg-border/60" />
+        <span className="text-[12px] text-muted-foreground">Vendor:</span>
+        <span className="text-[12px] font-semibold text-foreground">{p.vendorName ?? "—"}</span>
+        <div className="h-4 w-px bg-border/60" />
+        <span className="text-[12px] text-muted-foreground">PO Date:</span>
+        <span className="text-[12px] text-foreground">{formatDate(p.poDate)}</span>
+        {isOverdue && (
+          <>
+            <div className="h-4 w-px bg-border/60" />
+            <span className="text-[12px] font-semibold text-red-600 flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3" /> Overdue by {daysOverdue} day{daysOverdue !== 1 ? "s" : ""}
+            </span>
+          </>
+        )}
       </div>
+
+      {/* ── Workflow Timeline ────────────────────────────────────────────────── */}
+      <SectionCard title="Workflow Timeline">
+        <div className="flex items-start overflow-x-auto pb-1">
+          {TIMELINE_STEPS.map((step, idx) => {
+            const state = getStepState(step.key, p);
+            const Icon = step.icon;
+            const isLast = idx === TIMELINE_STEPS.length - 1;
+            return (
+              <div key={step.key} className="flex items-center">
+                <div className="flex flex-col items-center min-w-[80px]">
+                  <div className={cn(
+                    "w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all",
+                    state === "done"   ? "bg-orange-500 border-orange-500 text-white" :
+                    state === "active" ? "bg-white border-orange-400 text-orange-500" :
+                                        "bg-muted border-border text-muted-foreground"
+                  )}>
+                    {state === "done" ? <CheckCircle2 className="w-4 h-4" /> : <Icon className="w-3.5 h-3.5" />}
+                  </div>
+                  <p className={cn("text-[10px] font-medium text-center mt-1.5 max-w-[72px] leading-tight",
+                    state === "done"   ? "text-orange-600" :
+                    state === "active" ? "text-foreground"  : "text-muted-foreground"
+                  )}>{step.label}</p>
+                </div>
+                {!isLast && (
+                  <div className={cn("h-0.5 w-6 mb-5 shrink-0",
+                    state === "done" ? "bg-orange-300" : "bg-border"
+                  )} />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </SectionCard>
 
       {/* ── Contextual Action Panel ─────────────────────────────────────────── */}
 
@@ -405,7 +414,6 @@ export default function ProcurementPODetail({ id }: { id: string }) {
               <Package className="w-4 h-4" /> Create GRN
             </Button>
           </div>
-          {/* Dispatch for Acknowledged state */}
           {!p.dispatchedAt && (
             <div className="border-t border-emerald-200 pt-3 flex items-center justify-between">
               <p className="text-sm text-emerald-700">Dispatch not yet recorded.</p>
@@ -503,10 +511,10 @@ export default function ProcurementPODetail({ id }: { id: string }) {
 
       {/* CLOSED — read-only summary */}
       {p.status === "Closed" && (
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 flex items-center gap-3">
-          <ClipboardCheck className="w-5 h-5 text-slate-500 shrink-0" />
-          <p className="text-sm text-slate-600">
-            This PO is <strong>closed</strong>
+        <div className="bg-muted/50 border border-border rounded-xl p-4 flex items-center gap-3">
+          <ClipboardCheck className="w-5 h-5 text-muted-foreground shrink-0" />
+          <p className="text-sm text-muted-foreground">
+            This PO is <strong className="text-foreground">closed</strong>
             {p.closedAt ? ` on ${new Date(p.closedAt).toLocaleDateString("en-IN")}` : ""}.
             All records are read-only.
           </p>
@@ -515,73 +523,74 @@ export default function ProcurementPODetail({ id }: { id: string }) {
 
       {/* CANCELLED */}
       {p.status === "Cancelled" && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-5 flex items-center gap-3">
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3">
           <XCircle className="w-5 h-5 text-red-500 shrink-0" />
           <p className="text-sm text-red-700">This PO has been <strong>cancelled</strong>. No further actions can be taken.</p>
         </div>
       )}
 
-      {/* ── PO Details ─────────────────────────────────────────────────────── */}
-      <div className="bg-white border border-slate-200 rounded-xl p-5">
-        <h2 className="font-bold text-slate-900 mb-4">Purchase Order Details</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-          <div><p className="text-xs text-slate-500">PO Date</p><p className="font-medium">{p.poDate ?? "—"}</p></div>
-          <div>
-            <p className="text-xs text-slate-500">Delivery Deadline</p>
-            <p className={cn("font-medium", isOverdue ? "text-red-600 font-bold" : "")}>{deadline ?? "—"}</p>
-          </div>
-          <div><p className="text-xs text-slate-500">Payment Terms</p><p className="font-medium">{p.paymentTerms ?? "—"}</p></div>
-          <div><p className="text-xs text-slate-500">Warranty</p><p className="font-medium">{p.warrantyMonths ? `${p.warrantyMonths} months` : "—"}</p></div>
-          {p.deliveryAddress && (
-            <div className="col-span-2">
-              <p className="text-xs text-slate-500">Delivery Address</p>
-              <p className="font-medium">{p.deliveryAddress}</p>
-            </div>
-          )}
-          {p.vendorGstin && <div><p className="text-xs text-slate-500">Vendor GSTIN</p><p className="font-medium font-mono">{p.vendorGstin}</p></div>}
-          {p.approvedByName && <div><p className="text-xs text-slate-500">Approved By</p><p className="font-medium">{p.approvedByName}</p></div>}
-          {p.acknowledgedAt && <div><p className="text-xs text-slate-500">Acknowledged At</p><p className="font-medium">{new Date(p.acknowledgedAt).toLocaleDateString("en-IN")}</p></div>}
-        </div>
-        {p.specialTerms && (
-          <div className="mt-4 pt-4 border-t border-slate-100">
-            <p className="text-xs text-slate-500">Special Terms</p>
-            <p className="text-sm text-slate-700 mt-1">{p.specialTerms}</p>
+      {/* ── Order Details ────────────────────────────────────────────────────── */}
+      <SectionCard title="Order Details">
+        <DetailGrid cols={4}>
+          <DetailRow label="Vendor" value={p.vendorName} />
+          <DetailRow label="Status" value={<StatusBadge status={p.status ?? "Draft"} />} />
+          <DetailRow label="PO Date" value={formatDate(p.poDate)} />
+          <DetailRow
+            label="Delivery Deadline"
+            value={deadline ? (
+              <span className={cn(isOverdue && "text-red-600 font-bold")}>{formatDate(deadline)}</span>
+            ) : undefined}
+          />
+          <DetailRow label="Total Amount" value={fmt(p.totalAmount)} mono />
+          <DetailRow label="Payment Terms" value={p.paymentTerms} />
+          <DetailRow label="Warranty" value={p.warrantyMonths ? `${p.warrantyMonths} months` : undefined} />
+          {p.vendorGstin && <DetailRow label="Vendor GSTIN" value={p.vendorGstin} mono />}
+          {p.approvedByName && <DetailRow label="Approved By" value={p.approvedByName} />}
+          {p.acknowledgedAt && <DetailRow label="Acknowledged At" value={formatDate(p.acknowledgedAt)} />}
+          {p.createdByName && <DetailRow label="Created By" value={p.createdByName} />}
+          {p.deliveryAddress && <DetailRow label="Delivery Address" value={p.deliveryAddress} colSpan={2} />}
+        </DetailGrid>
+        {(p.specialTerms || p.internalNotes) && (
+          <div className="mt-5 pt-5 border-t border-border/60 space-y-3">
+            {p.specialTerms && (
+              <div>
+                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Special Terms</p>
+                <p className="text-sm text-foreground">{p.specialTerms}</p>
+              </div>
+            )}
+            {p.internalNotes && (
+              <div>
+                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Internal Notes</p>
+                <p className="text-sm text-foreground">{p.internalNotes}</p>
+              </div>
+            )}
           </div>
         )}
-        {p.internalNotes && (
-          <div className="mt-3">
-            <p className="text-xs text-slate-500">Internal Notes</p>
-            <p className="text-sm text-slate-700 mt-1">{p.internalNotes}</p>
-          </div>
-        )}
-      </div>
+      </SectionCard>
 
       {/* ── Line Items ─────────────────────────────────────────────────────── */}
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-        <div className="bg-slate-50 border-b border-slate-200 px-5 py-3">
-          <h2 className="font-bold text-slate-900">Line Items</h2>
-        </div>
+      <SectionCard title="Line Items" noPadding>
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-max">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
+            <thead>
+              <tr className="bg-muted/40 border-b border-border">
                 {["#","Material","UOM","Qty","Unit Price","GST%","Line Total","Delivered"].map(h => (
-                  <th key={h} className="text-left px-4 py-2.5 text-xs font-bold text-slate-500 uppercase whitespace-nowrap">{h}</th>
+                  <th key={h} className="text-left px-4 py-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-border/60">
               {(p.items ?? []).map((item: any) => {
                 const pct = item.qty > 0 ? (Number(item.deliveredQty ?? 0) / Number(item.qty)) * 100 : 0;
                 return (
-                  <tr key={item.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 text-slate-400">{item.lineNo}</td>
+                  <tr key={item.id} className="hover:bg-muted/20 transition-colors">
+                    <td className="px-4 py-3 text-muted-foreground text-[12px]">{item.lineNo}</td>
                     <td className="px-4 py-3">
-                      <p className="font-medium text-slate-900">{item.materialName}</p>
-                      {item.materialCode && <p className="text-xs text-slate-400">{item.materialCode}</p>}
-                      {item.brand && <p className="text-xs text-slate-400">{item.brand}</p>}
+                      <p className="font-semibold text-foreground">{item.materialName}</p>
+                      {item.materialCode && <p className="text-[11px] text-muted-foreground">{item.materialCode}</p>}
+                      {item.brand && <p className="text-[11px] text-muted-foreground">{item.brand}</p>}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{item.uom}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{item.uom}</td>
                     <td className="px-4 py-3 font-mono">{item.qty}</td>
                     <td className="px-4 py-3 font-mono">{fmt(item.unitPrice)}</td>
                     <td className="px-4 py-3">{item.gstRate}%</td>
@@ -590,52 +599,52 @@ export default function ProcurementPODetail({ id }: { id: string }) {
                       {item.deliveredQty != null ? (
                         <div>
                           <span className={cn("font-mono font-bold text-sm",
-                            pct >= 100 ? "text-emerald-600" : pct > 0 ? "text-amber-600" : "text-slate-400"
+                            pct >= 100 ? "text-emerald-600" : pct > 0 ? "text-amber-600" : "text-muted-foreground"
                           )}>
                             {item.deliveredQty} / {item.qty}
                           </span>
-                          <div className="w-16 h-1.5 bg-slate-100 rounded-full mt-1 overflow-hidden">
+                          <div className="w-16 h-1.5 bg-muted rounded-full mt-1 overflow-hidden">
                             <div className={cn("h-full rounded-full", pct >= 100 ? "bg-emerald-500" : "bg-amber-400")}
                               style={{ width: `${Math.min(100, pct)}%` }} />
                           </div>
                         </div>
-                      ) : <span className="text-slate-400">—</span>}
+                      ) : <span className="text-muted-foreground">—</span>}
                     </td>
                   </tr>
                 );
               })}
             </tbody>
-            <tfoot className="bg-slate-50 border-t-2 border-slate-200">
+            <tfoot className="bg-muted/30 border-t-2 border-border">
               <tr>
-                <td colSpan={4} className="px-4 py-3 text-sm text-slate-500">
-                  <span className="text-xs">Subtotal {fmt(p.subtotal)} · GST {fmt(p.totalGst)} · Freight+Other {fmt((p.freightCharges ?? 0) + (p.otherCharges ?? 0))}</span>
+                <td colSpan={4} className="px-4 py-3 text-sm text-muted-foreground">
+                  <span className="text-[11px]">Subtotal {fmt(p.subtotal)} · GST {fmt(p.totalGst)} · Freight+Other {fmt((p.freightCharges ?? 0) + (p.otherCharges ?? 0))}</span>
                 </td>
                 <td colSpan={3} className="px-4 py-3 text-right">
-                  <span className="text-xs font-bold text-slate-600 uppercase">Grand Total</span>
+                  <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Grand Total</span>
                 </td>
-                <td className="px-4 py-3 font-mono font-bold text-slate-900 text-base">{fmt(p.totalAmount)}</td>
+                <td className="px-4 py-3 font-mono font-bold text-foreground text-base">{fmt(p.totalAmount)}</td>
               </tr>
             </tfoot>
           </table>
         </div>
-      </div>
+      </SectionCard>
 
       {/* ── Goods Receipt Notes ─────────────────────────────────────────────── */}
       {!["Draft","Cancelled"].includes(p.status) && (
-        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-          <div className="bg-slate-50 border-b border-slate-200 px-5 py-3 flex items-center justify-between">
-            <div>
-              <h2 className="font-bold text-slate-900">Goods Receipt Notes</h2>
-              <p className="text-xs text-slate-500 mt-0.5">{(p.grns ?? []).length} GRN{(p.grns ?? []).length !== 1 ? "s" : ""} against this PO</p>
-            </div>
-            {canCreateGRN && (
-              <Button size="sm" className="text-xs gap-1.5 bg-orange-500 hover:bg-orange-600" onClick={() => setLocation(grnUrl)}>
+        <SectionCard
+          title="Goods Receipt Notes"
+          subtitle={`${(p.grns ?? []).length} GRN${(p.grns ?? []).length !== 1 ? "s" : ""} against this PO`}
+          noPadding
+          actions={
+            canCreateGRN ? (
+              <Button size="sm" className="text-xs gap-1.5 bg-orange-500 hover:bg-orange-600 text-white" onClick={() => setLocation(grnUrl)}>
                 <Package className="w-3.5 h-3.5" /> New GRN
               </Button>
-            )}
-          </div>
+            ) : undefined
+          }
+        >
           {(p.grns ?? []).length === 0 ? (
-            <div className="flex flex-col items-center py-8 text-slate-400">
+            <div className="flex flex-col items-center py-8 text-muted-foreground">
               <Package className="w-8 h-8 mb-2 opacity-40" />
               <p className="text-sm font-medium">No GRNs recorded yet</p>
               {canCreateGRN && (
@@ -645,43 +654,43 @@ export default function ProcurementPODetail({ id }: { id: string }) {
               )}
             </div>
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-border/60">
               {p.grns.map((grn: any) => (
                 <div key={grn.id}
-                  className="flex items-center justify-between px-5 py-3 hover:bg-slate-50 cursor-pointer group"
+                  className="flex items-center justify-between px-5 py-3.5 hover:bg-muted/20 cursor-pointer group transition-colors"
                   onClick={() => setLocation(`/procurement/grns/${grn.id}`)}>
                   <div className="flex items-center gap-3">
-                    <Package className="w-4 h-4 text-slate-400" />
+                    <Package className="w-4 h-4 text-muted-foreground" />
                     <div>
-                      <p className="font-mono font-bold text-slate-900 text-sm">{grn.grnNumber}</p>
-                      <p className="text-xs text-slate-500">{grn.deliveryDate ?? "No delivery date"}</p>
+                      <p className="font-mono font-bold text-foreground text-sm">{grn.grnNumber}</p>
+                      <p className="text-xs text-muted-foreground">{grn.deliveryDate ?? "No delivery date"}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className={cn("text-xs", GRN_STATUS_COLOR[grn.status] ?? "")}>{grn.status}</Badge>
-                    <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-orange-400" />
+                    <StatusBadge status={grn.status} />
+                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-orange-400 transition-colors" />
                   </div>
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </SectionCard>
       )}
 
       {/* ── Invoices ────────────────────────────────────────────────────────── */}
       {canCreateInvoice && (
-        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-          <div className="bg-slate-50 border-b border-slate-200 px-5 py-3 flex items-center justify-between">
-            <div>
-              <h2 className="font-bold text-slate-900">Invoices</h2>
-              <p className="text-xs text-slate-500 mt-0.5">{(p.invoices ?? []).length} invoice{(p.invoices ?? []).length !== 1 ? "s" : ""} linked</p>
-            </div>
-            <Button size="sm" className="text-xs gap-1.5 bg-orange-500 hover:bg-orange-600" onClick={() => setLocation(invUrl)}>
+        <SectionCard
+          title="Invoices"
+          subtitle={`${(p.invoices ?? []).length} invoice${(p.invoices ?? []).length !== 1 ? "s" : ""} linked`}
+          noPadding
+          actions={
+            <Button size="sm" className="text-xs gap-1.5 bg-orange-500 hover:bg-orange-600 text-white" onClick={() => setLocation(invUrl)}>
               <FileText className="w-3.5 h-3.5" /> New Invoice
             </Button>
-          </div>
+          }
+        >
           {(p.invoices ?? []).length === 0 ? (
-            <div className="flex flex-col items-center py-8 text-slate-400">
+            <div className="flex flex-col items-center py-8 text-muted-foreground">
               <FileText className="w-8 h-8 mb-2 opacity-40" />
               <p className="text-sm font-medium">No invoices created yet</p>
               <Button size="sm" variant="outline" className="mt-3 gap-1.5 text-xs" onClick={() => setLocation(invUrl)}>
@@ -689,51 +698,53 @@ export default function ProcurementPODetail({ id }: { id: string }) {
               </Button>
             </div>
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-border/60">
               {p.invoices.map((inv: any) => (
                 <div key={inv.id}
-                  className="flex items-center justify-between px-5 py-3 hover:bg-slate-50 cursor-pointer group"
+                  className="flex items-center justify-between px-5 py-3.5 hover:bg-muted/20 cursor-pointer group transition-colors"
                   onClick={() => setLocation(`/procurement/invoices/${inv.id}`)}>
                   <div className="flex items-center gap-3">
-                    <FileText className="w-4 h-4 text-slate-400" />
+                    <FileText className="w-4 h-4 text-muted-foreground" />
                     <div>
-                      <p className="font-mono font-bold text-slate-900 text-sm">{inv.invoiceNumber}</p>
-                      <p className="text-xs text-slate-500">₹{Number(inv.totalAmount ?? 0).toLocaleString("en-IN")}</p>
+                      <p className="font-mono font-bold text-foreground text-sm">{inv.invoiceNumber}</p>
+                      <p className="text-xs text-muted-foreground">₹{Number(inv.totalAmount ?? 0).toLocaleString("en-IN")}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className={cn("text-xs", INV_STATUS_COLOR[inv.status] ?? "")}>{inv.status}</Badge>
-                    <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-orange-400" />
+                    <StatusBadge status={inv.status} />
+                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-orange-400 transition-colors" />
                   </div>
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </SectionCard>
       )}
 
-      {/* ── Audit Trail ─────────────────────────────────────────────────────── */}
+      {/* ── Activity / Audit Trail ───────────────────────────────────────────── */}
       {(p.auditLogs ?? []).length > 0 && (
-        <div className="bg-white border border-slate-200 rounded-xl p-5">
-          <h2 className="font-bold text-slate-900 mb-4">Audit Trail</h2>
-          <div className="space-y-3">
-            {p.auditLogs.map((log: any) => (
+        <SectionCard title="Activity">
+          <div className="space-y-4">
+            {p.auditLogs.map((log: any, idx: number) => (
               <div key={log.id} className="flex gap-3">
-                <div className="w-7 h-7 bg-slate-100 rounded-full flex items-center justify-center shrink-0 mt-0.5">
-                  <Clock className="w-3.5 h-3.5 text-slate-500" />
+                <div className="flex flex-col items-center">
+                  <div className="w-7 h-7 bg-muted rounded-full flex items-center justify-center shrink-0">
+                    <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                  </div>
+                  {idx < p.auditLogs.length - 1 && <div className="w-px flex-1 bg-border/60 mt-1" />}
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-900">
+                <div className="pb-4 min-w-0">
+                  <p className="text-[13px] font-semibold text-foreground">
                     {STATUS_CONFIG[log.action]?.label ?? log.action}
-                    <span className="text-slate-500 font-normal"> by {log.performedByName}</span>
+                    <span className="text-muted-foreground font-normal"> · {log.performedByName}</span>
                   </p>
-                  {log.remarks && <p className="text-sm text-slate-500 mt-0.5">{log.remarks}</p>}
-                  <p className="text-xs text-slate-400 mt-0.5">{new Date(log.createdAt).toLocaleString("en-IN")}</p>
+                  {log.remarks && <p className="text-[12px] text-muted-foreground mt-0.5">{log.remarks}</p>}
+                  <p className="text-[11px] text-muted-foreground/70 mt-0.5">{new Date(log.createdAt).toLocaleString("en-IN")}</p>
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </SectionCard>
       )}
 
       {/* ── Dialogs ─────────────────────────────────────────────────────────── */}
@@ -744,15 +755,15 @@ export default function ProcurementPODetail({ id }: { id: string }) {
           <AlertDialogHeader>
             <AlertDialogTitle className="text-red-700">⚠️ Active Deliveries Detected</AlertDialogTitle>
             <AlertDialogDescription asChild>
-              <div className="space-y-2 text-sm text-slate-600">
+              <div className="space-y-2 text-sm text-muted-foreground">
                 <p>This PO has <strong>{(p.grns ?? []).length} GRN(s)</strong> with active delivery records. Cancelling it may cause reconciliation issues.</p>
                 {(p.grns ?? []).length > 0 && (
-                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 mt-2">
-                    <p className="text-xs font-bold text-slate-600 mb-2 uppercase tracking-wide">Linked GRNs</p>
+                  <div className="bg-muted border border-border rounded-lg p-3 mt-2">
+                    <p className="text-xs font-bold text-foreground mb-2 uppercase tracking-wide">Linked GRNs</p>
                     {(p.grns as any[]).map((g: any) => (
                       <div key={g.id} className="flex items-center justify-between text-sm">
-                        <span className="font-mono font-semibold text-slate-800">{g.grnNumber}</span>
-                        <span className="text-xs text-slate-500">{g.status}</span>
+                        <span className="font-mono font-semibold text-foreground">{g.grnNumber}</span>
+                        <span className="text-xs text-muted-foreground">{g.status}</span>
                       </div>
                     ))}
                   </div>

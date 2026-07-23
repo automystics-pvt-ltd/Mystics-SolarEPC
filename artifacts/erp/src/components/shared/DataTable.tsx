@@ -27,7 +27,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   ChevronsUpDown, ChevronUp, ChevronDown, Search, Download,
   Settings2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
-  X, Loader2, LucideIcon,
+  X, Loader2, LucideIcon, AlignJustify,
 } from "lucide-react";
 import { EmptyState } from "./EmptyState";
 
@@ -69,6 +69,8 @@ export interface DataTableProps<TData> {
   pageSize?: number;
   /** Disable row selection */
   noSelection?: boolean;
+  /** Row density */
+  density?: "compact" | "default" | "comfortable";
   className?: string;
 }
 
@@ -99,6 +101,19 @@ function SortButton({ sorted, onClick, children }: {
         )}
       </span>
     </button>
+  );
+}
+
+// ── Filter Chip ───────────────────────────────────────────────────────────────
+
+function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }) {
+  return (
+    <span className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-full text-[11px] font-medium bg-primary/8 text-primary border border-primary/20">
+      {label}
+      <button onClick={onRemove} className="h-3.5 w-3.5 rounded-full flex items-center justify-center hover:bg-primary/20 transition-colors">
+        <X className="h-2.5 w-2.5" />
+      </button>
+    </span>
   );
 }
 
@@ -149,6 +164,7 @@ export function DataTable<TData>({
   emptyAction,
   pageSize: defaultPageSize = 20,
   noSelection = false,
+  density: densityProp,
   className,
 }: DataTableProps<TData>) {
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -160,11 +176,16 @@ export function DataTable<TData>({
     pageSize: defaultPageSize,
   });
   const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({});
+  const [density, setDensity] = useState<"compact" | "default" | "comfortable">(densityProp ?? "default");
 
   // Reset page on filter/search change
   useEffect(() => {
     setPagination((p) => ({ ...p, pageIndex: 0 }));
   }, [globalFilter, columnFilters]);
+
+  // Density-based padding
+  const cellPadding = density === "compact" ? "px-3 py-1.5" : density === "comfortable" ? "px-5 py-4" : "px-4 py-3";
+  const rowHeight   = density === "compact" ? "h-9" : density === "comfortable" ? "h-14" : "h-11";
 
   // Prepend selection column if not disabled
   const columns = useMemo<ColumnDef<TData, any>[]>(() => {
@@ -353,10 +374,51 @@ export function DataTable<TData>({
             </DropdownMenuContent>
           </DropdownMenu>
 
+          {/* Density toggle */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8 gap-1.5 text-[12px] border-border/60" aria-label="Row density">
+                <AlignJustify className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Density</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-36">
+              {(["compact", "default", "comfortable"] as const).map(d => (
+                <DropdownMenuItem key={d} onClick={() => setDensity(d)}
+                  className={cn("text-[12px] capitalize cursor-pointer", density === d && "font-semibold text-primary")}>
+                  {d} {density === d && "✓"}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           {/* Custom actions */}
           {actions}
         </div>
       </div>
+
+      {/* ── Active filter chips ── */}
+      {hasActiveFilters && (
+        <div className="flex items-center gap-2 px-4 py-2 border-b border-border/40 bg-background flex-wrap">
+          <span className="text-[11px] text-muted-foreground font-medium">Filters:</span>
+          {globalFilter && (
+            <FilterChip label={"Search: " + globalFilter} onRemove={() => setGlobalFilter("")} />
+          )}
+          {columnFilters.map(f => {
+            const opt = filterOptions?.find(fo => fo.key === f.id);
+            const val = opt?.options.find(o => o.value === f.value)?.label ?? String(f.value);
+            return (
+              <FilterChip key={f.id}
+                label={(opt?.label ?? f.id) + ": " + val}
+                onRemove={() => setColumnFilters(prev => prev.filter(cf => cf.id !== f.id))}
+              />
+            );
+          })}
+          <button onClick={clearAllFilters} className="text-[11px] text-muted-foreground hover:text-foreground ml-1 underline-offset-2 hover:underline transition-colors">
+            Clear all
+          </button>
+        </div>
+      )}
 
       {/* ── Bulk action bar ── */}
       {selectedRows.length > 0 && bulkActions && (
@@ -381,7 +443,7 @@ export function DataTable<TData>({
       {/* ── Table ── */}
       <div className="overflow-x-auto scrollbar-thin flex-1">
         <table className="w-full text-[13px]">
-          <thead className="border-b border-border/60 bg-muted/30 sticky top-0 z-[1]">
+          <thead className="border-b-2 border-border/60 bg-muted/30 sticky top-0 z-[1]">
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id}>
                 {hg.headers.map((header) => (
@@ -419,7 +481,16 @@ export function DataTable<TData>({
             ) : table.getRowModel().rows.length === 0 ? (
               <tr>
                 <td colSpan={columns.length}>
-                  {emptyIcon ? (
+                  {hasActiveFilters ? (
+                    <div className="py-16 text-center">
+                      <div className="h-12 w-12 rounded-full bg-muted mx-auto flex items-center justify-center mb-3">
+                        <Search className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      <p className="text-[14px] font-semibold text-foreground">No results match your filters</p>
+                      <p className="text-[13px] text-muted-foreground mt-1">Try adjusting or clearing your search criteria</p>
+                      <button onClick={clearAllFilters} className="mt-3 text-[13px] text-primary hover:underline">Clear all filters</button>
+                    </div>
+                  ) : emptyIcon ? (
                     <EmptyState
                       icon={emptyIcon}
                       title={emptyTitle}
@@ -429,7 +500,7 @@ export function DataTable<TData>({
                     />
                   ) : (
                     <div className="text-center py-12 text-muted-foreground text-sm">
-                      {hasActiveFilters ? "No results match your filters." : emptyTitle}
+                      {emptyTitle}
                     </div>
                   )}
                 </td>
@@ -440,13 +511,13 @@ export function DataTable<TData>({
                   key={row.id}
                   onClick={onRowClick ? () => onRowClick(row.original) : undefined}
                   className={cn(
-                    "border-b border-border/40 last:border-0 transition-colors",
-                    onRowClick && "cursor-pointer hover:bg-muted/40",
-                    row.getIsSelected() && "bg-primary/[0.04] dark:bg-primary/[0.08]"
+                    "border-b border-border/40 last:border-0 transition-all duration-100 group hover:bg-muted/40",
+                    onRowClick && "cursor-pointer",
+                    row.getIsSelected() && "bg-primary/[0.04] dark:bg-primary/[0.08]",
                   )}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-4 py-3 align-middle">
+                    <td key={cell.id} className={cn("align-middle", cellPadding)}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
                   ))}
@@ -506,8 +577,20 @@ export function DataTable<TData>({
             >
               <ChevronLeft className="h-3.5 w-3.5" />
             </Button>
-            <span className="text-[12px] font-medium text-foreground px-2 tabular-nums">
-              {pageIndex + 1} / {pageCount || 1}
+            <span className="flex items-center gap-1.5 text-[12px] text-muted-foreground px-1">
+              Page
+              <input
+                type="number"
+                min={1}
+                max={pageCount}
+                value={pageIndex + 1}
+                onChange={e => {
+                  const p = Number(e.target.value) - 1;
+                  if (p >= 0 && p < pageCount) table.setPageIndex(p);
+                }}
+                className="w-10 h-6 text-center text-[12px] font-medium border border-border/60 rounded bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring tabular-nums"
+              />
+              of {pageCount || 1}
             </span>
             <Button
               variant="outline"

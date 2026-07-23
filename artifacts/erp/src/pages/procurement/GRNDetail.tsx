@@ -7,26 +7,27 @@ import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Package, CheckCircle2, XCircle, Send, AlertTriangle, Clock, Printer } from "lucide-react";
+import { ArrowLeft, Package, CheckCircle2, XCircle, Send, Clock, Printer } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
+import { StatusBadge, DetailRow, DetailGrid, SectionCard, PageHeader } from "@/components/shared";
 
-const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  Draft: { label: "Draft", color: "bg-slate-100 text-slate-600 border-slate-200" },
-  Submitted: { label: "Submitted", color: "bg-blue-50 text-blue-700 border-blue-200" },
-  Accepted: { label: "Accepted", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-  PartiallyAccepted: { label: "Partially Accepted", color: "bg-amber-50 text-amber-700 border-amber-200" },
-  Rejected: { label: "Rejected", color: "bg-red-50 text-red-700 border-red-200" },
-};
+function formatDate(d?: string | null) {
+  if (!d) return "—";
+  try {
+    return new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "short", year: "2-digit" }).format(new Date(d));
+  } catch {
+    return d;
+  }
+}
 
 const QC_COLOR: Record<string, string> = {
-  Pending: "bg-slate-100 text-slate-600",
-  Accepted: "bg-emerald-50 text-emerald-700",
-  PartiallyAccepted: "bg-amber-50 text-amber-700",
-  Rejected: "bg-red-50 text-red-700",
+  Pending:           "bg-slate-100 text-slate-600 border-slate-200",
+  Accepted:          "bg-emerald-50 text-emerald-700 border-emerald-200",
+  PartiallyAccepted: "bg-amber-50 text-amber-700 border-amber-200",
+  Rejected:          "bg-red-50 text-red-700 border-red-200",
 };
 
 export default function GRNDetail({ id }: { id: string }) {
@@ -65,41 +66,38 @@ export default function GRNDetail({ id }: { id: string }) {
   };
 
   if (isLoading || !grn) return (
-    <div className="flex h-60 items-center justify-center"><div className="animate-pulse text-slate-400">Loading GRN…</div></div>
+    <div className="flex h-60 items-center justify-center">
+      <div className="animate-pulse text-muted-foreground">Loading GRN…</div>
+    </div>
   );
 
   const g = grn as any;
-  const cfg = STATUS_CONFIG[g.status] ?? STATUS_CONFIG.Draft;
-  const canSubmit = g.status === "Draft";
+  const canSubmit  = g.status === "Draft";
   const canApprove = isApprover && g.status === "Submitted";
-  const canReject = isApprover && g.status === "Submitted";
+  const canReject  = isApprover && g.status === "Submitted";
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5 pb-10">
-      {/* Header */}
-      <div className="bg-white border border-slate-200 rounded-xl p-5">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="icon" onClick={() => setLocation("/procurement/grns")} className="h-9 w-9 shrink-0"><ArrowLeft className="w-4 h-4" /></Button>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold font-mono text-slate-900">{g.grnNumber}</h1>
-                <Badge variant="outline" className={cn("text-sm", cfg.color)}>{cfg.label}</Badge>
-              </div>
-              <p className="text-sm text-slate-500 mt-1">{g.vendorName} · PO #{g.poId} · Created {new Date(g.createdAt).toLocaleDateString("en-IN")} by {g.createdByName}</p>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="gap-1.5 print:hidden" onClick={() => window.print()}>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25 }} className="space-y-5 pb-10">
+
+      {/* ── Page Header ─────────────────────────────────────────────────────── */}
+      <PageHeader
+        title={g.grnNumber}
+        subtitle={`${g.vendorName ?? ""}${g.createdByName ? ` · Created by ${g.createdByName}` : ""}`}
+        actions={
+          <div className="flex items-center gap-2 print:hidden">
+            <Button variant="outline" size="sm" onClick={() => setLocation("/procurement/grns")} className="gap-1.5">
+              <ArrowLeft className="w-3.5 h-3.5" /> Back
+            </Button>
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => window.print()}>
               <Printer className="w-3.5 h-3.5" /> Print
             </Button>
             {canSubmit && (
-              <Button size="sm" className="gap-1.5 bg-blue-600 hover:bg-blue-700 print:hidden" onClick={() => setActionDialog("submit")}>
+              <Button size="sm" className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white" onClick={() => setActionDialog("submit")}>
                 <Send className="w-3.5 h-3.5" /> Submit for Inspection
               </Button>
             )}
             {canApprove && (
-              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 gap-1.5 print:hidden" onClick={() => setActionDialog("approve")}>
+              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5" onClick={() => setActionDialog("approve")}>
                 <CheckCircle2 className="w-3.5 h-3.5" /> Approve
               </Button>
             )}
@@ -109,100 +107,157 @@ export default function GRNDetail({ id }: { id: string }) {
               </Button>
             )}
           </div>
-        </div>
+        }
+      />
 
-        {/* Delivery metadata */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-4 pt-4 border-t border-slate-100 text-sm">
-          <div><p className="text-xs text-slate-500">Delivery Date</p><p className="font-medium">{g.deliveryDate ?? "—"}</p></div>
-          <div><p className="text-xs text-slate-500">Vehicle No.</p><p className="font-medium">{g.vehicleNumber ?? "—"}</p></div>
-          <div><p className="text-xs text-slate-500">DC Number</p><p className="font-medium">{g.dcNumber ?? "—"}</p></div>
-          <div><p className="text-xs text-slate-500">DC Date</p><p className="font-medium">{g.dcDate ?? "—"}</p></div>
-          <div><p className="text-xs text-slate-500">Received By</p><p className="font-medium">{g.receivedByName ?? "—"}</p></div>
-        </div>
+      {/* ── Status Bar ──────────────────────────────────────────────────────── */}
+      <div className="flex items-center flex-wrap gap-3 px-5 py-3 rounded-xl border bg-card">
+        <StatusBadge status={g.status} size="md" />
+        <div className="h-4 w-px bg-border/60" />
+        <span className="text-[12px] text-muted-foreground">GRN#:</span>
+        <span className="font-mono text-[12px] font-semibold text-foreground">{g.grnNumber}</span>
+        <div className="h-4 w-px bg-border/60" />
+        <span className="text-[12px] text-muted-foreground">PO Ref:</span>
+        <span className="font-mono text-[12px] font-semibold text-foreground">#{g.poId}</span>
+        {g.deliveryDate && (
+          <>
+            <div className="h-4 w-px bg-border/60" />
+            <span className="text-[12px] text-muted-foreground">Received:</span>
+            <span className="text-[12px] text-foreground">{formatDate(g.deliveryDate)}</span>
+          </>
+        )}
+        {g.createdAt && (
+          <>
+            <div className="h-4 w-px bg-border/60" />
+            <span className="text-[12px] text-muted-foreground">Created:</span>
+            <span className="text-[12px] text-foreground">{formatDate(g.createdAt)}</span>
+          </>
+        )}
       </div>
 
-      {/* Quantity summary */}
-      <div className="grid grid-cols-4 gap-3">
+      {/* ── Quantity Summary Cards ───────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: "Total Ordered", value: g.totalOrderedQty, color: "text-slate-900" },
-          { label: "Total Received", value: g.totalReceivedQty, color: "text-blue-700" },
-          { label: "Total Accepted", value: g.totalAcceptedQty, color: "text-emerald-700" },
-          { label: "Total Rejected", value: g.totalRejectedQty, color: "text-red-700" },
+          { label: "Total Ordered",  value: g.totalOrderedQty,  colorClass: "text-foreground" },
+          { label: "Total Received", value: g.totalReceivedQty, colorClass: "text-blue-600" },
+          { label: "Total Accepted", value: g.totalAcceptedQty, colorClass: "text-emerald-600" },
+          { label: "Total Rejected", value: g.totalRejectedQty, colorClass: "text-red-600" },
         ].map(s => (
-          <div key={s.label} className="bg-white border border-slate-200 rounded-xl p-4 text-center">
-            <p className={cn("text-2xl font-bold font-mono", s.color)}>{s.value ?? 0}</p>
-            <p className="text-xs text-slate-500 mt-1">{s.label}</p>
+          <div key={s.label} className="bg-card border border-border rounded-xl p-4 text-center">
+            <p className={cn("text-2xl font-bold font-mono", s.colorClass)}>{s.value ?? 0}</p>
+            <p className="text-[11px] text-muted-foreground mt-1 font-medium uppercase tracking-wide">{s.label}</p>
           </div>
         ))}
       </div>
 
-      {/* Items table */}
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-        <div className="bg-slate-50 border-b border-slate-200 px-5 py-3">
-          <h2 className="font-bold text-slate-900">Line Items & Inspection Results</h2>
-        </div>
+      {/* ── Receipt Details ──────────────────────────────────────────────────── */}
+      <SectionCard title="Receipt Details">
+        <DetailGrid cols={4}>
+          <DetailRow label="PO Reference" value={g.poId ? `PO #${g.poId}` : undefined} mono />
+          <DetailRow label="Vendor" value={g.vendorName} />
+          <DetailRow label="Received By" value={g.receivedByName} />
+          <DetailRow label="Vehicle No." value={g.vehicleNumber} mono />
+          <DetailRow label="DC Number" value={g.dcNumber} mono />
+          <DetailRow label="DC Date" value={formatDate(g.dcDate)} />
+          <DetailRow label="Delivery Date" value={formatDate(g.deliveryDate)} />
+          <DetailRow label="Created By" value={g.createdByName} />
+          {g.warehouseName && <DetailRow label="Warehouse" value={g.warehouseName} />}
+          {g.remarks && <DetailRow label="Remarks" value={g.remarks} colSpan={2} />}
+        </DetailGrid>
+      </SectionCard>
+
+      {/* ── Line Items & QC ─────────────────────────────────────────────────── */}
+      <SectionCard title="Line Items & Inspection Results" noPadding>
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-max">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
+            <thead>
+              <tr className="bg-muted/40 border-b border-border">
                 {["#", "Material", "UOM", "Ordered", "Received", "Accepted", "Rejected", "Damaged", "QC Status", "Rejection Reason"].map(h => (
-                  <th key={h} className="text-left px-4 py-2.5 text-xs font-bold text-slate-500 uppercase whitespace-nowrap">{h}</th>
+                  <th key={h} className="text-left px-4 py-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-border/60">
               {(g.items ?? []).map((item: any) => (
-                <tr key={item.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 text-slate-400">{item.lineNo}</td>
-                  <td className="px-4 py-3"><p className="font-medium text-slate-900">{item.materialName}</p>{item.materialCode && <p className="text-xs text-slate-400">{item.materialCode}</p>}</td>
-                  <td className="px-4 py-3 text-slate-600">{item.uom}</td>
+                <tr key={item.id} className="hover:bg-muted/20 transition-colors">
+                  <td className="px-4 py-3 text-muted-foreground text-[12px]">{item.lineNo}</td>
+                  <td className="px-4 py-3">
+                    <p className="font-semibold text-foreground">{item.materialName}</p>
+                    {item.materialCode && <p className="text-[11px] text-muted-foreground">{item.materialCode}</p>}
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">{item.uom}</td>
                   <td className="px-4 py-3 font-mono">{item.orderedQty}</td>
-                  <td className="px-4 py-3 font-mono text-blue-700">{item.receivedQty}</td>
-                  <td className="px-4 py-3 font-mono text-emerald-700 font-bold">{item.acceptedQty}</td>
+                  <td className="px-4 py-3 font-mono text-blue-600">{item.receivedQty}</td>
+                  <td className="px-4 py-3 font-mono font-bold text-emerald-600">{item.acceptedQty}</td>
                   <td className="px-4 py-3 font-mono text-red-600">{item.rejectedQty}</td>
                   <td className="px-4 py-3 font-mono text-amber-600">{item.damagedQty}</td>
                   <td className="px-4 py-3">
-                    <Badge variant="outline" className={cn("text-xs", QC_COLOR[item.qcStatus] ?? "")}>{item.qcStatus}</Badge>
+                    <span className={cn(
+                      "inline-flex items-center rounded-md border text-[10px] px-1.5 py-0.5 font-bold uppercase tracking-wide",
+                      QC_COLOR[item.qcStatus] ?? "bg-slate-100 text-slate-600 border-slate-200"
+                    )}>
+                      {item.qcStatus}
+                    </span>
                   </td>
-                  <td className="px-4 py-3 text-slate-500 text-xs max-w-40 truncate">{item.rejectionReason ?? "—"}</td>
+                  <td className="px-4 py-3 text-muted-foreground text-[11px] max-w-40 truncate">{item.rejectionReason ?? "—"}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </div>
+      </SectionCard>
 
-      {/* Audit log */}
+      {/* ── Activity / Audit Trail ───────────────────────────────────────────── */}
       {(g.auditLogs ?? []).length > 0 && (
-        <div className="bg-white border border-slate-200 rounded-xl p-5">
-          <h2 className="font-bold text-slate-900 mb-4">Audit Trail</h2>
-          <div className="space-y-3">
-            {g.auditLogs.map((log: any) => (
+        <SectionCard title="Activity">
+          <div className="space-y-4">
+            {g.auditLogs.map((log: any, idx: number) => (
               <div key={log.id} className="flex gap-3">
-                <div className="w-7 h-7 bg-slate-100 rounded-full flex items-center justify-center shrink-0 mt-0.5">
-                  <Clock className="w-3.5 h-3.5 text-slate-500" />
+                <div className="flex flex-col items-center">
+                  <div className="w-7 h-7 bg-muted rounded-full flex items-center justify-center shrink-0">
+                    <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                  </div>
+                  {idx < g.auditLogs.length - 1 && <div className="w-px flex-1 bg-border/60 mt-1" />}
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-900">{log.action} <span className="text-slate-500 font-normal">by {log.performedByName}</span></p>
-                  {log.remarks && <p className="text-sm text-slate-500 mt-0.5">{log.remarks}</p>}
-                  <p className="text-xs text-slate-400 mt-0.5">{new Date(log.createdAt).toLocaleString("en-IN")}</p>
+                <div className="pb-4 min-w-0">
+                  <p className="text-[13px] font-semibold text-foreground">
+                    {log.action}
+                    <span className="text-muted-foreground font-normal"> · {log.performedByName}</span>
+                  </p>
+                  {log.remarks && <p className="text-[12px] text-muted-foreground mt-0.5">{log.remarks}</p>}
+                  <p className="text-[11px] text-muted-foreground/70 mt-0.5">{new Date(log.createdAt).toLocaleString("en-IN")}</p>
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </SectionCard>
       )}
 
-      {/* Action dialog */}
+      {/* ── Action Dialog ────────────────────────────────────────────────────── */}
       <Dialog open={!!actionDialog} onOpenChange={o => { if (!o) { setActionDialog(null); setRemarks(""); } }}>
         <DialogContent>
-          <DialogHeader><DialogTitle className="capitalize">{actionDialog} GRN</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle className="capitalize">{actionDialog} GRN</DialogTitle>
+          </DialogHeader>
           <div className="space-y-3 pt-2">
-            <Textarea value={remarks} onChange={e => setRemarks(e.target.value)} placeholder={`Enter remarks${["approve","reject"].includes(actionDialog ?? "") ? " (required)" : ""}…`} className="min-h-20" />
+            <Textarea
+              value={remarks}
+              onChange={e => setRemarks(e.target.value)}
+              placeholder={`Enter remarks${["approve","reject"].includes(actionDialog ?? "") ? " (required)" : ""}…`}
+              className="min-h-20"
+            />
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={() => { setActionDialog(null); setRemarks(""); }}>Cancel</Button>
-              <Button className={cn(actionDialog === "approve" ? "bg-emerald-600 hover:bg-emerald-700" : actionDialog === "reject" ? "bg-red-600 hover:bg-red-700" : "bg-blue-600 hover:bg-blue-700")}
-                onClick={() => runAction(actionDialog ?? "")}>Confirm</Button>
+              <Button
+                className={cn(
+                  actionDialog === "approve" ? "bg-emerald-600 hover:bg-emerald-700" :
+                  actionDialog === "reject"  ? "bg-red-600 hover:bg-red-700" :
+                                              "bg-blue-600 hover:bg-blue-700"
+                )}
+                onClick={() => runAction(actionDialog ?? "")}
+              >
+                Confirm
+              </Button>
             </div>
           </div>
         </DialogContent>

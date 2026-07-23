@@ -1,28 +1,27 @@
-import { useGetLead, useUpdateLead, useAssignLead, useGetQuotations } from "@workspace/api-client-react";
+import { useGetLead, useUpdateLead, useGetQuotations } from "@workspace/api-client-react";
 import { getGetLeadQueryKey, getGetQuotationsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LeadSurvey } from "./tabs/LeadSurvey";
-import { Loader2, ArrowLeft, Building2, Mail, Phone, UserSquare2, Edit2, Save, X, Plus, FileText, StickyNote, Building } from "lucide-react";
-import { Link, useLocation } from "wouter";
-import { useState, useRef, useEffect } from "react";
+import { Loader2, ArrowLeft, Mail, Phone, UserSquare2, Edit2, Save, Plus, FileText, StickyNote, Clock, TrendingUp } from "lucide-react";
+import { useLocation } from "wouter";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
+import { StatusBadge, DetailRow, DetailGrid, SectionCard, PageHeader } from "@/components/shared";
 
-function getStatusColor(status: string) {
-  switch (status) {
-    case 'Closed Won': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-    case 'Closed Lost': return 'bg-red-100 text-red-800 border-red-200';
-    case 'New': return 'bg-blue-100 text-blue-800 border-blue-200';
-    case 'Proposal':
-    case 'Negotiation': return 'bg-amber-100 text-amber-800 border-amber-200';
-    default: return 'bg-gray-100 text-gray-800 border-gray-200';
+function formatDate(d?: string | null) {
+  if (!d) return "—";
+  try {
+    return new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "short", year: "2-digit" }).format(new Date(d));
+  } catch {
+    return d;
   }
 }
 
@@ -31,11 +30,11 @@ export function LeadDetail({ id }: { id: string }) {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  
-  const { data: lead, isLoading } = useGetLead(leadId, { 
-    query: { enabled: !!leadId, queryKey: getGetLeadQueryKey(leadId) } 
+
+  const { data: lead, isLoading } = useGetLead(leadId, {
+    query: { enabled: !!leadId, queryKey: getGetLeadQueryKey(leadId) }
   });
-  
+
   const { data: quotations } = useGetQuotations(
     { leadId },
     { query: { enabled: !!leadId, queryKey: getGetQuotationsQueryKey({ leadId }) } }
@@ -60,19 +59,19 @@ export function LeadDetail({ id }: { id: string }) {
   useEffect(() => {
     if (lead && !isEditing) {
       setEditForm({
-        companyName: lead.companyName || "",
-        contactName: lead.contactName || "",
-        contactEmail: lead.contactEmail || "",
-        contactPhone: lead.contactPhone || "",
-        status: lead.status || "New",
+        companyName:    lead.companyName    || "",
+        contactName:    lead.contactName    || "",
+        contactEmail:   lead.contactEmail   || "",
+        contactPhone:   lead.contactPhone   || "",
+        status:         lead.status         || "New",
         estimatedValue: lead.estimatedValue || 0,
-        notes: lead.notes || "",
+        notes:          lead.notes          || "",
       });
     }
   }, [lead, isEditing]);
 
   if (isLoading) {
-    return <div className="flex h-[60vh] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-gray-300" /></div>;
+    return <div className="flex h-[60vh] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
   }
 
   if (!lead) return <div>Lead not found</div>;
@@ -80,100 +79,120 @@ export function LeadDetail({ id }: { id: string }) {
   const handleSave = () => {
     updateMutation.mutate({
       id: leadId,
-      data: {
-        ...editForm,
-        estimatedValue: Number(editForm.estimatedValue)
-      }
+      data: { ...editForm, estimatedValue: Number(editForm.estimatedValue) }
     });
   };
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
-      
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-[12px] premium-shadow border border-gray-100">
-        <div className="flex items-center gap-5">
-          <Button variant="outline" size="icon" onClick={() => setLocation("/crm/leads")} className="h-10 w-10 rounded-[8px] border-gray-200 text-gray-500 hover:text-gray-900 shrink-0">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <div className="flex items-center gap-3 mb-1">
-              <h1 className="text-2xl font-bold tracking-tight text-gray-900">{lead.companyName || 'Unknown Company'}</h1>
-              <Badge variant="outline" className={`font-bold text-[10px] uppercase tracking-wide border px-2 py-0.5 rounded-[4px] ${getStatusColor(lead.status)}`}>
-                {lead.status}
-              </Badge>
-            </div>
-            <div className="flex items-center gap-3 text-sm font-medium text-gray-500">
-              <span className="flex items-center gap-1.5"><UserSquare2 className="h-4 w-4" /> {lead.contactName}</span>
-              <span className="text-gray-300">•</span>
-              <span className="font-mono text-xs text-gray-400">ID: LD-{lead.id.toString().padStart(4, '0')}</span>
-            </div>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          {isEditing ? (
-            <>
-              <Button variant="ghost" onClick={() => setIsEditing(false)} disabled={updateMutation.isPending} className="h-10 text-gray-500 font-bold">
-                Cancel
-              </Button>
-              <Button onClick={handleSave} disabled={updateMutation.isPending} className="h-10 bg-gray-900 hover:bg-black text-white font-bold rounded-[8px] px-6">
-                {updateMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-                Save Changes
-              </Button>
-            </>
-          ) : isAdmin ? (
-            <Button onClick={() => setIsEditing(true)} className="w-full sm:w-auto h-10 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 font-bold rounded-[8px] shadow-sm">
-              <Edit2 className="h-4 w-4 mr-2" /> Edit Details
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25 }} className="space-y-5 pb-10">
+
+      {/* ── Page Header ─────────────────────────────────────────────────────── */}
+      <PageHeader
+        title={lead.companyName || "Unknown Company"}
+        subtitle={lead.contactName ?? undefined}
+        actions={
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setLocation("/crm/leads")} className="gap-1.5">
+              <ArrowLeft className="w-3.5 h-3.5" /> Back
             </Button>
-          ) : null}
-        </div>
+            {isEditing ? (
+              <>
+                <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)} disabled={updateMutation.isPending}>
+                  Cancel
+                </Button>
+                <Button size="sm" onClick={handleSave} disabled={updateMutation.isPending} className="bg-foreground hover:bg-foreground/90 text-background gap-1.5">
+                  {updateMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                  Save Changes
+                </Button>
+              </>
+            ) : isAdmin ? (
+              <Button size="sm" variant="outline" onClick={() => setIsEditing(true)} className="gap-1.5">
+                <Edit2 className="h-3.5 w-3.5" /> Edit
+              </Button>
+            ) : null}
+          </div>
+        }
+      />
+
+      {/* ── Status Bar ──────────────────────────────────────────────────────── */}
+      <div className="flex items-center flex-wrap gap-3 px-5 py-3 rounded-xl border bg-card">
+        <StatusBadge status={lead.status} size="md" />
+        <div className="h-4 w-px bg-border/60" />
+        <span className="text-[12px] text-muted-foreground">Lead ID:</span>
+        <span className="font-mono text-[12px] font-semibold text-foreground">LD-{lead.id.toString().padStart(4, "0")}</span>
+        {lead.ownerName && (
+          <>
+            <div className="h-4 w-px bg-border/60" />
+            <span className="text-[12px] text-muted-foreground">Assigned to:</span>
+            <span className="text-[12px] font-semibold text-foreground">{lead.ownerName}</span>
+          </>
+        )}
+        {lead.createdAt && (
+          <>
+            <div className="h-4 w-px bg-border/60" />
+            <span className="text-[12px] text-muted-foreground">Created:</span>
+            <span className="text-[12px] text-foreground">{formatDate(lead.createdAt as string)}</span>
+          </>
+        )}
+        {lead.estimatedValue ? (
+          <>
+            <div className="h-4 w-px bg-border/60" />
+            <span className="text-[12px] text-muted-foreground">Est. Value:</span>
+            <span className="text-[12px] font-bold text-foreground font-mono">₹{Number(lead.estimatedValue).toLocaleString("en-IN")}</span>
+          </>
+        ) : null}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        
-        {/* Left Column: Details */}
-        <div className="space-y-6 lg:col-span-1">
-          
-          <div className="bg-white rounded-[12px] premium-shadow border border-gray-100 overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-50 bg-gray-50/50">
-              <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Contact Info</h3>
-            </div>
-            <div className="p-5 space-y-5">
-              <InfoRow 
-                icon={Building} label="Company" 
-                value={lead.companyName} editValue={editForm.companyName} 
-                isEditing={isEditing} onChange={(v: string) => setEditForm({...editForm, companyName: v})} 
-              />
-              <InfoRow 
-                icon={UserSquare2} label="Contact Person" 
-                value={lead.contactName} editValue={editForm.contactName} 
-                isEditing={isEditing} onChange={(v: string) => setEditForm({...editForm, contactName: v})} 
-              />
-              <InfoRow 
-                icon={Mail} label="Email Address" 
-                value={lead.contactEmail} editValue={editForm.contactEmail} 
-                isEditing={isEditing} onChange={(v: string) => setEditForm({...editForm, contactEmail: v})} 
-                isLink
-              />
-              <InfoRow 
-                icon={Phone} label="Phone Number" 
-                value={lead.contactPhone} editValue={editForm.contactPhone} 
-                isEditing={isEditing} onChange={(v: string) => setEditForm({...editForm, contactPhone: v})} 
-              />
-            </div>
-          </div>
+      {/* ── Two-column layout ───────────────────────────────────────────────── */}
+      <div className="grid gap-5 lg:grid-cols-3">
 
-          <div className="bg-white rounded-[12px] premium-shadow border border-gray-100 overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-50 bg-gray-50/50">
-              <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Qualification</h3>
-            </div>
-            <div className="p-5 space-y-6">
-              <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Stage / Status</p>
-                {isEditing ? (
+        {/* LEFT: 2/3 */}
+        <div className="space-y-5 lg:col-span-2">
+
+          {/* Lead Information */}
+          <SectionCard title="Lead Information">
+            <DetailGrid cols={2}>
+              <DetailRow
+                label="Company"
+                value={isEditing ? (
+                  <Input value={editForm.companyName} onChange={e => setEditForm({...editForm, companyName: e.target.value})} className="h-8 text-sm mt-1" />
+                ) : lead.companyName}
+              />
+              <DetailRow
+                label="Contact Person"
+                value={isEditing ? (
+                  <Input value={editForm.contactName} onChange={e => setEditForm({...editForm, contactName: e.target.value})} className="h-8 text-sm mt-1" />
+                ) : lead.contactName}
+              />
+              <DetailRow
+                label="Email"
+                value={isEditing ? (
+                  <Input value={editForm.contactEmail} onChange={e => setEditForm({...editForm, contactEmail: e.target.value})} className="h-8 text-sm mt-1" />
+                ) : (
+                  lead.contactEmail ? (
+                    <a href={`mailto:${lead.contactEmail}`} className="text-[13px] font-semibold text-primary hover:underline flex items-center gap-1">
+                      <Mail className="w-3.5 h-3.5" /> {lead.contactEmail}
+                    </a>
+                  ) : undefined
+                )}
+              />
+              <DetailRow
+                label="Phone"
+                value={isEditing ? (
+                  <Input value={editForm.contactPhone} onChange={e => setEditForm({...editForm, contactPhone: e.target.value})} className="h-8 text-sm mt-1" />
+                ) : (
+                  lead.contactPhone ? (
+                    <span className="flex items-center gap-1 text-[13px] font-semibold text-foreground">
+                      <Phone className="w-3.5 h-3.5 text-muted-foreground" /> {lead.contactPhone}
+                    </span>
+                  ) : undefined
+                )}
+              />
+              <DetailRow
+                label="Status / Stage"
+                value={isEditing ? (
                   <Select value={editForm.status} onValueChange={val => setEditForm({...editForm, status: val})}>
-                    <SelectTrigger className="h-10 bg-gray-50 font-semibold text-sm rounded-[8px]"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-8 text-sm mt-1"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="New">New</SelectItem>
                       <SelectItem value="Contacted">Contacted</SelectItem>
@@ -184,153 +203,227 @@ export function LeadDetail({ id }: { id: string }) {
                       <SelectItem value="Closed Lost">Closed Lost</SelectItem>
                     </SelectContent>
                   </Select>
+                ) : <StatusBadge status={lead.status} />}
+              />
+              <DetailRow
+                label="Estimated Value"
+                value={isEditing ? (
+                  <Input type="number" value={editForm.estimatedValue} onChange={e => setEditForm({...editForm, estimatedValue: e.target.value})} className="h-8 text-sm font-mono mt-1" />
                 ) : (
-                  <Badge variant="outline" className={`font-bold text-[11px] uppercase tracking-wide border px-2 py-0.5 rounded-[4px] ${getStatusColor(lead.status)}`}>
-                    {lead.status}
-                  </Badge>
-                )}
-              </div>
-              
-              <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Estimated Value</p>
-                {isEditing ? (
-                  <Input type="number" value={editForm.estimatedValue} onChange={e => setEditForm({...editForm, estimatedValue: e.target.value})} className="h-10 bg-gray-50 font-mono font-bold" />
-                ) : (
-                  <p className="text-2xl font-bold text-gray-900 tracking-tight font-mono">
+                  <span className="text-[18px] font-bold font-mono text-foreground">
                     ₹{Number(lead.estimatedValue || 0).toLocaleString("en-IN")}
+                  </span>
+                )}
+              />
+              <DetailRow label="Assigned Owner" value={lead.ownerName || "Unassigned"} />
+              {(lead as any).source && <DetailRow label="Source" value={(lead as any).source} />}
+              {(lead as any).category && <DetailRow label="Category" value={(lead as any).category} />}
+            </DetailGrid>
+
+            {/* Lead Score */}
+            {(lead.score !== undefined && lead.score !== null) && (
+              <div className="mt-5 pt-5 border-t border-border/60">
+                <div className="flex items-center justify-between mb-1.5">
+                  <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                    <TrendingUp className="w-3 h-3" /> Lead Score
+                  </p>
+                  <span className="text-sm font-bold font-mono text-foreground">{lead.score}</span>
+                </div>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className={cn("h-full rounded-full transition-all",
+                      lead.score > 70 ? "bg-emerald-500" : lead.score > 40 ? "bg-amber-500" : "bg-muted-foreground/40"
+                    )}
+                    style={{ width: `${Math.min(100, lead.score || 0)}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Notes */}
+            {(lead.notes || isEditing) && (
+              <div className="mt-5 pt-5 border-t border-border/60">
+                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">Notes</p>
+                {isEditing ? (
+                  <textarea
+                    className="w-full min-h-[120px] p-3 rounded-lg border border-border bg-muted/20 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary transition-all resize-none"
+                    value={editForm.notes || ""}
+                    onChange={e => setEditForm({...editForm, notes: e.target.value})}
+                    placeholder="Add background notes, meeting summaries, next steps..."
+                  />
+                ) : (
+                  <p className="text-[13px] text-foreground leading-relaxed whitespace-pre-wrap">
+                    {lead.notes || <span className="text-muted-foreground italic">No notes recorded.</span>}
                   </p>
                 )}
               </div>
+            )}
+          </SectionCard>
 
-              <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Lead Score</p>
-                <div className="flex items-center gap-3">
-                  <div className="h-2 flex-1 bg-gray-100 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full ${lead.score && lead.score > 70 ? 'bg-emerald-500' : lead.score && lead.score > 40 ? 'bg-amber-500' : 'bg-gray-400'}`} 
-                      style={{ width: `${Math.min(100, lead.score || 0)}%` }}
-                    />
-                  </div>
-                  <span className="text-sm font-bold font-mono text-gray-700">{lead.score || 0}</span>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Assigned Owner</p>
-                <p className="text-sm font-semibold text-gray-900">{lead.ownerName || 'Unassigned'}</p>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-        {/* Right Column: Tabs */}
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-[12px] premium-shadow border border-gray-100 h-full flex flex-col overflow-hidden">
-            <Tabs defaultValue="quotations" className="flex-1 flex flex-col">
-              <div className="border-b border-gray-100 px-2 pt-2 bg-gray-50/30">
-                <TabsList className="bg-transparent h-12 p-0 gap-6 px-4">
-                  <TabsTrigger value="quotations" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#EA580C] rounded-none px-0 h-12 text-sm font-bold text-gray-500 data-[state=active]:text-gray-900 transition-colors">
-                    <FileText className="h-4 w-4 mr-2" /> Quotations
+          {/* Quotations / Survey (tabbed) */}
+          <SectionCard noPadding>
+            <Tabs defaultValue="quotations">
+              <div className="border-b border-border px-2 pt-2 bg-muted/20">
+                <TabsList className="bg-transparent h-11 p-0 gap-5 px-4">
+                  <TabsTrigger
+                    value="quotations"
+                    className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 h-11 text-[13px] font-bold text-muted-foreground data-[state=active]:text-foreground transition-colors"
+                  >
+                    <FileText className="h-3.5 w-3.5 mr-1.5" /> Quotations
                   </TabsTrigger>
-                  <TabsTrigger value="notes" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#EA580C] rounded-none px-0 h-12 text-sm font-bold text-gray-500 data-[state=active]:text-gray-900 transition-colors">
-                    <StickyNote className="h-4 w-4 mr-2" /> Notes
+                  <TabsTrigger
+                    value="survey"
+                    className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 h-11 text-[13px] font-bold text-muted-foreground data-[state=active]:text-foreground transition-colors"
+                  >
+                    <StickyNote className="h-3.5 w-3.5 mr-1.5" /> Site Survey
                   </TabsTrigger>
                 </TabsList>
               </div>
-              
-              <TabsContent value="quotations" className="p-6 m-0 flex-1 outline-none">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-base font-bold text-gray-900 tracking-tight">Active Proposals</h3>
-                  <Button size="sm" className="bg-gray-100 hover:bg-gray-200 text-gray-900 font-bold rounded-[6px] h-8 shadow-none" onClick={() => setLocation(`/crm/quotations/new?leadId=${lead.id}`)}>
-                    <Plus className="h-4 w-4 mr-1.5" /> Create
+
+              <TabsContent value="quotations" className="p-5 m-0 outline-none">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-[13px] font-bold text-foreground">Active Proposals</h3>
+                  <Button size="sm" variant="outline" className="h-8 text-[12px] gap-1.5" onClick={() => setLocation(`/crm/quotations/new?leadId=${lead.id}`)}>
+                    <Plus className="h-3.5 w-3.5" /> Create
                   </Button>
                 </div>
-                
-                <div className="space-y-3">
+
+                <div className="space-y-2.5">
                   {quotations?.length === 0 ? (
-                    <div className="border-2 border-dashed border-gray-200 rounded-[12px] h-48 flex flex-col items-center justify-center text-center p-6 bg-gray-50/50">
-                      <FileText className="h-8 w-8 text-gray-300 mb-3" />
-                      <p className="text-sm font-bold text-gray-600">No quotations generated yet</p>
-                      <Button variant="link" className="text-[#EA580C] font-semibold mt-1" onClick={() => setLocation(`/crm/quotations/new?leadId=${lead.id}`)}>
+                    <div className="border-2 border-dashed border-border rounded-xl h-44 flex flex-col items-center justify-center text-center p-6">
+                      <FileText className="h-7 w-7 text-muted-foreground/40 mb-2.5" />
+                      <p className="text-sm font-semibold text-muted-foreground">No quotations yet</p>
+                      <Button variant="link" className="text-primary font-semibold mt-1 h-auto p-0" onClick={() => setLocation(`/crm/quotations/new?leadId=${lead.id}`)}>
                         Create the first proposal
                       </Button>
                     </div>
                   ) : (
                     quotations?.map(quote => (
-                      <div key={quote.id} 
+                      <div
+                        key={quote.id}
                         onClick={() => setLocation(`/crm/quotations/${quote.id}`)}
-                        className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-[8px] border border-gray-200 hover:border-orange-200 bg-white hover:bg-orange-50/30 transition-all cursor-pointer shadow-sm hover:shadow-md"
+                        className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg border border-border hover:border-primary/40 bg-card hover:bg-primary/5 transition-all cursor-pointer"
                       >
-                        <div className="mb-3 sm:mb-0">
-                          <div className="flex items-center gap-3 mb-1.5">
-                            <span className="font-mono font-bold text-gray-900 text-sm group-hover:text-[#EA580C] transition-colors">QTN-{quote.id.toString().padStart(4, '0')}</span>
-                            <Badge variant="outline" className={`text-[10px] font-bold uppercase tracking-wider rounded-[4px] border ${quote.approvalStatus === 'Approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-100 text-gray-600 border-gray-200'}`}>
-                              {quote.approvalStatus}
-                            </Badge>
+                        <div className="mb-2 sm:mb-0">
+                          <div className="flex items-center gap-2.5 mb-1">
+                            <span className="font-mono font-bold text-foreground text-sm group-hover:text-primary transition-colors">
+                              QTN-{quote.id.toString().padStart(4, "0")}
+                            </span>
+                            <StatusBadge status={quote.approvalStatus} />
                           </div>
-                          <p className="text-xs font-medium text-gray-500">
-                            Version {quote.version} • Created {format(new Date(quote.createdAt), 'MMM d, yyyy')}
+                          <p className="text-[11px] font-medium text-muted-foreground">
+                            Version {quote.version} · Created {format(new Date(quote.createdAt), "MMM d, yyyy")}
                           </p>
                         </div>
-                        <div className="sm:text-right flex sm:block items-end justify-between w-full sm:w-auto pt-3 border-t border-gray-100 sm:border-0 sm:pt-0">
-                          <p className="text-lg font-bold text-gray-900 font-mono">₹{Number(quote.totalAmount || 0).toLocaleString("en-IN")}</p>
-                          <p className="text-[11px] font-semibold text-gray-400 mt-0.5 uppercase tracking-wider">Valid till {quote.validTill ? format(new Date(quote.validTill), 'MMM d') : '-'}</p>
+                        <div className="sm:text-right flex sm:block items-end justify-between w-full sm:w-auto pt-2 border-t border-border sm:border-0 sm:pt-0">
+                          <p className="text-base font-bold text-foreground font-mono">₹{Number(quote.totalAmount || 0).toLocaleString("en-IN")}</p>
+                          <p className="text-[11px] font-medium text-muted-foreground mt-0.5">
+                            Valid till {quote.validTill ? format(new Date(quote.validTill), "MMM d") : "—"}
+                          </p>
                         </div>
                       </div>
                     ))
                   )}
                 </div>
               </TabsContent>
-              
-              <TabsContent value="notes" className="p-6 m-0 flex-1 outline-none flex flex-col">
-                {isEditing ? (
-                  <textarea 
-                    className="w-full flex-1 min-h-[300px] p-4 rounded-[8px] border border-gray-200 bg-gray-50 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#EA580C]/20 focus-visible:border-[#EA580C] transition-all resize-none"
-                    value={editForm.notes || ""}
-                    onChange={e => setEditForm({...editForm, notes: e.target.value})}
-                    placeholder="Add background notes, meeting summaries, next steps..."
-                  />
-                ) : (
-                  <div className="flex-1 min-h-[300px] p-5 rounded-[8px] border border-gray-100 bg-gray-50/50 whitespace-pre-wrap text-sm leading-relaxed text-gray-700 shadow-inner">
-                    {lead.notes || <span className="text-gray-400 italic font-medium">No notes recorded. Click edit to add context.</span>}
-                  </div>
-                )}
-              </TabsContent>
 
-              <TabsContent value="survey" className="p-6 m-0 flex-1 outline-none">
+              <TabsContent value="survey" className="p-5 m-0 outline-none">
                 <LeadSurvey leadId={lead.id} />
               </TabsContent>
             </Tabs>
-          </div>
+          </SectionCard>
+        </div>
+
+        {/* RIGHT: 1/3 */}
+        <div className="space-y-5">
+
+          {/* Quick Actions */}
+          <SectionCard title="Quick Actions">
+            <div className="space-y-2">
+              <Button
+                className="w-full justify-start gap-2 text-[13px] bg-primary text-primary-foreground hover:bg-primary/90"
+                size="sm"
+                onClick={() => setLocation(`/crm/quotations/new?leadId=${lead.id}`)}
+              >
+                <FileText className="w-3.5 h-3.5" /> Create Quotation
+              </Button>
+              {isAdmin && !isEditing && (
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-2 text-[13px]"
+                  size="sm"
+                  onClick={() => setIsEditing(true)}
+                >
+                  <Edit2 className="w-3.5 h-3.5" /> Edit Lead Details
+                </Button>
+              )}
+              {lead.contactEmail && (
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-2 text-[13px]"
+                  size="sm"
+                  asChild
+                >
+                  <a href={`mailto:${lead.contactEmail}`}>
+                    <Mail className="w-3.5 h-3.5" /> Email Contact
+                  </a>
+                </Button>
+              )}
+              {lead.contactPhone && (
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-2 text-[13px]"
+                  size="sm"
+                  asChild
+                >
+                  <a href={`tel:${lead.contactPhone}`}>
+                    <Phone className="w-3.5 h-3.5" /> Call Contact
+                  </a>
+                </Button>
+              )}
+            </div>
+          </SectionCard>
+
+          {/* Activity Timeline */}
+          {((lead as any).activityLog ?? []).length > 0 && (
+            <SectionCard title="Activity">
+              <div className="space-y-3">
+                {((lead as any).activityLog as any[]).map((log: any, idx: number) => (
+                  <div key={log.id ?? idx} className="flex gap-2.5">
+                    <div className="flex flex-col items-center">
+                      <div className="w-6 h-6 bg-muted rounded-full flex items-center justify-center shrink-0">
+                        <Clock className="w-3 h-3 text-muted-foreground" />
+                      </div>
+                      {idx < ((lead as any).activityLog as any[]).length - 1 && (
+                        <div className="w-px flex-1 bg-border/60 mt-1" />
+                      )}
+                    </div>
+                    <div className="pb-3 min-w-0">
+                      <p className="text-[12px] font-semibold text-foreground leading-snug">{log.action ?? log.event}</p>
+                      {log.note && <p className="text-[11px] text-muted-foreground mt-0.5">{log.note}</p>}
+                      <p className="text-[10px] text-muted-foreground/70 mt-0.5">
+                        {log.createdAt ? new Date(log.createdAt).toLocaleString("en-IN") : ""}
+                        {log.performedByName ? ` · ${log.performedByName}` : ""}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </SectionCard>
+          )}
+
+          {/* Lead Meta */}
+          <SectionCard title="Lead Details">
+            <div className="space-y-3">
+              <DetailRow label="Lead ID" value={`LD-${lead.id.toString().padStart(4, "0")}`} mono />
+              <DetailRow label="Created" value={formatDate((lead as any).createdAt)} />
+              {(lead as any).updatedAt && <DetailRow label="Last Updated" value={formatDate((lead as any).updatedAt)} />}
+              {(lead as any).source && <DetailRow label="Source" value={(lead as any).source} />}
+              {(lead as any).category && <DetailRow label="Category" value={(lead as any).category} />}
+            </div>
+          </SectionCard>
         </div>
       </div>
     </motion.div>
-  );
-}
-
-function InfoRow({ icon: Icon, label, value, editValue, isEditing, onChange, isLink }: any) {
-  return (
-    <div className="flex items-start gap-4">
-      <div className="mt-0.5 p-2 bg-gray-50 rounded-md text-gray-400">
-        <Icon className="h-4 w-4" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">{label}</p>
-        {isEditing ? (
-          <Input 
-            value={editValue} 
-            onChange={e => onChange(e.target.value)} 
-            className="h-9 bg-gray-50 text-sm font-semibold rounded-[6px]"
-          />
-        ) : (
-          isLink && value ? (
-            <a href={`mailto:${value}`} className="text-sm font-bold text-[#EA580C] hover:underline truncate block">{value}</a>
-          ) : (
-            <p className="text-sm font-bold text-gray-900 truncate">{value || '-'}</p>
-          )
-        )}
-      </div>
-    </div>
   );
 }

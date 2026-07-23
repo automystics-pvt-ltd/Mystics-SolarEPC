@@ -4,6 +4,7 @@ import { useTheme } from "@/lib/theme";
 import {
   Bell, Search, PanelLeftClose, PanelLeftOpen, CheckCheck,
   ExternalLink, ArrowRight, Moon, Sun, Monitor, LogOut,
+  ChevronDown, CheckCircle2, Info, AlertCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -141,6 +142,10 @@ function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void 
   const [activeIdx, setActiveIdx] = useState(0);
   const [, navigate] = useLocation();
   const inputRef = useRef<HTMLInputElement>(null);
+  const [recents, setRecents] = useState<typeof CMD_NAV>(() => {
+    try { return JSON.parse(sessionStorage.getItem("recent_nav") ?? "[]"); }
+    catch { return []; }
+  });
 
   const filtered = query.trim()
     ? CMD_NAV.filter(
@@ -159,7 +164,16 @@ function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void 
   }, [open]);
   useEffect(() => { setActiveIdx(0); }, [query]);
 
-  const go = (href: string) => { navigate(href); onClose(); };
+  const go = (href: string) => {
+    const item = CMD_NAV.find(i => i.href === href);
+    if (item) {
+      const updated = [item, ...recents.filter(r => r.href !== href)].slice(0, 5);
+      setRecents(updated);
+      sessionStorage.setItem("recent_nav", JSON.stringify(updated));
+    }
+    navigate(href);
+    onClose();
+  };
 
   const handleKey = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") { e.preventDefault(); setActiveIdx((i) => Math.min(i + 1, filtered.length - 1)); }
@@ -202,34 +216,66 @@ function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void 
               No results for "{query}"
             </div>
           ) : (
-            Object.entries(groups).map(([section, items]) => (
-              <div key={section}>
-                <p className="px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
-                  {section}
-                </p>
-                {items.map((item) => {
-                  const idx = globalIdx++;
-                  return (
-                    <div
-                      key={item.href}
-                      onClick={() => go(item.href)}
-                      onMouseEnter={() => setActiveIdx(idx)}
-                      className={cn(
-                        "flex items-center justify-between px-4 py-2.5 cursor-pointer text-[13px] transition-colors",
-                        idx === activeIdx
-                          ? "bg-primary/8 text-primary dark:bg-primary/15"
-                          : "text-foreground hover:bg-muted/60"
-                      )}
-                    >
-                      <span className="font-medium">{item.name}</span>
-                      {idx === activeIdx && (
-                        <ArrowRight className="h-3.5 w-3.5 text-primary" />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            ))
+            <>
+              {/* Recent section — shown only when no query and recents exist */}
+              {!query.trim() && recents.length > 0 && (
+                <div>
+                  <p className="px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+                    Recent
+                  </p>
+                  {recents.map((item) => {
+                    const idx = globalIdx++;
+                    return (
+                      <div
+                        key={"recent-" + item.href}
+                        onClick={() => go(item.href)}
+                        onMouseEnter={() => setActiveIdx(idx)}
+                        className={cn(
+                          "flex items-center justify-between px-4 py-2.5 cursor-pointer text-[13px] transition-colors",
+                          idx === activeIdx
+                            ? "bg-primary/8 text-primary dark:bg-primary/15"
+                            : "text-foreground hover:bg-muted/60"
+                        )}
+                      >
+                        <span className="font-medium">{item.name}</span>
+                        {idx === activeIdx && (
+                          <ArrowRight className="h-3.5 w-3.5 text-primary" />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {/* Main groups */}
+              {Object.entries(groups).map(([section, items]) => (
+                <div key={section}>
+                  <p className="px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+                    {!query.trim() && recents.length > 0 ? "All Navigation" : section}
+                  </p>
+                  {items.map((item) => {
+                    const idx = globalIdx++;
+                    return (
+                      <div
+                        key={item.href}
+                        onClick={() => go(item.href)}
+                        onMouseEnter={() => setActiveIdx(idx)}
+                        className={cn(
+                          "flex items-center justify-between px-4 py-2.5 cursor-pointer text-[13px] transition-colors",
+                          idx === activeIdx
+                            ? "bg-primary/8 text-primary dark:bg-primary/15"
+                            : "text-foreground hover:bg-muted/60"
+                        )}
+                      >
+                        <span className="font-medium">{item.name}</span>
+                        {idx === activeIdx && (
+                          <ArrowRight className="h-3.5 w-3.5 text-primary" />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </>
           )}
         </ScrollArea>
 
@@ -285,6 +331,16 @@ function ThemeToggle() {
     </DropdownMenu>
   );
 }
+
+// ── Notification icon map ─────────────────────────────────────────────────────
+
+const NOTIF_ICON: Record<string, React.ElementType> = {
+  success:  CheckCircle2,
+  info:     Info,
+  warning:  AlertCircle,
+  error:    AlertCircle,
+  approval: CheckCircle2,
+};
 
 // ── Notification dot colors ───────────────────────────────────────────────────
 
@@ -392,11 +448,11 @@ function NotificationBell({ userId }: { userId: number }) {
               >
                 <div
                   className={cn(
-                    "h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5",
+                    "h-7 w-7 rounded-full flex items-center justify-center shrink-0 mt-0.5",
                     NOTIF_ICON_CLASS[n.type] ?? "bg-muted text-muted-foreground"
                   )}
                 >
-                  {n.type === "success" ? "✓" : n.type === "info" ? "i" : "!"}
+                  {(() => { const NIcon = NOTIF_ICON[n.type] ?? Info; return <NIcon className="h-3.5 w-3.5" />; })()}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className={cn("text-[12px] leading-snug", !n.isRead ? "font-semibold text-foreground" : "font-medium text-foreground/80")}>{n.title}</p>
@@ -572,36 +628,32 @@ export function Topbar() {
             <DropdownMenuTrigger asChild>
               <button
                 aria-label="User menu"
-                className="h-8 w-8 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ml-0.5"
+                className="flex items-center gap-2 h-8 pl-1 pr-2.5 rounded-lg hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <Avatar className="h-8 w-8 ring-2 ring-background shadow-xs">
-                  <AvatarFallback
-                    className="text-white text-[11px] font-bold"
-                    style={{ background: "linear-gradient(135deg, #1E3A5F, #0F2340)" }}
-                  >
+                <Avatar className="h-6 w-6">
+                  <AvatarFallback className="text-[10px] font-bold bg-gradient-to-br from-blue-900 to-blue-700 text-white border border-white/10">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
+                <div className="hidden md:flex flex-col items-start leading-none">
+                  <span className="text-[12px] font-semibold text-foreground">{user?.name?.split(" ")[0]}</span>
+                  <span className="text-[10px] text-muted-foreground capitalize">{(user as any)?.role}</span>
+                </div>
+                <ChevronDown className="h-3 w-3 text-muted-foreground hidden md:block" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 mt-1 shadow-popover" align="end">
-              <DropdownMenuLabel className="font-normal px-3 py-2.5">
+            <DropdownMenuContent align="end" className="w-56 shadow-popover" sideOffset={8}>
+              <div className="px-3 py-2 border-b border-border/60">
                 <p className="text-[13px] font-semibold text-foreground">{user?.name}</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">{(user as any)?.email}</p>
-                <Badge
-                  variant="outline"
-                  className="mt-1.5 w-fit text-[9px] uppercase font-bold text-muted-foreground bg-muted px-1.5 py-0 capitalize"
-                >
+                <p className="text-[11px] text-muted-foreground">{(user as any)?.email}</p>
+                <span className="inline-flex items-center mt-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-primary/10 text-primary">
                   {(user as any)?.role}
-                </Badge>
-              </DropdownMenuLabel>
+                </span>
+              </div>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={logout}
-                className="text-destructive font-medium cursor-pointer px-3 py-2 text-[13px] gap-2 focus:text-destructive focus:bg-destructive/8"
-              >
-                <LogOut className="h-3.5 w-3.5" />
-                Sign out
+              <DropdownMenuItem className="gap-2.5 text-[13px] cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/8"
+                onClick={logout}>
+                <LogOut className="h-3.5 w-3.5" /> Sign out
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
