@@ -58,8 +58,8 @@ function timeAgo(ts?: string): string {
   }
 }
 
-function getInitials(name?: string): string {
-  if (!name) return "•";
+function getInitials(name?: unknown): string {
+  if (!name || typeof name !== "string") return "•";
   return name
     .split(" ")
     .slice(0, 2)
@@ -85,8 +85,8 @@ export function ActivityFeed({ items, isLoading }: ActivityFeedProps) {
       {visible.length === 0 ? (
         <EmptyState
           icon={Activity}
-          title="No recent activity"
-          description="Events from leads, projects, and procurement will appear here."
+          heading="No recent activity"
+          message="Events from leads, projects, and procurement will appear here."
           size="sm"
         />
       ) : (
