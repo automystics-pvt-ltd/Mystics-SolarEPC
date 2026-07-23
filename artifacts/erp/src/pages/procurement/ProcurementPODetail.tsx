@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   useGetProcurementPO, useUpdateProcurementPO, useRecordProcurementPODispatch,
   getGetProcurementPOQueryKey, getGetProcurementPOsQueryKey,
@@ -23,6 +23,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { StatusBadge, DetailRow, DetailGrid, SectionCard, PageHeader } from "@/components/shared";
+import { addRecentEntry } from "@/lib/recentHistory";
 
 function formatDate(d?: string | null) {
   if (!d) return "—";
@@ -105,6 +106,11 @@ export default function ProcurementPODetail({ id }: { id: string }) {
   const [showCloseConfirm,  setShowCloseConfirm]     = useState(false);
 
   const { data: po, isLoading } = useGetProcurementPO(poId, { query: { enabled: !!poId, queryKey: getGetProcurementPOQueryKey(poId) } });
+
+  useEffect(() => {
+    if (po?.poNumber) addRecentEntry(`/procurement/pos/${poId}`, po.poNumber, "Purchase Orders");
+  }, [po?.poNumber, poId]);
+
   const updateMut  = useUpdateProcurementPO();
   const dispatchMut = useRecordProcurementPODispatch();
 

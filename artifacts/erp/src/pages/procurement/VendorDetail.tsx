@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useGetVendor, getGetVendorQueryKey, useUpdateVendor, useAddVendorContact, useDeleteVendorContact } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { motion } from "framer-motion";
 import { Edit3, Save, X, Plus, Trash2, Building2, Shield, Phone, Mail, CreditCard, Users, Banknote, Star } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { PageHeader, SectionCard, StatusBadge, DetailGrid, DetailRow } from "@/components/shared";
+import { addRecentEntry } from "@/lib/recentHistory";
 
 export default function VendorDetail({ id }: { id: string }) {
   const [, setLocation] = useLocation();
@@ -28,6 +29,11 @@ export default function VendorDetail({ id }: { id: string }) {
   const { data: vendor, isLoading } = useGetVendor(vendorId, {
     query: { enabled: !!vendorId, queryKey: getGetVendorQueryKey(vendorId) }
   });
+
+  useEffect(() => {
+    if (vendor?.name) addRecentEntry(`/procurement/vendors/${vendorId}`, vendor.name, "Vendors");
+  }, [vendor?.name, vendorId]);
+
   const updateMut = useUpdateVendor();
   const addContactMut = useAddVendorContact();
   const delContactMut = useDeleteVendorContact();

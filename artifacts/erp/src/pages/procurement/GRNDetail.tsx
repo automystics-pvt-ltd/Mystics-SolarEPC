@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   useGetProcGrn, getGetProcGrnQueryKey, getGetProcGrnsQueryKey,
   useSubmitProcGrn, useApproveProcGrn, useRejectProcGrn,
@@ -16,6 +16,7 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
 import { StatusBadge, DetailRow, DetailGrid, SectionCard, PageHeader } from "@/components/shared";
+import { addRecentEntry } from "@/lib/recentHistory";
 
 function formatDate(d?: string | null) {
   if (!d) return "—";
@@ -177,6 +178,11 @@ export default function GRNDetail({ id }: { id: string }) {
   const isApprover = ["admin", "approver"].includes(user.role);
 
   const { data: grn, isLoading } = useGetProcGrn(grnId, { query: { enabled: !!grnId, queryKey: getGetProcGrnQueryKey(grnId) } });
+
+  useEffect(() => {
+    if (grn?.grnNumber) addRecentEntry(`/procurement/grns/${grnId}`, grn.grnNumber, "GRNs");
+  }, [grn?.grnNumber, grnId]);
+
   const submitMut = useSubmitProcGrn();
   const approveMut = useApproveProcGrn();
   const rejectMut = useRejectProcGrn();

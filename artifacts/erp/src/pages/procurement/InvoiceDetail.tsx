@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   useGetProcInvoice, getGetProcInvoiceQueryKey, getGetProcInvoicesQueryKey,
   useSubmitProcInvoice, useApproveProcInvoice, useRejectProcInvoice,
@@ -16,6 +16,7 @@ import { CheckCircle2, XCircle, Send, AlertTriangle, CreditCard, Printer, Clock,
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
 import { PageHeader, SectionCard, StatusBadge, DetailGrid, DetailRow } from "@/components/shared";
+import { addRecentEntry } from "@/lib/recentHistory";
 
 const fmt = (n: number | null | undefined) =>
   n != null ? `₹${Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : "—";
@@ -29,6 +30,11 @@ export default function InvoiceDetail({ id }: { id: string }) {
   const isApprover = ["admin", "approver"].includes(user.role);
 
   const { data: invoice, isLoading } = useGetProcInvoice(invId, { query: { enabled: !!invId, queryKey: getGetProcInvoiceQueryKey(invId) } });
+
+  useEffect(() => {
+    if (invoice?.invoiceNumber) addRecentEntry(`/procurement/invoices/${invId}`, invoice.invoiceNumber, "Procurement Invoices");
+  }, [invoice?.invoiceNumber, invId]);
+
   const submitMut = useSubmitProcInvoice();
   const approveMut = useApproveProcInvoice();
   const rejectMut = useRejectProcInvoice();

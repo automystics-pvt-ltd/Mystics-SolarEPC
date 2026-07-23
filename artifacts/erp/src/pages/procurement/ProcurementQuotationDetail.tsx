@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   useGetProcurementQuotation, getGetProcurementQuotationQueryKey, getGetProcurementQuotationsQueryKey,
   useSubmitProcurementQuotation,
@@ -22,6 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { PageHeader, SectionCard, DetailGrid, DetailRow, StatusBadge } from "@/components/shared";
+import { addRecentEntry } from "@/lib/recentHistory";
 
 const ACTION_ICONS: Record<string, any> = {
   Created: FileText, Submitted: Send, ReviewStarted: Eye, Approved: CheckCircle2,
@@ -38,6 +39,10 @@ export default function ProcurementQuotationDetail({ id }: { id: string }) {
   const [remarks, setRemarks] = useState("");
 
   const { data: quotation, isLoading } = useGetProcurementQuotation(qId, { query: { enabled: !!qId, queryKey: getGetProcurementQuotationQueryKey(qId) } });
+
+  useEffect(() => {
+    if (quotation?.referenceId) addRecentEntry(`/procurement/quotations/${qId}`, quotation.referenceId, "Vendor Quotations");
+  }, [quotation?.referenceId, qId]);
 
   const submitMut = useSubmitProcurementQuotation();
   const reviewMut = useStartProcurementQuotationReview();

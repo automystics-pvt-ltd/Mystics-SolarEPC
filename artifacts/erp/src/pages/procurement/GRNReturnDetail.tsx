@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -13,6 +13,7 @@ import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { PageHeader, SectionCard, StatusBadge, DetailGrid, DetailRow } from "@/components/shared";
+import { addRecentEntry } from "@/lib/recentHistory";
 
 const STEPS = ["Draft", "Submitted", "Approved", "Dispatched", "Closed"];
 
@@ -36,6 +37,10 @@ export default function GRNReturnDetail({ id }: { id: string }) {
     queryKey: ["grn-return", id],
     queryFn: () => apiGet<any>(`/grn-returns/${id}`),
   });
+
+  useEffect(() => {
+    if (rtv?.returnNumber) addRecentEntry(`/procurement/grn-returns/${id}`, rtv.returnNumber, "GRN Returns");
+  }, [rtv?.returnNumber, id]);
 
   const submitMut = useMutation({
     mutationFn: () => apiPatch(`/grn-returns/${id}/submit`, { userId: user?.id, userName: user?.name, remarks }),

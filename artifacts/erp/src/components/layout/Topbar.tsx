@@ -23,6 +23,7 @@ import { apiGet, apiPost, apiPatch } from "@/lib/fetch";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useEffect, useRef, useState, useCallback } from "react";
+import { addRecentEntry, getRecentEntries, type RecentEntry } from "@/lib/recentHistory";
 
 /* ── All nav items for command palette ───────────────────────────
    `roles` mirrors NavRail exactly — item visible when:
@@ -191,73 +192,94 @@ function navItemAllowed(item: typeof ALL_NAV[number], role: string): boolean {
   return !item.roles || item.roles.includes(role);
 }
 
-const RECENT_KEY = "mystics_cmd_recent";
-const MAX_RECENT = 5;
-
-function getRecentHrefs(): string[] {
-  try { return JSON.parse(localStorage.getItem(RECENT_KEY) ?? "[]"); } catch { return []; }
+/* ── Palette item (unified type for nav + detail entries) ────── */
+interface PaletteItem {
+  href: string;
+  label: string;
+  section: string;
+  icon: React.ElementType;
+  roles?: string[];
 }
 
-function addRecentHref(href: string) {
-  const prev = getRecentHrefs().filter((h) => h !== href);
-  localStorage.setItem(RECENT_KEY, JSON.stringify([href, ...prev].slice(0, MAX_RECENT)));
+function navToPaletteItem(n: typeof ALL_NAV[number]): PaletteItem {
+  return { href: n.href, label: n.name, section: n.section, icon: n.icon, roles: n.roles };
+}
+
+/** Convert a RecentEntry to a PaletteItem; returns null if unresolvable. */
+function recentEntryToPaletteItem(entry: RecentEntry): PaletteItem | null {
+  // Exact nav item match (list pages)
+  const navItem = ALL_NAV.find((n) => n.href === entry.href);
+  if (navItem) return navToPaletteItem(navItem);
+  // Detail page — inherit icon and roles from parent nav item
+  const parent = ALL_NAV.find((n) => entry.href.startsWith(n.href + "/"));
+  return {
+    href: entry.href,
+    label: entry.label || entry.href,
+    section: entry.section || parent?.section || "",
+    icon: parent?.icon ?? FileText,
+    roles: parent?.roles,
+  };
 }
 
 /* ── Command Palette ─────────────────────────────────────────── */
 function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [query, setQuery] = useState("");
   const [cursor, setCursor] = useState(0);
-  const [recentHrefs, setRecentHrefs] = useState<string[]>([]);
+  const [recentEntries, setRecentEntries] = useState<RecentEntry[]>([]);
   const [, setLocation] = useLocation();
   const inputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
 
   /* Filter nav by role — route-level, deny-by-default for unknown roles */
   const role = user?.role ?? "";
-  const roleNav = ALL_NAV.filter((item) => navItemAllowed(item, role));
+  const roleNav: PaletteItem[] = ALL_NAV
+    .filter((item) => navItemAllowed(item, role))
+    .map(navToPaletteItem);
 
-  /* Recent items (role-filtered) */
-  const recentItems = recentHrefs
-    .map((href) => roleNav.find((n) => n.href === href))
-    .filter(Boolean) as typeof ALL_NAV;
+  /* Recent items: include detail-page entries + nav items, role-filtered */
+  const recentItems: PaletteItem[] = recentEntries
+    .map(recentEntryToPaletteItem)
+    .filter((item): item is PaletteItem => {
+      if (!item) return false;
+      if (!item.roles) return true;
+      return item.roles.includes(role);
+    });
 
-  /* Search results (role-filtered) */
-  const searchResults = query.trim()
+  /* Search results (role-filtered, searches both label and section) */
+  const searchResults: PaletteItem[] = query.trim()
     ? roleNav.filter(
         (item) =>
-          item.name.toLowerCase().includes(query.toLowerCase()) ||
+          item.label.toLowerCase().includes(query.toLowerCase()) ||
           item.section.toLowerCase().includes(query.toLowerCase())
       )
     : [];
 
   /* Flat list for keyboard navigation */
-  const flatList = query.trim() ? searchResults : [...recentItems, ...roleNav];
+  const flatList: PaletteItem[] = query.trim() ? searchResults : [...recentItems, ...roleNav];
 
-  // Re-read localStorage whenever `open` becomes true (picks up hrefs added
-  // in other tabs or since the palette was last opened).
+  // Re-read localStorage whenever `open` becomes true (picks up entries added
+  // from detail pages or since the palette was last opened).
   useEffect(() => {
     if (open) {
       setQuery("");
       setCursor(0);
-      setRecentHrefs(getRecentHrefs());
+      setRecentEntries(getRecentEntries());
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [open]);
 
-  // Also refresh recentHrefs whenever the user's role changes so that hrefs
-  // from sections the user can no longer access are flushed from the list.
-  // (recentItems is already role-filtered at render time, but re-reading
-  // here keeps the state consistent and makes the dependency explicit.)
+  // Also refresh whenever the user's role changes so that entries for
+  // sections the user can no longer access are flushed from the display.
   useEffect(() => {
-    setRecentHrefs(getRecentHrefs());
+    setRecentEntries(getRecentEntries());
   }, [role]);
 
   useEffect(() => { setCursor(0); }, [query]);
 
   const navigate = useCallback(
-    (href: string) => {
-      addRecentHref(href);
-      setLocation(href);
+    (item: PaletteItem) => {
+      addRecentEntry(item.href, item.label, item.section);
+      setLocation(item.href);
       onClose();
     },
     [setLocation, onClose]
@@ -266,17 +288,17 @@ function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") { e.preventDefault(); setCursor((c) => Math.min(c + 1, flatList.length - 1)); }
     else if (e.key === "ArrowUp") { e.preventDefault(); setCursor((c) => Math.max(c - 1, 0)); }
-    else if (e.key === "Enter") { if (flatList[cursor]) navigate(flatList[cursor].href); }
+    else if (e.key === "Enter") { if (flatList[cursor]) navigate(flatList[cursor]); }
     else if (e.key === "Escape") onClose();
   };
 
   if (!open) return null;
 
-  /* Render a single nav item row */
-  const NavRow = ({ item, idx }: { item: typeof ALL_NAV[number]; idx: number }) => (
+  /* Render a single palette item row (works for nav items and detail entries) */
+  const NavRow = ({ item, idx }: { item: PaletteItem; idx: number }) => (
     <button
       key={item.href}
-      onClick={() => navigate(item.href)}
+      onClick={() => navigate(item)}
       onMouseEnter={() => setCursor(idx)}
       className={cn(
         "w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors",
@@ -291,7 +313,7 @@ function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void 
         <item.icon className="h-4 w-4" aria-hidden />
       </div>
       <div className="min-w-0 flex-1">
-        <p className={cn("text-[13px] font-semibold", cursor === idx ? "text-gray-900 dark:text-foreground" : "text-gray-700 dark:text-muted-foreground")}>{item.name}</p>
+        <p className={cn("text-[13px] font-semibold", cursor === idx ? "text-gray-900 dark:text-foreground" : "text-gray-700 dark:text-muted-foreground")}>{item.label}</p>
         <p className="text-[11px] text-gray-400">{item.section}</p>
       </div>
       {cursor === idx && <ArrowRight className="h-4 w-4 text-[#EA580C] shrink-0" aria-hidden />}
