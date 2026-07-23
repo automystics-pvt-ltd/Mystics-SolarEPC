@@ -339,3 +339,207 @@ export const COUNTRIES: SelectOption[] = [
   { value: "Zambia",               label: "Zambia" },
   { value: "Zimbabwe",             label: "Zimbabwe" },
 ];
+
+// ── India: cities grouped by state ───────────────────────────────────────────
+export const INDIA_STATE_CITIES_MAP: Record<string, SelectOption[]> = {
+  "Andhra Pradesh":    [{ value:"Visakhapatnam",label:"Visakhapatnam"},{value:"Vijayawada",label:"Vijayawada"},{value:"Guntur",label:"Guntur"},{value:"Tirupati",label:"Tirupati"},{value:"Kurnool",label:"Kurnool"},{value:"Nellore",label:"Nellore"}],
+  "Arunachal Pradesh": [{ value:"Itanagar",label:"Itanagar"},{value:"Naharlagun",label:"Naharlagun"}],
+  "Assam":             [{ value:"Guwahati",label:"Guwahati"},{value:"Dispur",label:"Dispur (Capital)"},{value:"Silchar",label:"Silchar"},{value:"Dibrugarh",label:"Dibrugarh"}],
+  "Bihar":             [{ value:"Patna",label:"Patna"},{value:"Gaya",label:"Gaya"},{value:"Muzaffarpur",label:"Muzaffarpur"},{value:"Bhagalpur",label:"Bhagalpur"},{value:"Darbhanga",label:"Darbhanga"}],
+  "Chhattisgarh":      [{ value:"Raipur",label:"Raipur"},{value:"Bhilai",label:"Bhilai"},{value:"Bilaspur",label:"Bilaspur"},{value:"Korba",label:"Korba"}],
+  "Goa":               [{ value:"Panaji",label:"Panaji (Capital)"},{value:"Margao",label:"Margao"},{value:"Vasco da Gama",label:"Vasco da Gama"},{value:"Mapusa",label:"Mapusa"}],
+  "Gujarat":           [{ value:"Ahmedabad",label:"Ahmedabad"},{value:"Surat",label:"Surat"},{value:"Vadodara",label:"Vadodara"},{value:"Rajkot",label:"Rajkot"},{value:"Bhavnagar",label:"Bhavnagar"},{value:"Jamnagar",label:"Jamnagar"},{value:"Gandhinagar",label:"Gandhinagar (Capital)"},{value:"Anand",label:"Anand"}],
+  "Haryana":           [{ value:"Gurugram",label:"Gurugram"},{value:"Faridabad",label:"Faridabad"},{value:"Panipat",label:"Panipat"},{value:"Ambala",label:"Ambala"},{value:"Sonipat",label:"Sonipat"},{value:"Rohtak",label:"Rohtak"},{value:"Chandigarh",label:"Chandigarh (shared)"},{value:"Hisar",label:"Hisar"}],
+  "Himachal Pradesh":  [{ value:"Shimla",label:"Shimla (Capital)"},{value:"Dharamshala",label:"Dharamshala"},{value:"Solan",label:"Solan"},{value:"Mandi",label:"Mandi"},{value:"Baddi",label:"Baddi"}],
+  "Jharkhand":         [{ value:"Ranchi",label:"Ranchi (Capital)"},{value:"Dhanbad",label:"Dhanbad"},{value:"Jamshedpur",label:"Jamshedpur"},{value:"Bokaro",label:"Bokaro Steel City"}],
+  "Karnataka":         [{ value:"Bengaluru",label:"Bengaluru"},{value:"Mysuru",label:"Mysuru"},{value:"Hubli-Dharwad",label:"Hubli-Dharwad"},{value:"Mangaluru",label:"Mangaluru"},{value:"Belagavi",label:"Belagavi"},{value:"Tumakuru",label:"Tumakuru"},{value:"Shivamogga",label:"Shivamogga"},{value:"Kalaburagi",label:"Kalaburagi"}],
+  "Kerala":            [{ value:"Kochi",label:"Kochi"},{value:"Thiruvananthapuram",label:"Thiruvananthapuram (Capital)"},{value:"Kozhikode",label:"Kozhikode"},{value:"Thrissur",label:"Thrissur"},{value:"Kollam",label:"Kollam"},{value:"Palakkad",label:"Palakkad"},{value:"Kannur",label:"Kannur"}],
+  "Madhya Pradesh":    [{ value:"Indore",label:"Indore"},{value:"Bhopal",label:"Bhopal (Capital)"},{value:"Jabalpur",label:"Jabalpur"},{value:"Gwalior",label:"Gwalior"},{value:"Ujjain",label:"Ujjain"},{value:"Rewa",label:"Rewa"},{value:"Sagar",label:"Sagar"}],
+  "Maharashtra":       [{ value:"Mumbai",label:"Mumbai"},{value:"Pune",label:"Pune"},{value:"Nagpur",label:"Nagpur"},{value:"Thane",label:"Thane"},{value:"Navi Mumbai",label:"Navi Mumbai"},{value:"Nashik",label:"Nashik"},{value:"Aurangabad",label:"Aurangabad (Chhatrapati Sambhajinagar)"},{value:"Solapur",label:"Solapur"},{value:"Kolhapur",label:"Kolhapur"},{value:"Amravati",label:"Amravati"}],
+  "Manipur":           [{ value:"Imphal",label:"Imphal (Capital)"},{value:"Thoubal",label:"Thoubal"},{value:"Bishnupur",label:"Bishnupur"}],
+  "Meghalaya":         [{ value:"Shillong",label:"Shillong (Capital)"},{value:"Tura",label:"Tura"}],
+  "Mizoram":           [{ value:"Aizawl",label:"Aizawl (Capital)"},{value:"Lunglei",label:"Lunglei"}],
+  "Nagaland":          [{ value:"Kohima",label:"Kohima (Capital)"},{value:"Dimapur",label:"Dimapur"}],
+  "Odisha":            [{ value:"Bhubaneswar",label:"Bhubaneswar (Capital)"},{value:"Cuttack",label:"Cuttack"},{value:"Rourkela",label:"Rourkela"},{value:"Sambalpur",label:"Sambalpur"},{value:"Puri",label:"Puri"}],
+  "Punjab":            [{ value:"Ludhiana",label:"Ludhiana"},{value:"Amritsar",label:"Amritsar"},{value:"Jalandhar",label:"Jalandhar"},{value:"Patiala",label:"Patiala"},{value:"Bathinda",label:"Bathinda"},{value:"Chandigarh",label:"Chandigarh (shared)"},{value:"Mohali",label:"Mohali (SAS Nagar)"}],
+  "Rajasthan":         [{ value:"Jaipur",label:"Jaipur (Capital)"},{value:"Jodhpur",label:"Jodhpur"},{value:"Kota",label:"Kota"},{value:"Udaipur",label:"Udaipur"},{value:"Bikaner",label:"Bikaner"},{value:"Ajmer",label:"Ajmer"},{value:"Alwar",label:"Alwar"}],
+  "Sikkim":            [{ value:"Gangtok",label:"Gangtok (Capital)"},{value:"Namchi",label:"Namchi"}],
+  "Tamil Nadu":        [{ value:"Chennai",label:"Chennai (Capital)"},{value:"Coimbatore",label:"Coimbatore"},{value:"Madurai",label:"Madurai"},{value:"Tiruppur",label:"Tiruppur"},{value:"Salem",label:"Salem"},{value:"Tiruchirappalli",label:"Tiruchirappalli"},{value:"Tirunelveli",label:"Tirunelveli"},{value:"Erode",label:"Erode"},{value:"Vellore",label:"Vellore"},{value:"Thoothukudi",label:"Thoothukudi"}],
+  "Telangana":         [{ value:"Hyderabad",label:"Hyderabad (Capital)"},{value:"Warangal",label:"Warangal"},{value:"Nizamabad",label:"Nizamabad"},{value:"Khammam",label:"Khammam"},{value:"Karimnagar",label:"Karimnagar"}],
+  "Tripura":           [{ value:"Agartala",label:"Agartala (Capital)"},{value:"Udaipur",label:"Udaipur (Tripura)"}],
+  "Uttar Pradesh":     [{ value:"Lucknow",label:"Lucknow (Capital)"},{value:"Kanpur",label:"Kanpur"},{value:"Ghaziabad",label:"Ghaziabad"},{value:"Agra",label:"Agra"},{value:"Meerut",label:"Meerut"},{value:"Varanasi",label:"Varanasi"},{value:"Noida",label:"Noida"},{value:"Prayagraj",label:"Prayagraj"},{value:"Bareilly",label:"Bareilly"},{value:"Aligarh",label:"Aligarh"},{value:"Moradabad",label:"Moradabad"},{value:"Firozabad",label:"Firozabad"},{value:"Saharanpur",label:"Saharanpur"},{value:"Mathura",label:"Mathura"},{value:"Gorakhpur",label:"Gorakhpur"}],
+  "Uttarakhand":       [{ value:"Dehradun",label:"Dehradun (Capital)"},{value:"Haridwar",label:"Haridwar"},{value:"Rishikesh",label:"Rishikesh"},{value:"Roorkee",label:"Roorkee"},{value:"Haldwani",label:"Haldwani"}],
+  "West Bengal":       [{ value:"Kolkata",label:"Kolkata (Capital)"},{value:"Howrah",label:"Howrah"},{value:"Durgapur",label:"Durgapur"},{value:"Siliguri",label:"Siliguri"},{value:"Asansol",label:"Asansol"},{value:"Bardhaman",label:"Bardhaman"}],
+  // Union Territories
+  "Delhi":                                       [{ value:"New Delhi",label:"New Delhi (Capital Territory)"},{value:"Dwarka",label:"Dwarka"},{value:"Rohini",label:"Rohini"},{value:"Pitampura",label:"Pitampura"},{value:"Saket",label:"Saket"},{value:"Lajpat Nagar",label:"Lajpat Nagar"},{value:"Connaught Place",label:"Connaught Place"}],
+  "Jammu and Kashmir":                           [{ value:"Srinagar",label:"Srinagar (Summer Capital)"},{value:"Jammu",label:"Jammu (Winter Capital)"},{value:"Anantnag",label:"Anantnag"},{value:"Sopore",label:"Sopore"}],
+  "Ladakh":                                      [{ value:"Leh",label:"Leh (HQ)"},{value:"Kargil",label:"Kargil"}],
+  "Chandigarh":                                  [{ value:"Chandigarh",label:"Chandigarh"}],
+  "Puducherry":                                  [{ value:"Puducherry",label:"Puducherry (Capital)"},{value:"Karaikal",label:"Karaikal"},{value:"Mahe",label:"Mahe"},{value:"Yanam",label:"Yanam"}],
+  "Andaman and Nicobar Islands":                 [{ value:"Port Blair",label:"Port Blair (Capital)"}],
+  "Dadra and Nagar Haveli and Daman and Diu":    [{ value:"Daman",label:"Daman"},{value:"Diu",label:"Diu"},{value:"Silvassa",label:"Silvassa"}],
+  "Lakshadweep":                                 [{ value:"Kavaratti",label:"Kavaratti (Capital)"},{value:"Agatti",label:"Agatti"}],
+};
+
+// ── International: cities grouped by country → state/province ────────────────
+export const INTL_STATE_CITIES_MAP: Record<string, Record<string, SelectOption[]>> = {
+  "United States": {
+    "California":      [{ value:"Los Angeles",label:"Los Angeles"},{value:"San Francisco",label:"San Francisco"},{value:"San Diego",label:"San Diego"},{value:"San Jose",label:"San Jose"},{value:"Sacramento",label:"Sacramento"},{value:"Oakland",label:"Oakland"},{value:"Fresno",label:"Fresno"},{value:"Long Beach",label:"Long Beach"}],
+    "Texas":           [{ value:"Houston",label:"Houston"},{value:"Dallas",label:"Dallas"},{value:"Austin",label:"Austin"},{value:"San Antonio",label:"San Antonio"},{value:"Fort Worth",label:"Fort Worth"},{value:"El Paso",label:"El Paso"},{value:"Arlington",label:"Arlington"},{value:"Plano",label:"Plano"}],
+    "New York":        [{ value:"New York City",label:"New York City"},{value:"Buffalo",label:"Buffalo"},{value:"Rochester",label:"Rochester"},{value:"Yonkers",label:"Yonkers"},{value:"Syracuse",label:"Syracuse"},{value:"Albany",label:"Albany"}],
+    "Florida":         [{ value:"Miami",label:"Miami"},{value:"Tampa",label:"Tampa"},{value:"Orlando",label:"Orlando"},{value:"Jacksonville",label:"Jacksonville"},{value:"Fort Lauderdale",label:"Fort Lauderdale"},{value:"St. Petersburg",label:"St. Petersburg"}],
+    "Illinois":        [{ value:"Chicago",label:"Chicago"},{value:"Aurora",label:"Aurora"},{value:"Naperville",label:"Naperville"},{value:"Joliet",label:"Joliet"},{value:"Rockford",label:"Rockford"}],
+    "Pennsylvania":    [{ value:"Philadelphia",label:"Philadelphia"},{value:"Pittsburgh",label:"Pittsburgh"},{value:"Allentown",label:"Allentown"},{value:"Erie",label:"Erie"}],
+    "Ohio":            [{ value:"Columbus",label:"Columbus"},{value:"Cleveland",label:"Cleveland"},{value:"Cincinnati",label:"Cincinnati"},{value:"Toledo",label:"Toledo"},{value:"Akron",label:"Akron"}],
+    "Georgia":         [{ value:"Atlanta",label:"Atlanta"},{value:"Augusta",label:"Augusta"},{value:"Savannah",label:"Savannah"},{value:"Columbus",label:"Columbus"}],
+    "North Carolina":  [{ value:"Charlotte",label:"Charlotte"},{value:"Raleigh",label:"Raleigh"},{value:"Greensboro",label:"Greensboro"},{value:"Durham",label:"Durham"}],
+    "Michigan":        [{ value:"Detroit",label:"Detroit"},{value:"Grand Rapids",label:"Grand Rapids"},{value:"Lansing",label:"Lansing"},{value:"Ann Arbor",label:"Ann Arbor"}],
+    "Washington":      [{ value:"Seattle",label:"Seattle"},{value:"Spokane",label:"Spokane"},{value:"Tacoma",label:"Tacoma"},{value:"Bellevue",label:"Bellevue"}],
+    "Massachusetts":   [{ value:"Boston",label:"Boston"},{value:"Worcester",label:"Worcester"},{value:"Springfield",label:"Springfield"},{value:"Cambridge",label:"Cambridge"}],
+    "Arizona":         [{ value:"Phoenix",label:"Phoenix"},{value:"Tucson",label:"Tucson"},{value:"Scottsdale",label:"Scottsdale"},{value:"Mesa",label:"Mesa"}],
+    "Colorado":        [{ value:"Denver",label:"Denver"},{value:"Colorado Springs",label:"Colorado Springs"},{value:"Aurora",label:"Aurora"},{value:"Boulder",label:"Boulder"}],
+    "Nevada":          [{ value:"Las Vegas",label:"Las Vegas"},{value:"Henderson",label:"Henderson"},{value:"Reno",label:"Reno"},{value:"North Las Vegas",label:"North Las Vegas"}],
+    "Minnesota":       [{ value:"Minneapolis",label:"Minneapolis"},{value:"Saint Paul",label:"Saint Paul"},{value:"Rochester",label:"Rochester"}],
+    "Missouri":        [{ value:"Kansas City",label:"Kansas City"},{value:"St. Louis",label:"St. Louis"},{value:"Springfield",label:"Springfield"}],
+    "Tennessee":       [{ value:"Nashville",label:"Nashville"},{value:"Memphis",label:"Memphis"},{value:"Knoxville",label:"Knoxville"},{value:"Chattanooga",label:"Chattanooga"}],
+    "Indiana":         [{ value:"Indianapolis",label:"Indianapolis"},{value:"Fort Wayne",label:"Fort Wayne"},{value:"Evansville",label:"Evansville"}],
+    "Wisconsin":       [{ value:"Milwaukee",label:"Milwaukee"},{value:"Madison",label:"Madison"},{value:"Green Bay",label:"Green Bay"}],
+    "Maryland":        [{ value:"Baltimore",label:"Baltimore"},{value:"Rockville",label:"Rockville"},{value:"Gaithersburg",label:"Gaithersburg"}],
+    "Virginia":        [{ value:"Virginia Beach",label:"Virginia Beach"},{value:"Norfolk",label:"Norfolk"},{value:"Chesapeake",label:"Chesapeake"},{value:"Richmond",label:"Richmond"}],
+    "Oregon":          [{ value:"Portland",label:"Portland"},{value:"Salem",label:"Salem"},{value:"Eugene",label:"Eugene"}],
+    "New Jersey":      [{ value:"Newark",label:"Newark"},{value:"Jersey City",label:"Jersey City"},{value:"Paterson",label:"Paterson"},{value:"Trenton",label:"Trenton"}],
+    "District of Columbia": [{ value:"Washington D.C.",label:"Washington D.C."}],
+  },
+  "United Kingdom": {
+    "England":          [{ value:"London",label:"London"},{value:"Manchester",label:"Manchester"},{value:"Birmingham",label:"Birmingham"},{value:"Leeds",label:"Leeds"},{value:"Liverpool",label:"Liverpool"},{value:"Sheffield",label:"Sheffield"},{value:"Bristol",label:"Bristol"},{value:"Newcastle",label:"Newcastle upon Tyne"},{value:"Nottingham",label:"Nottingham"},{value:"Leicester",label:"Leicester"},{value:"Coventry",label:"Coventry"},{value:"Bradford",label:"Bradford"},{value:"Oxford",label:"Oxford"},{value:"Cambridge",label:"Cambridge"},{value:"Southampton",label:"Southampton"},{value:"Portsmouth",label:"Portsmouth"}],
+    "Scotland":         [{ value:"Edinburgh",label:"Edinburgh"},{value:"Glasgow",label:"Glasgow"},{value:"Aberdeen",label:"Aberdeen"},{value:"Dundee",label:"Dundee"},{value:"Inverness",label:"Inverness"},{value:"Stirling",label:"Stirling"}],
+    "Wales":            [{ value:"Cardiff",label:"Cardiff"},{value:"Swansea",label:"Swansea"},{value:"Newport",label:"Newport"},{value:"Wrexham",label:"Wrexham"}],
+    "Northern Ireland": [{ value:"Belfast",label:"Belfast"},{value:"Derry",label:"Derry / Londonderry"},{value:"Lisburn",label:"Lisburn"},{value:"Newry",label:"Newry"}],
+  },
+  "United Arab Emirates": {
+    "Dubai":          [{ value:"Downtown Dubai",label:"Downtown Dubai"},{value:"Deira",label:"Deira"},{value:"Bur Dubai",label:"Bur Dubai"},{value:"Jumeirah",label:"Jumeirah"},{value:"Dubai Marina",label:"Dubai Marina"},{value:"Business Bay",label:"Business Bay"},{value:"JBR",label:"Jumeirah Beach Residence"},{value:"Al Quoz",label:"Al Quoz"},{value:"DIFC",label:"DIFC"},{value:"Dubai Silicon Oasis",label:"Dubai Silicon Oasis"}],
+    "Abu Dhabi":      [{ value:"Abu Dhabi City",label:"Abu Dhabi City"},{value:"Al Ain",label:"Al Ain"},{value:"Khalifa City",label:"Khalifa City"},{value:"Mussafah",label:"Mussafah"}],
+    "Sharjah":        [{ value:"Sharjah City",label:"Sharjah City"},{value:"Khor Fakkan",label:"Khor Fakkan"},{value:"Kalba",label:"Kalba"}],
+    "Ajman":          [{ value:"Ajman City",label:"Ajman City"}],
+    "Ras Al Khaimah": [{ value:"Ras Al Khaimah City",label:"Ras Al Khaimah City"},{value:"Al Hamra",label:"Al Hamra"}],
+    "Fujairah":       [{ value:"Fujairah City",label:"Fujairah City"},{value:"Dibba Al Fujairah",label:"Dibba Al Fujairah"}],
+    "Umm Al Quwain":  [{ value:"Umm Al Quwain City",label:"Umm Al Quwain City"}],
+  },
+  "Australia": {
+    "New South Wales":    [{ value:"Sydney",label:"Sydney"},{value:"Newcastle",label:"Newcastle"},{value:"Wollongong",label:"Wollongong"},{value:"Central Coast",label:"Central Coast"},{value:"Maitland",label:"Maitland"},{value:"Albury",label:"Albury"},{value:"Orange",label:"Orange"}],
+    "Victoria":           [{ value:"Melbourne",label:"Melbourne"},{value:"Geelong",label:"Geelong"},{value:"Ballarat",label:"Ballarat"},{value:"Bendigo",label:"Bendigo"},{value:"Frankston",label:"Frankston"}],
+    "Queensland":         [{ value:"Brisbane",label:"Brisbane"},{value:"Gold Coast",label:"Gold Coast"},{value:"Sunshine Coast",label:"Sunshine Coast"},{value:"Townsville",label:"Townsville"},{value:"Cairns",label:"Cairns"},{value:"Toowoomba",label:"Toowoomba"}],
+    "Western Australia":  [{ value:"Perth",label:"Perth"},{value:"Mandurah",label:"Mandurah"},{value:"Bunbury",label:"Bunbury"},{value:"Geraldton",label:"Geraldton"},{value:"Kalgoorlie",label:"Kalgoorlie"}],
+    "South Australia":    [{ value:"Adelaide",label:"Adelaide"},{value:"Mount Gambier",label:"Mount Gambier"},{value:"Whyalla",label:"Whyalla"}],
+    "Tasmania":           [{ value:"Hobart",label:"Hobart"},{value:"Launceston",label:"Launceston"},{value:"Devonport",label:"Devonport"}],
+    "Australian Capital Territory": [{ value:"Canberra",label:"Canberra"}],
+    "Northern Territory": [{ value:"Darwin",label:"Darwin"},{value:"Alice Springs",label:"Alice Springs"}],
+  },
+  "Canada": {
+    "Ontario":                   [{ value:"Toronto",label:"Toronto"},{value:"Ottawa",label:"Ottawa"},{value:"Hamilton",label:"Hamilton"},{value:"London",label:"London"},{value:"Mississauga",label:"Mississauga"},{value:"Brampton",label:"Brampton"},{value:"Markham",label:"Markham"},{value:"Kitchener",label:"Kitchener"}],
+    "Quebec":                    [{ value:"Montreal",label:"Montréal"},{value:"Quebec City",label:"Québec City"},{value:"Laval",label:"Laval"},{value:"Gatineau",label:"Gatineau"},{value:"Longueuil",label:"Longueuil"}],
+    "British Columbia":          [{ value:"Vancouver",label:"Vancouver"},{value:"Surrey",label:"Surrey"},{value:"Burnaby",label:"Burnaby"},{value:"Richmond",label:"Richmond"},{value:"Victoria",label:"Victoria"},{value:"Kelowna",label:"Kelowna"}],
+    "Alberta":                   [{ value:"Calgary",label:"Calgary"},{value:"Edmonton",label:"Edmonton"},{value:"Red Deer",label:"Red Deer"},{value:"Lethbridge",label:"Lethbridge"}],
+    "Manitoba":                  [{ value:"Winnipeg",label:"Winnipeg"},{value:"Brandon",label:"Brandon"}],
+    "Saskatchewan":              [{ value:"Saskatoon",label:"Saskatoon"},{value:"Regina",label:"Regina"}],
+    "Nova Scotia":               [{ value:"Halifax",label:"Halifax"},{value:"Dartmouth",label:"Dartmouth"}],
+    "New Brunswick":             [{ value:"Moncton",label:"Moncton"},{value:"Fredericton",label:"Fredericton"},{value:"Saint John",label:"Saint John"}],
+    "Newfoundland and Labrador": [{ value:"St. John's",label:"St. John's"}],
+    "Prince Edward Island":      [{ value:"Charlottetown",label:"Charlottetown"}],
+    "Northwest Territories":     [{ value:"Yellowknife",label:"Yellowknife"}],
+    "Yukon":                     [{ value:"Whitehorse",label:"Whitehorse"}],
+    "Nunavut":                   [{ value:"Iqaluit",label:"Iqaluit"}],
+  },
+  "Saudi Arabia": {
+    "Riyadh Region":    [{ value:"Riyadh",label:"Riyadh"},{value:"Al Kharj",label:"Al Kharj"},{value:"Zulfi",label:"Zulfi"}],
+    "Makkah Region":    [{ value:"Mecca",label:"Mecca"},{value:"Jeddah",label:"Jeddah"},{value:"Taif",label:"Taif"}],
+    "Madinah Region":   [{ value:"Medina",label:"Medina"},{value:"Yanbu",label:"Yanbu"}],
+    "Eastern Province": [{ value:"Dammam",label:"Dammam"},{value:"Dhahran",label:"Dhahran"},{value:"Al Khobar",label:"Al Khobar"},{value:"Jubail",label:"Jubail"}],
+    "Asir Region":      [{ value:"Abha",label:"Abha"},{value:"Khamis Mushait",label:"Khamis Mushait"}],
+    "Tabuk Region":     [{ value:"Tabuk",label:"Tabuk"}],
+    "Jizan Region":     [{ value:"Jizan",label:"Jizan"}],
+    "Najran Region":    [{ value:"Najran",label:"Najran"}],
+    "Al Bahah Region":  [{ value:"Al Bahah",label:"Al Bahah"}],
+    "Al Jouf Region":   [{ value:"Sakaka",label:"Sakaka"}],
+    "Ha'il Region":     [{ value:"Ha'il",label:"Ha'il"}],
+    "Qassim Region":    [{ value:"Buraidah",label:"Buraidah"},{value:"Unaizah",label:"Unaizah"}],
+    "Northern Borders": [{ value:"Arar",label:"Arar"}],
+  },
+};
+
+// ── Country → States/Provinces ───────────────────────────────────────────────
+export const COUNTRY_STATES_MAP: Record<string, SelectOption[]> = {
+  "India": INDIAN_STATES,
+  "United States": [
+    { value:"Alabama",label:"Alabama",sub:"AL" },{ value:"Alaska",label:"Alaska",sub:"AK" },{ value:"Arizona",label:"Arizona",sub:"AZ" },{ value:"Arkansas",label:"Arkansas",sub:"AR" },{ value:"California",label:"California",sub:"CA" },{ value:"Colorado",label:"Colorado",sub:"CO" },{ value:"Connecticut",label:"Connecticut",sub:"CT" },{ value:"Delaware",label:"Delaware",sub:"DE" },{ value:"District of Columbia",label:"District of Columbia",sub:"DC" },{ value:"Florida",label:"Florida",sub:"FL" },{ value:"Georgia",label:"Georgia",sub:"GA" },{ value:"Hawaii",label:"Hawaii",sub:"HI" },{ value:"Idaho",label:"Idaho",sub:"ID" },{ value:"Illinois",label:"Illinois",sub:"IL" },{ value:"Indiana",label:"Indiana",sub:"IN" },{ value:"Iowa",label:"Iowa",sub:"IA" },{ value:"Kansas",label:"Kansas",sub:"KS" },{ value:"Kentucky",label:"Kentucky",sub:"KY" },{ value:"Louisiana",label:"Louisiana",sub:"LA" },{ value:"Maine",label:"Maine",sub:"ME" },{ value:"Maryland",label:"Maryland",sub:"MD" },{ value:"Massachusetts",label:"Massachusetts",sub:"MA" },{ value:"Michigan",label:"Michigan",sub:"MI" },{ value:"Minnesota",label:"Minnesota",sub:"MN" },{ value:"Mississippi",label:"Mississippi",sub:"MS" },{ value:"Missouri",label:"Missouri",sub:"MO" },{ value:"Montana",label:"Montana",sub:"MT" },{ value:"Nebraska",label:"Nebraska",sub:"NE" },{ value:"Nevada",label:"Nevada",sub:"NV" },{ value:"New Hampshire",label:"New Hampshire",sub:"NH" },{ value:"New Jersey",label:"New Jersey",sub:"NJ" },{ value:"New Mexico",label:"New Mexico",sub:"NM" },{ value:"New York",label:"New York",sub:"NY" },{ value:"North Carolina",label:"North Carolina",sub:"NC" },{ value:"North Dakota",label:"North Dakota",sub:"ND" },{ value:"Ohio",label:"Ohio",sub:"OH" },{ value:"Oklahoma",label:"Oklahoma",sub:"OK" },{ value:"Oregon",label:"Oregon",sub:"OR" },{ value:"Pennsylvania",label:"Pennsylvania",sub:"PA" },{ value:"Rhode Island",label:"Rhode Island",sub:"RI" },{ value:"South Carolina",label:"South Carolina",sub:"SC" },{ value:"South Dakota",label:"South Dakota",sub:"SD" },{ value:"Tennessee",label:"Tennessee",sub:"TN" },{ value:"Texas",label:"Texas",sub:"TX" },{ value:"Utah",label:"Utah",sub:"UT" },{ value:"Vermont",label:"Vermont",sub:"VT" },{ value:"Virginia",label:"Virginia",sub:"VA" },{ value:"Washington",label:"Washington",sub:"WA" },{ value:"West Virginia",label:"West Virginia",sub:"WV" },{ value:"Wisconsin",label:"Wisconsin",sub:"WI" },{ value:"Wyoming",label:"Wyoming",sub:"WY" },
+  ],
+  "United Kingdom": [
+    { value:"England",label:"England" },{ value:"Scotland",label:"Scotland" },{ value:"Wales",label:"Wales" },{ value:"Northern Ireland",label:"Northern Ireland" },
+  ],
+  "Australia": [
+    { value:"New South Wales",label:"New South Wales",sub:"NSW" },{ value:"Victoria",label:"Victoria",sub:"VIC" },{ value:"Queensland",label:"Queensland",sub:"QLD" },{ value:"Western Australia",label:"Western Australia",sub:"WA" },{ value:"South Australia",label:"South Australia",sub:"SA" },{ value:"Tasmania",label:"Tasmania",sub:"TAS" },{ value:"Australian Capital Territory",label:"Australian Capital Territory",sub:"ACT" },{ value:"Northern Territory",label:"Northern Territory",sub:"NT" },
+  ],
+  "Canada": [
+    { value:"Ontario",label:"Ontario" },{ value:"Quebec",label:"Québec" },{ value:"British Columbia",label:"British Columbia" },{ value:"Alberta",label:"Alberta" },{ value:"Manitoba",label:"Manitoba" },{ value:"Saskatchewan",label:"Saskatchewan" },{ value:"Nova Scotia",label:"Nova Scotia" },{ value:"New Brunswick",label:"New Brunswick" },{ value:"Newfoundland and Labrador",label:"Newfoundland and Labrador" },{ value:"Prince Edward Island",label:"Prince Edward Island" },{ value:"Northwest Territories",label:"Northwest Territories" },{ value:"Yukon",label:"Yukon" },{ value:"Nunavut",label:"Nunavut" },
+  ],
+  "United Arab Emirates": [
+    { value:"Abu Dhabi",label:"Abu Dhabi" },{ value:"Dubai",label:"Dubai" },{ value:"Sharjah",label:"Sharjah" },{ value:"Ajman",label:"Ajman" },{ value:"Umm Al Quwain",label:"Umm Al Quwain" },{ value:"Ras Al Khaimah",label:"Ras Al Khaimah" },{ value:"Fujairah",label:"Fujairah" },
+  ],
+  "Saudi Arabia": [
+    { value:"Riyadh Region",label:"Riyadh Region" },{ value:"Makkah Region",label:"Makkah Region" },{ value:"Madinah Region",label:"Madinah Region" },{ value:"Qassim Region",label:"Qassim Region" },{ value:"Eastern Province",label:"Eastern Province" },{ value:"Asir Region",label:"Asir Region" },{ value:"Tabuk Region",label:"Tabuk Region" },{ value:"Ha'il Region",label:"Ha'il Region" },{ value:"Northern Borders",label:"Northern Borders" },{ value:"Jizan Region",label:"Jizan Region" },{ value:"Najran Region",label:"Najran Region" },{ value:"Al Bahah Region",label:"Al Bahah Region" },{ value:"Al Jouf Region",label:"Al Jouf Region" },
+  ],
+  "Germany": [
+    { value:"Baden-Württemberg",label:"Baden-Württemberg" },{ value:"Bavaria",label:"Bavaria" },{ value:"Berlin",label:"Berlin" },{ value:"Brandenburg",label:"Brandenburg" },{ value:"Bremen",label:"Bremen" },{ value:"Hamburg",label:"Hamburg" },{ value:"Hesse",label:"Hesse" },{ value:"Lower Saxony",label:"Lower Saxony" },{ value:"Mecklenburg-Vorpommern",label:"Mecklenburg-Vorpommern" },{ value:"North Rhine-Westphalia",label:"North Rhine-Westphalia" },{ value:"Rhineland-Palatinate",label:"Rhineland-Palatinate" },{ value:"Saarland",label:"Saarland" },{ value:"Saxony",label:"Saxony" },{ value:"Saxony-Anhalt",label:"Saxony-Anhalt" },{ value:"Schleswig-Holstein",label:"Schleswig-Holstein" },{ value:"Thuringia",label:"Thuringia" },
+  ],
+  "France": [
+    { value:"Auvergne-Rhône-Alpes",label:"Auvergne-Rhône-Alpes" },{ value:"Bourgogne-Franche-Comté",label:"Bourgogne-Franche-Comté" },{ value:"Brittany",label:"Brittany" },{ value:"Centre-Val de Loire",label:"Centre-Val de Loire" },{ value:"Corsica",label:"Corsica" },{ value:"Grand Est",label:"Grand Est" },{ value:"Hauts-de-France",label:"Hauts-de-France" },{ value:"Île-de-France",label:"Île-de-France" },{ value:"Normandy",label:"Normandy" },{ value:"Nouvelle-Aquitaine",label:"Nouvelle-Aquitaine" },{ value:"Occitanie",label:"Occitanie" },{ value:"Pays de la Loire",label:"Pays de la Loire" },{ value:"Provence-Alpes-Côte d'Azur",label:"Provence-Alpes-Côte d'Azur" },
+  ],
+  "Malaysia": [
+    { value:"Johor",label:"Johor" },{ value:"Kedah",label:"Kedah" },{ value:"Kelantan",label:"Kelantan" },{ value:"Malacca",label:"Malacca" },{ value:"Negeri Sembilan",label:"Negeri Sembilan" },{ value:"Pahang",label:"Pahang" },{ value:"Penang",label:"Penang" },{ value:"Perak",label:"Perak" },{ value:"Perlis",label:"Perlis" },{ value:"Sabah",label:"Sabah" },{ value:"Sarawak",label:"Sarawak" },{ value:"Selangor",label:"Selangor" },{ value:"Terengganu",label:"Terengganu" },{ value:"Kuala Lumpur",label:"Kuala Lumpur",sub:"Federal Territory" },{ value:"Labuan",label:"Labuan",sub:"Federal Territory" },{ value:"Putrajaya",label:"Putrajaya",sub:"Federal Territory" },
+  ],
+  "China": [
+    { value:"Beijing",label:"Beijing",sub:"Municipality" },{ value:"Chongqing",label:"Chongqing",sub:"Municipality" },{ value:"Shanghai",label:"Shanghai",sub:"Municipality" },{ value:"Tianjin",label:"Tianjin",sub:"Municipality" },{ value:"Guangdong",label:"Guangdong",sub:"Province" },{ value:"Jiangsu",label:"Jiangsu",sub:"Province" },{ value:"Shandong",label:"Shandong",sub:"Province" },{ value:"Zhejiang",label:"Zhejiang",sub:"Province" },{ value:"Sichuan",label:"Sichuan",sub:"Province" },{ value:"Fujian",label:"Fujian",sub:"Province" },{ value:"Hebei",label:"Hebei",sub:"Province" },{ value:"Hunan",label:"Hunan",sub:"Province" },{ value:"Anhui",label:"Anhui",sub:"Province" },{ value:"Hubei",label:"Hubei",sub:"Province" },{ value:"Liaoning",label:"Liaoning",sub:"Province" },{ value:"Shaanxi",label:"Shaanxi",sub:"Province" },{ value:"Jiangxi",label:"Jiangxi",sub:"Province" },{ value:"Yunnan",label:"Yunnan",sub:"Province" },{ value:"Heilongjiang",label:"Heilongjiang",sub:"Province" },{ value:"Henan",label:"Henan",sub:"Province" },{ value:"Guizhou",label:"Guizhou",sub:"Province" },{ value:"Gansu",label:"Gansu",sub:"Province" },{ value:"Hainan",label:"Hainan",sub:"Province" },{ value:"Xinjiang",label:"Xinjiang",sub:"Autonomous Region" },{ value:"Inner Mongolia",label:"Inner Mongolia",sub:"Autonomous Region" },{ value:"Guangxi",label:"Guangxi",sub:"Autonomous Region" },{ value:"Tibet",label:"Tibet",sub:"Autonomous Region" },{ value:"Ningxia",label:"Ningxia",sub:"Autonomous Region" },{ value:"Qinghai",label:"Qinghai",sub:"Province" },
+  ],
+  "Japan": [
+    { value:"Hokkaido",label:"Hokkaido" },{ value:"Aomori",label:"Aomori" },{ value:"Iwate",label:"Iwate" },{ value:"Miyagi",label:"Miyagi" },{ value:"Akita",label:"Akita" },{ value:"Yamagata",label:"Yamagata" },{ value:"Fukushima",label:"Fukushima" },{ value:"Ibaraki",label:"Ibaraki" },{ value:"Tochigi",label:"Tochigi" },{ value:"Gunma",label:"Gunma" },{ value:"Saitama",label:"Saitama" },{ value:"Chiba",label:"Chiba" },{ value:"Tokyo",label:"Tokyo",sub:"Metropolis" },{ value:"Kanagawa",label:"Kanagawa" },{ value:"Niigata",label:"Niigata" },{ value:"Toyama",label:"Toyama" },{ value:"Ishikawa",label:"Ishikawa" },{ value:"Fukui",label:"Fukui" },{ value:"Yamanashi",label:"Yamanashi" },{ value:"Nagano",label:"Nagano" },{ value:"Shizuoka",label:"Shizuoka" },{ value:"Aichi",label:"Aichi" },{ value:"Mie",label:"Mie" },{ value:"Shiga",label:"Shiga" },{ value:"Kyoto",label:"Kyoto" },{ value:"Osaka",label:"Osaka" },{ value:"Hyogo",label:"Hyogo" },{ value:"Nara",label:"Nara" },{ value:"Wakayama",label:"Wakayama" },{ value:"Tottori",label:"Tottori" },{ value:"Shimane",label:"Shimane" },{ value:"Okayama",label:"Okayama" },{ value:"Hiroshima",label:"Hiroshima" },{ value:"Yamaguchi",label:"Yamaguchi" },{ value:"Fukuoka",label:"Fukuoka" },{ value:"Saga",label:"Saga" },{ value:"Nagasaki",label:"Nagasaki" },{ value:"Kumamoto",label:"Kumamoto" },{ value:"Oita",label:"Oita" },{ value:"Miyazaki",label:"Miyazaki" },{ value:"Kagoshima",label:"Kagoshima" },{ value:"Okinawa",label:"Okinawa" },
+  ],
+  "Singapore": [],
+  "Hong Kong": [],
+  "Maldives": [],
+  "Bahrain": [],
+  "Kuwait": [],
+  "Qatar":   [{ value:"Doha",label:"Doha (Capital)" },{ value:"Al Wakrah",label:"Al Wakrah" },{ value:"Al Khor",label:"Al Khor" }],
+  "Oman":    [{ value:"Muscat",label:"Muscat" },{ value:"Salalah",label:"Salalah" },{ value:"Sohar",label:"Sohar" }],
+};
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+/** Returns state/province options for a given country, empty if none mapped. */
+export function getStatesForCountry(country: string): SelectOption[] {
+  return COUNTRY_STATES_MAP[country] ?? [];
+}
+
+/** Returns city options for a country+state combination. Falls back to INDIAN_CITIES for India with no state. */
+export function getCitiesForState(country: string, state: string): SelectOption[] {
+  if (country === "India") {
+    return state ? (INDIA_STATE_CITIES_MAP[state] ?? []) : INDIAN_CITIES;
+  }
+  if (INTL_STATE_CITIES_MAP[country]) {
+    return state ? (INTL_STATE_CITIES_MAP[country][state] ?? []) : [];
+  }
+  return [];
+}
+
+/** Returns the contextual label for the state/province field based on country. */
+export function getStateLabel(country: string): string {
+  switch (country) {
+    case "United States":        return "State";
+    case "Canada":               return "Province / Territory";
+    case "United Arab Emirates": return "Emirate";
+    case "Australia":            return "State / Territory";
+    case "Germany":              return "Federal State";
+    case "Japan":                return "Prefecture";
+    case "China":                return "Province / Municipality";
+    case "Saudi Arabia":         return "Region";
+    default:                     return "State / Province";
+  }
+}

@@ -27,7 +27,7 @@ import { addRecentEntry } from "@/lib/recentHistory";
 import { useAuth } from "@/lib/auth";
 import { validateVendorFull, validateContact, hasErrors, type VendorErrors } from "@/lib/vendor-validation";
 import { SearchableSelect, type SelectOption } from "@/components/ui/searchable-select";
-import { INDIAN_BANKS, ACCOUNT_TYPES, INDIAN_STATES, INDIAN_CITIES, COUNTRIES, GST_STATE_CODES, GST_STATE_CODE_MAP } from "@/lib/vendor-select-data";
+import { INDIAN_BANKS, ACCOUNT_TYPES, INDIAN_STATES, INDIAN_CITIES, COUNTRIES, GST_STATE_CODES, GST_STATE_CODE_MAP, getStatesForCountry, getCitiesForState, getStateLabel } from "@/lib/vendor-select-data";
 import { cn } from "@/lib/utils";
 
 /* ── Inline field error (top-level so it's stable across renders) ─────────── */
@@ -95,6 +95,14 @@ export default function VendorDetail({ id }: { id: string }) {
     // Auto-fill GST State Code when the registered state is selected
     if (field === "gstRegisteredState" && GST_STATE_CODE_MAP[v]) {
       next.gstStateCode = GST_STATE_CODE_MAP[v];
+    }
+    // Billing cascade: country change clears state + city; state change clears city
+    if (field === "billingCountry") {
+      next.billingState = "";
+      next.billingCity  = "";
+    }
+    if (field === "billingState") {
+      next.billingCity = "";
     }
     setForm(next);
     if (editTouched[field] || editSubmitted)
@@ -299,25 +307,26 @@ export default function VendorDetail({ id }: { id: string }) {
 
   /** Searchable combobox field */
   function renderCombobox({
-    label, field, options, searchPlaceholder, allowCustom = false,
+    label, field, options, searchPlaceholder, allowCustom = false, disabled = false,
   }: {
     label: string; field: string; options: SelectOption[];
-    searchPlaceholder?: string; allowCustom?: boolean;
+    searchPlaceholder?: string; allowCustom?: boolean; disabled?: boolean;
   }) {
     return (
       <div>
-        <Label className="text-xs text-muted-foreground">{label}</Label>
+        <Label className={cn("text-xs", disabled ? "text-muted-foreground/50" : "text-muted-foreground")}>{label}</Label>
         {editing ? (
           <>
             <div className="mt-1">
               <SearchableSelect
-                value={form[field] ?? ""}
+                value={disabled ? "" : (form[field] ?? "")}
                 onChange={v => setEditField(field, v)}
                 options={options}
-                placeholder={`Select ${label.toLowerCase()}…`}
+                placeholder={disabled ? "Select country first…" : `Select ${label.toLowerCase()}…`}
                 searchPlaceholder={searchPlaceholder ?? `Search ${label.toLowerCase()}…`}
                 allowCustom={allowCustom}
                 error={!!showEditError(field)}
+                disabled={disabled}
               />
             </div>
             <FieldError msg={showEditError(field)} />
@@ -728,38 +737,95 @@ export default function VendorDetail({ id }: { id: string }) {
         {/* ── Billing ── */}
         <TabsContent value="billing" className="mt-4">
           <SectionCard title="Billing Address">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2">{renderField({ label: "Address", field: "billingAddress" })}</div>
-              {renderCombobox({ label: "City", field: "billingCity", options: INDIAN_CITIES, searchPlaceholder: "Search city…", allowCustom: true })}
-              {renderCombobox({ label: "State", field: "billingState", options: INDIAN_STATES, searchPlaceholder: "Search state…" })}
-              {/* Pincode — special digit-only input */}
-              <div>
-                <Label className="text-xs text-muted-foreground">Pincode</Label>
-                {editing ? (
-                  <>
-                    <Input
-                      inputMode="numeric"
-                      value={form.billingPincode ?? ""}
-                      onChange={e => {
-                        const v = e.target.value.replace(/\D/g, "").slice(0, 6);
-                        setEditField("billingPincode", v);
-                      }}
-                      onBlur={() => touchEdit("billingPincode")}
-                      placeholder="110001"
-                      maxLength={6}
-                      className={cn("mt-1 h-9", showEditError("billingPincode") && "border-red-400 focus-visible:ring-red-300")}
-                    />
-                    <p className="mt-0.5 text-[11px] text-muted-foreground">{(form.billingPincode ?? "").length}/6 digits</p>
-                    <FieldError msg={showEditError("billingPincode")} />
-                  </>
-                ) : (
-                  <p className="mt-1 text-sm font-medium text-foreground">
-                    {(vendor as any).billingPincode || <span className="text-muted-foreground/40 font-normal">—</span>}
-                  </p>
-                )}
-              </div>
-              {renderCombobox({ label: "Country", field: "billingCountry", options: COUNTRIES, searchPlaceholder: "Search country…" })}
-            </div>
+            {(() => {
+              const country       = form.billingCountry ?? "";
+              const state         = form.billingState   ?? "";
+              const stateOptions  = getStatesForCountry(country);
+              const hasStateList  = stateOptions.length > 0;
+              const cityOptions   = getCitiesForState(country, state);
+              const stateLabel    = getStateLabel(country) || "State / Province";
+              const pincodeLabel  = country === "United States" ? "ZIP Code"
+                                  : country === "United Kingdom" ? "Postcode"
+                                  : country === "Canada"         ? "Postal Code"
+                                  : "Pincode / Postal Code";
+              const pincodeMaxLen = country === "India" ? 6 : 10;
+              const pincodeMask   = country === "India" ? /\D/g : /[^A-Za-z0-9 \-]/g;
+
+              return (
+                <div className="grid grid-cols-2 gap-4">
+                  {/* ① Full-width address line */}
+                  <div className="col-span-2">
+                    {renderField({ label: "Address Line", field: "billingAddress", placeholder: "Street, building, floor…" })}
+                  </div>
+
+                  {/* ② Country — always first, drives the cascade */}
+                  {renderCombobox({
+                    label: "Country",
+                    field: "billingCountry",
+                    options: COUNTRIES,
+                    searchPlaceholder: "Search country…",
+                  })}
+
+                  {/* ③ State/Province — filtered by country; disabled until country chosen */}
+                  {!country ? (
+                    renderCombobox({ label: "State / Province", field: "billingState", options: [], disabled: true })
+                  ) : hasStateList ? (
+                    renderCombobox({
+                      label: stateLabel,
+                      field: "billingState",
+                      options: stateOptions,
+                      searchPlaceholder: `Search ${stateLabel.toLowerCase()}…`,
+                    })
+                  ) : (
+                    /* Country exists but has no predefined list → free-text */
+                    renderField({ label: stateLabel, field: "billingState", placeholder: `Enter ${stateLabel.toLowerCase()}` })
+                  )}
+
+                  {/* ④ City — filtered by country+state; disabled until country chosen */}
+                  {renderCombobox({
+                    label: "City",
+                    field: "billingCity",
+                    options: cityOptions,
+                    searchPlaceholder: state
+                      ? `Cities in ${state}…`
+                      : country
+                        ? "Search or type city…"
+                        : "Select country first…",
+                    allowCustom: true,
+                    disabled: !country,
+                  })}
+
+                  {/* ⑤ Pincode/ZIP — digit-only with country-aware constraints */}
+                  <div>
+                    <Label className="text-xs text-muted-foreground">{pincodeLabel}</Label>
+                    {editing ? (
+                      <>
+                        <Input
+                          inputMode="numeric"
+                          value={form.billingPincode ?? ""}
+                          onChange={e => {
+                            const v = e.target.value.replace(pincodeMask, "").slice(0, pincodeMaxLen);
+                            setEditField("billingPincode", v);
+                          }}
+                          onBlur={() => touchEdit("billingPincode")}
+                          placeholder={country === "India" ? "110001" : country === "United States" ? "10001" : "Postal code"}
+                          maxLength={pincodeMaxLen}
+                          className={cn("mt-1 h-9", showEditError("billingPincode") && "border-red-400 focus-visible:ring-red-300")}
+                        />
+                        <p className="mt-0.5 text-[11px] text-muted-foreground">
+                          {(form.billingPincode ?? "").length}/{pincodeMaxLen} chars
+                        </p>
+                        <FieldError msg={showEditError("billingPincode")} />
+                      </>
+                    ) : (
+                      <p className="mt-1 text-sm font-medium text-foreground">
+                        {(vendor as any).billingPincode || <span className="text-muted-foreground/40 font-normal">—</span>}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
           </SectionCard>
         </TabsContent>
       </Tabs>
