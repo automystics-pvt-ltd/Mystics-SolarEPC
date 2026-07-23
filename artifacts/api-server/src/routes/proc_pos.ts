@@ -4,6 +4,7 @@ import {
   procPOAuditLogsTable, procGRNsTable, procInvoicesTable,
 } from "@workspace/db";
 import { eq, desc, inArray, sql } from "drizzle-orm";
+import { requireAuth, requirePermission } from "../lib/rbac";
 
 import { CATEGORY_DEFS, OTHER_CATEGORY } from "../lib/category-rules";
 
@@ -136,7 +137,7 @@ router.get("/procurement-pos/:id", async (req, res): Promise<void> => {
 });
 
 // ── UPDATE STATUS / METADATA ──────────────────────────────────────────────────
-router.patch("/procurement-pos/:id", async (req, res): Promise<void> => {
+router.patch("/procurement-pos/:id", requireAuth(), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const { status, deliveryAddress, specialTerms, internalNotes, userName = "System", userId, remarks, ...rest } = req.body;
 
@@ -185,7 +186,7 @@ router.patch("/procurement-pos/:id", async (req, res): Promise<void> => {
 });
 
 // ── RECORD DISPATCH ───────────────────────────────────────────────────────────
-router.post("/procurement-pos/:id/record-dispatch", async (req, res): Promise<void> => {
+router.post("/procurement-pos/:id/record-dispatch", requirePermission("procurement", "edit"), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const { vendorDispatchRef, trackingNumber, expectedDeliveryDate, userName = "System", userId, remarks } = req.body;
   const [existing] = await db.select().from(procurementPOsTable).where(eq(procurementPOsTable.id, id));

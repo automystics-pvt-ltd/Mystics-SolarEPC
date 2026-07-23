@@ -26,6 +26,7 @@ import stockTransfersRouter from "./stock_transfers";
 import reportsRouter from "./reports";
 import usersRouter from "./users";
 import approvalsRouter from "./approvals";
+import rbacRouter from "./rbac";
 
 const router: IRouter = Router();
 
@@ -56,5 +57,6 @@ router.use(stockTransfersRouter);
 router.use(reportsRouter);
 router.use(usersRouter);
 router.use(approvalsRouter);
+router.use(rbacRouter);
 
 export default router;

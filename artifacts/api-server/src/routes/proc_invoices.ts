@@ -4,6 +4,7 @@ import {
   procurementPOsTable, procPOItemsTable, procGRNsTable, procGRNItemsTable,
 } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
+import { requireAuth, requirePermission } from "../lib/rbac";
 
 const router: IRouter = Router();
 
@@ -84,7 +85,7 @@ router.get("/proc-invoices/:id", async (req, res): Promise<void> => {
 });
 
 // ── CREATE (with 3-way match) ─────────────────────────────────────────────────
-router.post("/proc-invoices", async (req, res): Promise<void> => {
+router.post("/proc-invoices", requirePermission("procurement", "create"), async (req, res): Promise<void> => {
   const { poId, grnId, items: itemsBody = [], userName = "System", userId, ...body } = req.body;
 
   const [po] = await db.select().from(procurementPOsTable).where(eq(procurementPOsTable.id, Number(poId)));
@@ -179,7 +180,7 @@ router.post("/proc-invoices", async (req, res): Promise<void> => {
 });
 
 // ── SUBMIT FOR APPROVAL ────────────────────────────────────────────────────────
-router.post("/proc-invoices/:id/submit", async (req, res): Promise<void> => {
+router.post("/proc-invoices/:id/submit", requireAuth(), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const { userName = "System", userId, remarks } = req.body;
   const [existing] = await db.select().from(procInvoicesTable).where(eq(procInvoicesTable.id, id));
@@ -196,7 +197,7 @@ router.post("/proc-invoices/:id/submit", async (req, res): Promise<void> => {
 });
 
 // ── APPROVE MISMATCH ───────────────────────────────────────────────────────────
-router.post("/proc-invoices/:id/approve-mismatch", async (req, res): Promise<void> => {
+router.post("/proc-invoices/:id/approve-mismatch", requirePermission("procurement", "approve"), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const { userName = "System", userId, remarks } = req.body;
   if (!remarks) { res.status(400).json({ error: "Remarks required to approve a mismatch" }); return; }
@@ -212,7 +213,7 @@ router.post("/proc-invoices/:id/approve-mismatch", async (req, res): Promise<voi
 });
 
 // ── APPROVE ───────────────────────────────────────────────────────────────────
-router.post("/proc-invoices/:id/approve", async (req, res): Promise<void> => {
+router.post("/proc-invoices/:id/approve", requirePermission("procurement", "approve"), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const { userName = "System", userId, remarks } = req.body;
   if (!remarks) { res.status(400).json({ error: "Remarks required to approve invoice" }); return; }
@@ -236,7 +237,7 @@ router.post("/proc-invoices/:id/approve", async (req, res): Promise<void> => {
 });
 
 // ── REJECT ────────────────────────────────────────────────────────────────────
-router.post("/proc-invoices/:id/reject", async (req, res): Promise<void> => {
+router.post("/proc-invoices/:id/reject", requirePermission("procurement", "approve"), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const { userName = "System", userId, remarks } = req.body;
   if (!remarks) { res.status(400).json({ error: "Remarks required to reject invoice" }); return; }
@@ -252,7 +253,7 @@ router.post("/proc-invoices/:id/reject", async (req, res): Promise<void> => {
 });
 
 // ── MARK PAID ─────────────────────────────────────────────────────────────────
-router.post("/proc-invoices/:id/mark-paid", async (req, res): Promise<void> => {
+router.post("/proc-invoices/:id/mark-paid", requirePermission("finance", "approve"), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const { userName = "System", userId, paymentReference, paymentMode, remarks } = req.body;
   const [existing] = await db.select().from(procInvoicesTable).where(eq(procInvoicesTable.id, id));

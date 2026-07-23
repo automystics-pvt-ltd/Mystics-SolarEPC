@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db, vendorsTable, vendorContactsTable, procurementPOsTable } from "@workspace/db";
 import { eq, desc, ilike, or, and, ne, inArray, gte } from "drizzle-orm";
+import { requirePermission, requireAuth } from "../lib/rbac";
 
 const router: IRouter = Router();
 
@@ -156,7 +157,7 @@ router.get("/vendors", async (req, res): Promise<void> => {
 });
 
 // ── CREATE vendor ─────────────────────────────────────────────────────────────
-router.post("/vendors", async (req, res): Promise<void> => {
+router.post("/vendors", requirePermission("vendors", "create"), async (req, res): Promise<void> => {
   const { contacts: contactsBody, ...rawBody } = req.body;
   const body = normaliseBody(rawBody);
 
@@ -212,7 +213,7 @@ router.get("/vendors/:id", async (req, res): Promise<void> => {
 });
 
 // ── UPDATE vendor ─────────────────────────────────────────────────────────────
-router.patch("/vendors/:id", async (req, res): Promise<void> => {
+router.patch("/vendors/:id", requirePermission("vendors", "edit"), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   if (!id) { res.status(400).json({ error: "Invalid vendor ID" }); return; }
 
@@ -256,7 +257,7 @@ router.patch("/vendors/:id", async (req, res): Promise<void> => {
 });
 
 // ── DELETE vendor ─────────────────────────────────────────────────────────────
-router.delete("/vendors/:id", async (req, res): Promise<void> => {
+router.delete("/vendors/:id", requirePermission("vendors", "delete"), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   if (!id) { res.status(400).json({ error: "Invalid vendor ID" }); return; }
   const [row] = await db.select({ id: vendorsTable.id }).from(vendorsTable).where(eq(vendorsTable.id, id));
@@ -266,7 +267,7 @@ router.delete("/vendors/:id", async (req, res): Promise<void> => {
 });
 
 // ── CONTACTS sub-resource ─────────────────────────────────────────────────────
-router.post("/vendors/:id/contacts", async (req, res): Promise<void> => {
+router.post("/vendors/:id/contacts", requirePermission("vendors", "edit"), async (req, res): Promise<void> => {
   const vendorId = Number(req.params.id);
   if (!vendorId) { res.status(400).json({ error: "Invalid vendor ID" }); return; }
 
@@ -301,7 +302,7 @@ router.post("/vendors/:id/contacts", async (req, res): Promise<void> => {
 });
 
 // Set one contact as the primary; clears isPrimary on all siblings
-router.patch("/vendors/:id/contacts/:cid/set-primary", async (req, res): Promise<void> => {
+router.patch("/vendors/:id/contacts/:cid/set-primary", requirePermission("vendors", "edit"), async (req, res): Promise<void> => {
   const vendorId = Number(req.params.id);
   const cid      = Number(req.params.cid);
   if (!vendorId || !cid) { res.status(400).json({ error: "Invalid ID" }); return; }
@@ -324,7 +325,7 @@ router.patch("/vendors/:id/contacts/:cid/set-primary", async (req, res): Promise
   res.json(updated);
 });
 
-router.delete("/vendors/:id/contacts/:cid", async (req, res): Promise<void> => {
+router.delete("/vendors/:id/contacts/:cid", requirePermission("vendors", "delete"), async (req, res): Promise<void> => {
   const cid = Number(req.params.cid);
   if (!cid) { res.status(400).json({ error: "Invalid contact ID" }); return; }
   await db.delete(vendorContactsTable).where(eq(vendorContactsTable.id, cid));

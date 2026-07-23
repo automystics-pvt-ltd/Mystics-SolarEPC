@@ -2,11 +2,12 @@ import { Router, type IRouter } from "express";
 import { db, usersTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import bcrypt from "bcryptjs";
+import { requireAdmin } from "../lib/rbac";
 
 const router: IRouter = Router();
 
 // GET /users — list all users (admin)
-router.get("/users", async (req, res): Promise<void> => {
+router.get("/users", requireAdmin(), async (req, res): Promise<void> => {
   try {
     const rows = await db.select({
       id: usersTable.id,
@@ -21,7 +22,7 @@ router.get("/users", async (req, res): Promise<void> => {
 });
 
 // POST /users — create user (admin)
-router.post("/users", async (req, res): Promise<void> => {
+router.post("/users", requireAdmin(), async (req, res): Promise<void> => {
   try {
     const { name, email, password, role = "sales" } = req.body;
     if (!name || !email || !password) {
@@ -44,7 +45,7 @@ router.post("/users", async (req, res): Promise<void> => {
 });
 
 // PATCH /users/:id — update user role
-router.patch("/users/:id", async (req, res): Promise<void> => {
+router.patch("/users/:id", requireAdmin(), async (req, res): Promise<void> => {
   try {
     const id = Number(req.params.id);
     const { name, role } = req.body;
@@ -62,7 +63,7 @@ router.patch("/users/:id", async (req, res): Promise<void> => {
 });
 
 // PATCH /users/:id/reset-password
-router.patch("/users/:id/reset-password", async (req, res): Promise<void> => {
+router.patch("/users/:id/reset-password", requireAdmin(), async (req, res): Promise<void> => {
   try {
     const id = Number(req.params.id);
     const { password } = req.body;

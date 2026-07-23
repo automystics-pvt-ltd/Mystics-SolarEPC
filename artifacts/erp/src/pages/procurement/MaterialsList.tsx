@@ -26,6 +26,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/use-toast";
 import { PageHeader, SectionCard, EmptyState, StatusBadge } from "@/components/shared";
 import { apiGet, apiPost, apiPatch, apiDelete } from "@/lib/fetch";
+import { usePermissions } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
@@ -792,6 +793,9 @@ export default function MaterialsList() {
   const qc = useQueryClient();
   const { toast } = useToast();
 
+  /* ── RBAC ───────────────────────────────────────────────────────────── */
+  const perms = usePermissions("materials");
+
   /* ── State ──────────────────────────────────────────────────────────── */
   const [search, setSearch]           = useState("");
   const [dSearch, setDSearch]         = useState("");
@@ -896,21 +900,27 @@ export default function MaterialsList() {
         subtitle={`Master material data · ${materials.length} items`}
         actions={
           <div className="flex items-center gap-2">
-            {materials.length === 0 && !isLoading && (
+            {materials.length === 0 && !isLoading && perms.canCreate && (
               <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => seedMut.mutate()} disabled={seedMut.isPending}>
                 <RefreshCw className={cn("w-3.5 h-3.5", seedMut.isPending && "animate-spin")} />
                 {seedMut.isPending ? "Seeding…" : "Load Demo Data"}
               </Button>
             )}
-            <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => setShowImport(true)}>
-              <Upload className="w-3.5 h-3.5" /> Import
-            </Button>
-            <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={exportCSV}>
-              <Download className="w-3.5 h-3.5" /> Export
-            </Button>
-            <Button size="sm" className="gap-1.5" onClick={() => { setEditMaterial(null); setFormOpen(true); }}>
-              <Plus className="w-4 h-4" /> Add Material
-            </Button>
+            {perms.canImport && (
+              <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => setShowImport(true)}>
+                <Upload className="w-3.5 h-3.5" /> Import
+              </Button>
+            )}
+            {perms.canExport && (
+              <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={exportCSV}>
+                <Download className="w-3.5 h-3.5" /> Export
+              </Button>
+            )}
+            {perms.canCreate && (
+              <Button size="sm" className="gap-1.5" onClick={() => { setEditMaterial(null); setFormOpen(true); }}>
+                <Plus className="w-4 h-4" /> Add Material
+              </Button>
+            )}
           </div>
         }
       />

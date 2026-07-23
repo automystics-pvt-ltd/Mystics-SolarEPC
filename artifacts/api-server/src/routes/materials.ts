@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { db, materialCategoriesTable, materialsTable, materialSuppliersTable, materialAuditLogsTable } from "@workspace/db";
 import { eq, desc, ilike, or, and, gte, lte, inArray, sql } from "drizzle-orm";
 import jwt from "jsonwebtoken";
+import { requirePermission, requireAuth } from "../lib/rbac";
 
 const router: IRouter = Router();
 
@@ -79,12 +80,12 @@ router.get("/material-categories", async (_req, res): Promise<void> => {
   res.json(rows);
 });
 
-router.post("/material-categories", async (req, res): Promise<void> => {
+router.post("/material-categories", requirePermission("materials", "create"), async (req, res): Promise<void> => {
   const [row] = await db.insert(materialCategoriesTable).values(req.body).returning();
   res.status(201).json(row);
 });
 
-router.patch("/material-categories/:id", async (req, res): Promise<void> => {
+router.patch("/material-categories/:id", requirePermission("materials", "edit"), async (req, res): Promise<void> => {
   const [row] = await db.update(materialCategoriesTable)
     .set({ ...req.body, updatedAt: new Date() })
     .where(eq(materialCategoriesTable.id, Number(req.params.id))).returning();
@@ -92,7 +93,7 @@ router.patch("/material-categories/:id", async (req, res): Promise<void> => {
   res.json(row);
 });
 
-router.delete("/material-categories/:id", async (req, res): Promise<void> => {
+router.delete("/material-categories/:id", requirePermission("materials", "delete"), async (req, res): Promise<void> => {
   await db.delete(materialCategoriesTable).where(eq(materialCategoriesTable.id, Number(req.params.id)));
   res.json({ ok: true });
 });
@@ -102,7 +103,7 @@ router.delete("/material-categories/:id", async (req, res): Promise<void> => {
 ════════════════════════════════════════════════════════════════════════ */
 
 /* ── GET /materials/export — CSV download ─────────────────────────────── */
-router.get("/materials/export", async (req, res): Promise<void> => {
+router.get("/materials/export", requirePermission("materials", "export"), async (req, res): Promise<void> => {
   const categories = await db.select().from(materialCategoriesTable);
   const catMap = new Map(categories.map(c => [c.id, c.name]));
 
@@ -134,7 +135,7 @@ router.get("/materials/export", async (req, res): Promise<void> => {
 });
 
 /* ── POST /materials/import — bulk CSV import ─────────────────────────── */
-router.post("/materials/import", async (req, res): Promise<void> => {
+router.post("/materials/import", requirePermission("materials", "import"), async (req, res): Promise<void> => {
   const user = getUser(req);
   const items: any[] = req.body.items ?? [];
   if (!items.length) { res.status(400).json({ error: "No items provided" }); return; }
@@ -172,7 +173,7 @@ router.post("/materials/import", async (req, res): Promise<void> => {
 });
 
 /* ── POST /materials/bulk — bulk operations ──────────────────────────── */
-router.post("/materials/bulk", async (req, res): Promise<void> => {
+router.post("/materials/bulk", requireAuth(), async (req, res): Promise<void> => {
   const user = getUser(req);
   const { action, ids }: { action: string; ids: number[] } = req.body;
   if (!ids?.length) { res.status(400).json({ error: "No IDs provided" }); return; }
@@ -320,7 +321,7 @@ router.get("/materials", async (req, res): Promise<void> => {
   res.json(rows.map(m => fmtMaterial(m, m.categoryId ? catMap.get(m.categoryId) : undefined)));
 });
 
-router.post("/materials", async (req, res): Promise<void> => {
+router.post("/materials", requirePermission("materials", "create"), async (req, res): Promise<void> => {
   const user = getUser(req);
   const code = `MAT-${String(matCounter++).padStart(4, "0")}`;
   const { gstRate, cessRate, basePrice, lastPurchasePrice, minOrderQty, minStockLevel, maxStockLevel, reorderPoint, ...rest } = req.body;
@@ -346,7 +347,7 @@ router.get("/materials/:id", async (req, res): Promise<void> => {
   res.json(fmtMaterial(row, cat?.name));
 });
 
-router.patch("/materials/:id", async (req, res): Promise<void> => {
+router.patch("/materials/:id", requirePermission("materials", "edit"), async (req, res): Promise<void> => {
   const user = getUser(req);
   const id = Number(req.params.id);
   const [existing] = await db.select().from(materialsTable).where(eq(materialsTable.id, id));
@@ -375,7 +376,7 @@ router.patch("/materials/:id", async (req, res): Promise<void> => {
   res.json(fmtMaterial(row));
 });
 
-router.delete("/materials/:id", async (req, res): Promise<void> => {
+router.delete("/materials/:id", requirePermission("materials", "delete"), async (req, res): Promise<void> => {
   await db.delete(materialsTable).where(eq(materialsTable.id, Number(req.params.id)));
   res.json({ ok: true });
 });

@@ -11,6 +11,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Plus, Building2, AlertCircle } from "lucide-react";
 import { PageHeader, DataTable, StatusBadge } from "@/components/shared";
+import { usePermissions } from "@/lib/permissions";
 import { useToast } from "@/components/ui/use-toast";
 import { validateVendorCore, hasErrors, type VendorErrors } from "@/lib/vendor-validation";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -47,6 +48,7 @@ export default function VendorsList() {
 
   const { data: vendors = [], isLoading } = useGetVendors({});
   const createMut = useCreateVendor();
+  const perms = usePermissions("vendors");
 
   /* ── Helpers ── */
   const touch = (field: string) => setTouched(t => ({ ...t, [field]: true }));
@@ -186,9 +188,11 @@ export default function VendorsList() {
         subtitle="Approved supplier and contractor registry"
         actions={
           <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetDialog(); }}>
-            <DialogTrigger asChild>
-              <Button className="gap-2"><Plus className="w-4 h-4" /> Add Vendor</Button>
-            </DialogTrigger>
+            {perms.canCreate && (
+              <DialogTrigger asChild>
+                <Button className="gap-2"><Plus className="w-4 h-4" /> Add Vendor</Button>
+              </DialogTrigger>
+            )}
 
             <DialogContent className="sm:max-w-lg">
               <DialogHeader>

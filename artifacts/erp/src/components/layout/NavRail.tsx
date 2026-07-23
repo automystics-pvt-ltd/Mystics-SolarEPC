@@ -33,7 +33,7 @@ import {
   ClipboardList, Building2, Package, RotateCcw, Boxes,
   BarChart2, BarChart3, TrendingUp, UserCog, ScrollText, X,
   ChevronRight, Users2, FileCode, Calendar, Receipt, Star, Clock,
-  Trash2, Pin, PinOff, ListChecks, GitBranch,
+  Trash2, Pin, PinOff, ListChecks, GitBranch, Shield,
 } from "lucide-react";
 
 /* ════════════════════════════════════════════════════════════════
@@ -144,8 +144,9 @@ export const RAIL: RailEntry[] = [
     type: "group", key: "admin", icon: Settings2, label: "Administration",
     roles: ["admin","director"],
     items: [
-      { name: "User Management", href: "/admin/users",      icon: UserCog },
+      { name: "User Management", href: "/admin/users",      icon: UserCog  },
       { name: "Audit Logs",      href: "/admin/audit-logs", icon: ScrollText },
+      { name: "Access Control",  href: "/admin/rbac",       icon: Shield,  roles: ["admin"] },
     ],
   },
 ];
@@ -642,11 +643,29 @@ export function NavRail() {
 
   const activeKey = getActiveSectionKey(location, RAIL);
 
-  // Role-filter the visible rail entries
+  // RBAC permission map — same query key as App-level; served from React Query cache
+  const { data: permMap } = useQuery<Record<string, Record<string, boolean>>>({
+    queryKey: ["rbac-my-permissions"],
+    queryFn: () => apiGet("/rbac/my-permissions"),
+    enabled: !!user,
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    refetchOnWindowFocus: false,
+  });
+
+  // Filter by role first (fast), then by RBAC view permission (cached)
   const visible = RAIL.filter((e) => {
     if (e.type === "separator") return true;
-    if (e.type === "link")      return true;
-    return !e.roles || e.roles.includes(role);
+    if (e.type === "group") {
+      if (e.roles && !e.roles.includes(role)) return false;
+      if (role !== "admin" && permMap) return permMap[e.key]?.view !== false;
+      return true;
+    }
+    if (e.type === "link") {
+      if (role !== "admin" && permMap) return permMap[e.key]?.view !== false;
+      return true;
+    }
+    return true;
   }) as RailEntry[];
 
   // Publish flyout open state to Shell via context

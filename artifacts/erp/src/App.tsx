@@ -9,10 +9,12 @@ import { SidebarProvider } from '@/lib/sidebar-context';
 import { Shell } from '@/components/layout/Shell';
 import { Login } from '@/pages/auth/Login';
 import { Dashboard } from '@/pages/dashboard/Dashboard';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ShieldX, ArrowLeft } from 'lucide-react';
 import { lazy, Suspense } from 'react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { env } from '@/lib/env';
+import { usePermissions } from '@/lib/permissions';
+import { Button } from '@/components/ui/button';
 
 // CRM — lazy loaded
 const LeadsList = lazy(() => import('@/pages/crm/LeadsList').then(m => ({ default: m.LeadsList })));
@@ -66,7 +68,7 @@ const InvoicesList = lazy(() => import('@/pages/procurement/InvoicesList'));
 const InvoiceForm = lazy(() => import('@/pages/procurement/InvoiceForm'));
 const InvoiceDetail = lazy(() => import('@/pages/procurement/InvoiceDetail'));
 
-// New modules (lazy-loaded for performance)
+// New modules
 const GRNReturnsList = lazy(() => import('@/pages/procurement/GRNReturnsList'));
 const GRNReturnForm = lazy(() => import('@/pages/procurement/GRNReturnForm'));
 const GRNReturnDetail = lazy(() => import('@/pages/procurement/GRNReturnDetail'));
@@ -76,6 +78,7 @@ const VendorPerformance = lazy(() => import('@/pages/reports/VendorPerformance')
 const FinanceDashboard = lazy(() => import('@/pages/finance/FinanceDashboard'));
 const UserManagement = lazy(() => import('@/pages/admin/UserManagement'));
 const AuditLogs = lazy(() => import('@/pages/admin/AuditLogs'));
+const RBACManager = lazy(() => import('@/pages/admin/RBACManager'));
 
 // Approvals — lazy loaded
 const ApprovalWorkbench = lazy(() => import('@/pages/approvals/ApprovalWorkbench'));
@@ -91,9 +94,7 @@ const queryClient = new QueryClient({
       gcTime: 5 * 60_000,
       refetchOnWindowFocus: false,
     },
-    mutations: {
-      retry: false,
-    },
+    mutations: { retry: false },
   },
 });
 
@@ -105,12 +106,41 @@ function PageLoader() {
   );
 }
 
-function ProtectedRoute({ component: Component, ...rest }: any) {
-  const { user, isLoading } = useAuth();
+/* ── Forbidden page ─────────────────────────────────────────────────────── */
+function ForbiddenPage({ module }: { module?: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center gap-6 px-4">
+      <div className="w-20 h-20 bg-rose-50 border border-rose-200 rounded-2xl flex items-center justify-center">
+        <ShieldX className="h-10 w-10 text-rose-500" />
+      </div>
+      <div className="space-y-2">
+        <h2 className="text-2xl font-bold tracking-tight">Access Denied</h2>
+        <p className="text-muted-foreground max-w-sm">
+          {module
+            ? `Your role doesn't have permission to view the "${module}" module.`
+            : "You don't have permission to access this page."}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Contact your administrator to request access.
+        </p>
+      </div>
+      <Button variant="outline" size="sm" onClick={() => window.history.back()} className="gap-2">
+        <ArrowLeft className="h-4 w-4" />
+        Go Back
+      </Button>
+    </div>
+  );
+}
 
-  if (isLoading) {
+/* ── Protected route (auth + optional module-level view permission) ──────── */
+function ProtectedRoute({ component: Component, module: moduleName, ...rest }: any) {
+  const { user, isLoading: authLoading } = useAuth();
+  const perms = usePermissions(moduleName);
+
+  if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "linear-gradient(135deg, #0c1445 0%, #1e3a8a 100%)" }}>
+      <div className="min-h-screen flex items-center justify-center"
+        style={{ background: "linear-gradient(135deg, #0c1445 0%, #1e3a8a 100%)" }}>
         <Loader2 className="h-8 w-8 animate-spin text-amber-400" />
       </div>
     );
@@ -121,9 +151,14 @@ function ProtectedRoute({ component: Component, ...rest }: any) {
   return (
     <Shell>
       <ErrorBoundary fallbackTitle="Page failed to load">
-        <Suspense fallback={<PageLoader />}>
-          <Component {...rest} />
-        </Suspense>
+        {/* If a module is specified, wait for permission then gate */}
+        {moduleName && !perms.isLoading && !perms.canView ? (
+          <ForbiddenPage module={moduleName} />
+        ) : (
+          <Suspense fallback={<PageLoader />}>
+            <Component {...rest} />
+          </Suspense>
+        )}
       </ErrorBoundary>
     </Shell>
   );
@@ -135,7 +170,8 @@ function Router() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "linear-gradient(135deg, #0c1445 0%, #1e3a8a 100%)" }}>
+      <div className="min-h-screen flex items-center justify-center"
+        style={{ background: "linear-gradient(135deg, #0c1445 0%, #1e3a8a 100%)" }}>
         <Loader2 className="h-8 w-8 animate-spin text-amber-400" />
       </div>
     );
@@ -148,74 +184,78 @@ function Router() {
     <Switch>
       <Route path="/login" component={Login} />
 
-      <Route path="/dashboard">{() => <ProtectedRoute component={Dashboard} />}</Route>
+      {/* Core */}
+      <Route path="/dashboard">{() => <ProtectedRoute component={Dashboard} module="dashboard" />}</Route>
+      <Route path="/approvals">{() => <ProtectedRoute component={ApprovalWorkbench} module="approvals" />}</Route>
 
-      <Route path="/crm/leads">{() => <ProtectedRoute component={LeadsList} />}</Route>
-      <Route path="/crm/leads/:id">{(p) => <ProtectedRoute component={LeadDetail} id={p.id} />}</Route>
+      {/* CRM */}
+      <Route path="/crm/leads">{() => <ProtectedRoute component={LeadsList} module="crm" />}</Route>
+      <Route path="/crm/leads/:id">{(p) => <ProtectedRoute component={LeadDetail} module="crm" id={p.id} />}</Route>
+      <Route path="/crm/quotations">{() => <ProtectedRoute component={QuotationsList} module="crm" />}</Route>
+      <Route path="/crm/quotations/:id">{(p) => <ProtectedRoute component={QuotationDetail} module="crm" id={p.id} />}</Route>
+      <Route path="/crm/client-pos">{() => <ProtectedRoute component={ClientPOsList} module="crm" />}</Route>
+      <Route path="/crm/invoices">{() => <ProtectedRoute component={CrmInvoicesList} module="crm" />}</Route>
+      <Route path="/crm/tasks">{() => <ProtectedRoute component={TasksList} module="crm" />}</Route>
+      <Route path="/crm/escalations">{() => <ProtectedRoute component={EscalationsList} module="crm" />}</Route>
 
-      <Route path="/crm/quotations">{() => <ProtectedRoute component={QuotationsList} />}</Route>
-      <Route path="/crm/quotations/:id">{(p) => <ProtectedRoute component={QuotationDetail} id={p.id} />}</Route>
+      {/* Projects */}
+      <Route path="/projects">{() => <ProtectedRoute component={ProjectsList} module="projects" />}</Route>
+      <Route path="/projects/contractors">{() => <ProtectedRoute component={ContractorsList} module="projects" />}</Route>
+      <Route path="/projects/:id">{(p) => <ProtectedRoute component={ProjectWorkspace} module="projects" id={p.id} />}</Route>
 
-      <Route path="/crm/client-pos">{() => <ProtectedRoute component={ClientPOsList} />}</Route>
-      <Route path="/crm/invoices">{() => <ProtectedRoute component={CrmInvoicesList} />}</Route>
-      <Route path="/crm/tasks">{() => <ProtectedRoute component={TasksList} />}</Route>
-      <Route path="/crm/escalations">{() => <ProtectedRoute component={EscalationsList} />}</Route>
+      {/* Inventory */}
+      <Route path="/inventory/warehouses">{() => <ProtectedRoute component={WarehousesList} module="inventory" />}</Route>
+      <Route path="/inventory/warehouses/:id">{(p) => <ProtectedRoute component={WarehouseDetail} module="inventory" id={p.id} />}</Route>
+      <Route path="/inventory/stock-transfers">{() => <ProtectedRoute component={StockTransfers} module="inventory" />}</Route>
+      <Route path="/inventory/delivery-challans">{() => <ProtectedRoute component={DeliveryChallansList} module="inventory" />}</Route>
+      <Route path="/inventory/stock-ledger">{() => <ProtectedRoute component={StockLedgerList} module="inventory" />}</Route>
+      <Route path="/inventory/stock-valuation">{() => <ProtectedRoute component={StockValuationList} module="inventory" />}</Route>
+      <Route path="/inventory/audits">{() => <ProtectedRoute component={InventoryAuditsList} module="inventory" />}</Route>
 
-      <Route path="/projects">{() => <ProtectedRoute component={ProjectsList} />}</Route>
-      <Route path="/projects/contractors">{() => <ProtectedRoute component={ContractorsList} />}</Route>
-      <Route path="/projects/:id">{(p) => <ProtectedRoute component={ProjectWorkspace} id={p.id} />}</Route>
+      {/* Engineering */}
+      <Route path="/engineering/docs">{() => <ProtectedRoute component={DesignDocsList} module="engineering" />}</Route>
+      <Route path="/engineering/docs/:id">{(p) => <ProtectedRoute component={DesignDocDetail} module="engineering" id={p.id} />}</Route>
 
-      <Route path="/inventory/warehouses">{() => <ProtectedRoute component={WarehousesList} />}</Route>
-      <Route path="/inventory/warehouses/:id">{(p) => <ProtectedRoute component={WarehouseDetail} id={p.id} />}</Route>
-      <Route path="/inventory/stock-transfers">{() => <ProtectedRoute component={StockTransfers} />}</Route>
-      <Route path="/inventory/delivery-challans">{() => <ProtectedRoute component={DeliveryChallansList} />}</Route>
-      <Route path="/inventory/stock-ledger">{() => <ProtectedRoute component={StockLedgerList} />}</Route>
-      <Route path="/inventory/stock-valuation">{() => <ProtectedRoute component={StockValuationList} />}</Route>
-      <Route path="/inventory/audits">{() => <ProtectedRoute component={InventoryAuditsList} />}</Route>
+      {/* Commissioning */}
+      <Route path="/commissioning">{() => <ProtectedRoute component={CommissioningList} module="commissioning" />}</Route>
+      <Route path="/commissioning/:id">{(p) => <ProtectedRoute component={CommissioningDetail} module="commissioning" id={p.id} />}</Route>
 
-      <Route path="/engineering/docs">{() => <ProtectedRoute component={DesignDocsList} />}</Route>
-      <Route path="/engineering/docs/:id">{(p) => <ProtectedRoute component={DesignDocDetail} id={p.id} />}</Route>
+      {/* O&M */}
+      <Route path="/oam/amc">{() => <ProtectedRoute component={OamPages} module="oam" />}</Route>
+      <Route path="/oam/maintenance">{() => <ProtectedRoute component={OamPages} module="oam" />}</Route>
+      <Route path="/oam/tickets">{() => <ProtectedRoute component={OamPages} module="oam" />}</Route>
 
-      <Route path="/commissioning">{() => <ProtectedRoute component={CommissioningList} />}</Route>
-      <Route path="/commissioning/:id">{(p) => <ProtectedRoute component={CommissioningDetail} id={p.id} />}</Route>
-
-      <Route path="/oam/amc">{() => <ProtectedRoute component={OamPages} />}</Route>
-      <Route path="/oam/maintenance">{() => <ProtectedRoute component={OamPages} />}</Route>
-      <Route path="/oam/tickets">{() => <ProtectedRoute component={OamPages} />}</Route>
-
-      {/* Procurement */}
-      <Route path="/procurement/vendors">{() => <ProtectedRoute component={VendorsList} />}</Route>
-      <Route path="/procurement/vendors/:id">{(p) => <ProtectedRoute component={VendorDetail} id={p.id} />}</Route>
-      <Route path="/procurement/materials">{() => <ProtectedRoute component={MaterialsList} />}</Route>
-      <Route path="/procurement/quotations">{() => <ProtectedRoute component={ProcurementQuotationsList} />}</Route>
-      <Route path="/procurement/quotations/new">{() => <ProtectedRoute component={ProcurementQuotationForm} />}</Route>
-      <Route path="/procurement/quotations/:id/edit">{(p) => <ProtectedRoute component={ProcurementQuotationForm} editId={p.id} />}</Route>
-      <Route path="/procurement/material-requests/:mrId/compare">{(p) => <ProtectedRoute component={QuotationComparisonView} mrId={p.mrId} />}</Route>
-      <Route path="/procurement/quotations/:id">{(p) => <ProtectedRoute component={ProcurementQuotationDetail} id={p.id} />}</Route>
-      <Route path="/procurement/pos">{() => <ProtectedRoute component={ProcurementPOsList} />}</Route>
-      <Route path="/procurement/pos/:id">{(p) => <ProtectedRoute component={ProcurementPODetail} id={p.id} />}</Route>
-      <Route path="/procurement/dashboard">{() => <ProtectedRoute component={ProcurementDashboard} />}</Route>
-      <Route path="/procurement/grns/new">{() => <ProtectedRoute component={GRNForm} />}</Route>
-      <Route path="/procurement/grns/:id">{(p) => <ProtectedRoute component={GRNDetail} id={p.id} />}</Route>
-      <Route path="/procurement/grns">{() => <ProtectedRoute component={ProcGRNsList} />}</Route>
-      <Route path="/procurement/grn-returns/new">{() => <ProtectedRoute component={GRNReturnForm} />}</Route>
-      <Route path="/procurement/grn-returns/:id">{(p) => <ProtectedRoute component={GRNReturnDetail} id={p.id} />}</Route>
-      <Route path="/procurement/grn-returns">{() => <ProtectedRoute component={GRNReturnsList} />}</Route>
-      <Route path="/procurement/invoices/new">{() => <ProtectedRoute component={InvoiceForm} />}</Route>
-      <Route path="/procurement/invoices/:id">{(p) => <ProtectedRoute component={InvoiceDetail} id={p.id} />}</Route>
-      <Route path="/procurement/invoices">{() => <ProtectedRoute component={InvoicesList} />}</Route>
+      {/* Procurement — order matters: specific paths before /:id */}
+      <Route path="/procurement/dashboard">{() => <ProtectedRoute component={ProcurementDashboard} module="procurement" />}</Route>
+      <Route path="/procurement/vendors">{() => <ProtectedRoute component={VendorsList} module="vendors" />}</Route>
+      <Route path="/procurement/vendors/:id">{(p) => <ProtectedRoute component={VendorDetail} module="vendors" id={p.id} />}</Route>
+      <Route path="/procurement/materials">{() => <ProtectedRoute component={MaterialsList} module="materials" />}</Route>
+      <Route path="/procurement/quotations/new">{() => <ProtectedRoute component={ProcurementQuotationForm} module="procurement" />}</Route>
+      <Route path="/procurement/quotations/:id/edit">{(p) => <ProtectedRoute component={ProcurementQuotationForm} module="procurement" editId={p.id} />}</Route>
+      <Route path="/procurement/material-requests/:mrId/compare">{(p) => <ProtectedRoute component={QuotationComparisonView} module="procurement" mrId={p.mrId} />}</Route>
+      <Route path="/procurement/quotations/:id">{(p) => <ProtectedRoute component={ProcurementQuotationDetail} module="procurement" id={p.id} />}</Route>
+      <Route path="/procurement/quotations">{() => <ProtectedRoute component={ProcurementQuotationsList} module="procurement" />}</Route>
+      <Route path="/procurement/pos">{() => <ProtectedRoute component={ProcurementPOsList} module="procurement" />}</Route>
+      <Route path="/procurement/pos/:id">{(p) => <ProtectedRoute component={ProcurementPODetail} module="procurement" id={p.id} />}</Route>
+      <Route path="/procurement/grns/new">{() => <ProtectedRoute component={GRNForm} module="procurement" />}</Route>
+      <Route path="/procurement/grns/:id">{(p) => <ProtectedRoute component={GRNDetail} module="procurement" id={p.id} />}</Route>
+      <Route path="/procurement/grns">{() => <ProtectedRoute component={ProcGRNsList} module="procurement" />}</Route>
+      <Route path="/procurement/grn-returns/new">{() => <ProtectedRoute component={GRNReturnForm} module="procurement" />}</Route>
+      <Route path="/procurement/grn-returns/:id">{(p) => <ProtectedRoute component={GRNReturnDetail} module="procurement" id={p.id} />}</Route>
+      <Route path="/procurement/grn-returns">{() => <ProtectedRoute component={GRNReturnsList} module="procurement" />}</Route>
+      <Route path="/procurement/invoices/new">{() => <ProtectedRoute component={InvoiceForm} module="procurement" />}</Route>
+      <Route path="/procurement/invoices/:id">{(p) => <ProtectedRoute component={InvoiceDetail} module="procurement" id={p.id} />}</Route>
+      <Route path="/procurement/invoices">{() => <ProtectedRoute component={InvoicesList} module="procurement" />}</Route>
 
       {/* Finance & Reports */}
-      <Route path="/finance/dashboard">{() => <ProtectedRoute component={FinanceDashboard} />}</Route>
-      <Route path="/reports/vendors">{() => <ProtectedRoute component={VendorPerformance} />}</Route>
-      <Route path="/reports">{() => <ProtectedRoute component={ReportsModule} />}</Route>
+      <Route path="/finance/dashboard">{() => <ProtectedRoute component={FinanceDashboard} module="finance" />}</Route>
+      <Route path="/reports/vendors">{() => <ProtectedRoute component={VendorPerformance} module="reports" />}</Route>
+      <Route path="/reports">{() => <ProtectedRoute component={ReportsModule} module="reports" />}</Route>
 
       {/* Admin */}
-      <Route path="/admin/users">{() => <ProtectedRoute component={UserManagement} />}</Route>
-      <Route path="/admin/audit-logs">{() => <ProtectedRoute component={AuditLogs} />}</Route>
-
-      {/* Approvals */}
-      <Route path="/approvals">{() => <ProtectedRoute component={ApprovalWorkbench} />}</Route>
+      <Route path="/admin/users">{() => <ProtectedRoute component={UserManagement} module="admin" />}</Route>
+      <Route path="/admin/audit-logs">{() => <ProtectedRoute component={AuditLogs} module="admin" />}</Route>
+      <Route path="/admin/rbac">{() => <ProtectedRoute component={RBACManager} module="admin" />}</Route>
 
       <Route component={NotFound} />
     </Switch>
