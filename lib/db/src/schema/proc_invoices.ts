@@ -1,4 +1,7 @@
-import { pgTable, serial, text, varchar, integer, numeric, timestamp, boolean, json, pgEnum } from "drizzle-orm/pg-core";
+import {
+  pgTable, serial, text, varchar, integer, numeric, timestamp,
+  boolean, json, pgEnum, index,
+} from "drizzle-orm/pg-core";
 import { procurementPOsTable } from "./proc_pos";
 import { procGRNsTable } from "./proc_grns";
 import { vendorsTable } from "./vendors";
@@ -63,7 +66,17 @@ export const procInvoicesTable = pgTable("proc_invoices", {
   createdByName: text("created_by_name"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => [
+  // Dashboard: pending invoices filter (Draft + PendingApproval + OnHold)
+  index("inv_status_idx").on(table.status),
+  // Dashboard: date-range activity feed + mismatch queries
+  index("inv_created_at_idx").on(table.createdAt),
+  // Invoice list: filter by PO
+  index("inv_po_id_idx").on(table.poId),
+  index("inv_vendor_id_idx").on(table.vendorId),
+  // Mismatch filter
+  index("inv_match_status_idx").on(table.matchStatus),
+]);
 
 export const procInvoiceItemsTable = pgTable("proc_invoice_items", {
   id: serial("id").primaryKey(),
@@ -90,7 +103,9 @@ export const procInvoiceItemsTable = pgTable("proc_invoice_items", {
 
   isMatched: boolean("is_matched").default(true),
   mismatchNote: text("mismatch_note"),
-});
+}, (table) => [
+  index("inv_item_invoice_id_idx").on(table.invoiceId),
+]);
 
 export const procInvoiceAuditLogsTable = pgTable("proc_invoice_audit_logs", {
   id: serial("id").primaryKey(),
@@ -102,4 +117,6 @@ export const procInvoiceAuditLogsTable = pgTable("proc_invoice_audit_logs", {
   oldValues: json("old_values"),
   newValues: json("new_values"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => [
+  index("inv_audit_invoice_id_idx").on(table.invoiceId),
+]);

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, memo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
@@ -15,6 +15,7 @@ import {
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
 import { SkeletonStats, SkeletonList, StatusBadge } from "@/components/shared";
+import { apiGet } from "@/lib/fetch";
 
 /* ─── Formatters ─────────────────────────────────────────────────────────── */
 const MONTH_LABELS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -40,12 +41,8 @@ function relTime(iso: string) {
 function daysSince(iso: string) {
   return Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
 }
-/** Build YYYY-MM-DD from local calendar parts — avoids UTC shift in positive-offset timezones (e.g. IST). */
 function toLocalISO(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
@@ -58,34 +55,17 @@ function monthLabel(yyyymm: string) {
 /* ─── Date range helpers ─────────────────────────────────────────────────── */
 type RangePreset = "ytd" | "this-month" | "last-month" | "this-quarter" | "custom";
 
-interface DateRange {
-  preset: RangePreset;
-  from: string; // YYYY-MM-DD
-  to:   string; // YYYY-MM-DD
-}
+interface DateRange { preset: RangePreset; from: string; to: string; }
 
 function computePreset(preset: Exclude<RangePreset, "custom">): { from: string; to: string } {
   const today = new Date();
   const y = today.getFullYear();
-  const m = today.getMonth(); // 0-based
-
+  const m = today.getMonth();
   switch (preset) {
-    case "ytd":
-      return { from: `${y}-01-01`, to: toLocalISO(today) };
-    case "this-month": {
-      const first = new Date(y, m, 1);
-      return { from: toLocalISO(first), to: toLocalISO(today) };
-    }
-    case "last-month": {
-      const first = new Date(y, m - 1, 1);
-      const last  = new Date(y, m, 0);   // last day of previous month
-      return { from: toLocalISO(first), to: toLocalISO(last) };
-    }
-    case "this-quarter": {
-      const qStart = Math.floor(m / 3) * 3;
-      const first  = new Date(y, qStart, 1);
-      return { from: toLocalISO(first), to: toLocalISO(today) };
-    }
+    case "ytd":          return { from: `${y}-01-01`, to: toLocalISO(today) };
+    case "this-month":   return { from: toLocalISO(new Date(y, m, 1)), to: toLocalISO(today) };
+    case "last-month":   return { from: toLocalISO(new Date(y, m - 1, 1)), to: toLocalISO(new Date(y, m, 0)) };
+    case "this-quarter": return { from: toLocalISO(new Date(y, Math.floor(m / 3) * 3, 1)), to: toLocalISO(today) };
   }
 }
 
@@ -98,8 +78,7 @@ const PRESETS: { key: Exclude<RangePreset, "custom">; label: string }[] = [
 
 function rangeLabel(r: DateRange) {
   const found = PRESETS.find(p => p.key === r.preset);
-  if (found) return found.label;
-  return `${fmtDate(r.from)} – ${fmtDate(r.to)}`;
+  return found ? found.label : `${fmtDate(r.from)} – ${fmtDate(r.to)}`;
 }
 
 function defaultRange(): DateRange {
@@ -108,16 +87,14 @@ function defaultRange(): DateRange {
 }
 
 /* ─── Date Range Picker ──────────────────────────────────────────────────── */
-function DateRangePicker({ value, onChange }: {
-  value: DateRange;
-  onChange: (r: DateRange) => void;
+const DateRangePicker = memo(function DateRangePicker({ value, onChange }: {
+  value: DateRange; onChange: (r: DateRange) => void;
 }) {
-  const [open, setOpen]       = useState(false);
+  const [open, setOpen]           = useState(false);
   const [customFrom, setCustomFrom] = useState(value.from);
   const [customTo,   setCustomTo]   = useState(value.to);
   const ref = useRef<HTMLDivElement>(null);
 
-  // Close on outside click
   useEffect(() => {
     if (!open) return;
     function handler(e: MouseEvent) {
@@ -130,8 +107,7 @@ function DateRangePicker({ value, onChange }: {
   function applyPreset(preset: Exclude<RangePreset, "custom">) {
     const { from, to } = computePreset(preset);
     onChange({ preset, from, to });
-    setCustomFrom(from);
-    setCustomTo(to);
+    setCustomFrom(from); setCustomTo(to);
     setOpen(false);
   }
 
@@ -145,25 +121,19 @@ function DateRangePicker({ value, onChange }: {
 
   return (
     <div ref={ref} className="relative">
-      <button
-        onClick={() => setOpen(o => !o)}
-        className={cn(
-          "flex items-center gap-1.5 h-8 px-3 rounded-lg border text-xs font-semibold transition-all",
-          "bg-card hover:bg-muted border-border shadow-sm",
-          open && "ring-1 ring-primary/30",
-          !isYTD && "border-primary/40 text-primary bg-primary/5",
-        )}
-      >
+      <button onClick={() => setOpen(o => !o)} className={cn(
+        "flex items-center gap-1.5 h-8 px-3 rounded-lg border text-xs font-semibold transition-all",
+        "bg-card hover:bg-muted border-border shadow-sm",
+        open && "ring-1 ring-primary/30",
+        !isYTD && "border-primary/40 text-primary bg-primary/5",
+      )}>
         <Calendar className="h-3.5 w-3.5 shrink-0" />
         <span>{rangeLabel(value)}</span>
         {!isYTD && (
-          <span
-            role="button"
-            tabIndex={0}
+          <span role="button" tabIndex={0}
             onClick={e => { e.stopPropagation(); onChange(defaultRange()); }}
             onKeyDown={e => { if (e.key === "Enter") { e.stopPropagation(); onChange(defaultRange()); } }}
-            className="ml-0.5 rounded-full hover:bg-primary/20 p-0.5 transition-colors"
-          >
+            className="ml-0.5 rounded-full hover:bg-primary/20 p-0.5 transition-colors">
             <X className="h-3 w-3" />
           </span>
         )}
@@ -172,71 +142,43 @@ function DateRangePicker({ value, onChange }: {
 
       <AnimatePresence>
         {open && (
-          <motion.div
-            initial={{ opacity: 0, y: -4, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0,  scale: 1    }}
-            exit={{ opacity: 0, y: -4, scale: 0.97 }}
-            transition={{ duration: 0.15 }}
-            className="absolute right-0 top-[calc(100%+6px)] z-50 w-64 bg-popover border border-border rounded-xl shadow-lg overflow-hidden"
-          >
-            {/* Presets */}
+          <motion.div initial={{ opacity: 0, y: -4, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -4, scale: 0.97 }} transition={{ duration: 0.15 }}
+            className="absolute right-0 top-[calc(100%+6px)] z-50 w-64 bg-popover border border-border rounded-xl shadow-lg overflow-hidden">
             <div className="p-2 space-y-0.5">
               {PRESETS.map(p => (
-                <button
-                  key={p.key}
-                  onClick={() => applyPreset(p.key)}
-                  className={cn(
-                    "w-full text-left px-3 py-2 rounded-lg text-[12px] font-semibold transition-colors",
-                    value.preset === p.key
-                      ? "bg-primary text-primary-foreground"
-                      : "text-foreground hover:bg-muted",
-                  )}
-                >
-                  {p.label}
-                </button>
+                <button key={p.key} onClick={() => applyPreset(p.key)} className={cn(
+                  "w-full text-left px-3 py-2 rounded-lg text-[12px] font-semibold transition-colors",
+                  value.preset === p.key ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted",
+                )}>{p.label}</button>
               ))}
             </div>
-
-            {/* Custom range */}
             <div className="border-t border-border p-3 space-y-2">
               <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">Custom range</p>
               <div className="flex flex-col gap-1.5">
-                <div>
-                  <label className="text-[10px] font-semibold text-muted-foreground mb-1 block">From</label>
-                  <input
-                    type="date"
-                    value={customFrom}
-                    max={customTo || undefined}
-                    onChange={e => setCustomFrom(e.target.value)}
-                    className="w-full text-[12px] px-2.5 py-1.5 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-semibold text-muted-foreground mb-1 block">To</label>
-                  <input
-                    type="date"
-                    value={customTo}
-                    min={customFrom || undefined}
-                    onChange={e => setCustomTo(e.target.value)}
-                    className="w-full text-[12px] px-2.5 py-1.5 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
-                  />
-                </div>
+                {(["From", "To"] as const).map(lbl => (
+                  <div key={lbl}>
+                    <label className="text-[10px] font-semibold text-muted-foreground mb-1 block">{lbl}</label>
+                    <input type="date"
+                      value={lbl === "From" ? customFrom : customTo}
+                      max={lbl === "From" ? (customTo || undefined) : undefined}
+                      min={lbl === "To" ? (customFrom || undefined) : undefined}
+                      onChange={e => lbl === "From" ? setCustomFrom(e.target.value) : setCustomTo(e.target.value)}
+                      className="w-full text-[12px] px-2.5 py-1.5 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+                    />
+                  </div>
+                ))}
               </div>
-              <Button
-                size="sm"
-                className="w-full h-7 text-xs"
+              <Button size="sm" className="w-full h-7 text-xs"
                 disabled={!customFrom || !customTo || customFrom > customTo}
-                onClick={applyCustom}
-              >
-                Apply
-              </Button>
+                onClick={applyCustom}>Apply</Button>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
     </div>
   );
-}
+});
 
 /* ─── Constants ──────────────────────────────────────────────────────────── */
 const PIPELINE_STAGES = [
@@ -258,11 +200,9 @@ const ACTIVITY_META: Record<string, { icon: React.ElementType; label: string; cl
   invoice: { icon: FilePlus,     label: "Invoice",        cls: "bg-violet-100 text-violet-700"    },
 };
 
-/* ─── Animation ──────────────────────────────────────────────────────────── */
 const wrap = { hidden: {}, show: { transition: { staggerChildren: 0.055 } } };
 const fade = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0, transition: { duration: 0.28, ease: "easeOut" as const } } };
 
-/* ─── Accent palette ─────────────────────────────────────────────────────── */
 type Accent = "default"|"red"|"amber"|"emerald"|"blue"|"violet";
 const ACCENT: Record<Accent, { bg: string; icon: string }> = {
   default: { bg: "from-white to-slate-50/80 border-border",           icon: "bg-primary/10 text-primary"       },
@@ -279,8 +219,8 @@ const ALERT_STYLE: Record<AlertColor, { lb: string; bg: string; ib: string; badg
   blue:  { lb:"border-l-blue-500",  bg:"bg-blue-50/50",  ib:"bg-blue-100 text-blue-700",   badge:"bg-blue-100 text-blue-700",   bb:"border-blue-200"  },
 };
 
-/* ─── Leaf components ────────────────────────────────────────────────────── */
-function KPICard({ label, value, sub, trend, trendLabel, icon: Icon, accent = "default", onClick }: {
+/* ─── Pure leaf components (memo'd to prevent unnecessary re-renders) ─────── */
+const KPICard = memo(function KPICard({ label, value, sub, trend, trendLabel, icon: Icon, accent = "default", onClick }: {
   label: string; value: string | number; sub?: string;
   trend?: "up"|"down"|"neutral"; trendLabel?: string;
   icon: React.ElementType; accent?: Accent; onClick?: () => void;
@@ -310,9 +250,9 @@ function KPICard({ label, value, sub, trend, trendLabel, icon: Icon, accent = "d
       )}
     </div>
   );
-}
+});
 
-function DashCard({ title, sub, actions, children, className }: {
+const DashCard = memo(function DashCard({ title, sub, actions, children, className }: {
   title: string; sub?: string; actions?: React.ReactNode; children: React.ReactNode; className?: string;
 }) {
   return (
@@ -327,9 +267,9 @@ function DashCard({ title, sub, actions, children, className }: {
       {children}
     </div>
   );
-}
+});
 
-function Pipeline({ poByStatus, totalPOs, onNav }: {
+const Pipeline = memo(function Pipeline({ poByStatus, totalPOs, onNav }: {
   poByStatus: Record<string, number>; totalPOs: number; onNav: () => void;
 }) {
   const stages = PIPELINE_STAGES.filter(s => s.key !== "Cancelled" || (poByStatus[s.key] ?? 0) > 0);
@@ -357,7 +297,7 @@ function Pipeline({ poByStatus, totalPOs, onNav }: {
       })}
     </div>
   );
-}
+});
 
 function SpendTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
@@ -369,16 +309,18 @@ function SpendTooltip({ active, payload, label }: any) {
   );
 }
 
-function ActionRow({ left, right, onClick }: { left: React.ReactNode; right: React.ReactNode; onClick: () => void }) {
+const ActionRow = memo(function ActionRow({ left, right, onClick }: {
+  left: React.ReactNode; right: React.ReactNode; onClick: () => void;
+}) {
   return (
     <div onClick={onClick} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-muted/30 cursor-pointer border-b border-border/40 last:border-b-0 transition-colors">
       <div className="min-w-0 flex-1">{left}</div>
       <div className="shrink-0 flex items-center gap-2">{right}</div>
     </div>
   );
-}
+});
 
-function AlertRow({ icon: Icon, color, title, sub, count, onClick }: {
+const AlertRow = memo(function AlertRow({ icon: Icon, color, title, sub, count, onClick }: {
   icon: React.ElementType; color: AlertColor; title: string; sub: string; count: number; onClick?: () => void;
 }) {
   const c = ALERT_STYLE[color];
@@ -397,9 +339,9 @@ function AlertRow({ icon: Icon, color, title, sub, count, onClick }: {
       <span className={cn("text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 border", c.badge, c.bb)}>{count}</span>
     </div>
   );
-}
+});
 
-function ActivityRow({ event }: { event: any }) {
+const ActivityRow = memo(function ActivityRow({ event }: { event: any }) {
   const meta = ACTIVITY_META[event.type] ?? { icon: Activity, label: event.type, cls: "bg-muted text-muted-foreground" };
   const Icon = meta.icon;
   return (
@@ -429,7 +371,7 @@ function ActivityRow({ event }: { event: any }) {
       </div>
     </div>
   );
-}
+});
 
 function InsightChip({ icon: Icon, text, cls }: { icon: React.ElementType; text: string; cls: string }) {
   return (
@@ -439,112 +381,155 @@ function InsightChip({ icon: Icon, text, cls }: { icon: React.ElementType; text:
   );
 }
 
-/* ─── Main dashboard ─────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   MAIN DASHBOARD
+═══════════════════════════════════════════════════════════════════════════ */
 export default function ProcurementDashboard() {
   const [, setLocation] = useLocation();
   const [tab, setTab]             = useState<"invoices"|"grns"|"overdue">("invoices");
   const [chartMode, setChartMode] = useState<"vendor"|"category">("vendor");
-  const [selectedVendor, setSelectedVendor]     = useState<string>("");
+  const [selectedVendor,   setSelectedVendor]   = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [dateRange, setDateRange] = useState<DateRange>(defaultRange);
 
+  /* ── Single query, cached for 2 minutes ────────────────────────────────── */
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["procurement-dashboard", dateRange.from, dateRange.to],
-    queryFn: async ({ signal }) => {
-      const params = new URLSearchParams({ from: dateRange.from, to: dateRange.to });
-      const token  = localStorage.getItem("mystics_token");
-      const res    = await fetch(`/api/procurement-dashboard?${params}`, {
-        signal,
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return res.json();
-    },
+    queryFn:  () => apiGet<any>("/procurement-dashboard", {
+      from: dateRange.from,
+      to:   dateRange.to,
+    }),
+    staleTime:          2 * 60_000,   // fresh for 2 min — no refetch on navigation
+    gcTime:             10 * 60_000,  // keep in cache for 10 min
+    refetchOnWindowFocus: false,       // don't surprise users mid-task
+    placeholderData:    (prev: any) => prev, // show stale data while revalidating
   });
 
-  if (isLoading) return (
+  const handleRangeChange = useCallback((r: DateRange) => {
+    setDateRange(r);
+    setSelectedVendor("");
+    setSelectedCategory("");
+  }, []);
+
+  const handleChartModeChange = useCallback((mode: "vendor" | "category") => {
+    setChartMode(mode);
+    setSelectedVendor("");
+    setSelectedCategory("");
+  }, []);
+
+  /* ── Skeleton while loading for the first time ──────────────────────────── */
+  if (isLoading && !data) return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-      <SkeletonStats count={5} /><SkeletonList rows={4} /><SkeletonList rows={6} />
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <div className="h-6 w-48 bg-muted rounded animate-pulse" />
+          <div className="h-4 w-64 bg-muted/60 rounded animate-pulse" />
+        </div>
+        <div className="h-8 w-32 bg-muted rounded animate-pulse" />
+      </div>
+      <SkeletonStats count={5} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
+        {[1,2,3].map(i => <div key={i} className="h-12 bg-muted/50 rounded-xl animate-pulse" />)}
+      </div>
+      <SkeletonList rows={4} />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 h-72 bg-muted/50 rounded-xl animate-pulse" />
+        <div className="h-72 bg-muted/50 rounded-xl animate-pulse" />
+      </div>
+      <SkeletonList rows={6} />
     </motion.div>
   );
 
-  /* data */
-  const d   = data as any;
-  const s   = d?.summary ?? {};
-  const overduePOs: any[]      = d?.overduePOs           ?? [];
-  const pendingGRNs: any[]     = d?.pendingGRNs           ?? [];
-  const pendingInvoices: any[] = d?.pendingInvoices        ?? [];
-  const approaching: any[]     = d?.approachingDeadlines   ?? [];
-  const topVendors: any[]      = d?.topVendors             ?? [];
-  const topCategories: any[]   = d?.topCategories           ?? [];
-  const recentActivity: any[]  = d?.recentActivity         ?? [];
-  const vendorMonthlySpend: Record<string, any[]>   = d?.vendorMonthlySpend   ?? {};
-  const categoryMonthlySpend: Record<string, any[]> = d?.categoryMonthlySpend ?? {};
+  /* ── Data extraction ─────────────────────────────────────────────────────── */
+  const d   = data as any ?? {};
+  const s   = d.summary ?? {};
+  const overduePOs: any[]      = d.overduePOs           ?? [];
+  const pendingGRNs: any[]     = d.pendingGRNs           ?? [];
+  const pendingInvoices: any[] = d.pendingInvoices        ?? [];
+  const approaching: any[]     = d.approachingDeadlines   ?? [];
+  const topVendors: any[]      = d.topVendors             ?? [];
+  const topCategories: any[]   = d.topCategories          ?? [];
+  const recentActivity: any[]  = d.recentActivity         ?? [];
+  const vendorMonthlySpend: Record<string, any[]>   = d.vendorMonthlySpend   ?? {};
+  const categoryMonthlySpend: Record<string, any[]> = d.categoryMonthlySpend ?? {};
 
-  // Map monthly spend using actual month field (not array index) so custom ranges render correctly
-  const monthlySpend: any[] = (d?.monthlySpend ?? []).map((m: any) => ({
-    month: monthLabel(m.month), amount: m.amount,
-  }));
-  const maxCategorySpend = topCategories[0]?.spend ?? 1;
+  /* ── All derived values are memoised — no recomputation on irrelevant state changes */
 
-  const chartData: any[] = (() => {
+  const monthlySpend = useMemo(() =>
+    (d.monthlySpend ?? []).map((m: any) => ({ month: monthLabel(m.month), amount: m.amount })),
+    [d.monthlySpend],
+  );
+
+  const chartData = useMemo((): any[] => {
     if (chartMode === "vendor" && selectedVendor && vendorMonthlySpend[selectedVendor]) {
-      return vendorMonthlySpend[selectedVendor].map((m: any) => ({
-        month: monthLabel(m.month), amount: m.amount,
-      }));
+      return vendorMonthlySpend[selectedVendor].map((m: any) => ({ month: monthLabel(m.month), amount: m.amount }));
     }
     if (chartMode === "category" && selectedCategory && categoryMonthlySpend[selectedCategory]) {
-      return categoryMonthlySpend[selectedCategory].map((m: any) => ({
-        month: monthLabel(m.month), amount: m.amount,
-      }));
+      return categoryMonthlySpend[selectedCategory].map((m: any) => ({ month: monthLabel(m.month), amount: m.amount }));
     }
     return monthlySpend;
-  })();
+  }, [chartMode, selectedVendor, selectedCategory, vendorMonthlySpend, categoryMonthlySpend, monthlySpend]);
 
-  /* derived */
-  const spendDelta = s.lastMonthSpend > 0
-    ? ((s.thisMonthSpend - s.lastMonthSpend) / s.lastMonthSpend) * 100 : null;
+  const donutData = useMemo(() =>
+    Object.entries(s.poByStatus ?? {})
+      .map(([status, count]) => ({ name: status, value: count as number, color: DONUT_COLORS[status] ?? "#94a3b8" }))
+      .filter(d => d.value > 0),
+    [s.poByStatus],
+  );
+
+  const spendDelta = useMemo(() =>
+    s.lastMonthSpend > 0
+      ? ((s.thisMonthSpend - s.lastMonthSpend) / s.lastMonthSpend) * 100
+      : null,
+    [s.thisMonthSpend, s.lastMonthSpend],
+  );
+
   const pendingActions = (s.pendingGRNs ?? 0) + (s.pendingInvoices ?? 0);
-  const donutData = Object.entries(s.poByStatus ?? {})
-    .map(([status, count]) => ({ name: status, value: count as number, color: DONUT_COLORS[status] ?? "#94a3b8" }))
-    .filter(d => d.value > 0);
-  const maxVendorSpend = topVendors[0]?.spend ?? 1;
+  const maxVendorSpend   = useMemo(() => topVendors[0]?.spend ?? 1, [topVendors]);
+  const maxCategorySpend = useMemo(() => topCategories[0]?.spend ?? 1, [topCategories]);
 
-  const isYTD = dateRange.preset === "ytd";
+  const insights = useMemo(() => {
+    const chips: { icon: React.ElementType; text: string; cls: string }[] = [];
+    if (spendDelta !== null && Math.abs(spendDelta) >= 5)
+      chips.push({
+        icon: spendDelta > 0 ? TrendingUp : TrendingDown,
+        text: `Spend is ${spendDelta > 0 ? "up" : "down"} ${Math.abs(spendDelta).toFixed(0)}% vs last month (${fmt(s.thisMonthSpend)} this month)`,
+        cls: spendDelta > 0 ? "bg-amber-50 border-amber-200 text-amber-800" : "bg-emerald-50 border-emerald-200 text-emerald-800",
+      });
+    if (s.overduePOs > 0)
+      chips.push({ icon: AlertTriangle, cls: "bg-red-50 border-red-200 text-red-800",
+        text: `${s.overduePOs} overdue PO${s.overduePOs > 1 ? "s" : ""} need immediate follow-up with vendors` });
+    const staleInv = pendingInvoices.filter((i: any) => daysSince(i.createdAt) > 7);
+    if (staleInv.length > 0)
+      chips.push({ icon: Clock, cls: "bg-violet-50 border-violet-200 text-violet-800",
+        text: `${staleInv.length} invoice${staleInv.length > 1 ? "s" : ""} ${staleInv.length > 1 ? "have" : "has"} been pending for over 7 days` });
+    if (topVendors.length > 0 && s.ytdSpend > 0) {
+      const pct = Math.round((topVendors[0].spend / s.ytdSpend) * 100);
+      if (pct >= 25)
+        chips.push({ icon: Building2, cls: "bg-blue-50 border-blue-200 text-blue-800",
+          text: `${topVendors[0].vendorName} accounts for ${pct}% of period spend — consider diversifying` });
+    }
+    if (s.approachingDeadlines > 0)
+      chips.push({ icon: Calendar, cls: "bg-orange-50 border-orange-200 text-orange-800",
+        text: `${s.approachingDeadlines} PO${s.approachingDeadlines > 1 ? "s" : ""} due within 7 days — confirm delivery with vendors` });
+    if (s.mismatchCount > 0)
+      chips.push({ icon: AlertCircle, cls: "bg-rose-50 border-rose-200 text-rose-800",
+        text: `${s.mismatchCount} invoice${s.mismatchCount > 1 ? "s" : ""} ${s.mismatchCount > 1 ? "have" : "has"} 3-way match mismatches requiring sign-off` });
+    if (chips.length === 0)
+      chips.push({ icon: CheckCircle2, cls: "bg-emerald-50 border-emerald-200 text-emerald-800",
+        text: "All procurement metrics look healthy — no critical issues detected" });
+    return chips;
+  }, [spendDelta, s, pendingInvoices, topVendors]);
+
+  const isYTD      = dateRange.preset === "ytd";
   const spendKPILabel = isYTD ? "YTD Spend" : "Period Spend";
-
-  /* insights */
-  const insights: { icon: React.ElementType; text: string; cls: string }[] = [];
-  if (spendDelta !== null && Math.abs(spendDelta) >= 5)
-    insights.push({
-      icon: spendDelta > 0 ? TrendingUp : TrendingDown,
-      text: `Spend is ${spendDelta > 0 ? "up" : "down"} ${Math.abs(spendDelta).toFixed(0)}% vs last month (${fmt(s.thisMonthSpend)} this month)`,
-      cls: spendDelta > 0 ? "bg-amber-50 border-amber-200 text-amber-800" : "bg-emerald-50 border-emerald-200 text-emerald-800",
-    });
-  if (s.overduePOs > 0)
-    insights.push({ icon: AlertTriangle, cls: "bg-red-50 border-red-200 text-red-800",
-      text: `${s.overduePOs} overdue PO${s.overduePOs > 1 ? "s" : ""} need immediate follow-up with vendors` });
-  const staleInv = pendingInvoices.filter((i: any) => daysSince(i.createdAt) > 7);
-  if (staleInv.length > 0)
-    insights.push({ icon: Clock, cls: "bg-violet-50 border-violet-200 text-violet-800",
-      text: `${staleInv.length} invoice${staleInv.length > 1 ? "s" : ""} ${staleInv.length > 1 ? "have" : "has"} been pending for over 7 days` });
-  if (topVendors.length > 0 && s.ytdSpend > 0) {
-    const pct = Math.round((topVendors[0].spend / s.ytdSpend) * 100);
-    if (pct >= 25)
-      insights.push({ icon: Building2, cls: "bg-blue-50 border-blue-200 text-blue-800",
-        text: `${topVendors[0].vendorName} accounts for ${pct}% of period spend — consider diversifying` });
-  }
-  if (s.approachingDeadlines > 0)
-    insights.push({ icon: Calendar, cls: "bg-orange-50 border-orange-200 text-orange-800",
-      text: `${s.approachingDeadlines} PO${s.approachingDeadlines > 1 ? "s" : ""} due within 7 days — confirm delivery with vendors` });
-  if (s.mismatchCount > 0)
-    insights.push({ icon: AlertCircle, cls: "bg-rose-50 border-rose-200 text-rose-800",
-      text: `${s.mismatchCount} invoice${s.mismatchCount > 1 ? "s" : ""} ${s.mismatchCount > 1 ? "have" : "has"} 3-way match mismatches requiring sign-off` });
-  if (insights.length === 0)
-    insights.push({ icon: CheckCircle2, cls: "bg-emerald-50 border-emerald-200 text-emerald-800",
-      text: "All procurement metrics look healthy — no critical issues detected" });
-
   const now = new Date();
+
+  /* ── Navigation callbacks (stable refs via useCallback) ─────────────────── */
+  const navPOs      = useCallback(() => setLocation("/procurement/pos"),      [setLocation]);
+  const navGRNs     = useCallback(() => setLocation("/procurement/grns"),     [setLocation]);
+  const navInvoices = useCallback(() => setLocation("/procurement/invoices"), [setLocation]);
+  const navVendors  = useCallback(() => setLocation("/procurement/vendors"),  [setLocation]);
 
   return (
     <motion.div variants={wrap} initial="hidden" animate="show" className="space-y-5 pb-10">
@@ -559,19 +544,14 @@ export default function ProcurementDashboard() {
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Date range picker */}
-          <DateRangePicker value={dateRange} onChange={r => {
-            setDateRange(r);
-            setSelectedVendor("");
-            setSelectedCategory("");
-          }} />
+          <DateRangePicker value={dateRange} onChange={handleRangeChange} />
           {([
-            { label: "POs",      icon: ShoppingCart, href: "/procurement/pos"      },
-            { label: "GRNs",     icon: Boxes,        href: "/procurement/grns"     },
-            { label: "Invoices", icon: FilePlus,     href: "/procurement/invoices" },
-            { label: "Vendors",  icon: Building2,    href: "/procurement/vendors"  },
-          ] as const).map(({ label, icon: Icon, href }) => (
-            <Button key={href} size="sm" variant="outline" className="text-xs gap-1.5 h-8" onClick={() => setLocation(href)}>
+            { label: "POs",      icon: ShoppingCart, fn: navPOs      },
+            { label: "GRNs",     icon: Boxes,        fn: navGRNs     },
+            { label: "Invoices", icon: FilePlus,     fn: navInvoices },
+            { label: "Vendors",  icon: Building2,    fn: navVendors  },
+          ] as const).map(({ label, icon: Icon, fn }) => (
+            <Button key={label} size="sm" variant="outline" className="text-xs gap-1.5 h-8" onClick={fn}>
               <Icon className="h-3.5 w-3.5" />{label}
             </Button>
           ))}
@@ -584,21 +564,21 @@ export default function ProcurementDashboard() {
           sub={s.committedValue > 0 ? `+${fmt(s.committedValue)} committed` : "Received POs"}
           trend={spendDelta != null ? (spendDelta >= 0 ? "up" : "down") : undefined}
           trendLabel={spendDelta != null ? `${spendDelta > 0 ? "+" : ""}${spendDelta.toFixed(1)}% vs last month` : undefined}
-          onClick={() => setLocation("/procurement/pos")} />
+          onClick={navPOs} />
         <KPICard label="Active POs" value={s.openPOs ?? 0} icon={ShoppingCart} accent="blue"
           sub={`of ${s.totalPOs ?? 0} total · ${s.poByStatus?.Draft ?? 0} draft`}
-          onClick={() => setLocation("/procurement/pos")} />
+          onClick={navPOs} />
         <KPICard label="Overdue POs" value={s.overduePOs ?? 0} icon={AlertTriangle}
           accent={s.overduePOs > 0 ? "red" : "emerald"}
           sub={s.overduePOs > 0 ? "Needs immediate action" : "All on schedule"}
-          onClick={() => setLocation("/procurement/pos")} />
+          onClick={navPOs} />
         <KPICard label="Pending Actions" value={pendingActions} icon={ClipboardList} accent="violet"
           sub={`${s.pendingGRNs ?? 0} GRNs · ${s.pendingInvoices ?? 0} Invoices`}
-          onClick={() => setLocation("/procurement/invoices")} />
+          onClick={navInvoices} />
         <KPICard label="Mismatch Alerts" value={s.mismatchCount ?? 0} icon={AlertCircle}
           accent={s.mismatchCount > 0 ? "amber" : "emerald"}
           sub={s.mismatchCount > 0 ? "Invoice mismatches" : "All invoices matched"}
-          onClick={() => setLocation("/procurement/invoices")} />
+          onClick={navInvoices} />
       </motion.div>
 
       {/* Smart Insights */}
@@ -616,61 +596,39 @@ export default function ProcurementDashboard() {
       <motion.div variants={fade}>
         <DashCard title="Procurement Pipeline" sub={`${s.totalPOs ?? 0} total POs across all stages`}>
           <div className="p-4">
-            <Pipeline poByStatus={s.poByStatus ?? {}} totalPOs={s.totalPOs ?? 1} onNav={() => setLocation("/procurement/pos")} />
+            <Pipeline poByStatus={s.poByStatus ?? {}} totalPOs={s.totalPOs ?? 1} onNav={navPOs} />
           </div>
         </DashCard>
       </motion.div>
 
-      {/* Charts */}
+      {/* Charts row */}
       <motion.div variants={fade} className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <DashCard
           title="Monthly Spend Trend"
-          sub={`${rangeLabel(dateRange)} · ${
-            chartMode === "vendor"
-              ? (selectedVendor || "All vendors")
-              : (selectedCategory || "All categories")
-          }`}
+          sub={`${rangeLabel(dateRange)} · ${chartMode === "vendor" ? (selectedVendor || "All vendors") : (selectedCategory || "All categories")}`}
           className="lg:col-span-2"
           actions={
             <div className="flex items-center gap-2">
-              {/* Mode toggle */}
               <div className="flex bg-muted rounded-lg p-0.5 gap-0.5">
                 {(["vendor", "category"] as const).map(mode => (
-                  <button key={mode} onClick={() => {
-                    setChartMode(mode);
-                    setSelectedVendor("");
-                    setSelectedCategory("");
-                  }} className={cn(
+                  <button key={mode} onClick={() => handleChartModeChange(mode)} className={cn(
                     "px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all capitalize",
                     chartMode === mode ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                  )}>
-                    {mode === "vendor" ? "By Vendor" : "By Category"}
-                  </button>
+                  )}>{mode === "vendor" ? "By Vendor" : "By Category"}</button>
                 ))}
               </div>
-              {/* Contextual dropdown */}
               {chartMode === "vendor" && topVendors.length > 0 && (
-                <select
-                  value={selectedVendor}
-                  onChange={e => setSelectedVendor(e.target.value)}
-                  className="text-[11px] font-semibold bg-muted border border-border rounded-lg px-2 py-1 text-foreground cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary/40 max-w-[130px] truncate"
-                >
+                <select value={selectedVendor} onChange={e => setSelectedVendor(e.target.value)}
+                  className="text-[11px] font-semibold bg-muted border border-border rounded-lg px-2 py-1 text-foreground cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary/40 max-w-[130px] truncate">
                   <option value="">All vendors</option>
-                  {topVendors.map((v: any) => (
-                    <option key={v.vendorName} value={v.vendorName}>{v.vendorName}</option>
-                  ))}
+                  {topVendors.map((v: any) => <option key={v.vendorName} value={v.vendorName}>{v.vendorName}</option>)}
                 </select>
               )}
               {chartMode === "category" && topCategories.length > 0 && (
-                <select
-                  value={selectedCategory}
-                  onChange={e => setSelectedCategory(e.target.value)}
-                  className="text-[11px] font-semibold bg-muted border border-border rounded-lg px-2 py-1 text-foreground cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary/40 max-w-[140px] truncate"
-                >
+                <select value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)}
+                  className="text-[11px] font-semibold bg-muted border border-border rounded-lg px-2 py-1 text-foreground cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary/40 max-w-[140px] truncate">
                   <option value="">All categories</option>
-                  {topCategories.map((c: any) => (
-                    <option key={c.category} value={c.category}>{c.category}</option>
-                  ))}
+                  {topCategories.map((c: any) => <option key={c.category} value={c.category}>{c.category}</option>)}
                 </select>
               )}
             </div>
@@ -703,8 +661,7 @@ export default function ProcurementDashboard() {
             <ResponsiveContainer width="100%" height={150}>
               <PieChart>
                 <Pie data={donutData} cx="50%" cy="50%" innerRadius={42} outerRadius={66}
-                  paddingAngle={2} dataKey="value" startAngle={90} endAngle={-270}
-                  cursor="pointer"
+                  paddingAngle={2} dataKey="value" startAngle={90} endAngle={-270} cursor="pointer"
                   onClick={(entry: any) => entry?.name && setLocation(`/procurement/pos?status=${entry.name}`)}>
                   {donutData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                 </Pie>
@@ -728,7 +685,7 @@ export default function ProcurementDashboard() {
         </DashCard>
       </motion.div>
 
-      {/* Action Queue + Top Vendors */}
+      {/* Action Queue + Top Vendors/Categories */}
       <motion.div variants={fade} className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <DashCard title="Pending Actions" sub="Items requiring your attention" className="lg:col-span-2"
           actions={
@@ -850,7 +807,7 @@ export default function ProcurementDashboard() {
                     ))}
                   </div>
                   <div className="px-4 py-3 border-t border-border/40">
-                    <button onClick={() => setLocation("/procurement/vendors")} className="text-[12px] font-semibold text-primary hover:underline flex items-center gap-1">
+                    <button onClick={navVendors} className="text-[12px] font-semibold text-primary hover:underline flex items-center gap-1">
                       All vendors <ArrowRight className="h-3.5 w-3.5" />
                     </button>
                   </div>
@@ -884,7 +841,7 @@ export default function ProcurementDashboard() {
                     ))}
                   </div>
                   <div className="px-4 py-3 border-t border-border/40">
-                    <button onClick={() => setLocation("/procurement/pos")} className="text-[12px] font-semibold text-primary hover:underline flex items-center gap-1">
+                    <button onClick={navPOs} className="text-[12px] font-semibold text-primary hover:underline flex items-center gap-1">
                       All POs <ArrowRight className="h-3.5 w-3.5" />
                     </button>
                   </div>
@@ -901,25 +858,25 @@ export default function ProcurementDashboard() {
               <AlertRow icon={AlertTriangle} color="red"
                 title={`${s.overduePOs} Overdue Purchase Order${s.overduePOs > 1 ? "s" : ""}`}
                 sub="Past delivery deadline — follow up with vendors"
-                count={s.overduePOs} onClick={() => setLocation("/procurement/pos")} />
+                count={s.overduePOs} onClick={navPOs} />
             )}
             {s.mismatchCount > 0 && (
               <AlertRow icon={AlertCircle} color="amber"
                 title={`${s.mismatchCount} Invoice Mismatch${s.mismatchCount > 1 ? "es" : ""}`}
                 sub="3-way match failed — review and sign off"
-                count={s.mismatchCount} onClick={() => setLocation("/procurement/invoices")} />
+                count={s.mismatchCount} onClick={navInvoices} />
             )}
             {s.approachingDeadlines > 0 && (
               <AlertRow icon={Calendar} color="blue"
                 title={`${s.approachingDeadlines} PO${s.approachingDeadlines > 1 ? "s" : ""} Due This Week`}
                 sub="Delivery deadline within 7 days"
-                count={s.approachingDeadlines} onClick={() => setLocation("/procurement/pos")} />
+                count={s.approachingDeadlines} onClick={navPOs} />
             )}
             {s.pendingApprovalCount > 0 && (
               <AlertRow icon={FileText} color="blue"
                 title={`${s.pendingApprovalCount} Invoice${s.pendingApprovalCount > 1 ? "s" : ""} Awaiting Approval`}
                 sub="In the finance approval queue"
-                count={s.pendingApprovalCount} onClick={() => setLocation("/procurement/invoices")} />
+                count={s.pendingApprovalCount} onClick={navInvoices} />
             )}
             {!s.overduePOs && !s.mismatchCount && !s.approachingDeadlines && !s.pendingApprovalCount && (
               <div className="flex flex-col items-center justify-center py-10 gap-2">

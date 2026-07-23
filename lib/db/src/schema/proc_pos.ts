@@ -1,4 +1,6 @@
-import { pgTable, serial, text, varchar, integer, numeric, timestamp, pgEnum } from "drizzle-orm/pg-core";
+import {
+  pgTable, serial, text, varchar, integer, numeric, timestamp, pgEnum, index,
+} from "drizzle-orm/pg-core";
 import { vendorsTable } from "./vendors";
 import { procurementQuotationsTable } from "./proc_quotations";
 
@@ -48,7 +50,17 @@ export const procurementPOsTable = pgTable("procurement_pos", {
   createdByName: text("created_by_name"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => [
+  // Dashboard: status aggregation + pipeline counts
+  index("po_status_idx").on(table.status),
+  // Dashboard: date-range spend queries
+  index("po_created_at_idx").on(table.createdAt),
+  // Vendor drill-down
+  index("po_vendor_id_idx").on(table.vendorId),
+  index("po_vendor_name_idx").on(table.vendorName),
+  // Composite: the most common dashboard query (received POs in date range)
+  index("po_status_created_at_idx").on(table.status, table.createdAt),
+]);
 
 export const procPOItemsTable = pgTable("proc_po_items", {
   id: serial("id").primaryKey(),
@@ -71,4 +83,7 @@ export const procPOItemsTable = pgTable("proc_po_items", {
   lineTotal: numeric("line_total", { precision: 14, scale: 2 }).default("0"),
   deliveredQty: numeric("delivered_qty", { precision: 12, scale: 3 }).default("0"),
   remarks: text("remarks"),
-});
+}, (table) => [
+  // Category join in dashboard: items → POs by po_id
+  index("po_item_po_id_idx").on(table.poId),
+]);

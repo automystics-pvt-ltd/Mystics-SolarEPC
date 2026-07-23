@@ -1,4 +1,6 @@
-import { pgTable, serial, text, varchar, integer, numeric, timestamp, json, pgEnum } from "drizzle-orm/pg-core";
+import {
+  pgTable, serial, text, varchar, integer, numeric, timestamp, json, pgEnum, index,
+} from "drizzle-orm/pg-core";
 import { procurementPOsTable } from "./proc_pos";
 import { vendorsTable } from "./vendors";
 
@@ -52,7 +54,15 @@ export const procGRNsTable = pgTable("proc_grns", {
   createdByName: text("created_by_name"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => [
+  // Dashboard: pending GRNs filter (Draft + Submitted)
+  index("grn_status_idx").on(table.status),
+  // Dashboard: date-range activity feed
+  index("grn_created_at_idx").on(table.createdAt),
+  // GRN list: filter by PO
+  index("grn_po_id_idx").on(table.poId),
+  index("grn_vendor_id_idx").on(table.vendorId),
+]);
 
 export const procGRNItemsTable = pgTable("proc_grn_items", {
   id: serial("id").primaryKey(),
@@ -81,7 +91,9 @@ export const procGRNItemsTable = pgTable("proc_grn_items", {
 
   unitPrice: numeric("unit_price", { precision: 14, scale: 2 }).default("0"),
   acceptedValue: numeric("accepted_value", { precision: 14, scale: 2 }).default("0"),
-});
+}, (table) => [
+  index("grn_item_grn_id_idx").on(table.grnId),
+]);
 
 export const procGRNAuditLogsTable = pgTable("proc_grn_audit_logs", {
   id: serial("id").primaryKey(),
@@ -93,4 +105,6 @@ export const procGRNAuditLogsTable = pgTable("proc_grn_audit_logs", {
   oldValues: json("old_values"),
   newValues: json("new_values"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => [
+  index("grn_audit_grn_id_idx").on(table.grnId),
+]);

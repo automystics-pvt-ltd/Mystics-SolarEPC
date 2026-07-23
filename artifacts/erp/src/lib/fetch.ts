@@ -20,10 +20,18 @@ class ApiError extends Error {
   }
 }
 
+/** Reads the JWT from localStorage and injects it as a Bearer token. */
+function getAuthHeaders(): Record<string, string> {
+  if (typeof window === 'undefined') return {};
+  const token = localStorage.getItem('mystics_token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 async function apiFetch<T>(url: string, options: FetchOptions = {}): Promise<T> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     Accept: 'application/json',
+    ...getAuthHeaders(),
     ...(options.headers as Record<string, string> | undefined),
   };
 
@@ -46,7 +54,11 @@ async function apiFetch<T>(url: string, options: FetchOptions = {}): Promise<T> 
   return response.json() as Promise<T>;
 }
 
-export function apiGet<T>(path: string, params?: Record<string, string | number | boolean | undefined>): Promise<T> {
+export function apiGet<T>(
+  path: string,
+  params?: Record<string, string | number | boolean | undefined>,
+  options?: RequestInit,
+): Promise<T> {
   let url = `/api${path}`;
   if (params) {
     const qs = Object.entries(params)
@@ -55,7 +67,7 @@ export function apiGet<T>(path: string, params?: Record<string, string | number 
       .join('&');
     if (qs) url += `?${qs}`;
   }
-  return apiFetch<T>(url);
+  return apiFetch<T>(url, options);
 }
 
 export function apiPost<T>(path: string, body?: unknown): Promise<T> {
