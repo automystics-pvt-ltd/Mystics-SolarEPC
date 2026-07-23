@@ -233,6 +233,8 @@ function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void 
   /* Flat list for keyboard navigation */
   const flatList = query.trim() ? searchResults : [...recentItems, ...roleNav];
 
+  // Re-read localStorage whenever `open` becomes true (picks up hrefs added
+  // in other tabs or since the palette was last opened).
   useEffect(() => {
     if (open) {
       setQuery("");
@@ -241,6 +243,14 @@ function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void 
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [open]);
+
+  // Also refresh recentHrefs whenever the user's role changes so that hrefs
+  // from sections the user can no longer access are flushed from the list.
+  // (recentItems is already role-filtered at render time, but re-reading
+  // here keeps the state consistent and makes the dependency explicit.)
+  useEffect(() => {
+    setRecentHrefs(getRecentHrefs());
+  }, [role]);
 
   useEffect(() => { setCursor(0); }, [query]);
 
