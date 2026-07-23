@@ -88,6 +88,40 @@ function renderWithRoleControl(initialRole: string) {
   return { ...render(React.createElement(Wrapper)), userId };
 }
 
+/**
+ * Renders CommandPalette with independently controllable `open` and `role`
+ * state. Exposes buttons so tests can toggle each without coupling them.
+ */
+function renderWithRoleAndOpenControl(initialRole: string, initialOpen: boolean) {
+  const userId = 1;
+
+  function Wrapper() {
+    const [role, setRoleState] = useState(initialRole);
+    const [open, setOpen] = useState(initialOpen);
+    // Keep mockUser in sync with local state so useAuth() sees the new role
+    mockUser = { id: userId, role };
+    return (
+      <>
+        <button
+          data-testid="change-role"
+          onClick={() => {
+            const next = role === "admin" ? "warehouse" : "admin";
+            mockUser = { id: userId, role: next };
+            setRoleState(next);
+          }}
+        />
+        <button
+          data-testid="toggle-open"
+          onClick={() => setOpen((prev) => !prev)}
+        />
+        <CommandPalette open={open} onClose={() => setOpen(false)} />
+      </>
+    );
+  }
+
+  return { ...render(React.createElement(Wrapper)), userId };
+}
+
 /* ── Tests ──────────────────────────────────────────────────── */
 
 describe("CommandPalette – role-change filtering", () => {
@@ -174,5 +208,47 @@ describe("CommandPalette – role-change filtering", () => {
 
     // Dashboard has no roles restriction — visible to every authenticated user
     expect(screen.getByText("Dashboard")).toBeInTheDocument();
+  });
+
+  it("forbidden Recent entry stays absent when palette is closed then reopened under demoted role", async () => {
+    // Seed localStorage with an admin-only page so it will appear in Recent
+    // when the palette is initially opened as admin.
+    const recentEntry = [
+      { href: "/admin/users", label: "User Management", section: "Admin" },
+    ];
+    localStorage.setItem(getRecentKey(userId), JSON.stringify(recentEntry));
+
+    mockUser = { id: userId, role: "admin" };
+
+    // Open the palette as admin — the forbidden entry should be visible.
+    const { getByTestId } = renderWithRoleAndOpenControl("admin", true);
+    expect(screen.getAllByText("User Management").length).toBeGreaterThan(0);
+
+    // Demote to warehouse while the palette is still open.
+    await act(async () => {
+      getByTestId("change-role").click();
+    });
+
+    // Entry must already be gone before we close.
+    expect(screen.queryByText("User Management")).not.toBeInTheDocument();
+
+    // Close the palette (open → false).
+    await act(async () => {
+      getByTestId("toggle-open").click();
+    });
+
+    // The stale localStorage entry is still there — the role change did NOT
+    // clear it. This is the critical risk: if the useEffect([open, userId])
+    // re-reads storage without filtering on re-open, the entry could reappear.
+    expect(localStorage.getItem(getRecentKey(userId))).not.toBeNull();
+
+    // Reopen the palette under the demoted (warehouse) role.
+    await act(async () => {
+      getByTestId("toggle-open").click();
+    });
+
+    // The forbidden entry must still be absent — the palette must filter
+    // against the current role when it loads Recent from localStorage.
+    expect(screen.queryByText("User Management")).not.toBeInTheDocument();
   });
 });
