@@ -1,53 +1,35 @@
-import { ReactNode, useEffect } from "react";
-import { Sidebar } from "./Sidebar";
+import { ReactNode } from "react";
+import { NavRail } from "./NavRail";
 import { Topbar } from "./Topbar";
-import { useSidebar } from "@/lib/sidebar-context";
-import {
-  LayoutDashboard, Users, FolderKanban, ShoppingCart, Warehouse,
-} from "lucide-react";
+import { LayoutDashboard, Users, FolderKanban, ShoppingCart, Warehouse } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 
-/* ── Bottom nav items for mobile ─────────────────────────────── */
+/* ── Mobile bottom-nav tabs ──────────────────────────────────────── */
 const BOTTOM_TABS = [
-  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/crm/leads", icon: Users, label: "CRM" },
-  { href: "/projects", icon: FolderKanban, label: "Projects" },
-  { href: "/procurement/pos", icon: ShoppingCart, label: "Procurement" },
-  { href: "/inventory/warehouses", icon: Warehouse, label: "Inventory" },
+  { href: "/dashboard",       icon: LayoutDashboard, label: "Home"        },
+  { href: "/crm/leads",       icon: Users,           label: "CRM"         },
+  { href: "/projects",        icon: FolderKanban,    label: "Projects"    },
+  { href: "/procurement/pos", icon: ShoppingCart,    label: "Procurement" },
+  { href: "/inventory/warehouses", icon: Warehouse,  label: "Inventory"   },
 ];
 
-interface ShellProps {
-  children: ReactNode;
-}
+interface ShellProps { children: ReactNode }
 
 export function Shell({ children }: ShellProps) {
-  const { isCollapsed, toggle } = useSidebar();
   const [location] = useLocation();
-
-  /* ── Auto-collapse on tablet (768–1024px) ── */
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 768px) and (max-width: 1023px)");
-
-    const handle = (e: MediaQueryListEvent | MediaQueryList) => {
-      if (e.matches && !isCollapsed) toggle();
-    };
-
-    handle(mq);
-    mq.addEventListener("change", handle);
-    return () => mq.removeEventListener("change", handle);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
     <div className="flex h-[100dvh] w-full overflow-hidden bg-background print:block print:h-auto print:overflow-visible">
-      {/* Sidebar — desktop only */}
+
+      {/* ── Desktop: slim icon rail (hidden on mobile) ── */}
       <div className="print:hidden">
-        <Sidebar />
+        <NavRail />
       </div>
 
-      {/* Main area */}
+      {/* ── Main column ── */}
       <div className="flex flex-1 flex-col overflow-hidden min-w-0 relative print:block print:overflow-visible">
+
         {/* Sticky topbar */}
         <div className="print:hidden shrink-0">
           <Topbar />
@@ -67,9 +49,8 @@ export function Shell({ children }: ShellProps) {
       {/* ── Mobile bottom-tab bar ── */}
       <nav
         aria-label="Mobile navigation"
-        className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 print:hidden
-                   safe-area-bottom"
-        style={{ paddingBottom: "env(safe-area-inset-bottom, 0)" }}
+        className="lg:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-40 print:hidden"
+        style={{ paddingBottom: "env(safe-area-inset-bottom,0)" }}
       >
         <div className="flex items-stretch h-16">
           {BOTTOM_TABS.map((tab) => {
@@ -84,15 +65,15 @@ export function Shell({ children }: ShellProps) {
                   aria-current={isActive ? "page" : undefined}
                   aria-label={tab.label}
                   className={cn(
-                    "flex flex-col items-center justify-center gap-1 h-full transition-colors",
-                    isActive ? "text-[#EA580C]" : "text-gray-400 hover:text-gray-700"
+                    "relative flex flex-col items-center justify-center gap-1 h-full transition-colors",
+                    isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   {isActive && (
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-[#EA580C] rounded-full" />
+                    <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[2px] bg-primary rounded-full" />
                   )}
                   <tab.icon className="h-5 w-5" aria-hidden />
-                  <span className="text-[10px] font-bold tracking-wide">{tab.label}</span>
+                  <span className="text-[10px] font-semibold tracking-wide">{tab.label}</span>
                 </div>
               </Link>
             );

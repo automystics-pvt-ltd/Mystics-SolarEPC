@@ -10,46 +10,51 @@ interface EmptyStateAction {
 
 interface EmptyStateProps {
   icon: LucideIcon;
-  title: string;
+  /** Primary label */
+  title?: string;
+  /** Alias for title — accepts either prop name */
+  heading?: string;
   description?: string;
+  /** Alias for description — accepts either prop name */
+  message?: string;
   action?: EmptyStateAction;
   secondaryAction?: EmptyStateAction;
   className?: string;
   size?: "sm" | "md" | "lg";
 }
 
-/**
- * Consistent empty state — use when a list or section has no data.
- */
+/** Consistent empty state — use when a list or section has no data. */
 export function EmptyState({
   icon: Icon,
   title,
+  heading,
   description,
+  message,
   action,
   secondaryAction,
   className,
   size = "md",
 }: EmptyStateProps) {
+  const resolvedTitle = title ?? heading;
+  const resolvedDesc  = description ?? message;
+
   const s = {
-    sm: { iconWrap: "h-12 w-12", icon: "h-6 w-6",  title: "text-[13px]", desc: "text-[12px]", py: "py-8" },
+    sm: { iconWrap: "h-12 w-12", icon: "h-6 w-6",  title: "text-[13px]", desc: "text-[12px]", py: "py-8"  },
     md: { iconWrap: "h-16 w-16", icon: "h-8 w-8",  title: "text-sm",     desc: "text-[13px]", py: "py-12" },
-    lg: { iconWrap: "h-20 w-20", icon: "h-10 w-10", title: "text-base",   desc: "text-sm",     py: "py-16" },
+    lg: { iconWrap: "h-20 w-20", icon: "h-10 w-10", title: "text-base",  desc: "text-sm",     py: "py-16" },
   }[size];
 
   return (
     <div className={cn("flex flex-col items-center text-center", s.py, className)}>
-      <div
-        className={cn(
-          "rounded-2xl bg-muted flex items-center justify-center mb-4",
-          s.iconWrap
-        )}
-      >
+      <div className={cn("rounded-2xl bg-muted flex items-center justify-center mb-4", s.iconWrap)}>
         <Icon className={cn(s.icon, "text-muted-foreground/40")} strokeWidth={1.5} />
       </div>
-      <p className={cn("font-semibold text-foreground mb-1", s.title)}>{title}</p>
-      {description && (
+      {resolvedTitle && (
+        <p className={cn("font-semibold text-foreground mb-1", s.title)}>{resolvedTitle}</p>
+      )}
+      {resolvedDesc && (
         <p className={cn("text-muted-foreground max-w-[280px] leading-snug", s.desc)}>
-          {description}
+          {resolvedDesc}
         </p>
       )}
       {(action || secondaryAction) && (

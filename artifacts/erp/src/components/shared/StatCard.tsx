@@ -15,9 +15,7 @@ interface StatCardProps {
   compact?: boolean;
 }
 
-/**
- * KPI / stat card for dashboards and module headers.
- */
+/** KPI / stat card for dashboards and module headers. */
 export function StatCard({
   label,
   value,
@@ -47,7 +45,7 @@ export function StatCard({
       className={cn(
         "bg-card border border-border rounded-xl text-left transition-all",
         compact ? "p-3.5" : "p-4",
-        onClick && "cursor-pointer hover:shadow-card hover:border-border/80",
+        onClick && "cursor-pointer hover:shadow-md hover:border-border/80",
         className
       )}
     >
@@ -84,5 +82,33 @@ export function StatCard({
         )}
       </div>
     </El>
+  );
+}
+
+interface CompactStatCardProps {
+  label: string;
+  value: string | number | ReactNode;
+  icon?: LucideIcon;
+  className?: string;
+}
+
+/** Compact KPI chip — for dense sections and sidebar summaries. */
+export function CompactStatCard({ label, value, icon: Icon, className }: CompactStatCardProps) {
+  return (
+    <div className={cn("bg-card border border-border rounded-lg p-3 flex items-center gap-3", className)}>
+      {Icon && (
+        <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
+          <Icon className="h-4 w-4 text-muted-foreground" />
+        </div>
+      )}
+      <div className="min-w-0">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.09em] text-muted-foreground">
+          {label}
+        </p>
+        <div className="text-[18px] font-bold text-foreground tabular-nums leading-tight">
+          {value}
+        </div>
+      </div>
+    </div>
   );
 }

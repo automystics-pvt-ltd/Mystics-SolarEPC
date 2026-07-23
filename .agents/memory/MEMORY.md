@@ -2,3 +2,5 @@
 - [Mystics ERP auth setup](mystics-erp-auth.md) — JWT auth with SESSION_SECRET; token stored in localStorage key "mystics_token"; custom-fetch reads it via setAuthTokenGetter
 - [Mystics ERP seed accounts](mystics-erp-seed.md) — seeded users and their passwords for local dev testing
 - [Mystics ERP design system rules](mystics-erp-design-system.md) — StatusBadge covers all 50+ statuses; DetailRow has fullWidth prop; shared component barrel at @/components/shared
+- [Mystics ERP navigation system](mystics-erp-nav-system.md) — 56px NavRail + flyout replaced sidebar; Shell/Topbar updated; mobile uses bottom tabs + MobileNavSheet
+- [Mystics ERP shared component contracts](mystics-erp-shared-components.md) — EmptyState accepts heading/message aliases; SkeletonBar+SkeletonCards exist; CompactStatCard exported

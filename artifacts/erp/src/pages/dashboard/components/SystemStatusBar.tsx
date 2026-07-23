@@ -1,8 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiGet } from "@/lib/fetch";
+import { RefreshCw } from "lucide-react";
 
 interface SystemStatusBarProps {
   lastRefresh: Date;
+  isRefreshing?: boolean;
 }
 
 function formatRefreshTime(date: Date): string {
@@ -14,7 +16,13 @@ function formatRefreshTime(date: Date): string {
   }).format(date);
 }
 
-export function SystemStatusBar({ lastRefresh }: SystemStatusBarProps) {
+function getFY(): string {
+  const today = new Date();
+  const fyStart = today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
+  return `FY ${String(fyStart).slice(2)}-${String(fyStart + 1).slice(2)}`;
+}
+
+export function SystemStatusBar({ lastRefresh, isRefreshing }: SystemStatusBarProps) {
   const { isLoading, isError, isSuccess } = useQuery({
     queryKey: ["api-health-ping"],
     queryFn: () => apiGet<unknown>("/dashboard"),
@@ -23,49 +31,47 @@ export function SystemStatusBar({ lastRefresh }: SystemStatusBarProps) {
   });
 
   const status = isError
-    ? { dot: "bg-red-500", label: "API Degraded", pulse: false }
+    ? { dot: "bg-red-500", label: "API Degraded", cls: "text-red-500" }
     : isLoading
-    ? { dot: "bg-amber-400", label: "Connecting", pulse: true }
+    ? { dot: "bg-amber-400", label: "Connecting…", cls: "text-amber-500" }
     : isSuccess
-    ? { dot: "bg-emerald-500", label: "API Online", pulse: true }
-    : { dot: "bg-muted-foreground", label: "Unknown", pulse: false };
+    ? { dot: "bg-emerald-500", label: "All Systems Operational", cls: "text-emerald-600 dark:text-emerald-400" }
+    : { dot: "bg-muted-foreground", label: "Unknown", cls: "text-muted-foreground" };
 
   return (
-    <div className="px-0 py-2 flex items-center gap-4 text-[11px] text-muted-foreground border-b border-border/60">
+    <div className="flex items-center gap-3 text-[11px] text-muted-foreground flex-wrap">
       {/* API Status */}
       <div className="flex items-center gap-1.5">
         <span className="relative flex h-2 w-2 shrink-0">
-          {status.pulse && !isError && (
-            <span
-              className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${status.dot}`}
-            />
+          {isSuccess && !isError && (
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
           )}
           <span className={`relative inline-flex rounded-full h-2 w-2 ${status.dot}`} />
         </span>
-        <span className={isError ? "text-red-500 font-medium" : isLoading ? "text-amber-500 font-medium" : "font-medium text-emerald-600"}>
-          {status.label}
-        </span>
+        <span className={`font-medium ${status.cls}`}>{status.label}</span>
       </div>
 
-      <span className="text-border">·</span>
-
-      {/* Version */}
-      <div className="flex items-center gap-1">
-        <span className="relative flex h-2 w-2 shrink-0">
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-muted-foreground/40" />
-        </span>
-        <span>v2.4.0</span>
-      </div>
-
-      <span className="text-border">·</span>
+      <span className="text-border/60">·</span>
 
       {/* Last refresh */}
-      <span>Last refresh: {formatRefreshTime(lastRefresh)}</span>
+      <div className="flex items-center gap-1.5">
+        {isRefreshing ? (
+          <RefreshCw className="h-3 w-3 animate-spin text-muted-foreground" />
+        ) : null}
+        <span>Last updated: {formatRefreshTime(lastRefresh)}</span>
+      </div>
 
-      <span className="text-border">·</span>
+      <span className="text-border/60">·</span>
 
-      {/* FY */}
-      <span className="font-medium">FY 2025-26</span>
+      {/* FY indicator */}
+      <div className="flex items-center gap-1.5">
+        <span className="h-2 w-2 rounded-full bg-orange-500 inline-block" />
+        <span className="font-semibold text-foreground/70">{getFY()}</span>
+      </div>
+
+      <span className="text-border/60">·</span>
+
+      <span>v2.4.0</span>
     </div>
   );
 }

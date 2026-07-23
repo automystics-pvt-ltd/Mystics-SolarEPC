@@ -61,3 +61,40 @@ export function SkeletonStats({ count = 4 }: { count?: number }) {
     </div>
   );
 }
+
+/** Single horizontal shimmer bar — for inline loading states. */
+export function SkeletonBar({
+  className,
+  height = "h-3",
+}: {
+  className?: string;
+  height?: string;
+}) {
+  return (
+    <div className={cn("bg-muted rounded-full animate-pulse", height, className)} />
+  );
+}
+
+/** Shimmer card grid — for gallery or card-based loading states. */
+export function SkeletonCards({
+  count = 4,
+  className,
+}: {
+  count?: number;
+  className?: string;
+}) {
+  return (
+    <div className={cn("grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4", className)}>
+      {Array.from({ length: count }).map((_, i) => (
+        <div
+          key={i}
+          className="bg-card border border-border rounded-xl p-4 space-y-3 animate-pulse"
+        >
+          <div className="h-3 bg-muted rounded-full w-20" />
+          <div className="h-7 bg-muted rounded-full w-16" />
+          <div className="h-2.5 bg-muted rounded-full w-full" />
+        </div>
+      ))}
+    </div>
+  );
+}
