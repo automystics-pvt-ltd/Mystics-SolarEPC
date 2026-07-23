@@ -21,6 +21,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/lib/auth";
 import { useQuery } from "@tanstack/react-query";
 import { apiGet } from "@/lib/fetch";
+import { addRecentEntry, RECENT_KEY } from "@/lib/recentHistory";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
@@ -159,12 +160,10 @@ RAIL.forEach((e) => {
 /* ════════════════════════════════════════════════════════════════
    localStorage persistence
 ════════════════════════════════════════════════════════════════ */
-const HISTORY_KEY  = "mystics_nav_history";   // HistoryEntry[]  — rich history for NavRail
-const CMD_RECENT_KEY = "mystics_cmd_recent";  // string[]        — hrefs for command palette
-const FAVORITES_KEY  = "mystics_nav_favorites"; // string[]      — favorited hrefs
+const HISTORY_KEY  = "mystics_nav_history";     // HistoryEntry[]  — rich history for NavRail
+const FAVORITES_KEY  = "mystics_nav_favorites"; // string[]        — favorited hrefs
 
 const MAX_HISTORY   = 15;
-const MAX_CMD_RECENT = 5;
 
 function readHistory(): HistoryEntry[] {
   try { return JSON.parse(localStorage.getItem(HISTORY_KEY) ?? "[]"); } catch { return []; }
@@ -174,14 +173,13 @@ function pushHistory(entry: Omit<HistoryEntry, "ts">) {
   const prev = readHistory().filter((h) => h.href !== entry.href);
   const next = [{ ...entry, ts: Date.now() }, ...prev].slice(0, MAX_HISTORY);
   localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
-  // Keep command-palette list in sync
-  const cmdPrev = (() => { try { return JSON.parse(localStorage.getItem(CMD_RECENT_KEY) ?? "[]") as string[]; } catch { return []; } })();
-  localStorage.setItem(CMD_RECENT_KEY, JSON.stringify([entry.href, ...cmdPrev.filter(h => h !== entry.href)].slice(0, MAX_CMD_RECENT)));
+  // Keep command-palette list in sync via the shared RecentEntry[] format
+  addRecentEntry(entry.href, entry.name, entry.section);
 }
 
 function clearHistory() {
   localStorage.removeItem(HISTORY_KEY);
-  localStorage.removeItem(CMD_RECENT_KEY);
+  localStorage.removeItem(RECENT_KEY);
 }
 
 function readFavorites(): string[] {

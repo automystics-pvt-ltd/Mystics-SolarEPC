@@ -1,0 +1,80 @@
+Completely redesign the dashboard into an Executive ERP Command Center instead of a collection of cards. The dashboard should immediately answer:
+
+• What needs my attention?
+• What is the current business status?
+• Which approvals are pending?
+• Which KPIs are improving or declining?
+• Which transactions require action?
+• What are today's priorities?
+
+Include:
+• Personalized welcome section
+• Executive KPI cards with trends
+• Pending approvals
+• My Tasks
+• Calendar
+• Recent transactions
+• Business process overview
+• Operational analytics
+• Financial summary
+• Alerts & Exceptions
+• Notifications
+• Activity timeline
+• Quick actions
+• Recently accessed records
+• Favorite modules
+• Live system health
+
+Allow dashboard personalization with drag-and-drop widgets, resize, collapse, hide/show, and user-specific saved layouts.
+
+Replace the current visual style with a premium enterprise design system featuring:
+• Clean minimal interface
+• Excellent whitespace
+• Modern typography
+• Professional icons
+• Soft shadows
+• Rounded corners (10–12px)
+• Subtle gradients
+• Elegant animations
+• Micro-interactions
+• Consistent spacing (8px grid)
+• Light, Dark, and System themes
+• WCAG accessibility
+• Fully responsive layouts
+
+Refactor all pages to use a consistent layout:
+• Sticky top application bar
+• Compact navigation
+• Large content workspace
+• Consistent page headers
+• Contextual action toolbar
+• Responsive grid system
+
+Redesign forms with:
+• Section-based layouts
+• Sticky action buttons
+• Smart lookups
+• Searchable dropdowns
+• Inline validation
+• Autosave
+• Multi-step forms where applicable
+
+Upgrade tables with:
+• Sticky headers
+• Sticky action columns
+• Search
+• Advanced filtering
+• Sorting
+• Pagination
+• Saved views
+• Bulk actions
+• Export
+• Column resizing
+• Column reordering
+• Responsive layouts
+
+Do not use generic Bootstrap/AdminLTE-style layouts or common dashboard templates. Create a unique, premium SaaS ERP experience that feels intentionally designed.
+
+Challenge the current UX completely. If a different layout, navigation paradigm, or dashboard organization results in a better enterprise experience, implement it instead of preserving the existing design. Prioritize usability, efficiency, discoverability, and visual elegance over familiarity.
+
+The final application should look like a commercial enterprise ERP product that users would expect from SAP, Microsoft Dynamics 365, Oracle Fusion Cloud ERP, Salesforce, or Workday—modern, clean, intuitive, scalable, and fully production-ready.
