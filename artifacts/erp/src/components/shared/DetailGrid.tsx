@@ -16,13 +16,13 @@ export function DetailRow({ label, value, mono, colSpan, fullWidth, valueClassNa
   return (
     <div className={cn(span === 2 && "col-span-2", span === 4 && "col-span-4")}>
       <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-0.5">{label}</p>
-      <p className={cn(
+      <div className={cn(
         "text-[13px] font-semibold text-foreground leading-snug",
         mono && "font-mono",
         valueClassName
       )}>
         {value ?? <span className="text-muted-foreground font-normal">—</span>}
-      </p>
+      </div>
     </div>
   );
 }
