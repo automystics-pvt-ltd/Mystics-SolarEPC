@@ -188,6 +188,20 @@ export default function ProcurementPODetail({ id }: { id: string }) {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25 }} className="space-y-5 pb-12">
 
+      {/* ── Quotation source chip ─────────────────────────────────────────────── */}
+      {p.quotationId && (
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 border border-blue-200 rounded-xl text-xs print:hidden">
+          <ExternalLink className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+          <span className="text-blue-700">Auto-generated from</span>
+          <button
+            className="font-semibold text-blue-800 underline underline-offset-2 hover:text-blue-900 transition-colors"
+            onClick={() => setLocation(`/procurement/quotations/${p.quotationId}`)}
+          >
+            Vendor Quotation #{p.quotationId}
+          </button>
+        </div>
+      )}
+
       {/* ── Page Header ─────────────────────────────────────────────────────── */}
       <PageHeader
         title={p.poNumber}

@@ -6,3 +6,4 @@
 - [Mystics ERP shared component contracts](mystics-erp-shared-components.md) — EmptyState accepts heading/message aliases; SkeletonBar+SkeletonCards exist; CompactStatCard exported
 - [Mystics ERP hooks rule](mystics-erp-hooks-rule.md) — ProcurementDashboard had useMemo/useCallback after an early conditional return; always place ALL hooks before any conditional return in function components
 - [Mystics ERP RBAC system](mystics-erp-rbac.md) — DB-backed RBAC with API middleware, frontend usePermissions hook, PermissionGate, ProtectedRoute module guard, NavRail permission filter, and RBAC admin UI
+- [Mystics ERP Drizzle pool pitfall](mystics-erp-drizzle-pool-pitfall.md) — approval_requests insert must use dedicated pg.Client; Drizzle leaks pool connections on FK errors; users table IDs start at 5

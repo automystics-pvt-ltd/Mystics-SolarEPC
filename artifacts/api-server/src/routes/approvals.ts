@@ -556,12 +556,13 @@ router.post("/approvals/seed", async (req, res): Promise<void> => {
 
   // Seed workflows
   const wfDefs = [
-    { name: "Purchase Order Approval",    module: "procurement", description: "Standard PO approval flow: PM → Director", steps: [{ name: "PM Review", approverRole: "pm", slaHours: 24 }, { name: "Director Sign-off", approverRole: "director", slaHours: 48 }] },
-    { name: "Invoice Payment Approval",   module: "finance",     description: "3-level invoice approval for payments", steps: [{ name: "Finance Check", approverRole: "finance", slaHours: 24 }, { name: "Director Approval", approverRole: "director", slaHours: 48 }, { name: "Admin Release", approverRole: "admin", slaHours: 8 }] },
-    { name: "Vendor Onboarding",          module: "procurement", description: "New vendor onboarding approval", steps: [{ name: "PM Verification", approverRole: "pm", slaHours: 48 }, { name: "Admin Sign-off", approverRole: "admin", slaHours: 24 }] },
-    { name: "Project Budget Release",     module: "projects",    description: "Capital budget release for projects", steps: [{ name: "PM Submission", approverRole: "pm", slaHours: 24 }, { name: "Director Approval", approverRole: "director", slaHours: 72 }] },
-    { name: "Leave/Travel Request",       module: "hr",          description: "Employee leave and travel approval", steps: [{ name: "Manager Approval", approverRole: "director", slaHours: 24 }] },
-    { name: "Inventory Write-off",        module: "inventory",   description: "Stock write-off or disposal approval", steps: [{ name: "Warehouse Lead", approverRole: "warehouse", slaHours: 24 }, { name: "Finance Clearance", approverRole: "finance", slaHours: 48 }, { name: "Director Final", approverRole: "director", slaHours: 24 }] },
+    { name: "Purchase Order Approval",         module: "procurement", description: "Standard PO approval flow: PM → Director", steps: [{ name: "PM Review", approverRole: "pm", slaHours: 24 }, { name: "Director Sign-off", approverRole: "director", slaHours: 48 }] },
+    { name: "Vendor Quotation Approval",       module: "procurement", description: "Vendor quotation review and approval: PM review → Director sign-off → PO generation", steps: [{ name: "PM Review", approverRole: "pm", slaHours: 24 }, { name: "Director Sign-off", approverRole: "director", slaHours: 48 }] },
+    { name: "Invoice Payment Approval",        module: "finance",     description: "3-level invoice approval for payments", steps: [{ name: "Finance Check", approverRole: "finance", slaHours: 24 }, { name: "Director Approval", approverRole: "director", slaHours: 48 }, { name: "Admin Release", approverRole: "admin", slaHours: 8 }] },
+    { name: "Vendor Onboarding",               module: "procurement", description: "New vendor onboarding approval", steps: [{ name: "PM Verification", approverRole: "pm", slaHours: 48 }, { name: "Admin Sign-off", approverRole: "admin", slaHours: 24 }] },
+    { name: "Project Budget Release",          module: "projects",    description: "Capital budget release for projects", steps: [{ name: "PM Submission", approverRole: "pm", slaHours: 24 }, { name: "Director Approval", approverRole: "director", slaHours: 72 }] },
+    { name: "Leave/Travel Request",            module: "hr",          description: "Employee leave and travel approval", steps: [{ name: "Manager Approval", approverRole: "director", slaHours: 24 }] },
+    { name: "Inventory Write-off",             module: "inventory",   description: "Stock write-off or disposal approval", steps: [{ name: "Warehouse Lead", approverRole: "warehouse", slaHours: 24 }, { name: "Finance Clearance", approverRole: "finance", slaHours: 48 }, { name: "Director Final", approverRole: "director", slaHours: 24 }] },
   ];
 
   const workflows: typeof approvalWorkflowsTable.$inferSelect[] = [];

@@ -4,9 +4,11 @@
  */
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/components/ui/use-toast";
 import { apiGet, apiPost, apiPatch } from "@/lib/fetch";
+import { ExternalLink } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -314,6 +316,7 @@ function DetailSheet({ req, open, onClose, canAct, onApprove, onReject, onRecall
 }) {
   const [activeTab, setActiveTab] = useState<"timeline"|"activity">("timeline");
   const [comment, setComment] = useState("");
+  const [, setLocation] = useLocation();
 
   if (!req) return null;
   const st = STATUS_META[req.status] ?? STATUS_META.pending!;
@@ -335,6 +338,14 @@ function DetailSheet({ req, open, onClose, canAct, onApprove, onReject, onRecall
                 <StatusBadge_ status={req.status} />
                 <SLAChip deadline={req.slaDeadline} status={req.status} />
                 {req.entityRef && <span className="text-[10px] font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{req.entityRef}</span>}
+                {req.entityType === "quotation" && req.entityUrl && (
+                  <button
+                    className="flex items-center gap-1 text-[10px] font-semibold text-primary hover:underline"
+                    onClick={() => { setLocation(req.entityUrl!); onClose(); }}
+                  >
+                    <ExternalLink className="h-3 w-3" /> View Quotation
+                  </button>
+                )}
               </div>
             </div>
           </div>

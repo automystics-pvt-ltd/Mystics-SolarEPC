@@ -27,6 +27,7 @@ import reportsRouter from "./reports";
 import usersRouter from "./users";
 import approvalsRouter from "./approvals";
 import rbacRouter from "./rbac";
+import storageRouter from "./storage";
 
 const router: IRouter = Router();
 
@@ -58,5 +59,6 @@ router.use(reportsRouter);
 router.use(usersRouter);
 router.use(approvalsRouter);
 router.use(rbacRouter);
+router.use(storageRouter);
 
 export default router;

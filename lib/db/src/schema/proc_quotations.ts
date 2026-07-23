@@ -10,6 +10,7 @@ export const auditActionEnum = pgEnum("audit_action", [
   "Created", "Updated", "Submitted", "ReviewStarted",
   "RevisionRequested", "Approved", "Rejected", "Deleted",
   "CommentAdded", "DocumentUploaded", "POGenerated",
+  "Reopened", "Cancelled", "AttachmentAdded", "AttachmentRemoved", "Escalated",
 ]);
 
 export const procurementQuotationsTable = pgTable("procurement_quotations", {
@@ -61,6 +62,16 @@ export const procurementQuotationsTable = pgTable("procurement_quotations", {
   recommendationNotes: text("recommendation_notes"),
   poGenerated: boolean("po_generated").default(false),
 
+  // Lock / reopen tracking
+  lockedAt: timestamp("locked_at"),
+  lockedBy: integer("locked_by"),
+  reopenedAt: timestamp("reopened_at"),
+  reopenedBy: integer("reopened_by"),
+  reopenReason: text("reopen_reason"),
+
+  // Central approval engine link
+  approvalRequestId: integer("approval_request_id"),
+
   createdBy: integer("created_by"),
   createdByName: text("created_by_name"),
   updatedBy: integer("updated_by"),
@@ -104,6 +115,19 @@ export const quotationVersionsTable = pgTable("quotation_versions", {
   changedByName: text("changed_by_name"),
   changeSummary: text("change_summary"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// ── Attachments ──────────────────────────────────────────────────────────────
+export const quotationAttachmentsTable = pgTable("quotation_attachments", {
+  id: serial("id").primaryKey(),
+  quotationId: integer("quotation_id").notNull().references(() => procurementQuotationsTable.id, { onDelete: "cascade" }),
+  fileName: text("file_name").notNull(),
+  objectPath: text("object_path").notNull(), // GCS object path
+  fileSize: integer("file_size"),
+  mimeType: text("mime_type"),
+  uploadedBy: integer("uploaded_by"),
+  uploadedByName: text("uploaded_by_name"),
+  uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
 });
 
 export const quotationAuditLogsTable = pgTable("quotation_audit_logs", {
