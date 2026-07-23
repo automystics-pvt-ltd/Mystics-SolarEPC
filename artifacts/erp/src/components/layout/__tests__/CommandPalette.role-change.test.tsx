@@ -5,7 +5,7 @@
  * the command palette removes restricted pages from both the "Recent" section
  * and the "All Pages" section without requiring a page reload.
  */
-import { act, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import React, { useState } from "react";
 import { CommandPalette } from "../Topbar";
@@ -208,6 +208,71 @@ describe("CommandPalette – role-change filtering", () => {
 
     // Dashboard has no roles restriction — visible to every authenticated user
     expect(screen.getByText("Dashboard")).toBeInTheDocument();
+  });
+
+  /* ── Search-path tests ──────────────────────────────────────── */
+
+  it("hides a forbidden page from search results when the role lacks access", () => {
+    // Render directly as warehouse — no role change needed
+    mockUser = { id: userId, role: "warehouse" };
+    render(<CommandPalette open onClose={vi.fn()} />);
+
+    // Type a query that would match the admin-only "Audit Logs" page
+    fireEvent.change(screen.getByRole("textbox", { name: /search/i }), {
+      target: { value: "audit" },
+    });
+
+    // "Audit Logs" is restricted to admin/director — must be absent for warehouse
+    expect(screen.queryByText("Audit Logs")).not.toBeInTheDocument();
+  });
+
+  it("returns permitted search results for the warehouse role", () => {
+    mockUser = { id: userId, role: "warehouse" };
+    render(<CommandPalette open onClose={vi.fn()} />);
+
+    // "purchase" matches "Purchase Orders" which warehouse can access
+    fireEvent.change(screen.getByRole("textbox", { name: /search/i }), {
+      target: { value: "purchase" },
+    });
+
+    expect(screen.getByText("Purchase Orders")).toBeInTheDocument();
+  });
+
+  it("removes a forbidden page from search results after role is demoted mid-session", async () => {
+    mockUser = { id: userId, role: "admin" };
+    const { getByTestId } = renderWithRoleControl("admin");
+
+    // Admin types "audit" — "Audit Logs" should appear in search results
+    fireEvent.change(screen.getByRole("textbox", { name: /search/i }), {
+      target: { value: "audit" },
+    });
+    expect(screen.getByText("Audit Logs")).toBeInTheDocument();
+
+    // Demote to warehouse
+    await act(async () => {
+      getByTestId("change-role").click();
+    });
+
+    // After role drop, "Audit Logs" must vanish from search results
+    expect(screen.queryByText("Audit Logs")).not.toBeInTheDocument();
+  });
+
+  it("keeps permitted search results visible after a role is demoted mid-session", async () => {
+    mockUser = { id: userId, role: "admin" };
+    const { getByTestId } = renderWithRoleControl("admin");
+
+    // Type "purchase" — accessible to both admin and warehouse
+    fireEvent.change(screen.getByRole("textbox", { name: /search/i }), {
+      target: { value: "purchase" },
+    });
+
+    // Demote to warehouse
+    await act(async () => {
+      getByTestId("change-role").click();
+    });
+
+    // "Purchase Orders" is allowed for warehouse — must still appear
+    expect(screen.getByText("Purchase Orders")).toBeInTheDocument();
   });
 
   it("forbidden Recent entry stays absent when palette is closed then reopened under demoted role", async () => {
