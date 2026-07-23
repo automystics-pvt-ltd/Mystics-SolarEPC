@@ -11,7 +11,7 @@
  * Personalization: show/hide widgets stored in localStorage["mystics_dashboard_prefs"].
  */
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useGetDashboard, useGetCombinedDashboard } from "@workspace/api-client-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
@@ -20,6 +20,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   RefreshCw, Settings2, CheckCircle2, ShoppingCart,
   CircleDollarSign, TrendingUp, Ticket, X, Eye, EyeOff,
+  Clock, Flame, Users2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -121,11 +122,51 @@ interface WelcomeBarProps {
   isRefreshing: boolean;
   onRefresh: () => void;
   onCustomize: () => void;
+  openEscalations: number;
+  activeLeads: number;
 }
 
-function WelcomeBar({ name, isRefreshing, onRefresh, onCustomize }: WelcomeBarProps) {
+function WelcomeBar({ name, isRefreshing, onRefresh, onCustomize, openEscalations, activeLeads }: WelcomeBarProps) {
   const { greeting, date } = getGreeting(name);
-  const fy = getFYLabel();
+
+  // Live IST clock — updates every minute
+  const [istTime, setIstTime] = useState(() =>
+    new Date().toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: true })
+  );
+  useEffect(() => {
+    const tick = () =>
+      setIstTime(new Date().toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: true }));
+    const id = setInterval(tick, 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  const pulseChips = [
+    {
+      icon: Clock,
+      label: "IST",
+      value: istTime,
+      colorClass: "bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300",
+      iconClass: "text-slate-500",
+    },
+    {
+      icon: Users2,
+      label: "Active Leads",
+      value: activeLeads,
+      colorClass: activeLeads > 0
+        ? "bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300"
+        : "bg-muted/40 border-border text-muted-foreground",
+      iconClass: activeLeads > 0 ? "text-blue-500" : "text-muted-foreground",
+    },
+    {
+      icon: Flame,
+      label: "Open Escalations",
+      value: openEscalations,
+      colorClass: openEscalations > 0
+        ? "bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800 text-red-700 dark:text-red-300"
+        : "bg-muted/40 border-border text-muted-foreground",
+      iconClass: openEscalations > 0 ? "text-red-500" : "text-muted-foreground",
+    },
+  ];
 
   return (
     <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
@@ -138,12 +179,28 @@ function WelcomeBar({ name, isRefreshing, onRefresh, onCustomize }: WelcomeBarPr
           <p className="text-sm text-muted-foreground mt-0.5">{date}</p>
         </div>
 
+        {/* Centre: live pulse chips */}
+        <div className="hidden md:flex items-center gap-2">
+          {pulseChips.map((chip) => {
+            const Icon = chip.icon;
+            return (
+              <div
+                key={chip.label}
+                className={cn(
+                  "flex items-center gap-2 rounded-lg border px-3 py-1.5 text-[12px] font-medium select-none",
+                  chip.colorClass
+                )}
+              >
+                <Icon className={cn("h-3.5 w-3.5 shrink-0", chip.iconClass)} />
+                <span className="tabular-nums font-semibold">{chip.value}</span>
+                <span className="text-[11px] opacity-70">{chip.label}</span>
+              </div>
+            );
+          })}
+        </div>
+
         {/* Right: controls */}
         <div className="flex items-center gap-2 shrink-0">
-          <div className="flex items-center gap-1.5 bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800 rounded-full px-3 py-1">
-            <span className="h-1.5 w-1.5 rounded-full bg-orange-500 inline-block" />
-            <span className="text-[11px] font-semibold text-orange-700 dark:text-orange-400">{fy}</span>
-          </div>
           <Button variant="ghost" size="sm" onClick={onCustomize} className="gap-1.5 h-8 text-muted-foreground hover:text-foreground">
             <Settings2 className="h-3.5 w-3.5" />
             <span className="hidden sm:inline text-[13px]">Customize</span>
@@ -529,6 +586,8 @@ export function Dashboard() {
         isRefreshing={isRefreshing}
         onRefresh={handleRefresh}
         onCustomize={() => setCustomizeOpen(true)}
+        openEscalations={dashboard?.openEscalations?.length ?? 0}
+        activeLeads={(combined?.pipeline as any)?.totalLeads ?? dashboard?.recentLeads?.length ?? 0}
       />
 
       {/* KPI Row */}
