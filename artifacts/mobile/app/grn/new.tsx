@@ -56,10 +56,20 @@ export default function NewGRNScreen() {
   const [lines, setLines] = useState<LineItem[]>([emptyLine()]);
   const [submitting, setSubmitting] = useState(false);
 
+  const [showAllPos, setShowAllPos] = useState(false);
+
   const { data: pos, isLoading: posLoading } = useGetPurchaseOrders();
   const { data: warehouses, isLoading: warehousesLoading } = useGetWarehouses();
 
-  const poItems: PickerItem[] = (pos ?? []).map((po) => ({
+  // Only POs in these statuses can have a GRN raised against them.
+  // Matches the allowlist enforced by the API (Issued / Acknowledged / PartiallyReceived).
+  const GRN_ELIGIBLE_STATUSES = ['Issued', 'Acknowledged', 'PartiallyReceived'];
+
+  const filteredPos = showAllPos
+    ? (pos ?? [])
+    : (pos ?? []).filter((po) => GRN_ELIGIBLE_STATUSES.includes(po.status ?? ''));
+
+  const poItems: PickerItem[] = filteredPos.map((po) => ({
     id: po.id,
     label: po.poNumber,
     sublabel: po.vendorName ? `Vendor: ${po.vendorName}` : undefined,
@@ -176,7 +186,19 @@ export default function NewGRNScreen() {
             RECEIPT DETAILS
           </Text>
 
-          <Text style={[styles.label, { color: colors.foreground }]}>Purchase Order *</Text>
+          <View style={styles.labelRow}>
+            <Text style={[styles.label, { color: colors.foreground }]}>Purchase Order *</Text>
+            <TouchableOpacity onPress={() => setShowAllPos((v) => !v)} style={styles.showAllBtn}>
+              <Feather
+                name={showAllPos ? 'eye-off' : 'eye'}
+                size={13}
+                color={colors.mutedForeground}
+              />
+              <Text style={[styles.showAllTxt, { color: colors.mutedForeground }]}>
+                {showAllPos ? 'Open only' : 'Show all'}
+              </Text>
+            </TouchableOpacity>
+          </View>
           <TouchableOpacity
             style={[styles.pickerWrap, { backgroundColor: colors.card, borderColor: colors.border }]}
             onPress={() => setPoPickerOpen(true)}
@@ -355,7 +377,16 @@ const styles = StyleSheet.create({
     letterSpacing: 0.7,
     marginBottom: 12,
   },
-  label: { fontSize: 13, fontFamily: 'Inter_600SemiBold', marginBottom: 6, marginTop: 12 },
+  labelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 12,
+    marginBottom: 6,
+  },
+  label: { fontSize: 13, fontFamily: 'Inter_600SemiBold' },
+  showAllBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  showAllTxt: { fontSize: 12, fontFamily: 'Inter_400Regular' },
   pickerWrap: {
     flexDirection: 'row',
     alignItems: 'center',
