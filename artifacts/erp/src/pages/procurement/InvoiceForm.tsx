@@ -8,14 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, FileText, Save, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Save, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
+import { PageHeader, SectionCard, StatusBadge } from "@/components/shared";
 
 const fmt = (n: number | null | undefined) =>
   n != null ? `₹${Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : "—";
@@ -43,16 +43,14 @@ export default function InvoiceForm({ poId: initPoId, grnId: initGrnId }: { poId
     selectedPoId ? { poId: Number(selectedPoId) } : {},
     { query: { enabled: !!selectedPoId, queryKey: getGetProcGrnsQueryKey(selectedPoId ? { poId: Number(selectedPoId) } : {}) } }
   );
-  // "none" is the sentinel for "no GRN selected" — Radix Select cannot use empty string
   const hasGrn = !!selectedGrnId && selectedGrnId !== "none";
   const { data: grnData } = useGetProcGrn(Number(selectedGrnId), { query: { enabled: hasGrn, queryKey: getGetProcGrnQueryKey(Number(selectedGrnId)) } });
 
-  // Build line items and match preview when PO or GRN changes
   useEffect(() => {
     const po = poData as any;
     if (!po?.items?.length) return;
     const grn = grnData as any;
-    const items = po.items.map((poItem: any, idx: number) => {
+    const items = po.items.map((poItem: any) => {
       const grnItem = grn?.items?.find((g: any) => g.poItemId === poItem.id || g.materialName === poItem.materialName);
       const orderedQty = Number(poItem.qty) || 0;
       const receivedQty = Number(grnItem?.acceptedQty) || 0;
@@ -138,100 +136,124 @@ export default function InvoiceForm({ poId: initPoId, grnId: initGrnId }: { poId
 
   const [showConfirm, setShowConfirm] = useState(false);
   const acceptedGRNs = (poGRNs as any[]).filter(g => ["Accepted", "PartiallyAccepted"].includes(g.status));
+  const selectedPO = (allPOs as any[]).find(p => String(p.id) === selectedPoId);
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
-      <div className="flex items-center gap-3">
-        <Button variant="outline" size="icon" onClick={() => setLocation("/procurement/invoices")} className="h-9 w-9 shrink-0"><ArrowLeft className="w-4 h-4" /></Button>
-        <div>
-          <h1 className="text-xl font-bold text-slate-900">New Invoice</h1>
-          <p className="text-sm text-slate-500">Create invoice with automatic 3-way matching</p>
-        </div>
-      </div>
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-10">
+      <PageHeader
+        title="New Invoice"
+        subtitle="Create invoice against a purchase order and GRN"
+        backHref="/procurement/invoices"
+      />
 
-      {/* PO & GRN Selection */}
-      <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
-        <h2 className="font-bold text-slate-900">Source Documents</h2>
+      {/* Select References */}
+      <SectionCard title="Select References">
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Purchase Order *</Label>
+              <Select value={selectedPoId} onValueChange={v => { setSelectedPoId(v); setSelectedGrnId(""); }}>
+                <SelectTrigger><SelectValue placeholder="Choose a PO…" /></SelectTrigger>
+                <SelectContent>
+                  {(allPOs as any[]).filter(p => !["Draft", "Cancelled"].includes(p.status)).map((po: any) => (
+                    <SelectItem key={po.id} value={String(po.id)}>{po.poNumber} — {po.vendorName}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">GRN (optional — enables 3-way match)</Label>
+              <Select value={selectedGrnId} onValueChange={setSelectedGrnId} disabled={!selectedPoId}>
+                <SelectTrigger><SelectValue placeholder={acceptedGRNs.length === 0 ? "No accepted GRNs" : "Select GRN…"} /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None — match against PO only</SelectItem>
+                  {acceptedGRNs.map((g: any) => (
+                    <SelectItem key={g.id} value={String(g.id)}>{g.grnNumber} ({g.status})</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {selectedPO && (
+            <div className="bg-muted/30 rounded-lg p-3 text-sm grid grid-cols-2 md:grid-cols-4 gap-2 border border-border">
+              <div><span className="text-muted-foreground">PO#:</span> <span className="font-mono font-medium">{selectedPO.poNumber}</span></div>
+              {hasGrn && <div><span className="text-muted-foreground">GRN#:</span> <span className="font-mono font-medium">{acceptedGRNs.find((g: any) => String(g.id) === selectedGrnId)?.grnNumber ?? "—"}</span></div>}
+              <div><span className="text-muted-foreground">Vendor:</span> <span className="font-medium">{selectedPO.vendorName}</span></div>
+              <div><span className="text-muted-foreground">PO Value:</span> <span className="font-medium">{fmt(selectedPO.totalAmount)}</span></div>
+            </div>
+          )}
+        </div>
+      </SectionCard>
+
+      {/* Invoice Details */}
+      <SectionCard title="Invoice Details">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label className="text-xs font-semibold text-slate-600 mb-1.5 block">Purchase Order *</Label>
-            <Select value={selectedPoId} onValueChange={v => { setSelectedPoId(v); setSelectedGrnId(""); }}>
-              <SelectTrigger><SelectValue placeholder="Choose a PO…" /></SelectTrigger>
-              <SelectContent>
-                {(allPOs as any[]).filter(p => !["Draft", "Cancelled"].includes(p.status)).map((po: any) => (
-                  <SelectItem key={po.id} value={String(po.id)}>{po.poNumber} — {po.vendorName}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label className="text-xs font-semibold text-slate-600 mb-1.5 block">GRN (optional — enables 3-way match)</Label>
-            <Select value={selectedGrnId} onValueChange={setSelectedGrnId} disabled={!selectedPoId}>
-              <SelectTrigger><SelectValue placeholder={acceptedGRNs.length === 0 ? "No accepted GRNs" : "Select GRN…"} /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">None — match against PO only</SelectItem>
-                {acceptedGRNs.map((g: any) => (
-                  <SelectItem key={g.id} value={String(g.id)}>{g.grnNumber} ({g.status})</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {/* Vendor invoice fields */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label className="text-xs font-semibold text-slate-600 mb-1.5 block">Vendor Invoice Number</Label>
+            <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Vendor Invoice Number</Label>
             <Input value={vendorInvoiceNumber} onChange={e => setVendorInvoiceNumber(e.target.value)} placeholder="e.g. VEN/2024/001" className="h-9" />
           </div>
           <div>
-            <Label className="text-xs font-semibold text-slate-600 mb-1.5 block">Vendor Invoice Date</Label>
+            <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Vendor Invoice Date</Label>
             <Input type="date" value={vendorInvoiceDate} onChange={e => setVendorInvoiceDate(e.target.value)} className="h-9" />
           </div>
-        </div>
-      </div>
-
-      {/* 3-way match preview */}
-      {lineItems.length > 0 && (
-        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-          <div className="bg-slate-50 border-b border-slate-200 px-5 py-3 flex items-center justify-between">
-            <div>
-              <h2 className="font-bold text-slate-900">3-Way Match — Line Items</h2>
-              <p className="text-xs text-slate-500 mt-0.5">PO Ordered → GRN Accepted → Invoiced Qty</p>
-            </div>
-            {hasMismatch ? (
-              <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 gap-1">
-                <AlertTriangle className="w-3 h-3" /> Mismatch Detected
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 gap-1">
-                <CheckCircle2 className="w-3 h-3" /> All Matched
-              </Badge>
-            )}
+          <div>
+            <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Freight Charges</Label>
+            <Input type="number" min="0" value={freightCharges} onChange={e => setFreightCharges(e.target.value)} className="h-9" />
           </div>
+          <div>
+            <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Other Charges</Label>
+            <Input type="number" min="0" value={otherCharges} onChange={e => setOtherCharges(e.target.value)} className="h-9" />
+          </div>
+          <div>
+            <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">TDS Deduction</Label>
+            <Input type="number" min="0" value={tdsAmount} onChange={e => setTdsAmount(e.target.value)} className="h-9" />
+          </div>
+          <div className="bg-foreground rounded-lg p-3 text-background flex flex-col justify-center">
+            <p className="text-xs text-background/60">Net Payable</p>
+            <p className="text-xl font-bold font-mono">{fmt(netPayable)}</p>
+          </div>
+        </div>
+      </SectionCard>
+
+      {/* 3-Way Match Verification */}
+      {lineItems.length > 0 && (
+        <SectionCard
+          title="3-Way Match Verification"
+          subtitle="PO Ordered → GRN Accepted → Invoiced Qty"
+          badge={
+            hasMismatch
+              ? <StatusBadge status="MismatchFlagged" />
+              : <span className="flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold"><CheckCircle2 className="w-3.5 h-3.5" /> All Matched</span>
+          }
+          noPadding
+        >
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-max">
-              <thead className="bg-slate-50 border-b border-slate-200">
+              <thead className="bg-muted/40 border-b border-border">
                 <tr>
                   {["Material", "UOM", "PO Ordered", "GRN Accepted", "Invoiced Qty", "Unit Price", "GST%", "Line Total", "Match"].map(h => (
-                    <th key={h} className="text-left px-4 py-2.5 text-xs font-bold text-slate-500 uppercase whitespace-nowrap">{h}</th>
+                    <th key={h} className="text-left px-4 py-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-[0.08em] whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-border">
                 {lineItems.map((item, idx) => {
                   const invoicedQty = Number(item.invoicedQty) || 0;
                   const taxable = invoicedQty * (Number(item.unitPrice) || 0) * (1 - (Number(item.discountPct) || 0) / 100);
                   const gstAmt = taxable * (Number(item.gstRate) || 18) / 100;
                   const lineTotal = taxable + gstAmt;
                   return (
-                    <tr key={idx} className={cn("hover:bg-slate-50", !item.isMatched && "bg-red-50")}>
-                      <td className="px-4 py-3"><p className="font-medium text-slate-900 max-w-40 truncate">{item.materialName}</p></td>
-                      <td className="px-4 py-3 text-slate-600">{item.uom}</td>
+                    <tr key={idx} className={cn(
+                      "hover:bg-muted/20",
+                      !item.isMatched ? "border-l-2 border-l-red-400" : "border-l-2 border-l-emerald-400"
+                    )}>
+                      <td className="px-4 py-3"><p className="font-medium text-foreground max-w-40 truncate">{item.materialName}</p></td>
+                      <td className="px-4 py-3 text-muted-foreground">{item.uom}</td>
                       <td className="px-4 py-3 font-mono">{item.orderedQty}</td>
-                      <td className="px-4 py-3 font-mono text-blue-700">{item.receivedQty || "—"}</td>
+                      <td className="px-4 py-3 font-mono text-blue-700 dark:text-blue-400">{item.receivedQty || "—"}</td>
                       <td className="px-4 py-3">
-                        <Input type="number" min="0" value={item.invoicedQty} onChange={e => updateItem(idx, "invoicedQty", e.target.value)} className={cn("h-8 w-24 font-mono", !item.isMatched && "border-red-300 bg-red-50")} />
+                        <Input type="number" min="0" value={item.invoicedQty} onChange={e => updateItem(idx, "invoicedQty", e.target.value)} className={cn("h-8 w-24 font-mono", !item.isMatched && "border-red-300 bg-red-50 dark:bg-red-950/20")} />
                       </td>
                       <td className="px-4 py-3 font-mono">{fmt(item.unitPrice)}</td>
                       <td className="px-4 py-3">{item.gstRate}%</td>
@@ -245,40 +267,20 @@ export default function InvoiceForm({ poId: initPoId, grnId: initGrnId }: { poId
               </tbody>
             </table>
           </div>
-
-          {/* Totals */}
-          <div className="bg-slate-50 border-t border-slate-200 p-5 grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div>
-              <Label className="text-xs font-semibold text-slate-600 mb-1.5 block">Freight</Label>
-              <Input type="number" min="0" value={freightCharges} onChange={e => setFreightCharges(e.target.value)} className="h-9" />
-            </div>
-            <div>
-              <Label className="text-xs font-semibold text-slate-600 mb-1.5 block">Other Charges</Label>
-              <Input type="number" min="0" value={otherCharges} onChange={e => setOtherCharges(e.target.value)} className="h-9" />
-            </div>
-            <div>
-              <Label className="text-xs font-semibold text-slate-600 mb-1.5 block">TDS Deduction</Label>
-              <Input type="number" min="0" value={tdsAmount} onChange={e => setTdsAmount(e.target.value)} className="h-9" />
-            </div>
-            <div className="bg-slate-900 rounded-lg p-3 text-white text-right">
-              <p className="text-xs text-slate-400">Net Payable</p>
-              <p className="text-xl font-bold font-mono">{fmt(netPayable)}</p>
-            </div>
-          </div>
-        </div>
+        </SectionCard>
       )}
 
-      <div>
-        <Label className="text-xs font-semibold text-slate-600 mb-1.5 block">Internal Notes</Label>
-        <Textarea value={internalNotes} onChange={e => setInternalNotes(e.target.value)} placeholder="Any internal notes…" className="min-h-16 bg-white" />
-      </div>
+      {/* Internal Notes */}
+      <SectionCard title="Internal Notes">
+        <Textarea value={internalNotes} onChange={e => setInternalNotes(e.target.value)} placeholder="Any internal notes…" className="min-h-16" />
+      </SectionCard>
 
       {hasMismatch && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex gap-3">
-          <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/40 rounded-xl p-4 flex gap-3">
+          <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
           <div>
-            <p className="font-bold text-red-800">Quantity Mismatch Detected</p>
-            <p className="text-sm text-red-700 mt-0.5">The invoice will be created with a mismatch flag. An approver must approve the mismatch before this invoice can be submitted.</p>
+            <p className="font-bold text-red-800 dark:text-red-300">Quantity Mismatch Detected</p>
+            <p className="text-sm text-red-700 dark:text-red-400 mt-0.5">The invoice will be created with a mismatch flag. An approver must approve the mismatch before this invoice can be submitted.</p>
           </div>
         </div>
       )}
@@ -286,20 +288,21 @@ export default function InvoiceForm({ poId: initPoId, grnId: initGrnId }: { poId
       <div className="flex justify-end gap-3">
         <Button variant="outline" onClick={() => setLocation("/procurement/invoices")}>Cancel</Button>
         <Button className="gap-2 bg-orange-500 hover:bg-orange-600" onClick={() => setShowConfirm(true)} disabled={createMut.isPending || !selectedPoId}>
-          <Save className="w-4 h-4" /> {createMut.isPending ? "Creating…" : "Create Invoice"}
+          {createMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          {createMut.isPending ? "Creating…" : "Create Invoice"}
         </Button>
       </div>
 
       <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className={hasMismatch ? "text-red-700" : undefined}>
+            <AlertDialogTitle className={hasMismatch ? "text-red-700 dark:text-red-400" : undefined}>
               {hasMismatch ? "⚠ Quantity Mismatch — Confirm Invoice" : "Confirm Invoice Creation"}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {hasMismatch ? (
                 <>
-                  One or more line items have quantities that don't match the GRN.
+                  One or more line items have quantities that don&apos;t match the GRN.
                   The invoice will be created with a <strong>Mismatch Pending</strong> flag
                   and will require explicit sign-off before it can be approved.
                 </>

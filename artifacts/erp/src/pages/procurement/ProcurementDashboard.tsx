@@ -2,7 +2,6 @@ import { useGetProcurementDashboard } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   ShoppingCart, AlertTriangle, Package, FileText, TrendingUp,
@@ -11,7 +10,7 @@ import {
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
-import { PageHeader, StatCard, SectionCard, SkeletonStats, SkeletonList } from "@/components/shared";
+import { PageHeader, StatCard, SectionCard, SkeletonStats, SkeletonList, StatusBadge } from "@/components/shared";
 
 const fmt = (n: number | null | undefined) =>
   n != null ? `₹${Number(n).toLocaleString("en-IN", { maximumFractionDigits: 0 })}` : "—";
@@ -23,7 +22,7 @@ export default function ProcurementDashboard() {
   const { data, isLoading } = useGetProcurementDashboard();
 
   if (isLoading) return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6">
       <SkeletonStats count={6} />
       <SkeletonList rows={6} />
     </motion.div>
@@ -40,7 +39,7 @@ export default function ProcurementDashboard() {
   }));
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-10">
       <PageHeader
         title="Procurement Overview"
         subtitle="Monitor PO pipeline, GRN delivery status, and vendor invoices"
@@ -80,8 +79,8 @@ export default function ProcurementDashboard() {
         <SectionCard title="PO Status Breakdown">
           <div className="space-y-2">
             {Object.entries(summary.poByStatus ?? {}).map(([status, count]: any) => {
-              const colors: Record<string, string> = {
-                Draft: "bg-muted", Issued: "bg-blue-400", Acknowledged: "bg-amber-400",
+              const barColors: Record<string, string> = {
+                Draft: "bg-muted-foreground/40", Issued: "bg-blue-400", Acknowledged: "bg-amber-400",
                 PartiallyReceived: "bg-orange-400", FullyReceived: "bg-emerald-400",
                 Closed: "bg-green-600", Cancelled: "bg-red-400",
               };
@@ -91,7 +90,7 @@ export default function ProcurementDashboard() {
                 <div key={status} className="flex items-center gap-3">
                   <span className="text-xs text-muted-foreground w-28 shrink-0">{status}</span>
                   <div className="flex-1 bg-muted rounded-full h-2">
-                    <div className={cn("h-2 rounded-full", colors[status] ?? "bg-muted-foreground")} style={{ width: `${pct}%` }} />
+                    <div className={cn("h-2 rounded-full", barColors[status] ?? "bg-muted-foreground")} style={{ width: `${pct}%` }} />
                   </div>
                   <span className="text-xs font-bold text-foreground w-6 text-right">{count}</span>
                 </div>
@@ -123,8 +122,8 @@ export default function ProcurementDashboard() {
                     <td className="px-5 py-3 font-mono font-bold text-foreground">{po.poNumber}</td>
                     <td className="px-5 py-3 text-foreground">{po.vendorName}</td>
                     <td className="px-5 py-3 text-muted-foreground">{po.deliveryDeadline}</td>
-                    <td className="px-5 py-3"><Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">{po.daysOverdue}d overdue</Badge></td>
-                    <td className="px-5 py-3 text-muted-foreground">{po.status}</td>
+                    <td className="px-5 py-3"><StatusBadge status="Overdue" /></td>
+                    <td className="px-5 py-3"><StatusBadge status={po.status} /></td>
                     <td className="px-5 py-3 font-mono text-foreground">{fmt(po.totalAmount)}</td>
                     <td className="px-5 py-3"><ArrowRight className="w-4 h-4 text-muted-foreground" /></td>
                   </tr>
@@ -152,7 +151,7 @@ export default function ProcurementDashboard() {
                     <p className="font-mono font-bold text-sm text-foreground">{g.grnNumber}</p>
                     <p className="text-xs text-muted-foreground">{g.vendorName}</p>
                   </div>
-                  <Badge variant="outline" className={cn("text-xs", g.status === "Submitted" ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-muted text-muted-foreground")}>{g.status}</Badge>
+                  <StatusBadge status={g.status} />
                 </div>
               ))}
             </div>
@@ -176,8 +175,8 @@ export default function ProcurementDashboard() {
                     <p className="text-xs text-muted-foreground">{i.vendorName} · {fmt(i.totalAmount)}</p>
                   </div>
                   <div className="flex flex-col items-end gap-1">
-                    <Badge variant="outline" className={cn("text-xs", i.status === "PendingApproval" ? "bg-purple-50 text-purple-700 border-purple-200" : "bg-muted text-muted-foreground")}>{i.status}</Badge>
-                    {i.matchStatus === "MismatchPending" && <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">⚠ Mismatch</Badge>}
+                    <StatusBadge status={i.status} />
+                    {i.matchStatus === "MismatchPending" && <StatusBadge status="MismatchFlagged" />}
                   </div>
                 </div>
               ))}

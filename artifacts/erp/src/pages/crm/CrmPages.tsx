@@ -1,10 +1,9 @@
 import { useGetClientPOs, useGetCrmInvoices, useGetTasks, useGetEscalations } from "@workspace/api-client-react";
-import { Badge } from "@/components/ui/badge";
 import { FileCheck, DollarSign, CheckSquare, AlertTriangle, ListTodo } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { PageHeader, DataTable } from "@/components/shared";
+import { PageHeader, DataTable, StatusBadge } from "@/components/shared";
 import type { ColumnDef } from "@tanstack/react-table";
 
 /* ─────────────────────────────────────────────
@@ -41,9 +40,7 @@ export function ClientPOsList() {
       accessorKey: 'status',
       header: 'Status',
       cell: ({ row }) => (
-        <Badge variant="outline" className={`font-bold text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-[4px] border ${row.original.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-muted text-muted-foreground border-border'}`}>
-          {row.original.status}
-        </Badge>
+        <StatusBadge status={row.original.status} size="sm" />
       ),
     },
     {
@@ -76,7 +73,7 @@ export function ClientPOsList() {
   ];
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-10">
       <PageHeader
         title="Client POs"
         subtitle="Purchase orders received from clients"
@@ -102,14 +99,6 @@ export function CrmInvoicesList() {
   const { data, isLoading } = useGetCrmInvoices();
 
   type CrmInvoice = NonNullable<typeof data>[number];
-
-  function getPaymentStatusColor(status: string) {
-    switch (status) {
-      case 'Paid': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-      case 'Overdue': return 'bg-red-50 text-red-700 border-red-200';
-      default: return 'bg-amber-50 text-amber-700 border-amber-200';
-    }
-  }
 
   const STATUS_OPTIONS = [
     { label: 'Paid', value: 'Paid' },
@@ -159,15 +148,13 @@ export function CrmInvoicesList() {
       accessorKey: 'paymentStatus',
       header: 'Status',
       cell: ({ row }) => (
-        <Badge variant="outline" className={`font-bold text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-[4px] border ${getPaymentStatusColor(row.original.paymentStatus)}`}>
-          {row.original.paymentStatus}
-        </Badge>
+        <StatusBadge status={row.original.paymentStatus} size="sm" />
       ),
     },
   ];
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-10">
       <PageHeader
         title="Client Invoices"
         subtitle="Accounts receivable and payment tracking"
@@ -196,14 +183,6 @@ export function TasksList() {
   const { data, isLoading } = useGetTasks();
 
   type Task = NonNullable<typeof data>[number];
-
-  function getPriorityColor(priority: string) {
-    switch (priority) {
-      case 'High': return 'bg-red-50 text-red-700 border-red-200';
-      case 'Medium': return 'bg-blue-50 text-blue-700 border-blue-200';
-      default: return 'bg-muted text-muted-foreground border-border';
-    }
-  }
 
   const STATUS_OPTIONS = [
     { label: 'Open', value: 'Open' },
@@ -240,16 +219,14 @@ export function TasksList() {
       accessorKey: 'priority',
       header: 'Priority',
       cell: ({ row }) => (
-        <Badge variant="outline" className={`font-bold text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-[4px] border ${getPriorityColor(row.original.priority ?? '')}`}>
-          {row.original.priority || 'Normal'}
-        </Badge>
+        <StatusBadge status={row.original.priority ?? 'Low'} size="sm" />
       ),
     },
     {
       accessorKey: 'status',
       header: 'Status',
       cell: ({ row }) => (
-        <span className="text-sm font-bold text-muted-foreground">{row.original.status}</span>
+        <StatusBadge status={row.original.status} size="sm" />
       ),
     },
     {
@@ -264,7 +241,7 @@ export function TasksList() {
   ];
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-10">
       <PageHeader
         title="Tasks"
         subtitle="To-dos and action items"
@@ -294,13 +271,6 @@ export function EscalationsList() {
   const { data, isLoading } = useGetEscalations();
 
   type Escalation = NonNullable<typeof data>[number];
-
-  function getSeverityColor(severity: string) {
-    switch (severity) {
-      case 'Critical': return 'bg-red-600 text-white border-red-700';
-      default: return 'bg-orange-100 text-orange-800 border-orange-200';
-    }
-  }
 
   const PRIORITY_OPTIONS = [
     { label: 'Critical', value: 'Critical' },
@@ -334,16 +304,14 @@ export function EscalationsList() {
       accessorKey: 'severity',
       header: 'Priority',
       cell: ({ row }) => (
-        <Badge variant="outline" className={`font-bold text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-[4px] border ${getSeverityColor(row.original.severity)}`}>
-          {row.original.severity}
-        </Badge>
+        <StatusBadge status={row.original.severity} size="sm" />
       ),
     },
     {
       accessorKey: 'status',
       header: 'Status',
       cell: ({ row }) => (
-        <span className="text-sm font-bold text-muted-foreground">{row.original.status}</span>
+        <StatusBadge status={row.original.status} size="sm" />
       ),
     },
     {
@@ -365,7 +333,7 @@ export function EscalationsList() {
   ];
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-10">
       <PageHeader
         title="Escalations"
         subtitle="Issues requiring immediate attention"

@@ -14,18 +14,10 @@ import { Plus, UserCog, MoreHorizontal, Loader2, Shield } from "lucide-react";
 import { apiGet, apiPost, apiPatch } from "@/lib/fetch";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
-import { PageHeader, DataTable } from "@/components/shared";
+import { PageHeader, DataTable, SectionCard, StatusBadge } from "@/components/shared";
 import type { ColumnDef } from "@tanstack/react-table";
 
 const ROLES = ["admin", "director", "pm", "warehouse", "sales"];
-const ROLE_COLOR: Record<string, string> = {
-  admin: "bg-red-100 text-red-700 border-red-200",
-  director: "bg-purple-100 text-purple-700 border-purple-200",
-  pm: "bg-blue-100 text-blue-700 border-blue-200",
-  warehouse: "bg-amber-100 text-amber-700 border-amber-200",
-  sales: "bg-emerald-100 text-emerald-700 border-emerald-200",
-};
 
 export default function UserManagement() {
   const { user: currentUser } = useAuth();
@@ -125,7 +117,7 @@ export default function UserManagement() {
       accessorKey: "role",
       header: "Role",
       cell: ({ row }) => (
-        <Badge variant="outline" className={cn("text-xs font-semibold capitalize", ROLE_COLOR[row.original.role] ?? "bg-muted text-muted-foreground")}>
+        <Badge variant="secondary" className="capitalize text-xs">
           {row.original.role}
         </Badge>
       ),
@@ -134,11 +126,7 @@ export default function UserManagement() {
       id: "status",
       header: "Status",
       enableSorting: false,
-      cell: () => (
-        <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs">
-          Active
-        </Badge>
-      ),
+      cell: () => <StatusBadge status="Active" />,
     },
     {
       id: "lastActive",
@@ -184,7 +172,7 @@ export default function UserManagement() {
   ];
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-10">
       <PageHeader
         title="User Management"
         subtitle="Team members and access control"
@@ -195,24 +183,26 @@ export default function UserManagement() {
         }
       />
 
-      <DataTable
-        data={users as any[]}
-        columns={columns}
-        loading={isLoading}
-        searchPlaceholder="Search by name or email..."
-        exportFilename="users"
-        filterOptions={[
-          {
-            key: "role",
-            label: "Role",
-            options: ROLES.map(r => ({ label: r.charAt(0).toUpperCase() + r.slice(1), value: r })),
-          },
-        ]}
-        emptyIcon={UserCog}
-        emptyTitle="No users found"
-        emptyDescription="Add a user to get started"
-        noSelection
-      />
+      <SectionCard title="Users" noPadding>
+        <DataTable
+          data={users as any[]}
+          columns={columns}
+          loading={isLoading}
+          searchPlaceholder="Search by name or email..."
+          exportFilename="users"
+          filterOptions={[
+            {
+              key: "role",
+              label: "Role",
+              options: ROLES.map(r => ({ label: r.charAt(0).toUpperCase() + r.slice(1), value: r })),
+            },
+          ]}
+          emptyIcon={UserCog}
+          emptyTitle="No users found"
+          emptyDescription="Add a user to get started"
+          noSelection
+        />
+      </SectionCard>
 
       {/* Add User Dialog */}
       <Dialog open={addDialog} onOpenChange={setAddDialog}>

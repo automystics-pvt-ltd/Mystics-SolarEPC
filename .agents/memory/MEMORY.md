@@ -1,3 +1,4 @@
 - [Mystics ERP stack decisions](mystics-erp-stack.md) — full-stack EPC ERP; React+Vite frontend at `/`, Express API server, Drizzle/Postgres schema, OpenAPI-first codegen via Orval
 - [Mystics ERP auth setup](mystics-erp-auth.md) — JWT auth with SESSION_SECRET; token stored in localStorage key "mystics_token"; custom-fetch reads it via setAuthTokenGetter
 - [Mystics ERP seed accounts](mystics-erp-seed.md) — seeded users and their passwords for local dev testing
+- [Mystics ERP design system rules](mystics-erp-design-system.md) — StatusBadge covers all 50+ statuses; DetailRow has fullWidth prop; shared component barrel at @/components/shared

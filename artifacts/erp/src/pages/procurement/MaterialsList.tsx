@@ -11,7 +11,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Plus, Package, Tag } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { PageHeader, DataTable, SectionCard } from "@/components/shared";
 import type { ColumnDef } from "@tanstack/react-table";
 
@@ -92,7 +91,7 @@ export default function MaterialsList() {
   ];
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-10">
       <PageHeader
         title="Materials Catalogue"
         subtitle="Master list of materials and components"

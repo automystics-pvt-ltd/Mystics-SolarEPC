@@ -3,13 +3,12 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   PieChart, Pie, Cell, ResponsiveContainer,
 } from "recharts";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DollarSign, Clock, CheckCircle2, AlertCircle, Download } from "lucide-react";
 import { apiGet } from "@/lib/fetch";
 import { exportToCsv } from "@/lib/export";
 import { cn } from "@/lib/utils";
-import { PageHeader, StatCard, SkeletonStats, SectionCard } from "@/components/shared";
+import { PageHeader, StatCard, SkeletonStats, SectionCard, StatusBadge } from "@/components/shared";
 import { motion } from "framer-motion";
 
 const COLORS = ["#10B981", "#F59E0B", "#F97316", "#EF4444", "#991B1B"];
@@ -46,7 +45,7 @@ export default function FinanceDashboard() {
 
   if (isLoading) {
     return (
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
+      <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-10">
         <PageHeader
           title="Finance Overview"
           subtitle="Revenue, receivables, and cash flow tracking"
@@ -76,7 +75,7 @@ export default function FinanceDashboard() {
   }));
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-10">
       <PageHeader
         title="Finance Overview"
         subtitle="Revenue, receivables, and cash flow tracking"
@@ -124,7 +123,7 @@ export default function FinanceDashboard() {
       >
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={agingData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
             <XAxis dataKey="period" tick={{ fontSize: 12 }} />
             <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `₹${(v / 100000).toFixed(0)}L`} />
             <Tooltip content={<CustomTooltip />} />
@@ -141,7 +140,7 @@ export default function FinanceDashboard() {
           <SectionCard title="Payables by Vendor (Top 10)">
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={vendorChartData} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={v => `₹${(v / 100000).toFixed(0)}L`} />
                 <YAxis dataKey="name" type="category" tick={{ fontSize: 10 }} width={90} />
                 <Tooltip content={<CustomTooltip />} />

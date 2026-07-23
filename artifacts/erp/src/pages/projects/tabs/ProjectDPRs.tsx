@@ -1,6 +1,8 @@
 import { useGetDPRs, getGetDPRsQueryKey } from "@workspace/api-client-react";
-import { Loader2, Calendar, ClipboardCheck } from "lucide-react";
+import { Calendar, ClipboardCheck } from "lucide-react";
 import { format } from "date-fns";
+import { SectionCard, EmptyState, SkeletonList } from "@/components/shared";
+import { motion } from "framer-motion";
 
 export function ProjectDPRs({ projectId }: { projectId: number }) {
   const { data: dprs, isLoading } = useGetDPRs(
@@ -8,63 +10,74 @@ export function ProjectDPRs({ projectId }: { projectId: number }) {
     { query: { enabled: !!projectId, queryKey: getGetDPRsQueryKey({ projectId }) } }
   );
 
-  if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-gray-300" /></div>;
+  if (isLoading) {
+    return <SkeletonList rows={4} cols={3} showHeader />;
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="bg-gray-50/50 p-4 rounded-[12px] border border-gray-100">
-        <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
-          <ClipboardCheck className="h-4 w-4 text-gray-400" />
-          Daily Progress Reports
-        </h3>
-      </div>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+      <SectionCard title="Daily Progress Reports">
+        {!dprs?.length ? (
+          <EmptyState
+            icon={Calendar}
+            title="No DPRs submitted yet"
+            description="Daily progress reports will appear here once submitted."
+            size="sm"
+          />
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            {dprs.map(dpr => (
+              <div
+                key={dpr.id}
+                className="border border-border rounded-xl bg-card p-5 flex flex-col"
+              >
+                <div className="flex justify-between items-start mb-5 border-b border-border/60 pb-5">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
+                      <Calendar className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm text-foreground">
+                        {format(new Date(dpr.reportDate), "EEEE, MMM d, yyyy")}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        By {dpr.submittedByName}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-0.5">Progress</p>
+                    <p className="font-bold text-xl text-primary font-mono">{dpr.percentComplete || 0}%</p>
+                  </div>
+                </div>
 
-      {dprs?.length === 0 ? (
-        <div className="border border-dashed border-gray-200 rounded-[12px] h-48 flex flex-col items-center justify-center text-center p-6 bg-gray-50/50">
-          <Calendar className="h-8 w-8 text-gray-300 mb-3" />
-          <p className="text-sm font-bold text-gray-600">No DPRs submitted yet.</p>
-        </div>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2">
-          {dprs?.map(dpr => (
-            <div key={dpr.id} className="border border-gray-200 rounded-[12px] bg-white shadow-sm p-5 flex flex-col">
-              <div className="flex justify-between items-start mb-5 border-b border-gray-100 pb-5">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 bg-orange-50 rounded-[8px] flex items-center justify-center text-[#EA580C]">
-                    <Calendar className="h-5 w-5" />
+                <div className="grid grid-cols-2 gap-3 mb-5">
+                  <div className="bg-muted/30 p-3 rounded-lg border border-border/60">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Manpower</p>
+                    <p className="font-semibold text-sm text-foreground">
+                      {dpr.manpowerCount || 0}{" "}
+                      <span className="text-xs text-muted-foreground font-normal">active</span>
+                    </p>
                   </div>
-                  <div>
-                    <p className="font-bold text-sm text-gray-900">{format(new Date(dpr.reportDate), 'EEEE, MMM d, yyyy')}</p>
-                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">By {dpr.submittedByName}</p>
+                  <div className="bg-muted/30 p-3 rounded-lg border border-border/60">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Weather</p>
+                    <p className="font-semibold text-sm text-foreground">{dpr.weather || "Not spec."}</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Progress</p>
-                  <p className="font-bold text-xl text-[#EA580C] font-mono">{dpr.percentComplete || 0}%</p>
+
+                <div className="mt-auto">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Work Summary</p>
+                  <div className="text-sm text-foreground leading-relaxed whitespace-pre-wrap bg-muted/20 p-3 rounded-lg border border-border/60 min-h-[80px]">
+                    {dpr.workSummary || (
+                      <span className="italic text-muted-foreground">No summary provided.</span>
+                    )}
+                  </div>
                 </div>
               </div>
-              
-              <div className="grid grid-cols-2 gap-3 mb-5">
-                <div className="bg-gray-50 p-3 rounded-[8px] border border-gray-100">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Manpower</p>
-                  <p className="font-bold text-sm text-gray-900">{dpr.manpowerCount || 0} <span className="text-xs text-gray-500 font-medium">active</span></p>
-                </div>
-                <div className="bg-gray-50 p-3 rounded-[8px] border border-gray-100">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Weather</p>
-                  <p className="font-bold text-sm text-gray-900">{dpr.weather || 'Not spec.'}</p>
-                </div>
-              </div>
-              
-              <div className="mt-auto">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Work Summary</p>
-                <div className="text-sm font-medium text-gray-700 leading-relaxed whitespace-pre-wrap bg-gray-50/50 p-3 rounded-[8px] border border-gray-100 min-h-[80px]">
-                  {dpr.workSummary || <span className="italic text-gray-400">No summary provided.</span>}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+            ))}
+          </div>
+        )}
+      </SectionCard>
+    </motion.div>
   );
 }

@@ -14,16 +14,9 @@ import { getGetDesignDocumentsQueryKey } from "@workspace/api-client-react";
 import { FileText, Plus, CheckCircle2, Clock, XCircle, Layers } from "lucide-react";
 import { motion } from "framer-motion";
 import type { ColumnDef } from "@tanstack/react-table";
-import { PageHeader, StatCard, DataTable } from "@/components/shared";
+import { PageHeader, StatCard, DataTable, StatusBadge } from "@/components/shared";
 
 const DOC_TYPES = ["Layout", "SLD", "Structural", "Other"] as const;
-
-const statusConfig: Record<string, { label: string; color: string }> = {
-  Draft: { label: "Draft", color: "bg-slate-100 text-slate-700 border-slate-200" },
-  InternalApproved: { label: "Internal Approved", color: "bg-blue-50 text-blue-700 border-blue-200" },
-  ClientApproved: { label: "Client Approved", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-  Rejected: { label: "Rejected", color: "bg-red-50 text-red-700 border-red-200" },
-};
 
 const docTypeIcon: Record<string, string> = {
   Layout: "🏗️",
@@ -106,14 +99,9 @@ export default function DesignDocsList() {
     {
       accessorKey: "internalStatus",
       header: "Status",
-      cell: ({ row }) => {
-        const s = statusConfig[row.original.internalStatus] ?? statusConfig["Draft"];
-        return (
-          <Badge variant="outline" className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[4px] border ${s.color}`}>
-            {s.label}
-          </Badge>
-        );
-      },
+      cell: ({ row }) => (
+        <StatusBadge status={row.original.internalStatus} size="sm" />
+      ),
     },
     {
       accessorKey: "version",
@@ -201,7 +189,7 @@ export default function DesignDocsList() {
   );
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-10">
       <PageHeader
         title="Design Documents"
         subtitle="Engineering drawings, SLDs, and technical documentation"

@@ -6,12 +6,11 @@ import {
 } from "recharts";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Loader2, Download, TrendingUp, Package, FileText, BarChart3, Boxes, FolderKanban } from "lucide-react";
 import { apiGet } from "@/lib/fetch";
 import { exportToCsv } from "@/lib/export";
 import { cn } from "@/lib/utils";
-import { PageHeader, StatCard, SectionCard } from "@/components/shared";
+import { PageHeader, StatCard, SectionCard, StatusBadge } from "@/components/shared";
 import { motion } from "framer-motion";
 
 const COLORS = ["#EA580C", "#F97316", "#3B82F6", "#10B981", "#8B5CF6", "#EC4899", "#06B6D4", "#84CC16"];
@@ -78,7 +77,7 @@ function ProcurementReport() {
         <SectionCard title="Monthly PO Trend">
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={monthly}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis dataKey="month" tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `₹${(v / 100000).toFixed(1)}L`} />
               <Tooltip content={<CustomTooltip />} />
@@ -117,10 +116,10 @@ function ProcurementReport() {
             </tr></thead>
             <tbody>
               {byVendor.map((v: any, i: number) => (
-                <tr key={i} className="border-b border-border/40">
+                <tr key={i} className="border-b border-border/40 hover:bg-muted/20">
                   <td className="px-4 py-2 font-medium text-foreground">{v.vendor}</td>
                   <td className="px-4 py-2 text-center text-muted-foreground">{v.count}</td>
-                  <td className="px-4 py-2 text-right font-semibold">{INR(v.value)}</td>
+                  <td className="px-4 py-2 text-right font-semibold text-foreground">{INR(v.value)}</td>
                 </tr>
               ))}
             </tbody>
@@ -160,7 +159,7 @@ function GRNReport() {
         <SectionCard title="Vendor Rejection Rates">
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={vendorRejections.slice(0, 8)} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={v => `${v}%`} />
               <YAxis dataKey="vendor" type="category" tick={{ fontSize: 10 }} width={80} />
               <Tooltip />
@@ -190,14 +189,12 @@ function GRNReport() {
             </tr></thead>
             <tbody>
               {vendorRejections.map((v: any, i: number) => (
-                <tr key={i} className="border-b border-border/40">
-                  <td className="px-4 py-2 font-medium">{v.vendor}</td>
+                <tr key={i} className="border-b border-border/40 hover:bg-muted/20">
+                  <td className="px-4 py-2 font-medium text-foreground">{v.vendor}</td>
                   <td className="px-4 py-2 text-right text-muted-foreground">{Number(v.received).toFixed(1)}</td>
                   <td className="px-4 py-2 text-right text-red-600">{Number(v.rejected).toFixed(1)}</td>
                   <td className="px-4 py-2 text-right">
-                    <Badge variant="outline" className={cn("text-xs", Number(v.rejectionRate) > 10 ? "text-red-600 border-red-200" : "text-emerald-600 border-emerald-200")}>
-                      {v.rejectionRate}%
-                    </Badge>
+                    <StatusBadge status={Number(v.rejectionRate) > 10 ? "Error" : "Success"} />
                   </td>
                 </tr>
               ))}
@@ -234,7 +231,7 @@ function InvoiceReport() {
       <SectionCard title="Invoice Aging Analysis">
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={agingData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
             <XAxis dataKey="period" tick={{ fontSize: 11 }} />
             <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `₹${(v / 100000).toFixed(0)}L`} />
             <Tooltip content={<CustomTooltip />} />
@@ -266,15 +263,13 @@ function InvoiceReport() {
             </tr></thead>
             <tbody>
               {byVendor.map((v: any, i: number) => (
-                <tr key={i} className="border-b border-border/40">
-                  <td className="px-4 py-2 font-medium">{v.vendor}</td>
-                  <td className="px-4 py-2 text-right">{INR(v.total)}</td>
+                <tr key={i} className="border-b border-border/40 hover:bg-muted/20">
+                  <td className="px-4 py-2 font-medium text-foreground">{v.vendor}</td>
+                  <td className="px-4 py-2 text-right text-muted-foreground">{INR(v.total)}</td>
                   <td className="px-4 py-2 text-right text-emerald-600">{INR(v.paid)}</td>
                   <td className="px-4 py-2 text-right text-orange-600 font-semibold">{INR(v.pending)}</td>
-                  <td className="px-4 py-2 text-right">
-                    <Badge variant="outline" className="text-xs">
-                      {v.total > 0 ? ((v.paid / v.total) * 100).toFixed(0) : 0}%
-                    </Badge>
+                  <td className="px-4 py-2 text-right text-muted-foreground text-xs">
+                    {v.total > 0 ? ((v.paid / v.total) * 100).toFixed(0) : 0}%
                   </td>
                 </tr>
               ))}
@@ -320,9 +315,7 @@ function InventoryReport() {
               {lowStock.slice(0, 10).map((item: any, i: number) => (
                 <div key={i} className="flex items-center justify-between text-sm p-2 bg-card rounded border border-border">
                   <span className="font-medium text-foreground">{item.itemName}</span>
-                  <Badge variant="outline" className="text-orange-600 border-orange-200">
-                    {Number(item.balanceQty).toFixed(1)} units
-                  </Badge>
+                  <StatusBadge status="Warning" />
                 </div>
               ))}
             </div>
@@ -350,7 +343,7 @@ function ProjectsReport() {
       <SectionCard title="Budget vs Expenses by Project">
         <ResponsiveContainer width="100%" height={240}>
           <BarChart data={projects.slice(0, 8)}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
             <XAxis dataKey="name" tick={{ fontSize: 10 }} />
             <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `₹${(v / 100000).toFixed(0)}L`} />
             <Tooltip content={<CustomTooltip />} />
@@ -383,11 +376,11 @@ function ProjectsReport() {
             </tr></thead>
             <tbody>
               {projects.map((p: any, i: number) => (
-                <tr key={i} className="border-b border-border/40">
-                  <td className="px-4 py-2 font-medium">{p.name}</td>
-                  <td className="px-4 py-2"><Badge variant="outline" className="text-xs">{p.status}</Badge></td>
-                  <td className="px-4 py-2 text-right">{INR(p.budget)}</td>
-                  <td className="px-4 py-2 text-right">{INR(p.expenses)}</td>
+                <tr key={i} className="border-b border-border/40 hover:bg-muted/20">
+                  <td className="px-4 py-2 font-medium text-foreground">{p.name}</td>
+                  <td className="px-4 py-2"><StatusBadge status={p.status} /></td>
+                  <td className="px-4 py-2 text-right text-muted-foreground">{INR(p.budget)}</td>
+                  <td className="px-4 py-2 text-right text-muted-foreground">{INR(p.expenses)}</td>
                   <td className={cn("px-4 py-2 text-right font-semibold", p.remaining < 0 ? "text-red-600" : "text-emerald-600")}>
                     {INR(p.remaining)}
                   </td>
@@ -397,7 +390,7 @@ function ProjectsReport() {
                         <div className={cn("h-full rounded-full", Number(p.utilization) > 90 ? "bg-red-500" : Number(p.utilization) > 70 ? "bg-amber-500" : "bg-emerald-500")}
                           style={{ width: `${Math.min(100, Number(p.utilization))}%` }} />
                       </div>
-                      <span className="text-xs font-semibold">{p.utilization}%</span>
+                      <span className="text-xs font-semibold text-foreground">{p.utilization}%</span>
                     </div>
                   </td>
                 </tr>
@@ -414,7 +407,7 @@ function ProjectsReport() {
 export default function ReportsModule() {
   const [tab, setTab] = useState("procurement");
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-10">
       <PageHeader
         title="Reports & Analytics"
         subtitle="Operational insights and performance metrics"

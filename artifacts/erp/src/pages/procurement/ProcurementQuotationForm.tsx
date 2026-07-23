@@ -15,9 +15,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { ArrowLeft, Plus, Trash2, ChevronRight, ChevronLeft, Building2, Package, FileText, Calculator, Loader2 } from "lucide-react";
+import { Plus, Trash2, ChevronRight, ChevronLeft, Building2, Package, FileText, Calculator, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
+import { PageHeader, SectionCard } from "@/components/shared";
 
 const STEPS = ["Vendor", "Line Items", "Pricing & Terms", "Review"];
 const UOM_OPTIONS = ["Nos", "Pcs", "Set", "Kg", "MT", "Mtr", "Sqm", "Sqft", "Ltr", "Box", "Carton", "Bundle", "KWp", "kWh", "KW", "KVA", "Other"];
@@ -186,7 +187,7 @@ export default function ProcurementQuotationForm({ editId }: Props) {
 
   if (editId && (existingLoading || !initialized)) {
     return (
-      <div className="flex items-center justify-center h-64 gap-3 text-slate-500">
+      <div className="flex items-center justify-center h-64 gap-3 text-muted-foreground">
         <Loader2 className="w-5 h-5 animate-spin" />
         <span>Loading quotation…</span>
       </div>
@@ -194,15 +195,12 @@ export default function ProcurementQuotationForm({ editId }: Props) {
   }
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10 max-w-4xl">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <Button variant="outline" size="icon" onClick={() => setLocation(editId ? `/procurement/quotations/${editId}` : "/procurement/quotations")} className="h-9 w-9"><ArrowLeft className="w-4 h-4" /></Button>
-        <div>
-          <h1 className="text-xl font-bold text-slate-900">{editId ? `Edit Quotation` : "New Vendor Quotation"}</h1>
-          <p className="text-sm text-slate-500">{editId ? `Editing ${existing?.referenceId ?? "…"} — changes saved as a new version` : "Fill in all steps to create a procurement quotation"}</p>
-        </div>
-      </div>
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-10 max-w-4xl">
+      <PageHeader
+        title={editId ? `Edit Quotation` : "New Vendor Quotation"}
+        subtitle={editId ? `Editing ${(existing as any)?.referenceId ?? "…"} — changes saved as a new version` : "Fill in all steps to create a procurement quotation"}
+        backHref={editId ? `/procurement/quotations/${editId}` : "/procurement/quotations"}
+      />
 
       {/* Step indicator */}
       <div className="flex items-center gap-0">
@@ -210,53 +208,53 @@ export default function ProcurementQuotationForm({ editId }: Props) {
           <div key={s} className="flex items-center">
             <button onClick={() => i < step && setStep(i)} disabled={i > step}
               className={cn("flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all",
-                i === step ? "bg-orange-500 text-white" : i < step ? "bg-orange-100 text-orange-700 cursor-pointer hover:bg-orange-200" : "bg-slate-100 text-slate-400")}>
+                i === step ? "bg-orange-500 text-white" : i < step ? "bg-orange-100 text-orange-700 cursor-pointer hover:bg-orange-200" : "bg-muted text-muted-foreground")}>
               <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs border-2 border-current">{i + 1}</span>
               {s}
             </button>
-            {i < STEPS.length - 1 && <ChevronRight className="w-4 h-4 text-slate-300 mx-1" />}
+            {i < STEPS.length - 1 && <ChevronRight className="w-4 h-4 text-muted-foreground mx-1" />}
           </div>
         ))}
       </div>
 
       {/* STEP 0: Vendor */}
       {step === 0 && (
-        <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Building2 className="w-5 h-5 text-orange-500" />
-            <h2 className="font-bold text-slate-800">Select Vendor</h2>
+        <SectionCard title="Select Vendor" badge={<Building2 className="w-4 h-4 text-orange-500" />}>
+          <div className="space-y-4">
+            <Input value={vendorSearch} onChange={e => setVendorSearch(e.target.value)} placeholder="Search vendor by name or GSTIN…" />
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {filteredVendors.map(v => (
+                <div key={v.id} onClick={() => setVendorId(v.id!)}
+                  className={cn("p-3 rounded-lg border cursor-pointer transition-all", vendorId === v.id ? "border-orange-400 bg-orange-50" : "border-border hover:border-border/80")}>
+                  <p className="font-semibold text-sm text-foreground">{v.name}</p>
+                  <p className="text-xs text-muted-foreground">{v.code} {v.gstin ? `· GSTIN: ${v.gstin}` : ""} · {v.status}</p>
+                </div>
+              ))}
+              {filteredVendors.length === 0 && <p className="text-sm text-muted-foreground py-4 text-center">No vendors found</p>}
+            </div>
+            <Button variant="outline" size="sm" className="gap-1.5 w-full" onClick={() => setNewVendorOpen(true)}><Plus className="w-3.5 h-3.5" /> Create New Vendor Inline</Button>
+            {selectedVendor && <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-sm text-emerald-800 font-medium">✓ Selected: {selectedVendor.name}</div>}
           </div>
-          <Input value={vendorSearch} onChange={e => setVendorSearch(e.target.value)} placeholder="Search vendor by name or GSTIN…" />
-          <div className="space-y-2 max-h-64 overflow-y-auto">
-            {filteredVendors.map(v => (
-              <div key={v.id} onClick={() => setVendorId(v.id!)}
-                className={cn("p-3 rounded-lg border cursor-pointer transition-all", vendorId === v.id ? "border-orange-400 bg-orange-50" : "border-slate-200 hover:border-slate-300")}>
-                <p className="font-semibold text-sm text-slate-900">{v.name}</p>
-                <p className="text-xs text-slate-500">{v.code} {v.gstin ? `· GSTIN: ${v.gstin}` : ""} · {v.status}</p>
-              </div>
-            ))}
-            {filteredVendors.length === 0 && <p className="text-sm text-slate-400 py-4 text-center">No vendors found</p>}
-          </div>
-          <Button variant="outline" size="sm" className="gap-1.5 w-full" onClick={() => setNewVendorOpen(true)}><Plus className="w-3.5 h-3.5" /> Create New Vendor Inline</Button>
-          {selectedVendor && <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-sm text-emerald-800 font-medium">✓ Selected: {selectedVendor.name}</div>}
-        </div>
+        </SectionCard>
       )}
 
       {/* STEP 1: Line items */}
       {step === 1 && (
-        <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2"><Package className="w-5 h-5 text-orange-500" /><h2 className="font-bold text-slate-800">Line Items</h2></div>
+        <SectionCard
+          title="Line Items"
+          badge={<Package className="w-4 h-4 text-orange-500" />}
+          actions={
             <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setItems(prev => [...prev, emptyItem()])}><Plus className="w-3.5 h-3.5" /> Add Row</Button>
-          </div>
+          }
+        >
           <div className="space-y-3">
             {items.map((item, idx) => {
               const c = calcItem(item);
               return (
-                <div key={idx} className="border border-slate-200 rounded-xl p-4 space-y-3">
+                <div key={idx} className="border border-border rounded-xl p-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-500">LINE {idx + 1}</span>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-red-500" onClick={() => setItems(prev => prev.filter((_, i) => i !== idx))}><Trash2 className="w-3.5 h-3.5" /></Button>
+                    <span className="text-xs font-bold text-muted-foreground">LINE {idx + 1}</span>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-red-500" onClick={() => setItems(prev => prev.filter((_, i) => i !== idx))}><Trash2 className="w-3.5 h-3.5" /></Button>
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div className="col-span-2">
@@ -282,26 +280,25 @@ export default function ProcurementQuotationForm({ editId }: Props) {
                     <div><Label className="text-xs">GST %</Label><Input type="number" className="mt-1 h-9" value={item.gstRate} onChange={e => setItems(prev => prev.map((it, i) => i === idx ? { ...it, gstRate: Number(e.target.value) } : it))} /></div>
                     <div><Label className="text-xs">Lead (days)</Label><Input type="number" className="mt-1 h-9" value={item.deliveryDays ?? ""} onChange={e => setItems(prev => prev.map((it, i) => i === idx ? { ...it, deliveryDays: Number(e.target.value) } : it))} /></div>
                   </div>
-                  <div className="flex justify-end gap-4 text-xs text-slate-500 bg-slate-50 rounded-lg p-2">
-                    <span>Taxable: <strong className="text-slate-800">₹{c.taxable.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</strong></span>
-                    <span>GST: <strong className="text-slate-800">₹{c.gst.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</strong></span>
-                    <span className="text-base font-bold text-slate-900">Line Total: ₹{c.total.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+                  <div className="flex justify-end gap-4 text-xs text-muted-foreground bg-muted/40 rounded-lg p-2">
+                    <span>Taxable: <strong className="text-foreground">₹{c.taxable.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</strong></span>
+                    <span>GST: <strong className="text-foreground">₹{c.gst.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</strong></span>
+                    <span className="text-base font-bold text-foreground">Line Total: ₹{c.total.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
                   </div>
                 </div>
               );
             })}
           </div>
-          <div className="bg-slate-900 text-white rounded-xl p-4 flex justify-between items-center">
+          <div className="mt-4 bg-foreground text-background rounded-xl p-4 flex justify-between items-center">
             <span className="text-sm opacity-70">Grand Total ({items.length} item{items.length !== 1 ? "s" : ""})</span>
             <span className="text-xl font-bold font-mono">₹{totals.total.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
           </div>
-        </div>
+        </SectionCard>
       )}
 
       {/* STEP 2: Pricing & Terms */}
       {step === 2 && (
-        <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-5">
-          <div className="flex items-center gap-2"><Calculator className="w-5 h-5 text-orange-500" /><h2 className="font-bold text-slate-800">Pricing & Terms</h2></div>
+        <SectionCard title="Pricing & Terms" badge={<Calculator className="w-4 h-4 text-orange-500" />}>
           <div className="grid grid-cols-2 gap-4">
             <div><Label>Quotation Date</Label><Input type="date" value={pricing.quotationDate} onChange={e => setPricing(p => ({ ...p, quotationDate: e.target.value }))} className="mt-1" /></div>
             <div><Label>Validity Date</Label><Input type="date" value={pricing.validityDate} onChange={e => setPricing(p => ({ ...p, validityDate: e.target.value }))} className="mt-1" /></div>
@@ -314,31 +311,30 @@ export default function ProcurementQuotationForm({ editId }: Props) {
             <div className="col-span-2"><Label>Vendor Remarks</Label><Textarea value={pricing.vendorRemarks} onChange={e => setPricing(p => ({ ...p, vendorRemarks: e.target.value }))} className="mt-1" rows={2} /></div>
             <div className="col-span-2"><Label>Internal Notes</Label><Textarea value={pricing.internalNotes} onChange={e => setPricing(p => ({ ...p, internalNotes: e.target.value }))} className="mt-1" rows={2} /></div>
           </div>
-        </div>
+        </SectionCard>
       )}
 
       {/* STEP 3: Review */}
       {step === 3 && (
-        <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-5">
-          <div className="flex items-center gap-2"><FileText className="w-5 h-5 text-orange-500" /><h2 className="font-bold text-slate-800">Review & {editId ? "Save Changes" : "Create"}</h2></div>
+        <SectionCard title={`Review & ${editId ? "Save Changes" : "Create"}`} badge={<FileText className="w-4 h-4 text-orange-500" />}>
           <div className="space-y-3">
-            <div className="bg-slate-50 rounded-xl p-4 grid grid-cols-2 gap-3 text-sm">
-              <div><span className="text-slate-500">Vendor</span><p className="font-semibold">{selectedVendor?.name ?? "None selected"}</p></div>
-              <div><span className="text-slate-500">Items</span><p className="font-semibold">{items.length} line item{items.length !== 1 ? "s" : ""}</p></div>
-              <div><span className="text-slate-500">Subtotal</span><p className="font-semibold font-mono">₹{totals.subtotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</p></div>
-              <div><span className="text-slate-500">Total GST</span><p className="font-semibold font-mono">₹{totals.gst.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</p></div>
-              <div><span className="text-slate-500">Freight</span><p className="font-semibold font-mono">₹{Number(pricing.freightCharges).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</p></div>
-              <div className="col-span-2 border-t border-slate-200 pt-3 flex justify-between">
-                <span className="text-slate-700 font-bold text-base">Grand Total</span>
+            <div className="bg-muted/40 rounded-xl p-4 grid grid-cols-2 gap-3 text-sm">
+              <div><span className="text-muted-foreground">Vendor</span><p className="font-semibold">{selectedVendor?.name ?? "None selected"}</p></div>
+              <div><span className="text-muted-foreground">Items</span><p className="font-semibold">{items.length} line item{items.length !== 1 ? "s" : ""}</p></div>
+              <div><span className="text-muted-foreground">Subtotal</span><p className="font-semibold font-mono">₹{totals.subtotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</p></div>
+              <div><span className="text-muted-foreground">Total GST</span><p className="font-semibold font-mono">₹{totals.gst.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</p></div>
+              <div><span className="text-muted-foreground">Freight</span><p className="font-semibold font-mono">₹{Number(pricing.freightCharges).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</p></div>
+              <div className="col-span-2 border-t border-border pt-3 flex justify-between">
+                <span className="text-foreground font-bold text-base">Grand Total</span>
                 <span className="font-bold font-mono text-lg">₹{(totals.total + Number(pricing.freightCharges) + Number(pricing.otherCharges)).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
               </div>
             </div>
             {editId
-              ? <p className="text-sm text-slate-500">Saving will create a new version of this quotation and update all line items.</p>
-              : <p className="text-sm text-slate-500">The quotation will be created in <strong>Draft</strong> status. You can edit it and submit for approval.</p>
+              ? <p className="text-sm text-muted-foreground">Saving will create a new version of this quotation and update all line items.</p>
+              : <p className="text-sm text-muted-foreground">The quotation will be created in <strong>Draft</strong> status. You can edit it and submit for approval.</p>
             }
           </div>
-        </div>
+        </SectionCard>
       )}
 
       {/* Navigation */}

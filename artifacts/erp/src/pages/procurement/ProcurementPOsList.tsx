@@ -1,29 +1,12 @@
 import { useGetProcurementPOs } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 import { ShoppingCart, Download } from "lucide-react";
 import { exportToCsv } from "@/lib/export";
 import { cn } from "@/lib/utils";
-import { PageHeader, DataTable } from "@/components/shared";
+import { PageHeader, DataTable, StatusBadge } from "@/components/shared";
 import type { ColumnDef } from "@tanstack/react-table";
-
-const STATUS_CONFIG: Record<string, { color: string }> = {
-  Draft: { color: "bg-slate-100 text-slate-600 border-slate-200" },
-  Issued: { color: "bg-blue-50 text-blue-700 border-blue-200" },
-  Acknowledged: { color: "bg-amber-50 text-amber-700 border-amber-200" },
-  PartiallyReceived: { color: "bg-orange-50 text-orange-700 border-orange-200" },
-  FullyReceived: { color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-  Closed: { color: "bg-slate-100 text-slate-500 border-slate-200" },
-  Cancelled: { color: "bg-red-50 text-red-700 border-red-200" },
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  Draft: "Draft", Issued: "Issued", Acknowledged: "Acknowledged",
-  PartiallyReceived: "Partially Received", FullyReceived: "Fully Received",
-  Closed: "Closed", Cancelled: "Cancelled",
-};
 
 const STATUS_OPTIONS = [
   { label: "Draft", value: "Draft" },
@@ -64,9 +47,7 @@ export default function ProcurementPOsList() {
               {po.poNumber}
             </span>
             {overdue && (
-              <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
-                Overdue
-              </Badge>
+              <StatusBadge status="Overdue" size="sm" />
             )}
           </div>
         );
@@ -82,14 +63,9 @@ export default function ProcurementPOsList() {
     {
       accessorKey: "status",
       header: "Status",
-      cell: ({ row }) => {
-        const cfg = STATUS_CONFIG[row.original.status ?? "Draft"] ?? STATUS_CONFIG["Draft"];
-        return (
-          <Badge variant="outline" className={cn("text-xs", cfg.color)}>
-            {STATUS_LABELS[row.original.status ?? "Draft"] ?? row.original.status}
-          </Badge>
-        );
-      },
+      cell: ({ row }) => (
+        <StatusBadge status={row.original.status ?? "Draft"} size="sm" />
+      ),
     },
     {
       accessorKey: "totalAmount",
@@ -128,7 +104,7 @@ export default function ProcurementPOsList() {
   ];
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-10">
       <PageHeader
         title="Purchase Orders"
         subtitle="Auto-generated from approved vendor quotations"

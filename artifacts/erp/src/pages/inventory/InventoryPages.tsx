@@ -1,9 +1,8 @@
 import { useGetGRNs, useGetDeliveryChallans, useGetStockLedger, useGetStockValuation, useGetInventoryAudits } from "@workspace/api-client-react";
-import { Badge } from "@/components/ui/badge";
 import { Boxes, Truck, BookOpen, Scale, ClipboardCheck } from "lucide-react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
-import { PageHeader, DataTable } from "@/components/shared";
+import { PageHeader, DataTable, StatusBadge } from "@/components/shared";
 import type { ColumnDef } from "@tanstack/react-table";
 
 // ─── GRNsList ─────────────────────────────────────────────────────────────────
@@ -48,19 +47,14 @@ export function GRNsList() {
     {
       accessorKey: "qcStatus",
       header: "QC Status",
-      cell: ({ row }) => {
-        const s = row.original.qcStatus;
-        const cls =
-          s === "Approved" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
-          s === "Rejected" ? "bg-red-50 text-red-700 border-red-200" :
-          "bg-muted text-muted-foreground border-border";
-        return <Badge variant="outline" className={cls}>{s}</Badge>;
-      },
+      cell: ({ row }) => (
+        <StatusBadge status={row.original.qcStatus ?? "Pending"} size="sm" />
+      ),
     },
   ];
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-10">
       <PageHeader
         title="Goods Receipt Notes"
         subtitle="Track inbound material receipts against POs."
@@ -139,7 +133,7 @@ export function DeliveryChallansList() {
       header: "Status",
       enableSorting: false,
       cell: () => (
-        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Issued</Badge>
+        <StatusBadge status="Issued" size="sm" />
       ),
     },
     {
@@ -154,7 +148,7 @@ export function DeliveryChallansList() {
   ];
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-10">
       <PageHeader
         title="Delivery Challans"
         subtitle="Track outbound material dispatches."
@@ -199,13 +193,9 @@ export function StockLedgerList() {
     {
       accessorKey: "txnType",
       header: "Txn Type",
-      cell: ({ row }) => {
-        const t = row.original.txnType;
-        const cls = t === "Inward"
-          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-          : "bg-muted text-muted-foreground border-border";
-        return <Badge variant="outline" className={cls}>{t}</Badge>;
-      },
+      cell: ({ row }) => (
+        <StatusBadge status={row.original.txnType} size="sm" />
+      ),
     },
     {
       accessorKey: "qty",
@@ -237,7 +227,7 @@ export function StockLedgerList() {
   ];
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-10">
       <PageHeader
         title="Stock Ledger"
         subtitle="Chronological log of inventory movements."
@@ -324,7 +314,7 @@ export function StockValuationList() {
   ];
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-10">
       <PageHeader
         title="Stock Valuation"
         subtitle="Financial value of inventory on hand."
@@ -369,13 +359,9 @@ export function InventoryAuditsList() {
     {
       accessorKey: "status",
       header: "Status",
-      cell: ({ row }) => {
-        const s = row.original.status;
-        const cls = s === "Completed"
-          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-          : "bg-muted text-muted-foreground border-border";
-        return <Badge variant="outline" className={cls}>{s}</Badge>;
-      },
+      cell: ({ row }) => (
+        <StatusBadge status={row.original.status ?? "Pending"} size="sm" />
+      ),
     },
     {
       id: "auditor",
@@ -393,7 +379,7 @@ export function InventoryAuditsList() {
   ];
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-10">
       <PageHeader
         title="Inventory Audits"
         subtitle="Physical stock reconciliation logs."

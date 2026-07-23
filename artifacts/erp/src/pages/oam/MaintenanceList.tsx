@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useGetMaintenanceSchedules, useCreateMaintenanceSchedule, useCompleteMaintenanceSchedule, getGetMaintenanceSchedulesQueryKey } from "@workspace/api-client-react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,15 +11,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Wrench, Plus, Calendar, CheckCircle2, User } from "lucide-react";
 import { motion } from "framer-motion";
 import type { ColumnDef } from "@tanstack/react-table";
-import { PageHeader, StatCard, DataTable } from "@/components/shared";
+import { PageHeader, StatCard, DataTable, StatusBadge } from "@/components/shared";
 
 const VISIT_TYPES = ["Preventive", "Corrective", "Emergency"];
-const statusColors: Record<string, string> = {
-  Scheduled: "bg-blue-50 text-blue-700 border-blue-200",
-  InProgress: "bg-amber-50 text-amber-700 border-amber-200",
-  Completed: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  Cancelled: "bg-slate-100 text-slate-500 border-slate-200",
-};
 
 const STATUS_OPTIONS = [
   { label: "Scheduled", value: "Scheduled" },
@@ -83,7 +76,9 @@ export default function MaintenanceList() {
                 Project #{row.original.projectId} — {row.original.visitType}
               </div>
               {isOverdue && (
-                <span className="text-[10px] bg-red-50 text-red-600 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Overdue</span>
+                <div className="mt-0.5">
+                  <StatusBadge status="Overdue" size="sm" />
+                </div>
               )}
             </div>
           </div>
@@ -101,9 +96,7 @@ export default function MaintenanceList() {
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => (
-        <Badge variant="outline" className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[4px] border ${statusColors[row.original.status] ?? "bg-slate-100 text-slate-600 border-slate-200"}`}>
-          {row.original.status}
-        </Badge>
+        <StatusBadge status={row.original.status} size="sm" />
       ),
     },
     {
@@ -177,7 +170,7 @@ export default function MaintenanceList() {
   );
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6">
       <PageHeader
         title="Maintenance Schedule"
         subtitle="Scheduled preventive maintenance"

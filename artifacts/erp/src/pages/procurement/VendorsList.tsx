@@ -10,15 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Plus, Building2 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { PageHeader, DataTable } from "@/components/shared";
+import { PageHeader, DataTable, StatusBadge } from "@/components/shared";
 import type { ColumnDef } from "@tanstack/react-table";
-
-const STATUS_COLORS: Record<string, string> = {
-  Active: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  Inactive: "bg-slate-100 text-slate-600 border-slate-200",
-  Blacklisted: "bg-red-50 text-red-700 border-red-200",
-};
 
 const STATUS_OPTIONS = [
   { label: "Active", value: "Active" },
@@ -100,9 +93,7 @@ export default function VendorsList() {
       header: "Status",
       cell: ({ row }) => (
         <div className="flex items-center gap-1.5 flex-wrap">
-          <Badge variant="outline" className={cn("text-xs", STATUS_COLORS[row.original.status ?? "Active"] ?? "")}>
-            {row.original.status}
-          </Badge>
+          <StatusBadge status={row.original.status ?? "Active"} size="sm" />
           {row.original.isMsme && (
             <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">MSME</Badge>
           )}
@@ -112,7 +103,7 @@ export default function VendorsList() {
   ];
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-10">
       <PageHeader
         title="Vendors"
         subtitle="Approved supplier and contractor registry"

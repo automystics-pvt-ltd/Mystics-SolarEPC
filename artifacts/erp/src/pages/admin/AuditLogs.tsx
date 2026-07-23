@@ -1,14 +1,12 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Clock, Download, ScrollText } from "lucide-react";
 import { apiGet } from "@/lib/fetch";
 import { exportToCsv } from "@/lib/export";
-import { cn } from "@/lib/utils";
-import { PageHeader, DataTable } from "@/components/shared";
+import { PageHeader, DataTable, SectionCard, StatusBadge } from "@/components/shared";
 import type { ColumnDef } from "@tanstack/react-table";
 
 type AuditEntry = {
@@ -21,25 +19,19 @@ type AuditEntry = {
   remarks: string;
 };
 
-const MODULE_COLOR: Record<string, string> = {
-  "GRN Return": "bg-purple-50 text-purple-700 border-purple-200",
-  "Purchase Order": "bg-blue-50 text-blue-700 border-blue-200",
-  "GRN": "bg-emerald-50 text-emerald-700 border-emerald-200",
-  "Invoice": "bg-orange-50 text-orange-700 border-orange-200",
-};
-
-const ACTION_COLOR: Record<string, string> = {
-  Created: "bg-muted text-muted-foreground",
-  Submitted: "bg-blue-100 text-blue-700",
-  Approved: "bg-emerald-100 text-emerald-700",
-  Dispatched: "bg-purple-100 text-purple-700",
-  Closed: "bg-muted text-muted-foreground",
-  Cancelled: "bg-red-100 text-red-600",
-  Rejected: "bg-red-100 text-red-600",
-};
-
 const MODULE_OPTIONS = ["GRN Return", "Purchase Order", "GRN", "Invoice"].map(m => ({ label: m, value: m }));
 const ACTION_OPTIONS = ["Created", "Submitted", "Approved", "Dispatched", "Closed", "Cancelled", "Rejected"].map(a => ({ label: a, value: a }));
+
+// Map module names to StatusBadge-compatible statuses
+function moduleStatus(module: string): string {
+  const map: Record<string, string> = {
+    "GRN Return": "RTV",
+    "Purchase Order": "Issued",
+    "GRN": "Accepted",
+    "Invoice": "PendingApproval",
+  };
+  return map[module] ?? module;
+}
 
 export default function AuditLogs() {
   const [fromDate, setFromDate] = useState("");
@@ -185,18 +177,14 @@ export default function AuditLogs() {
       accessorKey: "action",
       header: "Action",
       cell: ({ row }) => (
-        <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full", ACTION_COLOR[row.original.action] ?? "bg-muted text-muted-foreground")}>
-          {row.original.action}
-        </span>
+        <StatusBadge status={row.original.action} />
       ),
     },
     {
       accessorKey: "module",
       header: "Entity Type",
       cell: ({ row }) => (
-        <Badge variant="outline" className={cn("text-xs", MODULE_COLOR[row.original.module] ?? "bg-muted text-muted-foreground")}>
-          {row.original.module}
-        </Badge>
+        <StatusBadge status={moduleStatus(row.original.module)} />
       ),
     },
     {
@@ -217,10 +205,10 @@ export default function AuditLogs() {
   ];
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-10">
       <PageHeader
         title="Audit Logs"
-        subtitle="System-wide change trail and compliance history"
+        subtitle="System activity log"
         actions={
           <Button variant="outline" size="sm" className="gap-1 h-9 text-xs" onClick={() =>
             exportToCsv(`audit-logs-${new Date().toISOString().slice(0, 10)}.csv`,
@@ -247,29 +235,31 @@ export default function AuditLogs() {
         </span>
       </div>
 
-      <DataTable
-        data={dateFiltered}
-        columns={columns}
-        loading={isLoading}
-        searchPlaceholder="Search by doc ref, action, or user..."
-        exportFilename="audit-logs"
-        filterOptions={[
-          {
-            key: "action",
-            label: "Action",
-            options: ACTION_OPTIONS,
-          },
-          {
-            key: "module",
-            label: "Entity Type",
-            options: MODULE_OPTIONS,
-          },
-        ]}
-        emptyIcon={ScrollText}
-        emptyTitle="No audit entries found"
-        emptyDescription="Try adjusting your filters"
-        noSelection
-      />
+      <SectionCard title="Activity Log" noPadding>
+        <DataTable
+          data={dateFiltered}
+          columns={columns}
+          loading={isLoading}
+          searchPlaceholder="Search by doc ref, action, or user..."
+          exportFilename="audit-logs"
+          filterOptions={[
+            {
+              key: "action",
+              label: "Action",
+              options: ACTION_OPTIONS,
+            },
+            {
+              key: "module",
+              label: "Entity Type",
+              options: MODULE_OPTIONS,
+            },
+          ]}
+          emptyIcon={ScrollText}
+          emptyTitle="No audit entries found"
+          emptyDescription="Try adjusting your filters"
+          noSelection
+        />
+      </SectionCard>
     </motion.div>
   );
 }

@@ -3,7 +3,6 @@ import { useGetProjects, useCreateProject, useGetPortfolioSummary, getGetProject
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Plus, FolderKanban, MapPin, UserCircle, CheckCircle2, AlertTriangle } from "lucide-react";
 import { useLocation } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -13,7 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion } from "framer-motion";
 import type { ColumnDef } from "@tanstack/react-table";
-import { PageHeader, StatCard, DataTable } from "@/components/shared";
+import { PageHeader, StatCard, DataTable, StatusBadge } from "@/components/shared";
 
 const createProjectSchema = z.object({
   name: z.string().min(1, "Project name is required"),
@@ -28,16 +27,6 @@ function formatCurrency(amount?: number) {
   if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(2)} Cr`;
   if (amount >= 100000) return `₹${(amount / 100000).toFixed(1)} L`;
   return `₹${Number(amount).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
-}
-
-function getStatusColor(status: string) {
-  switch (status) {
-    case 'Active': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-    case 'Completed': return 'bg-blue-100 text-blue-800 border-blue-200';
-    case 'On Hold': return 'bg-amber-100 text-amber-800 border-amber-200';
-    case 'Cancelled': return 'bg-red-100 text-red-800 border-red-200';
-    default: return 'bg-gray-100 text-gray-800 border-gray-200';
-  }
 }
 
 type Project = {
@@ -116,9 +105,7 @@ export function ProjectsList() {
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => (
-        <Badge variant="outline" className={`font-bold text-[10px] uppercase tracking-wide border px-2 py-0.5 rounded-[4px] ${getStatusColor(row.original.status)}`}>
-          {row.original.status}
-        </Badge>
+        <StatusBadge status={row.original.status} size="sm" />
       ),
     },
     {
@@ -213,7 +200,7 @@ export function ProjectsList() {
   );
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-10">
       <PageHeader
         title="Projects Hub"
         subtitle="End-to-end solar EPC project tracking"

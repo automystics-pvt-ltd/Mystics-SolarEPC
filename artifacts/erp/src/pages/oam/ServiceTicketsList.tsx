@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useGetServiceTickets, useCreateServiceTicket, useResolveServiceTicket, getGetServiceTicketsQueryKey } from "@workspace/api-client-react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,24 +11,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Ticket, Plus, Clock, CheckCircle2, AlertTriangle, User } from "lucide-react";
 import { motion } from "framer-motion";
 import type { ColumnDef } from "@tanstack/react-table";
-import { PageHeader, StatCard, DataTable } from "@/components/shared";
+import { PageHeader, StatCard, DataTable, StatusBadge } from "@/components/shared";
 
 const CATEGORIES = ["Performance", "Electrical", "Structural", "Inverter", "Module", "Other"];
 const PRIORITIES = ["Low", "Medium", "High", "Critical"];
-
-const priorityColors: Record<string, string> = {
-  Low: "bg-slate-100 text-slate-600 border-slate-200",
-  Medium: "bg-blue-50 text-blue-700 border-blue-200",
-  High: "bg-amber-50 text-amber-700 border-amber-200",
-  Critical: "bg-red-50 text-red-700 border-red-200",
-};
-
-const statusColors: Record<string, string> = {
-  Open: "bg-red-50 text-red-700 border-red-200",
-  InProgress: "bg-amber-50 text-amber-700 border-amber-200",
-  Resolved: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  Closed: "bg-slate-100 text-slate-500 border-slate-200",
-};
 
 const STATUS_OPTIONS = [
   { label: "Open", value: "Open" },
@@ -115,18 +100,14 @@ export default function ServiceTicketsList() {
       accessorKey: "priority",
       header: "Priority",
       cell: ({ row }) => (
-        <Badge variant="outline" className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[4px] border ${priorityColors[row.original.priority] ?? "bg-slate-100 text-slate-600 border-slate-200"}`}>
-          {row.original.priority}
-        </Badge>
+        <StatusBadge status={row.original.priority} size="sm" />
       ),
     },
     {
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => (
-        <Badge variant="outline" className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[4px] border ${statusColors[row.original.status] ?? "bg-slate-100 text-slate-600 border-slate-200"}`}>
-          {row.original.status}
-        </Badge>
+        <StatusBadge status={row.original.status} size="sm" />
       ),
     },
     {
@@ -210,7 +191,7 @@ export default function ServiceTicketsList() {
   );
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6">
       <PageHeader
         title="Service Tickets"
         subtitle="Customer service and breakdown requests"

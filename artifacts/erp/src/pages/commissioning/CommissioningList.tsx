@@ -16,14 +16,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { CheckSquare, Plus, Clock, CheckCircle2, Pen } from "lucide-react";
 import { motion } from "framer-motion";
 import type { ColumnDef } from "@tanstack/react-table";
-import { PageHeader, StatCard, DataTable } from "@/components/shared";
-
-const statusConfig: Record<string, { label: string; color: string }> = {
-  Draft: { label: "Draft", color: "bg-slate-100 text-slate-600 border-slate-200" },
-  InProgress: { label: "In Progress", color: "bg-amber-50 text-amber-700 border-amber-200" },
-  PendingClientSignoff: { label: "Pending Sign-off", color: "bg-blue-50 text-blue-700 border-blue-200" },
-  Completed: { label: "Completed", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-};
+import { PageHeader, StatCard, DataTable, StatusBadge } from "@/components/shared";
 
 const STATUS_OPTIONS = [
   { label: "Draft", value: "Draft" },
@@ -97,14 +90,9 @@ export default function CommissioningList() {
     {
       accessorKey: "status",
       header: "Status",
-      cell: ({ row }) => {
-        const s = statusConfig[row.original.status] ?? statusConfig["Draft"];
-        return (
-          <Badge variant="outline" className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[4px] border ${s.color}`}>
-            {s.label}
-          </Badge>
-        );
-      },
+      cell: ({ row }) => (
+        <StatusBadge status={row.original.status} size="sm" />
+      ),
     },
     {
       accessorKey: "clientSignatoryName",
@@ -150,7 +138,7 @@ export default function CommissioningList() {
   );
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-10">
       <PageHeader
         title="Commissioning"
         subtitle="Site commissioning and handover checklists"

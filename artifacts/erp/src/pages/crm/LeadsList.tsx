@@ -3,7 +3,6 @@ import { useGetLeads, useCreateLead, useGetLeadsPipelineSummary, getGetLeadsQuer
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Loader2, Plus, Building2, UserCircle, Target, ChevronsUpDown, Check } from "lucide-react";
 import { useLocation } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -16,7 +15,7 @@ import { z } from "zod";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { PageHeader, DataTable, SkeletonStats, SkeletonList } from "@/components/shared";
+import { PageHeader, DataTable, SkeletonStats, StatusBadge } from "@/components/shared";
 import type { ColumnDef } from "@tanstack/react-table";
 
 /* ── Searchable combobox ── */
@@ -143,17 +142,6 @@ const createLeadSchema = z.object({
   notes: z.string().optional(),
 });
 
-function getStatusColor(status: string) {
-  switch (status) {
-    case 'Closed Won': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-    case 'Closed Lost': return 'bg-red-100 text-red-800 border-red-200';
-    case 'New': return 'bg-blue-100 text-blue-800 border-blue-200';
-    case 'Proposal':
-    case 'Negotiation': return 'bg-amber-100 text-amber-800 border-amber-200';
-    default: return 'bg-muted text-foreground border-border';
-  }
-}
-
 const STATUS_FILTER_OPTIONS = [
   { label: 'New', value: 'New' },
   { label: 'Contacted', value: 'Contacted' },
@@ -215,11 +203,7 @@ export function LeadsList() {
     {
       accessorKey: 'status',
       header: 'Stage',
-      cell: ({ row }) => (
-        <Badge variant="outline" className={cn("font-bold text-[11px] uppercase tracking-wide border px-2 py-0.5 rounded-[4px]", getStatusColor(row.original.status))}>
-          {row.original.status}
-        </Badge>
-      ),
+      cell: ({ row }) => <StatusBadge status={row.original.status} size="sm" />,
     },
     {
       accessorKey: 'estimatedValue',
@@ -413,7 +397,7 @@ export function LeadsList() {
   );
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-10">
       <PageHeader
         title="Leads"
         subtitle="Track prospects through the solar EPC sales pipeline"

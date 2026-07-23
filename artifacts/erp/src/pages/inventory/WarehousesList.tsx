@@ -3,6 +3,7 @@ import { useGetWarehouses, useCreateWarehouse, getGetWarehousesQueryKey } from "
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Plus, Warehouse } from "lucide-react";
 import { useLocation } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -10,9 +11,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
-import { PageHeader, DataTable } from "@/components/shared";
+import { PageHeader, DataTable, StatusBadge } from "@/components/shared";
 import type { ColumnDef } from "@tanstack/react-table";
 
 const formSchema = z.object({
@@ -21,12 +21,6 @@ const formSchema = z.object({
   type: z.string().min(1, "Type required"),
   capacity: z.string().optional(),
 });
-
-const TYPE_COLOR: Record<string, string> = {
-  Main: "bg-blue-50 text-blue-700 border-blue-200",
-  Site: "bg-amber-50 text-amber-700 border-amber-200",
-  Yard: "bg-emerald-50 text-emerald-700 border-emerald-200",
-};
 
 export function WarehousesList() {
   const [isOpen, setIsOpen] = useState(false);
@@ -78,7 +72,7 @@ export function WarehousesList() {
       cell: ({ row }) => {
         const type = row.original.type || "Standard";
         return (
-          <Badge variant="outline" className={TYPE_COLOR[type] ?? "bg-muted text-muted-foreground border-border"}>
+          <Badge variant="secondary" className="text-xs font-medium">
             {type}
           </Badge>
         );
@@ -107,9 +101,7 @@ export function WarehousesList() {
       header: "Status",
       enableSorting: false,
       cell: () => (
-        <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
-          Active
-        </Badge>
+        <StatusBadge status="Active" size="sm" />
       ),
     },
   ];
@@ -161,7 +153,7 @@ export function WarehousesList() {
   );
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-10">
       <PageHeader
         title="Warehouses"
         subtitle="Storage facilities and material inventory"

@@ -10,27 +10,18 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useQueryClient } from "@tanstack/react-query";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
-  ArrowLeft, CheckCircle2, XCircle, RotateCcw, Send, Eye, MessageSquare, BarChart2,
-  Clock, FileText, AlertCircle, Star, ShoppingCart, History, ChevronDown
+  CheckCircle2, XCircle, RotateCcw, Send, Eye, MessageSquare, BarChart2,
+  Clock, FileText, Star, ShoppingCart, History,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
-
-const STATUS_CONFIG: Record<string, { color: string; label: string }> = {
-  Draft: { color: "bg-slate-100 text-slate-600 border-slate-200", label: "Draft" },
-  Submitted: { color: "bg-blue-50 text-blue-700 border-blue-200", label: "Submitted" },
-  UnderReview: { color: "bg-amber-50 text-amber-700 border-amber-200", label: "Under Review" },
-  RevisionRequested: { color: "bg-orange-50 text-orange-700 border-orange-200", label: "Revision Requested" },
-  Approved: { color: "bg-emerald-50 text-emerald-700 border-emerald-200", label: "Approved" },
-  Rejected: { color: "bg-red-50 text-red-700 border-red-200", label: "Rejected" },
-};
+import { PageHeader, SectionCard, DetailGrid, DetailRow, StatusBadge } from "@/components/shared";
 
 const ACTION_ICONS: Record<string, any> = {
   Created: FileText, Submitted: Send, ReviewStarted: Eye, Approved: CheckCircle2,
@@ -82,11 +73,10 @@ export default function ProcurementQuotationDetail({ id }: { id: string }) {
   };
 
   if (isLoading || !quotation) return (
-    <div className="flex h-60 items-center justify-center"><div className="animate-pulse text-slate-400">Loading quotation…</div></div>
+    <div className="flex h-60 items-center justify-center"><div className="animate-pulse text-muted-foreground">Loading quotation…</div></div>
   );
 
   const q = quotation as any;
-  const cfg = STATUS_CONFIG[q.status ?? "Draft"];
   const canEdit = ["Draft", "RevisionRequested"].includes(q.status ?? "");
   const canSubmit = q.status === "Draft";
   const canReview = isApprover && q.status === "Submitted";
@@ -96,55 +86,48 @@ export default function ProcurementQuotationDetail({ id }: { id: string }) {
 
   const fmt = (n: number | null | undefined) => n !== null && n !== undefined ? `₹${Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : "—";
 
+  const headerActions = (
+    <div className="flex gap-2 flex-wrap">
+      {canEdit && <Button variant="outline" size="sm" onClick={() => setLocation(`/procurement/quotations/${qId}/edit`)}>Edit</Button>}
+      {canSubmit && <Button size="sm" className="gap-1.5 bg-blue-600 hover:bg-blue-700" onClick={() => setActionDialog("submit")}><Send className="w-3.5 h-3.5" /> Submit</Button>}
+      {canReview && <Button size="sm" variant="outline" onClick={() => setActionDialog("start-review")}><Eye className="w-3.5 h-3.5 mr-1" /> Start Review</Button>}
+      {canRequestRevision && <Button size="sm" variant="outline" className="border-orange-200 text-orange-700 hover:bg-orange-50" onClick={() => setActionDialog("request-revision")}><RotateCcw className="w-3.5 h-3.5 mr-1" /> Request Revision</Button>}
+      {canReject && <Button size="sm" variant="outline" className="border-red-200 text-red-700 hover:bg-red-50" onClick={() => setActionDialog("reject")}><XCircle className="w-3.5 h-3.5 mr-1" /> Reject</Button>}
+      {canApprove && <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 gap-1.5" onClick={() => setActionDialog("approve")}><CheckCircle2 className="w-3.5 h-3.5" /> Approve & PO</Button>}
+      {q.mrId && <Button size="sm" variant="outline" onClick={() => setLocation(`/procurement/material-requests/${q.mrId}/compare`)} title="Compare all vendor quotes for this MR"><BarChart2 className="w-3.5 h-3.5" /></Button>}
+      <Button size="sm" variant="outline" onClick={() => setActionDialog("comment")}><MessageSquare className="w-3.5 h-3.5" /></Button>
+    </div>
+  );
+
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5 pb-10">
-      {/* Header */}
-      <div className="bg-white border border-slate-200 rounded-xl p-5">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="icon" onClick={() => setLocation("/procurement/quotations")} className="h-9 w-9 shrink-0"><ArrowLeft className="w-4 h-4" /></Button>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold font-mono text-slate-900">{q.referenceId}</h1>
-                <span className="text-slate-400">v{q.version}</span>
-                <Badge variant="outline" className={cn("text-sm", cfg.color)}>{cfg.label}</Badge>
-                {q.isL1 && <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200"><Star className="w-3 h-3 mr-0.5" /> L1</Badge>}
-                {q.poGenerated && <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200"><ShoppingCart className="w-3 h-3 mr-0.5" /> PO Generated</Badge>}
-              </div>
-              <p className="text-sm text-slate-500 mt-1">{q.vendorSnapshotName ?? "No vendor"} · Created {new Date(q.createdAt).toLocaleDateString("en-IN")} by {q.createdByName}</p>
-            </div>
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-10">
+      <PageHeader
+        title={q.referenceId}
+        subtitle={`${q.vendorSnapshotName ?? "No vendor"} · v${q.version} · Created ${new Date(q.createdAt).toLocaleDateString("en-IN")} by ${q.createdByName}`}
+        backHref="/procurement/quotations"
+        badge={
+          <div className="flex items-center gap-2">
+            <StatusBadge status={q.status ?? "Draft"} />
+            {q.isL1 && <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200"><Star className="w-3 h-3 mr-0.5" /> L1</Badge>}
+            {q.poGenerated && <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200"><ShoppingCart className="w-3 h-3 mr-0.5" /> PO Generated</Badge>}
           </div>
-          {/* Action bar */}
-          <div className="flex gap-2">
-            {canEdit && <Button variant="outline" size="sm" onClick={() => setLocation(`/procurement/quotations/${qId}/edit`)}>Edit</Button>}
-            {canSubmit && <Button size="sm" className="gap-1.5 bg-blue-600 hover:bg-blue-700" onClick={() => { setActionDialog("submit"); }}><Send className="w-3.5 h-3.5" /> Submit</Button>}
-            {canReview && <Button size="sm" variant="outline" onClick={() => { setActionDialog("start-review"); }}><Eye className="w-3.5 h-3.5 mr-1" /> Start Review</Button>}
-            {canRequestRevision && <Button size="sm" variant="outline" className="border-orange-200 text-orange-700 hover:bg-orange-50" onClick={() => setActionDialog("request-revision")}><RotateCcw className="w-3.5 h-3.5 mr-1" /> Request Revision</Button>}
-            {canReject && <Button size="sm" variant="outline" className="border-red-200 text-red-700 hover:bg-red-50" onClick={() => setActionDialog("reject")}><XCircle className="w-3.5 h-3.5 mr-1" /> Reject</Button>}
-            {canApprove && <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 gap-1.5" onClick={() => setActionDialog("approve")}><CheckCircle2 className="w-3.5 h-3.5" /> Approve & PO</Button>}
-            {q.mrId && <Button size="sm" variant="outline" onClick={() => setLocation(`/procurement/material-requests/${q.mrId}/compare`)} title="Compare all vendor quotes for this MR"><BarChart2 className="w-3.5 h-3.5" /></Button>}
-            <Button size="sm" variant="outline" onClick={() => setActionDialog("comment")}><MessageSquare className="w-3.5 h-3.5" /></Button>
-          </div>
-        </div>
+        }
+        actions={headerActions}
+      />
 
-        {/* Metadata grid */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-4 pt-4 border-t border-slate-100">
-          {[
-            { label: "Quotation Date", value: q.quotationDate ?? "—" },
-            { label: "Valid Till", value: q.validityDate ?? "—" },
-            { label: "Payment Terms", value: q.paymentTerms ?? "—" },
-            { label: "Delivery Lead", value: q.deliveryLeadDays ? `${q.deliveryLeadDays} days` : "—" },
-            { label: "Warranty", value: q.warrantyMonths ? `${q.warrantyMonths} months` : "—" },
-          ].map(f => (
-            <div key={f.label}>
-              <p className="text-xs text-slate-400">{f.label}</p>
-              <p className="text-sm font-semibold text-slate-800 mt-0.5">{f.value}</p>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* Metadata strip */}
+      <SectionCard title="Quotation Details">
+        <DetailGrid cols={3}>
+          <DetailRow label="Quotation Date" value={q.quotationDate ?? "—"} />
+          <DetailRow label="Valid Till" value={q.validityDate ?? "—"} />
+          <DetailRow label="Payment Terms" value={q.paymentTerms ?? "—"} />
+          <DetailRow label="Delivery Terms" value={q.deliveryTerms ?? "—"} />
+          <DetailRow label="Delivery Lead" value={q.deliveryLeadDays ? `${q.deliveryLeadDays} days` : "—"} />
+          <DetailRow label="Warranty" value={q.warrantyMonths ? `${q.warrantyMonths} months` : "—"} />
+        </DetailGrid>
+      </SectionCard>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main content */}
         <div className="lg:col-span-2 space-y-4">
           <Tabs defaultValue="items">
@@ -154,41 +137,44 @@ export default function ProcurementQuotationDetail({ id }: { id: string }) {
             </TabsList>
 
             {/* Line items */}
-            <TabsContent value="items" className="mt-3">
-              <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+            <TabsContent value="items" className="mt-3 space-y-4">
+              <SectionCard noPadding>
                 <table className="w-full text-sm">
-                  <thead className="bg-slate-50 border-b border-slate-200">
-                    <tr>{["#", "Item / Description", "HSN", "Qty", "UoM", "Rate", "Disc%", "Taxable", "GST", "Total"].map(h => <th key={h} className="text-left px-3 py-2.5 text-xs font-bold text-slate-500 uppercase tracking-wider">{h}</th>)}</tr>
+                  <thead className="bg-muted/40 border-b border-border">
+                    <tr>{["#", "Item / Description", "HSN", "Qty", "UoM", "Rate", "Disc%", "Taxable", "GST", "Total"].map(h => <th key={h} className="text-left px-3 py-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">{h}</th>)}</tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-border">
                     {(q.items ?? []).map((item: any) => (
-                      <tr key={item.id} className="hover:bg-slate-50">
-                        <td className="px-3 py-2.5 text-slate-400 text-xs">{item.lineNo}</td>
+                      <tr key={item.id} className="hover:bg-muted/20">
+                        <td className="px-3 py-2.5 text-muted-foreground text-xs">{item.lineNo}</td>
                         <td className="px-3 py-2.5">
-                          <p className="font-medium text-slate-900">{item.materialName}</p>
-                          {item.brand && <p className="text-xs text-slate-400">{item.brand}</p>}
-                          {item.description && <p className="text-xs text-slate-400">{item.description}</p>}
+                          <p className="font-medium text-foreground">{item.materialName}</p>
+                          {item.brand && <p className="text-xs text-muted-foreground">{item.brand}</p>}
+                          {item.description && <p className="text-xs text-muted-foreground">{item.description}</p>}
                         </td>
-                        <td className="px-3 py-2.5 font-mono text-xs text-slate-500">{item.hsnSacCode ?? "—"}</td>
+                        <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{item.hsnSacCode ?? "—"}</td>
                         <td className="px-3 py-2.5 font-mono">{item.qty}</td>
-                        <td className="px-3 py-2.5 text-slate-500 text-xs">{item.uom}</td>
+                        <td className="px-3 py-2.5 text-muted-foreground text-xs">{item.uom}</td>
                         <td className="px-3 py-2.5 font-mono">₹{Number(item.unitPrice ?? 0).toLocaleString("en-IN")}</td>
-                        <td className="px-3 py-2.5 text-slate-500">{Number(item.discountPct ?? 0)}%</td>
+                        <td className="px-3 py-2.5 text-muted-foreground">{Number(item.discountPct ?? 0)}%</td>
                         <td className="px-3 py-2.5 font-mono">₹{Number(item.taxableAmount ?? 0).toLocaleString("en-IN")}</td>
                         <td className="px-3 py-2.5 text-xs">
                           <p className="font-medium">{Number(item.gstRate ?? 0)}%</p>
-                          <p className="text-slate-400">₹{Number(item.totalGst ?? 0).toLocaleString("en-IN")}</p>
+                          <p className="text-muted-foreground">₹{Number(item.totalGst ?? 0).toLocaleString("en-IN")}</p>
                         </td>
-                        <td className="px-3 py-2.5 font-bold font-mono">₹{Number(item.lineTotal ?? 0).toLocaleString("en-IN")}</td>
+                        <td className="px-3 py-2.5 font-bold font-mono">
+                          ₹{Number(item.lineTotal ?? 0).toLocaleString("en-IN")}
+                          {item.isL1 && <span className="ml-1 text-[10px] text-emerald-600 font-bold">L1</span>}
+                        </td>
                       </tr>
                     ))}
-                    {(q.items ?? []).length === 0 && <tr><td colSpan={10} className="text-center py-8 text-slate-400">No line items</td></tr>}
+                    {(q.items ?? []).length === 0 && <tr><td colSpan={10} className="text-center py-8 text-muted-foreground">No line items</td></tr>}
                   </tbody>
                 </table>
-              </div>
+              </SectionCard>
 
               {/* Totals */}
-              <div className="bg-white border border-slate-200 rounded-xl p-4 ml-auto max-w-xs">
+              <div className="bg-card border border-border rounded-xl p-4 ml-auto max-w-xs">
                 <div className="space-y-2 text-sm">
                   {[
                     { label: "Subtotal", value: fmt(q.subtotal) },
@@ -197,9 +183,9 @@ export default function ProcurementQuotationDetail({ id }: { id: string }) {
                     { label: "Freight", value: fmt(q.freightCharges) },
                     { label: "Other Charges", value: fmt(q.otherCharges) },
                   ].map(r => (
-                    <div key={r.label} className="flex justify-between text-slate-600"><span>{r.label}</span><span className="font-mono">{r.value}</span></div>
+                    <div key={r.label} className="flex justify-between text-muted-foreground"><span>{r.label}</span><span className="font-mono">{r.value}</span></div>
                   ))}
-                  <div className="border-t border-slate-200 pt-2 flex justify-between font-bold text-slate-900 text-base">
+                  <div className="border-t border-border pt-2 flex justify-between font-bold text-foreground text-base">
                     <span>Total Amount</span><span className="font-mono">{fmt(q.totalAmount)}</span>
                   </div>
                 </div>
@@ -207,13 +193,15 @@ export default function ProcurementQuotationDetail({ id }: { id: string }) {
             </TabsContent>
 
             {/* Notes */}
-            <TabsContent value="notes" className="mt-3 space-y-4">
-              <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
-                {q.vendorRemarks && <div><p className="text-xs text-slate-400 font-semibold uppercase">Vendor Remarks</p><p className="text-sm text-slate-700 mt-1">{q.vendorRemarks}</p></div>}
-                {q.internalNotes && <div><p className="text-xs text-slate-400 font-semibold uppercase">Internal Notes</p><p className="text-sm text-slate-700 mt-1">{q.internalNotes}</p></div>}
-                {q.approvalRemarks && <div><p className="text-xs text-slate-400 font-semibold uppercase">Approval Remarks</p><p className="text-sm text-slate-700 mt-1">{q.approvalRemarks}</p></div>}
-                {!q.vendorRemarks && !q.internalNotes && !q.approvalRemarks && <p className="text-sm text-slate-400">No remarks recorded</p>}
-              </div>
+            <TabsContent value="notes" className="mt-3">
+              <SectionCard>
+                <div className="space-y-3">
+                  {q.vendorRemarks && <div><p className="text-xs text-muted-foreground font-semibold uppercase">Vendor Remarks</p><p className="text-sm text-foreground mt-1">{q.vendorRemarks}</p></div>}
+                  {q.internalNotes && <div><p className="text-xs text-muted-foreground font-semibold uppercase">Internal Notes</p><p className="text-sm text-foreground mt-1">{q.internalNotes}</p></div>}
+                  {q.approvalRemarks && <div><p className="text-xs text-muted-foreground font-semibold uppercase">Approval Remarks</p><p className="text-sm text-foreground mt-1">{q.approvalRemarks}</p></div>}
+                  {!q.vendorRemarks && !q.internalNotes && !q.approvalRemarks && <p className="text-sm text-muted-foreground">No remarks recorded</p>}
+                </div>
+              </SectionCard>
             </TabsContent>
           </Tabs>
         </div>
@@ -221,44 +209,42 @@ export default function ProcurementQuotationDetail({ id }: { id: string }) {
         {/* Sidebar: Timeline + Audit */}
         <div className="space-y-4">
           {/* Version history */}
-          <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2 mb-3"><History className="w-4 h-4" /> Version History</h3>
+          <SectionCard title="Version History" badge={<History className="w-4 h-4 text-muted-foreground" />}>
             <div className="space-y-2">
               {(q.versions ?? []).map((v: any) => (
                 <div key={v.id} className="flex items-center gap-2 text-xs">
-                  <span className="bg-slate-100 text-slate-600 rounded px-1.5 py-0.5 font-mono font-bold">v{v.version}</span>
+                  <span className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-mono font-bold">v{v.version}</span>
                   <div>
-                    <p className="font-medium text-slate-700">{v.changeSummary ?? "Updated"}</p>
-                    <p className="text-slate-400">{v.changedByName} · {new Date(v.createdAt ?? "").toLocaleDateString("en-IN")}</p>
+                    <p className="font-medium text-foreground">{v.changeSummary ?? "Updated"}</p>
+                    <p className="text-muted-foreground">{v.changedByName} · {new Date(v.createdAt ?? "").toLocaleDateString("en-IN")}</p>
                   </div>
                 </div>
               ))}
-              {(q.versions ?? []).length === 0 && <p className="text-xs text-slate-400">No version history</p>}
+              {(q.versions ?? []).length === 0 && <p className="text-xs text-muted-foreground">No version history</p>}
             </div>
-          </div>
+          </SectionCard>
 
           {/* Audit log */}
-          <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2 mb-3"><Clock className="w-4 h-4" /> Audit Trail</h3>
+          <SectionCard title="Audit Trail" badge={<Clock className="w-4 h-4 text-muted-foreground" />}>
             <div className="space-y-3 max-h-80 overflow-y-auto">
               {(q.auditLogs ?? []).map((log: any) => {
                 const Icon = ACTION_ICONS[log.action] ?? FileText;
                 return (
                   <div key={log.id} className="flex gap-2.5">
-                    <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center shrink-0 mt-0.5">
-                      <Icon className="w-3 h-3 text-slate-500" />
+                    <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center shrink-0 mt-0.5">
+                      <Icon className="w-3 h-3 text-muted-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-slate-700">{log.action}</p>
-                      {log.remarks && <p className="text-xs text-slate-500 mt-0.5 truncate">{log.remarks}</p>}
-                      <p className="text-xs text-slate-400 mt-0.5">{log.performedByName} · {new Date(log.createdAt).toLocaleString("en-IN")}</p>
+                      <p className="text-xs font-semibold text-foreground">{log.action}</p>
+                      {log.remarks && <p className="text-xs text-muted-foreground mt-0.5 truncate">{log.remarks}</p>}
+                      <p className="text-xs text-muted-foreground mt-0.5">{log.performedByName} · {new Date(log.createdAt).toLocaleString("en-IN")}</p>
                     </div>
                   </div>
                 );
               })}
-              {(q.auditLogs ?? []).length === 0 && <p className="text-xs text-slate-400">No audit logs</p>}
+              {(q.auditLogs ?? []).length === 0 && <p className="text-xs text-muted-foreground">No audit logs</p>}
             </div>
-          </div>
+          </SectionCard>
         </div>
       </div>
 

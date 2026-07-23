@@ -2,21 +2,10 @@ import { useGetProcInvoices, getGetProcInvoicesQueryKey } from "@workspace/api-c
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Plus, FileText, AlertTriangle } from "lucide-react";
 import { exportToCsv } from "@/lib/export";
-import { cn } from "@/lib/utils";
-import { PageHeader, DataTable } from "@/components/shared";
+import { PageHeader, DataTable, StatusBadge } from "@/components/shared";
 import type { ColumnDef } from "@tanstack/react-table";
-
-const STATUS_COLOR: Record<string, string> = {
-  Draft: "bg-slate-100 text-slate-600 border-slate-200",
-  PendingApproval: "bg-purple-50 text-purple-700 border-purple-200",
-  Approved: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  OnHold: "bg-amber-50 text-amber-700 border-amber-200",
-  Paid: "bg-green-50 text-green-700 border-green-200",
-  Cancelled: "bg-red-50 text-red-700 border-red-200",
-};
 
 const fmt = (n: number | null | undefined) =>
   n != null ? `₹${Number(n).toLocaleString("en-IN", { minimumFractionDigits: 0 })}` : "—";
@@ -81,9 +70,7 @@ export default function InvoicesList() {
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => (
-        <Badge variant="outline" className={cn("text-xs", STATUS_COLOR[row.original.status] ?? "bg-slate-100 text-slate-600")}>
-          {row.original.status}
-        </Badge>
+        <StatusBadge status={row.original.status} size="sm" />
       ),
     },
     {
@@ -94,20 +81,14 @@ export default function InvoicesList() {
         const inv = row.original;
         if (inv.matchStatus === "MismatchPending") {
           return (
-            <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200 gap-1">
-              <AlertTriangle className="w-3 h-3" /> Mismatch
-            </Badge>
-          );
-        }
-        if (inv.matchStatus === "MismatchApproved") {
-          return (
-            <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
-              Mismatch Approved
-            </Badge>
+            <span className="inline-flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3 text-red-600" />
+              <StatusBadge status="MismatchFlagged" size="sm" />
+            </span>
           );
         }
         if (inv.matchStatus) {
-          return <span className="text-xs text-muted-foreground">{inv.matchStatus}</span>;
+          return <StatusBadge status={inv.matchStatus} size="sm" />;
         }
         return <span className="text-xs text-muted-foreground">—</span>;
       },
@@ -124,7 +105,7 @@ export default function InvoicesList() {
   ];
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-10">
       <PageHeader
         title="Vendor Invoices"
         subtitle="3-way matched against GRNs and purchase orders"

@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useGetAmcContracts, useCreateAmcContract, getGetAmcContractsQueryKey } from "@workspace/api-client-react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,16 +11,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { FileCheck, Plus, IndianRupee } from "lucide-react";
 import { motion } from "framer-motion";
 import type { ColumnDef } from "@tanstack/react-table";
-import { PageHeader, StatCard, DataTable } from "@/components/shared";
+import { PageHeader, StatCard, DataTable, StatusBadge } from "@/components/shared";
 
 const FREQUENCIES = ["Monthly", "Quarterly", "HalfYearly", "Annual"];
-
-const statusColors: Record<string, string> = {
-  Active: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  Draft: "bg-slate-100 text-slate-600 border-slate-200",
-  Expired: "bg-red-50 text-red-700 border-red-200",
-  Terminated: "bg-stone-50 text-stone-600 border-stone-200",
-};
 
 const STATUS_OPTIONS = [
   { label: "Active", value: "Active" },
@@ -127,9 +119,7 @@ export default function AmcContractsList() {
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => (
-        <Badge variant="outline" className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[4px] border ${statusColors[row.original.status] ?? "bg-slate-100 text-slate-600 border-slate-200"}`}>
-          {row.original.status}
-        </Badge>
+        <StatusBadge status={row.original.status} size="sm" />
       ),
     },
   ];
@@ -171,7 +161,7 @@ export default function AmcContractsList() {
   );
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6">
       <PageHeader
         title="AMC Contracts"
         subtitle="Active maintenance agreements"

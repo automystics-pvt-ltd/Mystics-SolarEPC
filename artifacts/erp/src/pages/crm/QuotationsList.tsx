@@ -1,31 +1,12 @@
 import { useGetQuotations, getGetQuotationsQueryKey } from "@workspace/api-client-react";
-import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, FileText, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Plus, FileText } from "lucide-react";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
-import { PageHeader, DataTable } from "@/components/shared";
+import { PageHeader, DataTable, StatusBadge } from "@/components/shared";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Link } from "wouter";
-
-function getStatusColor(status: string) {
-  switch (status) {
-    case 'Approved': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-    case 'Rejected': return 'bg-red-50 text-red-700 border-red-200';
-    default: return 'bg-muted text-muted-foreground border-border';
-  }
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const Icon = status === 'Approved' ? CheckCircle2 : status === 'Rejected' ? XCircle : Clock;
-  return (
-    <Badge variant="outline" className={`font-bold text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-[4px] flex items-center gap-1 w-fit ${getStatusColor(status)}`}>
-      <Icon className="h-3 w-3" /> {status}
-    </Badge>
-  );
-}
 
 const STATUS_FILTER_OPTIONS = [
   { label: 'Draft', value: 'Draft' },
@@ -85,7 +66,7 @@ export function QuotationsList() {
     {
       accessorKey: 'approvalStatus',
       header: 'Status',
-      cell: ({ row }) => <StatusBadge status={row.original.approvalStatus} />,
+      cell: ({ row }) => <StatusBadge status={row.original.approvalStatus} size="sm" />,
     },
     {
       accessorKey: 'validTill',
@@ -108,7 +89,7 @@ export function QuotationsList() {
   ];
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-10">
       <PageHeader
         title="CRM Quotations"
         subtitle="Client-facing proposals and cost estimates"
