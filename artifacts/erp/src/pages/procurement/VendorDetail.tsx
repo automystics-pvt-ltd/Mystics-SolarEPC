@@ -26,11 +26,11 @@ import { PageHeader, SectionCard, StatusBadge } from "@/components/shared";
 import { addRecentEntry } from "@/lib/recentHistory";
 import { useAuth } from "@/lib/auth";
 import { validateVendorFull, validateContact, hasErrors, type VendorErrors } from "@/lib/vendor-validation";
-import { SearchableSelect } from "@/components/ui/searchable-select";
+import { SearchableSelect, type SelectOption } from "@/components/ui/searchable-select";
 import { INDIAN_BANKS, ACCOUNT_TYPES, INDIAN_STATES, INDIAN_CITIES, COUNTRIES } from "@/lib/vendor-select-data";
 import { cn } from "@/lib/utils";
 
-/* ── Inline field error ───────────────────────────────────────────────────── */
+/* ── Inline field error (top-level so it's stable across renders) ─────────── */
 function FieldError({ msg }: { msg?: string }) {
   if (!msg) return null;
   return (
@@ -213,125 +213,140 @@ export default function VendorDetail({ id }: { id: string }) {
     });
   };
 
-  /* ── Field renderer ── */
-  const F = ({
+  /* ─────────────────────────────────────────────────────────────────────────
+   * Field renderer helpers — called as FUNCTIONS not as JSX components.
+   * Defining them as React components inside the parent body causes React to
+   * treat them as a new component type on every render → unmount/remount →
+   * inputs lose focus after each keystroke. Calling them as plain functions
+   * avoids that entirely.
+   * ────────────────────────────────────────────────────────────────────────── */
+
+  /** Generic text / email field */
+  function renderField({
     label, field, type = "text", placeholder = "",
     uppercase = false, hint = "", mono = false,
   }: {
     label: string; field: string; type?: string; placeholder?: string;
     uppercase?: boolean; hint?: string; mono?: boolean;
-  }) => (
-    <div>
-      <Label className="text-xs text-muted-foreground">{label}</Label>
-      {editing ? (
-        <>
-          <Input
-            type={type}
-            value={form[field] ?? ""}
-            onChange={e => setEditField(field, e.target.value, uppercase)}
-            onBlur={() => touchEdit(field)}
-            placeholder={placeholder}
-            className={cn(
-              "mt-1 h-9",
-              mono && "font-mono tracking-wide",
-              showEditError(field) && "border-red-400 focus-visible:ring-red-300"
+  }) {
+    return (
+      <div>
+        <Label className="text-xs text-muted-foreground">{label}</Label>
+        {editing ? (
+          <>
+            <Input
+              type={type}
+              value={form[field] ?? ""}
+              onChange={e => setEditField(field, e.target.value, uppercase)}
+              onBlur={() => touchEdit(field)}
+              placeholder={placeholder}
+              className={cn(
+                "mt-1 h-9",
+                mono && "font-mono tracking-wide",
+                showEditError(field) && "border-red-400 focus-visible:ring-red-300"
+              )}
+            />
+            {hint && !showEditError(field) && (
+              <p className="mt-0.5 text-[11px] text-muted-foreground">{hint}</p>
             )}
-          />
-          {hint && !showEditError(field) && (
-            <p className="mt-0.5 text-[11px] text-muted-foreground">{hint}</p>
-          )}
-          <FieldError msg={showEditError(field)} />
-        </>
-      ) : (
-        <p className={cn("mt-1 text-sm font-medium text-foreground", mono && "font-mono tracking-wide")}>
-          {(vendor as any)[field] || <span className="text-muted-foreground/40 font-normal">—</span>}
-        </p>
-      )}
-    </div>
-  );
-
-  /* ── Phone field renderer (digits-only in edit) ── */
-  const FPhone = ({ label, field }: { label: string; field: string }) => (
-    <div>
-      <Label className="text-xs text-muted-foreground">{label}</Label>
-      {editing ? (
-        <>
-          <Input
-            inputMode="numeric"
-            value={form[field] ?? ""}
-            onChange={e => {
-              const v = e.target.value.replace(/\D/g, "").slice(0, 10);
-              setEditField(field, v);
-            }}
-            onBlur={() => touchEdit(field)}
-            placeholder="9876543210"
-            maxLength={10}
-            className={cn("mt-1 h-9", showEditError(field) && "border-red-400 focus-visible:ring-red-300")}
-          />
-          <p className="mt-0.5 text-[11px] text-muted-foreground">
-            {(form[field] ?? "").length}/10 digits
+            <FieldError msg={showEditError(field)} />
+          </>
+        ) : (
+          <p className={cn("mt-1 text-sm font-medium text-foreground", mono && "font-mono tracking-wide")}>
+            {(vendor as any)[field] || <span className="text-muted-foreground/40 font-normal">—</span>}
           </p>
-          <FieldError msg={showEditError(field)} />
-        </>
-      ) : (
-        <p className="mt-1 text-sm font-medium text-foreground">
-          {(vendor as any)[field] || <span className="text-muted-foreground/40 font-normal">—</span>}
-        </p>
-      )}
-    </div>
-  );
+        )}
+      </div>
+    );
+  }
 
-  /* ── Searchable-select field renderer ── */
-  const FCombobox = ({
+  /** Digits-only phone field (max 10) */
+  function renderPhone({ label, field }: { label: string; field: string }) {
+    return (
+      <div>
+        <Label className="text-xs text-muted-foreground">{label}</Label>
+        {editing ? (
+          <>
+            <Input
+              inputMode="numeric"
+              value={form[field] ?? ""}
+              onChange={e => {
+                const v = e.target.value.replace(/\D/g, "").slice(0, 10);
+                setEditField(field, v);
+              }}
+              onBlur={() => touchEdit(field)}
+              placeholder="9876543210"
+              maxLength={10}
+              className={cn("mt-1 h-9", showEditError(field) && "border-red-400 focus-visible:ring-red-300")}
+            />
+            <p className="mt-0.5 text-[11px] text-muted-foreground">
+              {(form[field] ?? "").length}/10 digits
+            </p>
+            <FieldError msg={showEditError(field)} />
+          </>
+        ) : (
+          <p className="mt-1 text-sm font-medium text-foreground">
+            {(vendor as any)[field] || <span className="text-muted-foreground/40 font-normal">—</span>}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  /** Searchable combobox field */
+  function renderCombobox({
     label, field, options, searchPlaceholder, allowCustom = false,
   }: {
-    label: string; field: string;
-    options: import("@/components/ui/searchable-select").SelectOption[];
-    searchPlaceholder?: string;
-    allowCustom?: boolean;
-  }) => (
-    <div>
-      <Label className="text-xs text-muted-foreground">{label}</Label>
-      {editing ? (
-        <>
-          <div className="mt-1">
-            <SearchableSelect
-              value={form[field] ?? ""}
-              onChange={v => setEditField(field, v)}
-              options={options}
-              placeholder={`Select ${label.toLowerCase()}…`}
-              searchPlaceholder={searchPlaceholder ?? `Search ${label.toLowerCase()}…`}
-              allowCustom={allowCustom}
-              error={!!showEditError(field)}
-            />
-          </div>
-          <FieldError msg={showEditError(field)} />
-        </>
-      ) : (
-        <p className="mt-1 text-sm font-medium text-foreground">
-          {(vendor as any)[field] || <span className="text-muted-foreground/40 font-normal">—</span>}
-        </p>
-      )}
-    </div>
-  );
+    label: string; field: string; options: SelectOption[];
+    searchPlaceholder?: string; allowCustom?: boolean;
+  }) {
+    return (
+      <div>
+        <Label className="text-xs text-muted-foreground">{label}</Label>
+        {editing ? (
+          <>
+            <div className="mt-1">
+              <SearchableSelect
+                value={form[field] ?? ""}
+                onChange={v => setEditField(field, v)}
+                options={options}
+                placeholder={`Select ${label.toLowerCase()}…`}
+                searchPlaceholder={searchPlaceholder ?? `Search ${label.toLowerCase()}…`}
+                allowCustom={allowCustom}
+                error={!!showEditError(field)}
+              />
+            </div>
+            <FieldError msg={showEditError(field)} />
+          </>
+        ) : (
+          <p className="mt-1 text-sm font-medium text-foreground">
+            {(vendor as any)[field] || <span className="text-muted-foreground/40 font-normal">—</span>}
+          </p>
+        )}
+      </div>
+    );
+  }
 
-  /* ── Status select renderer ── */
-  const FStatus = () => (
-    <div>
-      <Label className="text-xs text-muted-foreground">Status</Label>
-      {editing ? (
-        <Select value={form.status ?? "Active"} onValueChange={v => setEditField("status", v)}>
-          <SelectTrigger className="mt-1 h-9"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {STATUS_OPTS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-          </SelectContent>
-        </Select>
-      ) : (
-        <div className="mt-1"><StatusBadge status={(vendor as any).status ?? "Active"} /></div>
-      )}
-    </div>
-  );
+  /** Status select */
+  function renderStatus() {
+    return (
+      <div>
+        <Label className="text-xs text-muted-foreground">Status</Label>
+        {editing ? (
+          <Select value={form.status ?? "Active"} onValueChange={v => setEditField("status", v)}>
+            <SelectTrigger className="mt-1 h-9"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {STATUS_OPTS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        ) : (
+          <div className="mt-1"><StatusBadge status={(vendor as any).status ?? "Active"} /></div>
+        )}
+      </div>
+    );
+  }
 
+  /* ── Page actions ── */
   const editErrorCount = Object.keys(editErrors).length;
   const editActions = editing ? (
     <>
@@ -427,24 +442,10 @@ export default function VendorDetail({ id }: { id: string }) {
         <TabsContent value="details" className="mt-4 space-y-4">
           <SectionCard title="GST Information">
             <div className="grid grid-cols-2 gap-4">
-              <F
-                label="GSTIN"
-                field="gstin"
-                placeholder="27AABCU9603R1ZX"
-                uppercase
-                mono
-                hint={`${(form.gstin ?? "").length}/15 chars`}
-              />
-              <F
-                label="PAN"
-                field="pan"
-                placeholder="AABCU9603R"
-                uppercase
-                mono
-                hint={`${(form.pan ?? "").length}/10 chars`}
-              />
-              <F label="GST Registered State" field="gstRegisteredState" />
-              <F label="State Code" field="gstStateCode" placeholder="e.g. 27" />
+              {renderField({ label: "GSTIN", field: "gstin", placeholder: "27AABCU9603R1ZX", uppercase: true, mono: true, hint: `${(form.gstin ?? "").length}/15 chars` })}
+              {renderField({ label: "PAN", field: "pan", placeholder: "AABCU9603R", uppercase: true, mono: true, hint: `${(form.pan ?? "").length}/10 chars` })}
+              {renderField({ label: "GST Registered State", field: "gstRegisteredState" })}
+              {renderField({ label: "State Code", field: "gstStateCode", placeholder: "e.g. 27" })}
             </div>
             <div className="flex items-center gap-3 pt-2 mt-2">
               <input
@@ -457,19 +458,19 @@ export default function VendorDetail({ id }: { id: string }) {
               />
               <label htmlFor="msme" className="text-sm">MSME Registered</label>
               {(editing ? form.isMsme : (vendor as any).isMsme) && (
-                <F label="MSME Number" field="msmeNumber" />
+                renderField({ label: "MSME Number", field: "msmeNumber" })
               )}
             </div>
           </SectionCard>
 
           <SectionCard title="Contact &amp; Terms">
             <div className="grid grid-cols-2 gap-4">
-              <FStatus />
-              <F label="Website" field="website" placeholder="https://vendor.com" />
-              <F label="Primary Email" field="primaryEmail" type="email" />
-              <FPhone label="Primary Phone" field="primaryPhone" />
-              <F label="Payment Terms" field="paymentTerms" placeholder="e.g. Net 30" />
-              <F label="Credit Limit" field="creditLimit" placeholder="e.g. ₹5,00,000" />
+              {renderStatus()}
+              {renderField({ label: "Website", field: "website", placeholder: "https://vendor.com" })}
+              {renderField({ label: "Primary Email", field: "primaryEmail", type: "email" })}
+              {renderPhone({ label: "Primary Phone", field: "primaryPhone" })}
+              {renderField({ label: "Payment Terms", field: "paymentTerms", placeholder: "e.g. Net 30" })}
+              {renderField({ label: "Credit Limit", field: "creditLimit", placeholder: "e.g. ₹5,00,000" })}
             </div>
             {editing ? (
               <div className="mt-4">
@@ -631,8 +632,9 @@ export default function VendorDetail({ id }: { id: string }) {
         <TabsContent value="bank" className="mt-4">
           <SectionCard title="Bank Account Details">
             <div className="grid grid-cols-2 gap-4">
-              <FCombobox label="Bank Name" field="bankName" options={INDIAN_BANKS} searchPlaceholder="Search bank…" allowCustom />
-              <F label="Branch / Location" field="bankBranch" placeholder="e.g. Connaught Place, Delhi" />
+              {renderCombobox({ label: "Bank Name", field: "bankName", options: INDIAN_BANKS, searchPlaceholder: "Search bank…", allowCustom: true })}
+              {renderField({ label: "Branch / Location", field: "bankBranch", placeholder: "e.g. Connaught Place, Delhi" })}
+              {/* Account Number — special digit-only input */}
               <div>
                 <Label className="text-xs text-muted-foreground">Account Number</Label>
                 {editing ? (
@@ -658,15 +660,9 @@ export default function VendorDetail({ id }: { id: string }) {
                   </p>
                 )}
               </div>
-              <F
-                label="IFSC Code"
-                field="bankIfsc"
-                placeholder="SBIN0001234"
-                uppercase mono
-                hint={`${(form.bankIfsc ?? "").length}/11 chars`}
-              />
-              <FCombobox label="Account Type" field="bankAccountType" options={ACCOUNT_TYPES} searchPlaceholder="Search account type…" />
-              <F label="UPI ID" field="upiId" placeholder="vendor@upi" />
+              {renderField({ label: "IFSC Code", field: "bankIfsc", placeholder: "SBIN0001234", uppercase: true, mono: true, hint: `${(form.bankIfsc ?? "").length}/11 chars` })}
+              {renderCombobox({ label: "Account Type", field: "bankAccountType", options: ACCOUNT_TYPES, searchPlaceholder: "Search account type…" })}
+              {renderField({ label: "UPI ID", field: "upiId", placeholder: "vendor@upi" })}
             </div>
           </SectionCard>
         </TabsContent>
@@ -675,9 +671,10 @@ export default function VendorDetail({ id }: { id: string }) {
         <TabsContent value="billing" className="mt-4">
           <SectionCard title="Billing Address">
             <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2"><F label="Address" field="billingAddress" /></div>
-              <FCombobox label="City" field="billingCity" options={INDIAN_CITIES} searchPlaceholder="Search city…" allowCustom />
-              <FCombobox label="State" field="billingState" options={INDIAN_STATES} searchPlaceholder="Search state…" />
+              <div className="col-span-2">{renderField({ label: "Address", field: "billingAddress" })}</div>
+              {renderCombobox({ label: "City", field: "billingCity", options: INDIAN_CITIES, searchPlaceholder: "Search city…", allowCustom: true })}
+              {renderCombobox({ label: "State", field: "billingState", options: INDIAN_STATES, searchPlaceholder: "Search state…" })}
+              {/* Pincode — special digit-only input */}
               <div>
                 <Label className="text-xs text-muted-foreground">Pincode</Label>
                 {editing ? (
@@ -703,7 +700,7 @@ export default function VendorDetail({ id }: { id: string }) {
                   </p>
                 )}
               </div>
-              <FCombobox label="Country" field="billingCountry" options={COUNTRIES} searchPlaceholder="Search country…" />
+              {renderCombobox({ label: "Country", field: "billingCountry", options: COUNTRIES, searchPlaceholder: "Search country…" })}
             </div>
           </SectionCard>
         </TabsContent>
