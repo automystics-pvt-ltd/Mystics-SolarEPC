@@ -27,7 +27,7 @@ import { addRecentEntry } from "@/lib/recentHistory";
 import { useAuth } from "@/lib/auth";
 import { validateVendorFull, validateContact, hasErrors, type VendorErrors } from "@/lib/vendor-validation";
 import { SearchableSelect, type SelectOption } from "@/components/ui/searchable-select";
-import { INDIAN_BANKS, ACCOUNT_TYPES, INDIAN_STATES, INDIAN_CITIES, COUNTRIES } from "@/lib/vendor-select-data";
+import { INDIAN_BANKS, ACCOUNT_TYPES, INDIAN_STATES, INDIAN_CITIES, COUNTRIES, GST_STATE_CODES, GST_STATE_CODE_MAP } from "@/lib/vendor-select-data";
 import { cn } from "@/lib/utils";
 
 /* ── Inline field error (top-level so it's stable across renders) ─────────── */
@@ -92,6 +92,10 @@ export default function VendorDetail({ id }: { id: string }) {
   const setEditField = (field: string, value: any, uppercase = false) => {
     const v = uppercase ? String(value).toUpperCase() : value;
     const next = { ...form, [field]: v };
+    // Auto-fill GST State Code when the registered state is selected
+    if (field === "gstRegisteredState" && GST_STATE_CODE_MAP[v]) {
+      next.gstStateCode = GST_STATE_CODE_MAP[v];
+    }
     setForm(next);
     if (editTouched[field] || editSubmitted)
       setEditErrors(validateVendorFull(next));
@@ -444,8 +448,8 @@ export default function VendorDetail({ id }: { id: string }) {
             <div className="grid grid-cols-2 gap-4">
               {renderField({ label: "GSTIN", field: "gstin", placeholder: "27AABCU9603R1ZX", uppercase: true, mono: true, hint: `${(form.gstin ?? "").length}/15 chars` })}
               {renderField({ label: "PAN", field: "pan", placeholder: "AABCU9603R", uppercase: true, mono: true, hint: `${(form.pan ?? "").length}/10 chars` })}
-              {renderField({ label: "GST Registered State", field: "gstRegisteredState" })}
-              {renderField({ label: "State Code", field: "gstStateCode", placeholder: "e.g. 27" })}
+              {renderCombobox({ label: "GST Registered State", field: "gstRegisteredState", options: INDIAN_STATES, searchPlaceholder: "Search state…" })}
+              {renderCombobox({ label: "State Code", field: "gstStateCode", options: GST_STATE_CODES, searchPlaceholder: "Search code…", allowCustom: true })}
             </div>
             <div className="flex items-center gap-3 pt-2 mt-2">
               <input
@@ -640,7 +644,7 @@ export default function VendorDetail({ id }: { id: string }) {
           <SectionCard title="Bank Account Details">
             <div className="grid grid-cols-2 gap-4">
               {renderCombobox({ label: "Bank Name", field: "bankName", options: INDIAN_BANKS, searchPlaceholder: "Search bank…", allowCustom: true })}
-              {renderField({ label: "Branch / Location", field: "bankBranch", placeholder: "e.g. Connaught Place, Delhi" })}
+              {renderCombobox({ label: "Branch / Location", field: "bankBranch", options: INDIAN_CITIES, searchPlaceholder: "Search city or area…", allowCustom: true })}
               {/* Account Number — special digit-only input */}
               <div>
                 <Label className="text-xs text-muted-foreground">Account Number</Label>

@@ -74,18 +74,31 @@ function validateVendorBody(body: Record<string, any>): FieldErrors {
   return err;
 }
 
+// Explicit whitelist of fields the client is allowed to set/update.
+// Anything not in this list is silently dropped — prevents timestamp strings
+// or system fields from ever reaching Drizzle's column mappers.
+const VENDOR_WRITABLE_FIELDS = new Set([
+  "name", "tradeName", "status",
+  "gstin", "pan", "gstRegisteredState", "gstStateCode", "isMsme", "msmeNumber",
+  "billingAddress", "billingCity", "billingState", "billingPincode", "billingCountry",
+  "primaryEmail", "primaryPhone", "website",
+  "bankName", "bankBranch", "bankAccountNumber", "bankIfsc", "bankAccountType", "upiId",
+  "paymentTerms", "creditLimit", "tags", "notes",
+]);
+
 function normaliseBody(body: Record<string, any>) {
-  // Strip system-managed fields that must never come from client input
-  const { id: _id, code: _code, createdAt: _ca, updatedAt: _ua, contacts: _c, ...rest } = body;
-  const b: Record<string, any> = { ...rest };
-  if (b.name)           b.name           = b.name.trim();
-  if (b.gstin)          b.gstin          = b.gstin.trim().toUpperCase();
-  if (b.pan)            b.pan            = b.pan.trim().toUpperCase();
-  if (b.primaryEmail)   b.primaryEmail   = b.primaryEmail.trim().toLowerCase();
-  if (b.primaryPhone)   b.primaryPhone   = b.primaryPhone.replace(/[\s\-\(\)]/g, "");
-  if (b.bankIfsc)       b.bankIfsc       = b.bankIfsc.trim().toUpperCase();
-  if (b.tradeName)      b.tradeName      = b.tradeName.trim();
-  if (b.billingPincode) b.billingPincode = b.billingPincode.trim();
+  const b: Record<string, any> = {};
+  for (const [key, val] of Object.entries(body)) {
+    if (VENDOR_WRITABLE_FIELDS.has(key)) b[key] = val;
+  }
+  if (b.name)           b.name           = String(b.name).trim();
+  if (b.tradeName)      b.tradeName      = String(b.tradeName).trim();
+  if (b.gstin)          b.gstin          = String(b.gstin).trim().toUpperCase();
+  if (b.pan)            b.pan            = String(b.pan).trim().toUpperCase();
+  if (b.primaryEmail)   b.primaryEmail   = String(b.primaryEmail).trim().toLowerCase();
+  if (b.primaryPhone)   b.primaryPhone   = String(b.primaryPhone).replace(/[\s\-\(\)]/g, "");
+  if (b.bankIfsc)       b.bankIfsc       = String(b.bankIfsc).trim().toUpperCase();
+  if (b.billingPincode) b.billingPincode = String(b.billingPincode).trim();
   return b;
 }
 
