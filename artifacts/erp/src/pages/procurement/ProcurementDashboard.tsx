@@ -8,7 +8,7 @@ import {
   ShoppingCart, AlertTriangle, FileText, TrendingUp, TrendingDown,
   ArrowRight, Zap, Clock, Building2, ChevronRight, CheckCircle2,
   AlertCircle, Boxes, FilePlus, DollarSign, ClipboardList, Calendar,
-  Activity, RotateCcw, Minus, ChevronDown, X,
+  Activity, RotateCcw, Minus, ChevronDown, X, Download,
 } from "lucide-react";
 import {
   AreaChart, Area, PieChart, Pie, Cell,
@@ -381,6 +381,91 @@ function InsightChip({ icon: Icon, text, cls }: { icon: React.ElementType; text:
   );
 }
 
+/* ─── CSV export ─────────────────────────────────────────────────────────── */
+function buildCSV(data: any, dateRange: DateRange): string {
+  const d   = data as any;
+  const s   = d?.summary ?? {};
+  const topVendors: any[]    = d?.topVendors    ?? [];
+  const topCategories: any[] = d?.topCategories ?? [];
+  const monthlySpend: any[]  = d?.monthlySpend  ?? [];
+
+  const rows: string[][] = [];
+
+  const q = (v: string | number) => {
+    const str = String(v ?? "");
+    return str.includes(",") || str.includes('"') || str.includes("\n")
+      ? `"${str.replace(/"/g, '""')}"` : str;
+  };
+  const row = (...cols: (string | number)[]) => rows.push(cols.map(c => q(c)));
+
+  // ── Header ──────────────────────────────────────────────────────────────
+  row("Mystics Procurement Dashboard Export");
+  row("Period", `${dateRange.from} to ${dateRange.to}`);
+  row("Generated", new Date().toISOString());
+  rows.push([]);
+
+  // ── KPIs ────────────────────────────────────────────────────────────────
+  row("== KPI SUMMARY ==");
+  row("Metric", "Value");
+  row("Period Spend (₹)", s.ytdSpend ?? 0);
+  row("Committed Value (₹)", s.committedValue ?? 0);
+  row("Total POs", s.totalPOs ?? 0);
+  row("Active POs", s.openPOs ?? 0);
+  row("Overdue POs", s.overduePOs ?? 0);
+  row("Pending GRNs", s.pendingGRNs ?? 0);
+  row("Pending Invoices", s.pendingInvoices ?? 0);
+  row("Invoice Mismatch Alerts", s.mismatchCount ?? 0);
+  row("Approaching Deadlines (7 days)", s.approachingDeadlines ?? 0);
+  row("This Month Spend (₹)", s.thisMonthSpend ?? 0);
+  row("Last Month Spend (₹)", s.lastMonthSpend ?? 0);
+  rows.push([]);
+
+  // ── PO Status Breakdown ──────────────────────────────────────────────
+  row("== PO STATUS BREAKDOWN ==");
+  row("Status", "Count");
+  for (const [status, count] of Object.entries(s.poByStatus ?? {})) {
+    row(status, count as number);
+  }
+  rows.push([]);
+
+  // ── Monthly Spend ────────────────────────────────────────────────────
+  row("== MONTHLY SPEND TREND ==");
+  row("Month", "Spend (₹)");
+  for (const m of monthlySpend) {
+    row(m.month, m.amount ?? 0);
+  }
+  rows.push([]);
+
+  // ── Top Vendors ──────────────────────────────────────────────────────
+  row("== TOP VENDORS ==");
+  row("Vendor", "Spend (₹)", "PO Count");
+  for (const v of topVendors) {
+    row(v.vendorName ?? "Unknown", v.spend ?? 0, v.poCount ?? 0);
+  }
+  rows.push([]);
+
+  // ── Top Categories ───────────────────────────────────────────────────
+  row("== TOP CATEGORIES ==");
+  row("Category", "Spend (₹)", "PO Count");
+  for (const c of topCategories) {
+    row(c.category ?? "Uncategorised", c.spend ?? 0, c.poCount ?? 0);
+  }
+
+  return rows.map(r => r.join(",")).join("\n");
+}
+
+function downloadCSV(content: string, filename: string) {
+  const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href     = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    MAIN DASHBOARD
 ═══════════════════════════════════════════════════════════════════════════ */
@@ -545,6 +630,21 @@ export default function ProcurementDashboard() {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <DateRangePicker value={dateRange} onChange={handleRangeChange} />
+          {/* Export button — only shown when data is available */}
+          {data && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-xs gap-1.5 h-8"
+              onClick={() => {
+                const filename = `procurement-${dateRange.from}-to-${dateRange.to}.csv`;
+                downloadCSV(buildCSV(data, dateRange), filename);
+              }}
+            >
+              <Download className="h-3.5 w-3.5" />
+              Export
+            </Button>
+          )}
           {([
             { label: "POs",      icon: ShoppingCart, fn: navPOs      },
             { label: "GRNs",     icon: Boxes,        fn: navGRNs     },
