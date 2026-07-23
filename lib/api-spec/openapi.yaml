@@ -3015,6 +3015,14 @@ paths:
         - name: vendorId
           in: query
           schema: { type: integer }
+        - name: vendor
+          in: query
+          schema: { type: string }
+          description: Filter by vendor name (partial match)
+        - name: category
+          in: query
+          schema: { type: string }
+          description: Filter by derived material category (e.g. Inverters, Solar Modules)
       responses:
         "200":
           description: POs

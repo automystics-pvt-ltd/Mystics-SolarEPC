@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useGetProcurementPOs } from "@workspace/api-client-react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
-import { Search, ShoppingCart, ChevronRight, CheckCircle2, Truck, XCircle, Clock, Download } from "lucide-react";
+import { Search, ShoppingCart, ChevronRight, CheckCircle2, Truck, XCircle, Clock, Download, X } from "lucide-react";
 import { exportToCsv } from "@/lib/export";
 import { cn } from "@/lib/utils";
 
@@ -23,8 +23,30 @@ const TABS = ["All", "Draft", "Issued", "Acknowledged", "PartiallyReceived", "Fu
 
 export default function ProcurementPOsList() {
   const [, setLocation] = useLocation();
-  const [activeTab, setActiveTab] = useState("All");
-  const [search, setSearch] = useState("");
+  const searchStr = useSearch();
+  const params = new URLSearchParams(searchStr);
+  const urlStatus   = params.get("status") ?? "";
+  const urlVendor   = params.get("vendor") ?? "";
+  const urlCategory = params.get("category") ?? "";
+
+  const validStatuses = ["All", "Draft", "Issued", "Acknowledged", "PartiallyReceived", "FullyReceived", "Closed", "Cancelled"];
+  const initialTab = validStatuses.includes(urlStatus) ? urlStatus : "All";
+
+  const [activeTab, setActiveTab]       = useState(initialTab);
+  const [search, setSearch]             = useState("");
+  const [vendorFilter, setVendorFilter]       = useState(urlVendor);
+  const [categoryFilter, setCategoryFilter]   = useState(urlCategory);
+
+  // Sync filters when URL params change (e.g. clicking dashboard drill-down while already on this page)
+  useEffect(() => {
+    const p = new URLSearchParams(searchStr);
+    const s = p.get("status") ?? "";
+    const v = p.get("vendor") ?? "";
+    const c = p.get("category") ?? "";
+    if (s && validStatuses.includes(s)) setActiveTab(s);
+    setVendorFilter(v);
+    setCategoryFilter(c);
+  }, [searchStr]);
 
   const handleExport = (pos: any[], filtered: any[]) => {
     exportToCsv(
@@ -36,13 +58,15 @@ export default function ProcurementPOsList() {
 
   const { data: pos = [], isLoading } = useGetProcurementPOs({
     status: activeTab !== "All" ? activeTab : undefined,
+    vendor: vendorFilter || undefined,
+    category: categoryFilter || undefined,
   });
 
-  const filtered = pos.filter(p =>
-    !search ||
-    p.poNumber?.toLowerCase().includes(search.toLowerCase()) ||
-    p.vendorName?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = pos.filter(p => {
+    return !search ||
+      p.poNumber?.toLowerCase().includes(search.toLowerCase()) ||
+      p.vendorName?.toLowerCase().includes(search.toLowerCase());
+  });
 
   const totalValue = pos.reduce((s, p) => s + Number(p.totalAmount ?? 0), 0);
 
@@ -68,6 +92,33 @@ export default function ProcurementPOsList() {
           </button>
         ))}
       </div>
+
+      {(vendorFilter || categoryFilter) && (
+        <div className="flex items-center gap-2 flex-wrap">
+          {vendorFilter && (
+            <>
+              <span className="text-xs text-slate-500">Vendor:</span>
+              <span className="flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-semibold px-2.5 py-1 rounded-full border border-primary/20">
+                {vendorFilter}
+                <button onClick={() => setVendorFilter("")} className="hover:opacity-70 transition-opacity">
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            </>
+          )}
+          {categoryFilter && (
+            <>
+              <span className="text-xs text-slate-500">Category:</span>
+              <span className="flex items-center gap-1.5 bg-violet-100 text-violet-700 text-xs font-semibold px-2.5 py-1 rounded-full border border-violet-200">
+                {categoryFilter}
+                <button onClick={() => setCategoryFilter("")} className="hover:opacity-70 transition-opacity">
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            </>
+          )}
+        </div>
+      )}
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />

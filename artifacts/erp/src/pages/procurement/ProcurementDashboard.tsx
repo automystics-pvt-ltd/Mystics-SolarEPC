@@ -245,7 +245,10 @@ function InsightChip({ icon: Icon, text, cls }: { icon: React.ElementType; text:
 /* ─── Main dashboard ─────────────────────────────────────────────────────── */
 export default function ProcurementDashboard() {
   const [, setLocation] = useLocation();
-  const [tab, setTab]   = useState<"invoices"|"grns"|"overdue">("invoices");
+  const [tab, setTab]             = useState<"invoices"|"grns"|"overdue">("invoices");
+  const [chartMode, setChartMode] = useState<"vendor"|"category">("vendor");
+  const [selectedVendor, setSelectedVendor]     = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
   const { data, isLoading } = useGetProcurementDashboard();
 
   if (isLoading) return (
@@ -262,10 +265,28 @@ export default function ProcurementDashboard() {
   const pendingInvoices: any[] = d?.pendingInvoices        ?? [];
   const approaching: any[]     = d?.approachingDeadlines   ?? [];
   const topVendors: any[]      = d?.topVendors             ?? [];
+  const topCategories: any[]   = d?.topCategories           ?? [];
   const recentActivity: any[]  = d?.recentActivity         ?? [];
+  const vendorMonthlySpend: Record<string, any[]>   = d?.vendorMonthlySpend   ?? {};
+  const categoryMonthlySpend: Record<string, any[]> = d?.categoryMonthlySpend ?? {};
   const monthlySpend: any[]    = (d?.monthlySpend ?? []).map((m: any, i: number) => ({
     month: MONTH_LABELS[i] ?? m.month, amount: m.amount,
   }));
+  const maxCategorySpend = topCategories[0]?.spend ?? 1;
+
+  const chartData: any[] = (() => {
+    if (chartMode === "vendor" && selectedVendor && vendorMonthlySpend[selectedVendor]) {
+      return vendorMonthlySpend[selectedVendor].map((m: any, i: number) => ({
+        month: MONTH_LABELS[i] ?? m.month, amount: m.amount,
+      }));
+    }
+    if (chartMode === "category" && selectedCategory && categoryMonthlySpend[selectedCategory]) {
+      return categoryMonthlySpend[selectedCategory].map((m: any, i: number) => ({
+        month: MONTH_LABELS[i] ?? m.month, amount: m.amount,
+      }));
+    }
+    return monthlySpend;
+  })();
 
   /* derived */
   const spendDelta = s.lastMonthSpend > 0
@@ -380,10 +401,62 @@ export default function ProcurementDashboard() {
 
       {/* Charts */}
       <motion.div variants={fade} className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <DashCard title="Monthly Spend Trend" sub={`${now.getFullYear()} · Received & closed POs`} className="lg:col-span-2">
+        <DashCard
+          title="Monthly Spend Trend"
+          sub={`${now.getFullYear()} · ${
+            chartMode === "vendor"
+              ? (selectedVendor || "All vendors")
+              : (selectedCategory || "All categories")
+          }`}
+          className="lg:col-span-2"
+          actions={
+            <div className="flex items-center gap-2">
+              {/* Mode toggle */}
+              <div className="flex bg-muted rounded-lg p-0.5 gap-0.5">
+                {(["vendor", "category"] as const).map(mode => (
+                  <button key={mode} onClick={() => {
+                    setChartMode(mode);
+                    setSelectedVendor("");
+                    setSelectedCategory("");
+                  }} className={cn(
+                    "px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all capitalize",
+                    chartMode === mode ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  )}>
+                    {mode === "vendor" ? "By Vendor" : "By Category"}
+                  </button>
+                ))}
+              </div>
+              {/* Contextual dropdown */}
+              {chartMode === "vendor" && topVendors.length > 0 && (
+                <select
+                  value={selectedVendor}
+                  onChange={e => setSelectedVendor(e.target.value)}
+                  className="text-[11px] font-semibold bg-muted border border-border rounded-lg px-2 py-1 text-foreground cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary/40 max-w-[130px] truncate"
+                >
+                  <option value="">All vendors</option>
+                  {topVendors.map((v: any) => (
+                    <option key={v.vendorName} value={v.vendorName}>{v.vendorName}</option>
+                  ))}
+                </select>
+              )}
+              {chartMode === "category" && topCategories.length > 0 && (
+                <select
+                  value={selectedCategory}
+                  onChange={e => setSelectedCategory(e.target.value)}
+                  className="text-[11px] font-semibold bg-muted border border-border rounded-lg px-2 py-1 text-foreground cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary/40 max-w-[140px] truncate"
+                >
+                  <option value="">All categories</option>
+                  {topCategories.map((c: any) => (
+                    <option key={c.category} value={c.category}>{c.category}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+          }
+        >
           <div className="px-4 pt-2 pb-4">
             <ResponsiveContainer width="100%" height={210}>
-              <AreaChart data={monthlySpend} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+              <AreaChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%"   stopColor="#f97316" stopOpacity={0.22} />
@@ -403,12 +476,14 @@ export default function ProcurementDashboard() {
           </div>
         </DashCard>
 
-        <DashCard title="PO Distribution" sub={`${s.totalPOs ?? 0} total`}>
+        <DashCard title="PO Distribution" sub={`${s.totalPOs ?? 0} total · click to filter`}>
           <div className="flex flex-col items-center px-4 py-3">
             <ResponsiveContainer width="100%" height={150}>
               <PieChart>
                 <Pie data={donutData} cx="50%" cy="50%" innerRadius={42} outerRadius={66}
-                  paddingAngle={2} dataKey="value" startAngle={90} endAngle={-270}>
+                  paddingAngle={2} dataKey="value" startAngle={90} endAngle={-270}
+                  cursor="pointer"
+                  onClick={(entry: any) => entry?.name && setLocation(`/procurement/pos?status=${entry.name}`)}>
                   {donutData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                 </Pie>
                 <Tooltip formatter={(v: any, name: any) => [v, name]} />
@@ -416,7 +491,9 @@ export default function ProcurementDashboard() {
             </ResponsiveContainer>
             <div className="w-full space-y-1.5 mt-1 pb-2">
               {donutData.map(d => (
-                <div key={d.name} className="flex items-center justify-between gap-2">
+                <div key={d.name}
+                  onClick={() => setLocation(`/procurement/pos?status=${d.name}`)}
+                  className="flex items-center justify-between gap-2 cursor-pointer hover:bg-muted/50 rounded-md px-1 py-0.5 transition-colors">
                   <div className="flex items-center gap-2 min-w-0">
                     <div className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
                     <span className="text-[11px] text-muted-foreground truncate">{d.name}</span>
@@ -520,36 +597,77 @@ export default function ProcurementDashboard() {
           </div>
         </DashCard>
 
-        <DashCard title="Top Vendors by Spend" sub="YTD received POs">
-          {topVendors.length === 0
-            ? <div className="py-10 text-center text-muted-foreground text-sm">No spend data yet</div>
-            : <div className="p-4 space-y-4">
-                {topVendors.map((v: any, i: number) => (
-                  <div key={v.vendorName}>
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <span className="text-[10px] font-bold text-muted-foreground/40 tabular-nums w-4 shrink-0">#{i+1}</span>
-                      <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                        <span className="text-[10px] font-bold text-primary">{v.vendorName?.[0]?.toUpperCase()}</span>
+        <DashCard title={chartMode === "vendor" ? "Top Vendors by Spend" : "Top Categories by Spend"}
+          sub="YTD received POs · click to filter">
+          {chartMode === "vendor" ? (
+            topVendors.length === 0
+              ? <div className="py-10 text-center text-muted-foreground text-sm">No spend data yet</div>
+              : <>
+                  <div className="p-4 space-y-3">
+                    {topVendors.map((v: any, i: number) => (
+                      <div key={v.vendorName}
+                        onClick={() => setLocation(`/procurement/pos?vendor=${encodeURIComponent(v.vendorName)}`)}
+                        className="cursor-pointer rounded-lg hover:bg-muted/40 transition-colors p-1.5 -mx-1.5">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span className="text-[10px] font-bold text-muted-foreground/40 tabular-nums w-4 shrink-0">#{i+1}</span>
+                          <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                            <span className="text-[10px] font-bold text-primary">{v.vendorName?.[0]?.toUpperCase()}</span>
+                          </div>
+                          <span className="text-[12px] font-semibold text-foreground truncate flex-1">{v.vendorName}</span>
+                          <span className="text-[12px] font-bold text-foreground tabular-nums shrink-0">{fmt(v.spend)}</span>
+                          <ChevronRight className="h-3 w-3 text-muted-foreground/30 shrink-0" />
+                        </div>
+                        <div className="ml-10 h-1.5 bg-muted rounded-full overflow-hidden">
+                          <motion.div className="h-full rounded-full bg-primary"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${Math.round((v.spend / maxVendorSpend) * 100)}%` }}
+                            transition={{ duration: 0.8, delay: i * 0.1, ease: "easeOut" }} />
+                        </div>
+                        <p className="ml-10 mt-0.5 text-[10px] text-muted-foreground">{v.poCount} PO{v.poCount !== 1 ? "s" : ""}</p>
                       </div>
-                      <span className="text-[12px] font-semibold text-foreground truncate flex-1">{v.vendorName}</span>
-                      <span className="text-[12px] font-bold text-foreground tabular-nums shrink-0">{fmt(v.spend)}</span>
-                    </div>
-                    <div className="ml-10 h-1.5 bg-muted rounded-full overflow-hidden">
-                      <motion.div className="h-full rounded-full bg-primary"
-                        initial={{ width: 0 }}
-                        animate={{ width: `${Math.round((v.spend / maxVendorSpend) * 100)}%` }}
-                        transition={{ duration: 0.8, delay: i * 0.1, ease: "easeOut" }} />
-                    </div>
-                    <p className="ml-10 mt-0.5 text-[10px] text-muted-foreground">{v.poCount} PO{v.poCount !== 1 ? "s" : ""}</p>
+                    ))}
                   </div>
-                ))}
-              </div>
-          }
-          <div className="px-4 py-3 border-t border-border/40">
-            <button onClick={() => setLocation("/procurement/vendors")} className="text-[12px] font-semibold text-primary hover:underline flex items-center gap-1">
-              All vendors <ArrowRight className="h-3.5 w-3.5" />
-            </button>
-          </div>
+                  <div className="px-4 py-3 border-t border-border/40">
+                    <button onClick={() => setLocation("/procurement/vendors")} className="text-[12px] font-semibold text-primary hover:underline flex items-center gap-1">
+                      All vendors <ArrowRight className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </>
+          ) : (
+            topCategories.length === 0
+              ? <div className="py-10 text-center text-muted-foreground text-sm">No category data yet</div>
+              : <>
+                  <div className="p-4 space-y-3">
+                    {topCategories.map((c: any, i: number) => (
+                      <div key={c.category}
+                        onClick={() => setLocation(`/procurement/pos?category=${encodeURIComponent(c.category)}`)}
+                        className="cursor-pointer rounded-lg hover:bg-muted/40 transition-colors p-1.5 -mx-1.5">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span className="text-[10px] font-bold text-muted-foreground/40 tabular-nums w-4 shrink-0">#{i+1}</span>
+                          <div className="h-6 w-6 rounded-full bg-violet-100 flex items-center justify-center shrink-0">
+                            <span className="text-[10px] font-bold text-violet-600">{c.category?.[0]?.toUpperCase()}</span>
+                          </div>
+                          <span className="text-[12px] font-semibold text-foreground truncate flex-1">{c.category}</span>
+                          <span className="text-[12px] font-bold text-foreground tabular-nums shrink-0">{fmt(c.spend)}</span>
+                          <ChevronRight className="h-3 w-3 text-muted-foreground/30 shrink-0" />
+                        </div>
+                        <div className="ml-10 h-1.5 bg-muted rounded-full overflow-hidden">
+                          <motion.div className="h-full rounded-full bg-violet-500"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${Math.round((c.spend / maxCategorySpend) * 100)}%` }}
+                            transition={{ duration: 0.8, delay: i * 0.1, ease: "easeOut" }} />
+                        </div>
+                        <p className="ml-10 mt-0.5 text-[10px] text-muted-foreground">{c.poCount} PO{c.poCount !== 1 ? "s" : ""}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="px-4 py-3 border-t border-border/40">
+                    <button onClick={() => setLocation("/procurement/pos")} className="text-[12px] font-semibold text-primary hover:underline flex items-center gap-1">
+                      All POs <ArrowRight className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </>
+          )}
         </DashCard>
       </motion.div>
 

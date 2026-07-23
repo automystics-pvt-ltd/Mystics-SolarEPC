@@ -3,7 +3,9 @@ import {
   db, procurementPOsTable, procPOItemsTable, procurementQuotationsTable, vendorsTable,
   procPOAuditLogsTable, procGRNsTable, procInvoicesTable,
 } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, inArray, sql } from "drizzle-orm";
+
+import { CATEGORY_DEFS, OTHER_CATEGORY } from "../lib/category-rules";
 
 const router: IRouter = Router();
 
@@ -66,6 +68,49 @@ router.get("/procurement-pos", async (req, res): Promise<void> => {
   let query = db.select().from(procurementPOsTable).orderBy(desc(procurementPOsTable.createdAt)).$dynamic();
   if (req.query.status) query = query.where(eq(procurementPOsTable.status, req.query.status as any));
   if (req.query.vendorId) query = query.where(eq(procurementPOsTable.vendorId, Number(req.query.vendorId)));
+  if (req.query.vendor) {
+    const vendorName = `%${String(req.query.vendor).toLowerCase()}%`;
+    query = query.where(sql`lower(${procurementPOsTable.vendorName}) LIKE ${vendorName}`);
+  }
+  if (req.query.category) {
+    const categoryLabel = String(req.query.category);
+    const def = CATEGORY_DEFS.find(d => d.label === categoryLabel);
+
+    if (categoryLabel === OTHER_CATEGORY) {
+      // "Other" = POs that have at least one item NOT matching any known category pattern.
+      // A mixed PO (some known + some unknown lines) still counts as "Other".
+      const allPatterns = CATEGORY_DEFS.flatMap(d => d.likePatterns);
+      const noneOfKnownClause = allPatterns
+        .map(p => sql`lower(${procPOItemsTable.materialName}) LIKE ${p}`)
+        .reduce((a, b) => sql`${a} OR ${b}`);
+      // Items where the name doesn't match any known pattern
+      const otherItemPoIds = await db
+        .selectDistinct({ poId: procPOItemsTable.poId })
+        .from(procPOItemsTable)
+        .where(sql`NOT (${noneOfKnownClause})`);
+      const otherIds = otherItemPoIds.map(r => r.poId);
+      if (otherIds.length > 0) {
+        query = query.where(inArray(procurementPOsTable.id, otherIds));
+      } else {
+        res.json([]); return;
+      }
+    } else if (def) {
+      const likeClause = def.likePatterns
+        .map(p => sql`lower(${procPOItemsTable.materialName}) LIKE ${p}`)
+        .reduce((a, b) => sql`${a} OR ${b}`);
+      const matchingPoIds = await db
+        .selectDistinct({ poId: procPOItemsTable.poId })
+        .from(procPOItemsTable)
+        .where(sql`(${likeClause})`);
+      const ids = matchingPoIds.map(r => r.poId);
+      if (ids.length > 0) {
+        query = query.where(inArray(procurementPOsTable.id, ids));
+      } else {
+        res.json([]); return;
+      }
+    }
+    // Unknown category label → no filter applied (safe fallback)
+  }
   const rows = await query;
   // Add isOverdue to list items too
   const today = new Date().toISOString().split("T")[0];

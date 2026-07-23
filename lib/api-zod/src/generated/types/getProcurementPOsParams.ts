@@ -9,4 +9,12 @@
 export type GetProcurementPOsParams = {
 status?: string;
 vendorId?: number;
+/**
+ * Filter by vendor name (partial match)
+ */
+vendor?: string;
+/**
+ * Filter by derived material category (e.g. Inverters, Solar Modules)
+ */
+category?: string;
 };

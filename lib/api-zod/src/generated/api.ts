@@ -5095,7 +5095,9 @@ export const GetQuotationComparisonResponse = zod.object({
  */
 export const GetProcurementPOsQueryParams = zod.object({
   "status": zod.coerce.string().optional(),
-  "vendorId": zod.coerce.number().optional()
+  "vendorId": zod.coerce.number().optional(),
+  "vendor": zod.coerce.string().optional().describe('Filter by vendor name (partial match)'),
+  "category": zod.coerce.string().optional().describe('Filter by derived material category (e.g. Inverters, Solar Modules)')
 })
 
 export const GetProcurementPOsResponseItem = zod.object({

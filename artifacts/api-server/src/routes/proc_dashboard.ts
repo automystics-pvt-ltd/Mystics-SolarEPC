@@ -1,6 +1,8 @@
 import { Router, type IRouter } from "express";
-import { db, procurementPOsTable, procGRNsTable, procInvoicesTable } from "@workspace/db";
-import { desc, sql } from "drizzle-orm";
+import { db, procurementPOsTable, procGRNsTable, procInvoicesTable, procPOItemsTable } from "@workspace/db";
+import { desc, sql, inArray } from "drizzle-orm";
+
+import { deriveCategory } from "../lib/category-rules";
 
 const router: IRouter = Router();
 
@@ -78,6 +80,61 @@ router.get("/procurement-dashboard", async (_req, res): Promise<void> => {
     .slice(0, 5)
     .map(([vendorName, v]) => ({ vendorName, spend: v.spend, poCount: v.poCount }));
 
+  // Per-vendor monthly spend for chart drill-down
+  const vendorMonthlySpend: Record<string, { month: string; amount: number }[]> = {};
+  for (const { vendorName } of topVendors) {
+    const monthlyData: { month: string; amount: number }[] = [];
+    for (let m = 1; m <= 12; m++) {
+      const monthStr = `${thisYear}-${String(m).padStart(2, "0")}`;
+      const monthPOs = receivedPOs.filter(p =>
+        (p.vendorName ?? "Unknown") === vendorName &&
+        p.createdAt.toISOString().startsWith(monthStr)
+      );
+      monthlyData.push({ month: monthStr, amount: monthPOs.reduce((s, p) => s + (n(p.totalAmount) ?? 0), 0) });
+    }
+    vendorMonthlySpend[vendorName] = monthlyData;
+  }
+
+  // Category spend aggregation (derived from PO item material names)
+  const receivedPOIds = receivedPOs.map(p => p.id);
+  const allItems = receivedPOIds.length > 0
+    ? await db.select().from(procPOItemsTable).where(inArray(procPOItemsTable.poId, receivedPOIds))
+    : [];
+
+  // Map poId → createdAt for monthly breakdown
+  const poCreatedAt = new Map<number, string>(receivedPOs.map(p => [p.id, p.createdAt.toISOString()]));
+
+  // Aggregate spend by category
+  const categoryMap = new Map<string, { spend: number; poCount: Set<number> }>();
+  for (const item of allItems) {
+    const cat = deriveCategory(item.materialName);
+    const cur = categoryMap.get(cat) ?? { spend: 0, poCount: new Set<number>() };
+    cur.spend += n(item.lineTotal) ?? 0;
+    cur.poCount.add(item.poId);
+    categoryMap.set(cat, cur);
+  }
+
+  const topCategories = [...categoryMap.entries()]
+    .sort((a, b) => b[1].spend - a[1].spend)
+    .map(([category, v]) => ({ category, spend: v.spend, poCount: v.poCount.size }));
+
+  // Per-category monthly spend
+  const categoryMonthlySpend: Record<string, { month: string; amount: number }[]> = {};
+  for (const { category } of topCategories) {
+    const monthlyData: { month: string; amount: number }[] = [];
+    for (let m = 1; m <= 12; m++) {
+      const monthStr = `${thisYear}-${String(m).padStart(2, "0")}`;
+      const catMonthAmount = allItems
+        .filter(item => {
+          const itemCreatedAt = poCreatedAt.get(item.poId) ?? "";
+          return deriveCategory(item.materialName) === category && itemCreatedAt.startsWith(monthStr);
+        })
+        .reduce((s, item) => s + (n(item.lineTotal) ?? 0), 0);
+      monthlyData.push({ month: monthStr, amount: catMonthAmount });
+    }
+    categoryMonthlySpend[category] = monthlyData;
+  }
+
   const poEvents  = allPOs.slice(0, 10).map(p => ({
     type: "po" as const, id: p.id, ref: p.poNumber, vendorName: p.vendorName ?? "",
     status: p.status, amount: n(p.totalAmount), createdAt: p.createdAt.toISOString(),
@@ -128,7 +185,8 @@ router.get("/procurement-dashboard", async (_req, res): Promise<void> => {
       status: i.status, matchStatus: i.matchStatus,
       totalAmount: n(i.totalAmount), createdAt: i.createdAt.toISOString(),
     })),
-    monthlySpend, topVendors, recentActivity,
+    monthlySpend, topVendors, vendorMonthlySpend,
+    topCategories, categoryMonthlySpend, recentActivity,
   });
 });
 
