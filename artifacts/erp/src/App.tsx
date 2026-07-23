@@ -11,52 +11,60 @@ import { Login } from '@/pages/auth/Login';
 import { Dashboard } from '@/pages/dashboard/Dashboard';
 import { Loader2 } from 'lucide-react';
 import { lazy, Suspense } from 'react';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { env } from '@/lib/env';
 
-// CRM
-import { LeadsList } from '@/pages/crm/LeadsList';
-import { LeadDetail } from '@/pages/crm/LeadDetail';
-import { QuotationsList } from '@/pages/crm/QuotationsList';
-import { QuotationDetail } from '@/pages/crm/QuotationDetail';
-import { ClientPOsList, CrmInvoicesList, TasksList, EscalationsList } from '@/pages/crm/CrmPages';
+// CRM — lazy loaded
+const LeadsList = lazy(() => import('@/pages/crm/LeadsList').then(m => ({ default: m.LeadsList })));
+const LeadDetail = lazy(() => import('@/pages/crm/LeadDetail').then(m => ({ default: m.LeadDetail })));
+const QuotationsList = lazy(() => import('@/pages/crm/QuotationsList').then(m => ({ default: m.QuotationsList })));
+const QuotationDetail = lazy(() => import('@/pages/crm/QuotationDetail').then(m => ({ default: m.QuotationDetail })));
+const ClientPOsList = lazy(() => import('@/pages/crm/CrmPages').then(m => ({ default: m.ClientPOsList })));
+const CrmInvoicesList = lazy(() => import('@/pages/crm/CrmPages').then(m => ({ default: m.CrmInvoicesList })));
+const TasksList = lazy(() => import('@/pages/crm/CrmPages').then(m => ({ default: m.TasksList })));
+const EscalationsList = lazy(() => import('@/pages/crm/CrmPages').then(m => ({ default: m.EscalationsList })));
 
-// Projects
-import { ProjectsList } from '@/pages/projects/ProjectsList';
-import { ProjectWorkspace } from '@/pages/projects/ProjectWorkspace';
-import { ContractorsList } from '@/pages/projects/ContractorsList';
+// Projects — lazy loaded
+const ProjectsList = lazy(() => import('@/pages/projects/ProjectsList').then(m => ({ default: m.ProjectsList })));
+const ProjectWorkspace = lazy(() => import('@/pages/projects/ProjectWorkspace').then(m => ({ default: m.ProjectWorkspace })));
+const ContractorsList = lazy(() => import('@/pages/projects/ContractorsList').then(m => ({ default: m.ContractorsList })));
 
-// Inventory
-import { WarehousesList } from '@/pages/inventory/WarehousesList';
-import { WarehouseDetail } from '@/pages/inventory/WarehouseDetail';
-import { DeliveryChallansList, StockLedgerList, StockValuationList, InventoryAuditsList } from '@/pages/inventory/InventoryPages';
+// Inventory — lazy loaded
+const WarehousesList = lazy(() => import('@/pages/inventory/WarehousesList').then(m => ({ default: m.WarehousesList })));
+const WarehouseDetail = lazy(() => import('@/pages/inventory/WarehouseDetail').then(m => ({ default: m.WarehouseDetail })));
+const DeliveryChallansList = lazy(() => import('@/pages/inventory/InventoryPages').then(m => ({ default: m.DeliveryChallansList })));
+const StockLedgerList = lazy(() => import('@/pages/inventory/InventoryPages').then(m => ({ default: m.StockLedgerList })));
+const StockValuationList = lazy(() => import('@/pages/inventory/InventoryPages').then(m => ({ default: m.StockValuationList })));
+const InventoryAuditsList = lazy(() => import('@/pages/inventory/InventoryPages').then(m => ({ default: m.InventoryAuditsList })));
 
-// Engineering & Design
-import DesignDocsList from '@/pages/engineering/DesignDocsList';
-import DesignDocDetail from '@/pages/engineering/DesignDocDetail';
+// Engineering & Design — lazy loaded
+const DesignDocsList = lazy(() => import('@/pages/engineering/DesignDocsList'));
+const DesignDocDetail = lazy(() => import('@/pages/engineering/DesignDocDetail'));
 
-// Commissioning
-import CommissioningList from '@/pages/commissioning/CommissioningList';
-import CommissioningDetail from '@/pages/commissioning/CommissioningDetail';
+// Commissioning — lazy loaded
+const CommissioningList = lazy(() => import('@/pages/commissioning/CommissioningList'));
+const CommissioningDetail = lazy(() => import('@/pages/commissioning/CommissioningDetail'));
 
-// O&M & AMC
-import OamPages from '@/pages/oam/OamPages';
+// O&M & AMC — lazy loaded
+const OamPages = lazy(() => import('@/pages/oam/OamPages'));
 
-// Procurement
-import VendorsList from '@/pages/procurement/VendorsList';
-import VendorDetail from '@/pages/procurement/VendorDetail';
-import MaterialsList from '@/pages/procurement/MaterialsList';
-import ProcurementQuotationsList from '@/pages/procurement/ProcurementQuotationsList';
-import ProcurementQuotationDetail from '@/pages/procurement/ProcurementQuotationDetail';
-import ProcurementQuotationForm from '@/pages/procurement/ProcurementQuotationForm';
-import QuotationComparisonView from '@/pages/procurement/QuotationComparisonView';
-import ProcurementPOsList from '@/pages/procurement/ProcurementPOsList';
-import ProcurementPODetail from '@/pages/procurement/ProcurementPODetail';
-import ProcurementDashboard from '@/pages/procurement/ProcurementDashboard';
-import ProcGRNsList from '@/pages/procurement/GRNsList';
-import GRNForm from '@/pages/procurement/GRNForm';
-import GRNDetail from '@/pages/procurement/GRNDetail';
-import InvoicesList from '@/pages/procurement/InvoicesList';
-import InvoiceForm from '@/pages/procurement/InvoiceForm';
-import InvoiceDetail from '@/pages/procurement/InvoiceDetail';
+// Procurement — lazy loaded
+const VendorsList = lazy(() => import('@/pages/procurement/VendorsList'));
+const VendorDetail = lazy(() => import('@/pages/procurement/VendorDetail'));
+const MaterialsList = lazy(() => import('@/pages/procurement/MaterialsList'));
+const ProcurementQuotationsList = lazy(() => import('@/pages/procurement/ProcurementQuotationsList'));
+const ProcurementQuotationDetail = lazy(() => import('@/pages/procurement/ProcurementQuotationDetail'));
+const ProcurementQuotationForm = lazy(() => import('@/pages/procurement/ProcurementQuotationForm'));
+const QuotationComparisonView = lazy(() => import('@/pages/procurement/QuotationComparisonView'));
+const ProcurementPOsList = lazy(() => import('@/pages/procurement/ProcurementPOsList'));
+const ProcurementPODetail = lazy(() => import('@/pages/procurement/ProcurementPODetail'));
+const ProcurementDashboard = lazy(() => import('@/pages/procurement/ProcurementDashboard'));
+const ProcGRNsList = lazy(() => import('@/pages/procurement/GRNsList'));
+const GRNForm = lazy(() => import('@/pages/procurement/GRNForm'));
+const GRNDetail = lazy(() => import('@/pages/procurement/GRNDetail'));
+const InvoicesList = lazy(() => import('@/pages/procurement/InvoicesList'));
+const InvoiceForm = lazy(() => import('@/pages/procurement/InvoiceForm'));
+const InvoiceDetail = lazy(() => import('@/pages/procurement/InvoiceDetail'));
 
 // New modules (lazy-loaded for performance)
 const GRNReturnsList = lazy(() => import('@/pages/procurement/GRNReturnsList'));
@@ -70,7 +78,20 @@ const UserManagement = lazy(() => import('@/pages/admin/UserManagement'));
 const AuditLogs = lazy(() => import('@/pages/admin/AuditLogs'));
 
 const queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: 1, staleTime: 30000 } },
+  defaultOptions: {
+    queries: {
+      retry: (failureCount, error: any) => {
+        if (error?.status === 401 || error?.status === 403) return false;
+        return failureCount < 2;
+      },
+      staleTime: 30_000,
+      gcTime: 5 * 60_000,
+      refetchOnWindowFocus: false,
+    },
+    mutations: {
+      retry: false,
+    },
+  },
 });
 
 function PageLoader() {
@@ -96,9 +117,11 @@ function ProtectedRoute({ component: Component, ...rest }: any) {
 
   return (
     <Shell>
-      <Suspense fallback={<PageLoader />}>
-        <Component {...rest} />
-      </Suspense>
+      <ErrorBoundary fallbackTitle="Page failed to load">
+        <Suspense fallback={<PageLoader />}>
+          <Component {...rest} />
+        </Suspense>
+      </ErrorBoundary>
     </Shell>
   );
 }
@@ -198,10 +221,12 @@ function App() {
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+          <WouterRouter base={env.basePath}>
             <AuthProvider>
               <SidebarProvider>
-                <Router />
+                <ErrorBoundary>
+                  <Router />
+                </ErrorBoundary>
               </SidebarProvider>
             </AuthProvider>
           </WouterRouter>

@@ -1,57 +1,249 @@
-import { useGetCombinedDashboard, useGetDashboard } from "@workspace/api-client-react";
-import {
-  TrendingUp, Users, FolderKanban, AlertCircle, FileCheck,
-  CircleDollarSign, FileText, Package,
-  ClipboardList, Boxes, HardHat, LayoutTemplate,
-  ChevronRight
-} from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
-import { Link } from "wouter";
-import { Badge } from "@/components/ui/badge";
+import { useState, useMemo } from "react";
+import { useGetDashboard, useGetCombinedDashboard } from "@workspace/api-client-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
+import {
+  FolderKanban,
+  TrendingUp,
+  CircleDollarSign,
+  AlertCircle,
+  ShoppingCart,
+  Package,
+  RefreshCw,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { PageHeader, StatCard, SkeletonStats, SkeletonList, SectionCard } from "@/components/shared";
+import {
+  PageHeader,
+  StatCard,
+  SkeletonStats,
+  SkeletonList,
+} from "@/components/shared";
+import { apiGet } from "@/lib/fetch";
 
-function formatCurrency(amount?: number | null) {
+import { SystemStatusBar } from "./components/SystemStatusBar";
+import { AlertsPanel, AlertItem } from "./components/AlertsPanel";
+import { QuickActionsGrid } from "./components/QuickActionsGrid";
+import { ActivityFeed, ActivityItem } from "./components/ActivityFeed";
+import { UpcomingTasksPanel, UpcomingItem } from "./components/UpcomingTasksPanel";
+import { PerformanceMetrics } from "./components/PerformanceMetrics";
+import { PipelineChart } from "./components/PipelineChart";
+import { FinancialTrendChart } from "./components/FinancialTrendChart";
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+function formatCurrency(amount?: number | null): string {
   if (!amount) return "₹0";
-  if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(2)} Cr`;
-  if (amount >= 100000) return `₹${(amount / 100000).toFixed(1)} L`;
-  if (amount >= 1000) return `₹${(amount / 1000).toFixed(1)}k`;
+  if (amount >= 10_000_000) return `₹${(amount / 10_000_000).toFixed(2)} Cr`;
+  if (amount >= 100_000) return `₹${(amount / 100_000).toFixed(1)} L`;
+  if (amount >= 1_000) return `₹${(amount / 1_000).toFixed(1)}k`;
   return `₹${Number(amount).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 }
+
+function getTimeOfDay(): "morning" | "afternoon" | "evening" {
+  const h = new Date().getHours();
+  if (h < 12) return "morning";
+  if (h < 17) return "afternoon";
+  return "evening";
+}
+
+function getFYBadge() {
+  const today = new Date();
+  const fyStart = today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
+  return { fyStart, fyEndShort: String(fyStart + 1).slice(2) };
+}
+
+// ─── Component ──────────────────────────────────────────────────────────────
 
 export function Dashboard() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
-  const { data: dashboard, isLoading: isDashboardLoading } = useGetDashboard();
-  const { data: combined, isLoading: isCombinedLoading } = useGetCombinedDashboard();
+  const queryClient = useQueryClient();
 
-  const today = new Date();
-  const fyStart = today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
-  const fyEnd = fyStart + 1;
-  const dateRange = `${fyStart}-04-01 to ${fyEnd}-03-31`;
+  const [lastRefresh, setLastRefresh] = useState(new Date());
 
-  if (isDashboardLoading || isCombinedLoading) {
+  const { data: dashboard, isLoading: d1 } = useGetDashboard();
+  const { data: combined, isLoading: d2 } = useGetCombinedDashboard();
+  const { data: procData, isLoading: d3 } = useQuery({
+    queryKey: ["procurement-dashboard"],
+    queryFn: () => apiGet<any>("/procurement-dashboard"),
+  });
+
+  const handleRefresh = () => {
+    setLastRefresh(new Date());
+    queryClient.invalidateQueries();
+  };
+
+  // ── Derived values ────────────────────────────────────────────────────────
+
+  const { fyStart, fyEndShort } = getFYBadge();
+  const timeOfDay = getTimeOfDay();
+  const firstName = (user as any)?.name?.split(" ")[0] ?? (user as any)?.email?.split("@")[0] ?? "there";
+
+  const escalationCount = dashboard?.openEscalations?.length ?? 0;
+
+  // Alerts
+  const alerts: AlertItem[] = useMemo(() => {
+    const list: AlertItem[] = [];
+    if ((dashboard?.overdueTasksCount ?? 0) > 0) {
+      list.push({
+        id: "overdue",
+        severity: "critical",
+        title: `${dashboard!.overdueTasksCount} overdue tasks`,
+        description: "Projects have past-due activities requiring immediate attention.",
+        action: { label: "View Projects", href: "/projects" },
+      });
+    }
+    if ((dashboard?.pendingApprovalsCount ?? 0) > 0) {
+      list.push({
+        id: "approvals",
+        severity: "warning",
+        title: `${dashboard!.pendingApprovalsCount} pending approvals`,
+        description: "Quotations and invoices are awaiting sign-off.",
+        action: { label: "View", href: "/procurement/quotations" },
+      });
+    }
+    if (escalationCount > 0) {
+      list.push({
+        id: "escalations",
+        severity: "critical",
+        title: `${escalationCount} open escalations`,
+        description: "Client escalations need resolution.",
+        action: { label: "View Escalations", href: "/crm/escalations" },
+      });
+    }
+    const pendingInvoiceCount = procData?.pendingInvoices?.length ?? 0;
+    if (pendingInvoiceCount > 3) {
+      list.push({
+        id: "invoices",
+        severity: "warning",
+        title: `${pendingInvoiceCount} vendor invoices pending`,
+        description: "Vendor invoices are awaiting 3-way match approval.",
+      });
+    }
+    return list;
+  }, [dashboard, procData, escalationCount]);
+
+  // Activity feed
+  const activityItems: ActivityItem[] = useMemo(() => {
+    const items: ActivityItem[] = [];
+
+    (dashboard?.recentLeads ?? []).slice(0, 3).forEach((lead: any) => {
+      items.push({
+        id: `lead-${lead.id}`,
+        type: "lead",
+        title: lead.name ?? lead.companyName ?? "Lead",
+        subtitle: lead.contactPerson ?? lead.email,
+        timestamp: lead.createdAt ?? lead.updatedAt,
+        status: lead.status,
+        href: `/crm/leads/${lead.id}`,
+      });
+    });
+
+    (dashboard?.recentProjects ?? []).slice(0, 3).forEach((project: any) => {
+      items.push({
+        id: `project-${project.id}`,
+        type: "project",
+        title: project.name ?? "Project",
+        subtitle: project.client ?? project.clientName,
+        timestamp: project.updatedAt ?? project.createdAt,
+        status: project.status,
+        href: `/projects/${project.id}`,
+      });
+    });
+
+    (combined?.recentDPRs ?? []).slice(0, 3).forEach((dpr: any) => {
+      items.push({
+        id: `dpr-${dpr.id}`,
+        type: "milestone",
+        title: dpr.title ?? dpr.remarks ?? `DPR #${dpr.id}`,
+        subtitle: dpr.projectName ?? dpr.project?.name,
+        timestamp: dpr.date ?? dpr.createdAt,
+        status: dpr.status,
+        href: dpr.projectId ? `/projects/${dpr.projectId}` : undefined,
+      });
+    });
+
+    return items.slice(0, 8);
+  }, [dashboard, combined]);
+
+  // Upcoming milestones
+  const upcomingItems: UpcomingItem[] = useMemo(() => {
+    const today = new Date();
+    const thirtyDaysLater = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    return (combined?.pendingMilestones ?? [])
+      .map((m: any) => {
+        const due = m.dueDate ?? m.targetDate ?? m.plannedDate;
+        const dueDate = due ? new Date(due) : null;
+        const overdue = dueDate ? dueDate < today : false;
+        const inRange = !dueDate || dueDate <= thirtyDaysLater;
+        return { m, dueDate, overdue, inRange };
+      })
+      .filter(({ inRange }: any) => inRange)
+      .map(({ m, dueDate, overdue }: any) => ({
+        id: m.id,
+        title: m.title ?? m.name ?? `Milestone #${m.id}`,
+        dueDate: dueDate ? dueDate.toISOString() : undefined,
+        project: m.projectName ?? m.project?.name,
+        type: "milestone" as const,
+        overdue,
+      }));
+  }, [combined]);
+
+  // Performance metrics
+  const deliveryRate = useMemo(() => {
+    const total = combined?.portfolioSummary?.totalProjects ?? 0;
+    const completed = combined?.portfolioSummary?.completedProjects ?? 0;
+    if (!total) return 0;
+    return (completed / total) * 100;
+  }, [combined]);
+
+  const collectionRate = useMemo(() => {
+    const outstanding = dashboard?.invoiceOutstanding ?? 0;
+    const total = dashboard?.totalContractValue ?? 0;
+    if (!total) return 0;
+    const ratio = outstanding / total;
+    return Math.max(0, Math.min(100, (1 - ratio) * 100));
+  }, [dashboard]);
+
+  const grnAcceptanceRate = useMemo(() => {
+    const allGRNs: any[] = procData?.pendingGRNs ?? [];
+    const allPOs: any[] = procData?.allPOs ?? [];
+    // Derive from available data: approved GRNs are those in allPOs with status FullyReceived or PartiallyReceived
+    const total = allGRNs.length + allPOs.filter((p: any) => p.status === "FullyReceived").length;
+    const approved = allPOs.filter(
+      (p: any) => p.status === "FullyReceived" || p.status === "PartiallyReceived"
+    ).length;
+    if (!total) return 0;
+    return Math.min(100, (approved / total) * 100);
+  }, [procData]);
+
+  // Open POs count
+  const openPOsCount =
+    procData?.allPOs?.filter(
+      (p: any) => p.status === "Approved" || p.status === "PartiallyReceived"
+    ).length ?? 0;
+
+  // ── Loading state ─────────────────────────────────────────────────────────
+
+  if (d1 && d2 && d3) {
     return (
       <div className="space-y-6">
-        <SkeletonStats count={4} />
-        <SkeletonList rows={6} />
+        <SkeletonStats count={6} />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2">
+            <SkeletonList rows={5} />
+          </div>
+          <SkeletonList rows={4} />
+        </div>
       </div>
     );
   }
 
-  const pipelineData = combined?.pipeline?.stages || [];
-
-  const quickActions = [
-    { label: "New Lead", icon: Users, href: "/crm/leads" },
-    { label: "Create Quote", icon: FileText, href: "/crm/quotations/new" },
-    { label: "Log PO", icon: FileCheck, href: "/crm/client-pos" },
-    { label: "Issue GRN", icon: Boxes, href: "/inventory/grns" },
-    { label: "Submit DPR", icon: ClipboardList, href: "/projects" },
-    { label: "Contractors", icon: HardHat, href: "/projects/contractors" },
-  ];
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <motion.div
@@ -59,195 +251,179 @@ export function Dashboard() {
       animate={{ opacity: 1 }}
       className="space-y-6 pb-10"
     >
+      {/* Header */}
       <PageHeader
-        title="Dashboard"
-        subtitle="Operational overview — Mystics ERP"
+        title={`Good ${timeOfDay}, ${firstName}`}
+        subtitle="Executive overview — Mystics ERP"
         badge={
-          <Badge variant="outline" className="px-3 py-1 font-mono text-xs text-muted-foreground rounded-[6px]">
-            {dateRange}
+          <Badge variant="outline" className="font-mono text-xs">
+            FY {fyStart}–{fyEndShort}
           </Badge>
+        }
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            className="gap-2"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Refresh
+          </Button>
         }
       />
 
-      {/* KPI Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          label="Active Projects"
-          value={dashboard?.activeProjectsCount ?? 0}
-          icon={FolderKanban}
-          iconBg="bg-blue-50"
-          iconColor="text-blue-600"
-          trend="up"
-          trendLabel="+2 this month"
-        />
-        <StatCard
-          label="Contract Value"
-          value={formatCurrency(dashboard?.totalContractValue)}
-          icon={TrendingUp}
-          iconBg="bg-emerald-50"
-          iconColor="text-emerald-600"
-          trend="up"
-          trendLabel="vs Last Year"
-        />
-        <StatCard
-          label="A/R Outstanding"
-          value={formatCurrency(dashboard?.invoiceOutstanding)}
-          icon={CircleDollarSign}
-          iconBg="bg-orange-50"
-          iconColor="text-orange-600"
-          trend="down"
-          trendLabel="12 Invoices"
-        />
-        <StatCard
-          label="Open Escalations"
-          value={dashboard?.openEscalations?.length ?? 0}
-          icon={AlertCircle}
-          iconBg={(dashboard?.openEscalations?.length ?? 0) > 0 ? "bg-red-50" : "bg-muted"}
-          iconColor={(dashboard?.openEscalations?.length ?? 0) > 0 ? "text-red-600" : "text-muted-foreground"}
-          trend="down"
-          trendLabel={`${dashboard?.overdueTasksCount ?? 0} Overdue Tasks`}
-        />
+      {/* System status bar */}
+      <SystemStatusBar lastRefresh={lastRefresh} />
+
+      {/* KPI cards — 6 across */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0 * 0.05 }}
+        >
+          <StatCard
+            label="Active Projects"
+            value={dashboard?.activeProjectsCount ?? 0}
+            icon={FolderKanban}
+            iconBg="bg-blue-50"
+            iconColor="text-blue-600"
+            trend="up"
+            trendLabel="Running"
+            onClick={() => setLocation("/projects")}
+            compact
+          />
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 1 * 0.05 }}
+        >
+          <StatCard
+            label="Contract Value"
+            value={formatCurrency(dashboard?.totalContractValue)}
+            icon={TrendingUp}
+            iconBg="bg-emerald-50"
+            iconColor="text-emerald-600"
+            trend="up"
+            trendLabel="Total pipeline"
+            compact
+          />
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 2 * 0.05 }}
+        >
+          <StatCard
+            label="A/R Outstanding"
+            value={formatCurrency(dashboard?.invoiceOutstanding)}
+            icon={CircleDollarSign}
+            iconBg="bg-amber-50"
+            iconColor="text-amber-600"
+            trend="neutral"
+            trendLabel="Receivables"
+            onClick={() => setLocation("/finance/dashboard")}
+            compact
+          />
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 3 * 0.05 }}
+        >
+          <StatCard
+            label="Open Escalations"
+            value={escalationCount}
+            icon={AlertCircle}
+            iconBg={escalationCount > 0 ? "bg-red-50" : "bg-muted"}
+            iconColor={escalationCount > 0 ? "text-red-500" : "text-muted-foreground"}
+            trend={escalationCount > 0 ? "down" : "neutral"}
+            trendLabel="Client issues"
+            onClick={() => setLocation("/crm/escalations")}
+            compact
+          />
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 4 * 0.05 }}
+        >
+          <StatCard
+            label="Open POs"
+            value={openPOsCount}
+            icon={ShoppingCart}
+            iconBg="bg-violet-50"
+            iconColor="text-violet-600"
+            trend="neutral"
+            trendLabel="Purchase orders"
+            onClick={() => setLocation("/procurement/pos")}
+            compact
+          />
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 5 * 0.05 }}
+        >
+          <StatCard
+            label="Pending GRNs"
+            value={procData?.pendingGRNs?.length ?? 0}
+            icon={Package}
+            iconBg="bg-cyan-50"
+            iconColor="text-cyan-600"
+            trend="neutral"
+            trendLabel="Awaiting receipt"
+            onClick={() => setLocation("/procurement/grns")}
+            compact
+          />
+        </motion.div>
       </div>
 
-      {/* Main Grid */}
-      <div className="grid lg:grid-cols-3 gap-6">
+      {/* Alerts */}
+      {alerts.length > 0 && <AlertsPanel alerts={alerts} />}
 
-        {/* Left Col: Charts & Portfolio */}
-        <div className="lg:col-span-2 space-y-6">
-          <SectionCard
-            title="Sales Pipeline"
-            subtitle={`${combined?.pipeline?.totalLeads ?? 0} active leads`}
-            actions={
-              <Button variant="ghost" size="sm" className="text-[#EA580C] hover:text-[#C2410C] hover:bg-orange-50 font-semibold" onClick={() => setLocation("/crm/leads")}>
-                View Pipeline <ChevronRight className="h-4 w-4 ml-1" />
-              </Button>
-            }
-            noPadding={false}
-          >
-            <div className="h-[240px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={pipelineData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                  <XAxis dataKey="stage" axisLine={false} tickLine={false} tick={{ fill: "#6B7280", fontSize: 12, fontWeight: 500 }} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: "#6B7280", fontSize: 12, fontWeight: 500 }} />
-                  <Tooltip
-                    cursor={{ fill: "#F3F4F6" }}
-                    contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)", fontSize: 13, fontWeight: 600 }}
-                  />
-                  <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={60}>
-                    {pipelineData.map((entry: any, index: number) => (
-                      <Cell key={`cell-${index}`} fill={entry.stage === "Closed Won" ? "#10B981" : "#EA580C"} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </SectionCard>
-
-          <div className="grid sm:grid-cols-2 gap-4">
-            <SectionCard title="Portfolio Health">
-              <div className="flex items-center gap-2 mb-2">
-                <LayoutTemplate className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <div className="flex items-baseline gap-2 mt-2">
-                <span className="text-3xl font-bold tracking-tight text-foreground">{combined?.portfolioSummary?.activeProjects ?? 0}</span>
-                <span className="text-sm font-medium text-muted-foreground">Active</span>
-              </div>
-              <div className="mt-4 pt-4 border-t border-border grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">On Track</p>
-                  <p className="text-lg font-bold text-emerald-600">{combined?.portfolioSummary?.onTrackCount ?? 0}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Delayed</p>
-                  <p className="text-lg font-bold text-red-500">{combined?.portfolioSummary?.delayedCount ?? 0}</p>
-                </div>
-              </div>
-            </SectionCard>
-
-            <SectionCard title="Budget vs Spend">
-              <div className="flex items-center gap-2 mb-2">
-                <CircleDollarSign className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <div className="flex items-baseline gap-2 mt-2">
-                <span className="text-3xl font-bold tracking-tight text-foreground">{formatCurrency(combined?.portfolioSummary?.totalActualSpend)}</span>
-              </div>
-              <p className="text-sm font-medium text-muted-foreground mt-1">Total Actual Spend</p>
-              <div className="mt-4 pt-4 border-t border-border">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Total Budget</p>
-                <p className="text-sm font-bold text-foreground">{formatCurrency(combined?.portfolioSummary?.totalBudget)}</p>
-              </div>
-            </SectionCard>
-          </div>
+      {/* Pipeline + Quick Actions */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2">
+          <PipelineChart
+            stages={(combined?.pipeline?.stages ?? []).map((s) => ({
+              name: s.stage,
+              count: s.count,
+              value: s.value,
+            }))}
+            isLoading={d2}
+          />
         </div>
+        <QuickActionsGrid />
+      </div>
 
-        {/* Right Col: Actions & Feed */}
-        <div className="space-y-6">
-          {/* Quick Actions */}
-          <SectionCard title="Quick Actions">
-            <div className="grid grid-cols-3 gap-3">
-              {quickActions.map((action) => (
-                <button key={action.label} onClick={() => setLocation(action.href)}
-                  className="flex flex-col items-center justify-center p-3 rounded-[8px] bg-muted/40 hover:bg-orange-50 border border-transparent hover:border-orange-100 transition-all group">
-                  <action.icon className="h-5 w-5 text-muted-foreground group-hover:text-[#EA580C] mb-2 transition-colors" />
-                  <span className="text-[11px] font-bold text-muted-foreground group-hover:text-foreground text-center leading-tight">{action.label}</span>
-                </button>
-              ))}
-            </div>
-          </SectionCard>
+      {/* Financial trend — full width */}
+      <FinancialTrendChart />
 
-          {/* Escalations Alert */}
-          {dashboard?.openEscalations && dashboard.openEscalations.length > 0 && (
-            <div className="bg-red-50 rounded-xl border border-red-100 p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <AlertCircle className="h-5 w-5 text-red-600" />
-                <h3 className="text-sm font-bold text-red-900 tracking-tight">Active Escalations</h3>
-              </div>
-              <div className="space-y-3">
-                {dashboard.openEscalations.slice(0, 3).map((esc: any) => (
-                  <div key={esc.id} className="bg-white/60 p-3 rounded-[8px] border border-red-100/50">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm font-semibold text-foreground leading-snug">{esc.reason}</p>
-                      <Badge variant="outline" className="text-[10px] font-bold text-red-600 border-red-200 bg-white shrink-0 uppercase">
-                        {esc.severity}
-                      </Badge>
-                    </div>
-                    <p className="text-xs font-medium text-muted-foreground mt-1">{esc.module}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Recent Projects */}
-          <SectionCard
-            title="Recent Projects"
-            actions={
-              <Button variant="link" size="sm" className="text-[#EA580C] h-auto p-0 text-xs font-semibold" onClick={() => setLocation("/projects")}>View All</Button>
-            }
-          >
-            <div className="space-y-4">
-              {dashboard?.recentProjects?.map((project: any) => (
-                <Link key={project.id} href={`/projects/${project.id}`}>
-                  <div className="group cursor-pointer">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <p className="text-sm font-bold text-foreground group-hover:text-[#EA580C] transition-colors truncate pr-2">{project.name}</p>
-                      <span className="text-xs font-mono font-bold text-muted-foreground">{project.percentComplete ?? 0}%</span>
-                    </div>
-                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                      <div className="h-full bg-foreground rounded-full transition-all"
-                        style={{ width: `${project.percentComplete ?? 0}%` }} />
-                    </div>
-                  </div>
-                </Link>
-              ))}
-              {!dashboard?.recentProjects?.length && (
-                <p className="text-sm font-medium text-muted-foreground text-center py-4">No active projects</p>
-              )}
-            </div>
-          </SectionCard>
+      {/* Activity feed + Upcoming tasks */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+        <div className="lg:col-span-3">
+          <ActivityFeed items={activityItems} isLoading={d1 || d2} />
+        </div>
+        <div className="lg:col-span-2">
+          <UpcomingTasksPanel items={upcomingItems} isLoading={d2} />
         </div>
       </div>
+
+      {/* Performance metrics */}
+      <PerformanceMetrics
+        deliveryRate={deliveryRate}
+        collectionRate={collectionRate}
+        grnAcceptanceRate={grnAcceptanceRate}
+        isLoading={d1 || d2 || d3}
+      />
     </motion.div>
   );
 }
