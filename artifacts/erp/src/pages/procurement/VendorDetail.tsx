@@ -26,6 +26,8 @@ import { PageHeader, SectionCard, StatusBadge } from "@/components/shared";
 import { addRecentEntry } from "@/lib/recentHistory";
 import { useAuth } from "@/lib/auth";
 import { validateVendorFull, validateContact, hasErrors, type VendorErrors } from "@/lib/vendor-validation";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { INDIAN_BANKS, ACCOUNT_TYPES, INDIAN_STATES, INDIAN_CITIES, COUNTRIES } from "@/lib/vendor-select-data";
 import { cn } from "@/lib/utils";
 
 /* ── Inline field error ───────────────────────────────────────────────────── */
@@ -269,6 +271,40 @@ export default function VendorDetail({ id }: { id: string }) {
           <p className="mt-0.5 text-[11px] text-muted-foreground">
             {(form[field] ?? "").length}/10 digits
           </p>
+          <FieldError msg={showEditError(field)} />
+        </>
+      ) : (
+        <p className="mt-1 text-sm font-medium text-foreground">
+          {(vendor as any)[field] || <span className="text-muted-foreground/40 font-normal">—</span>}
+        </p>
+      )}
+    </div>
+  );
+
+  /* ── Searchable-select field renderer ── */
+  const FCombobox = ({
+    label, field, options, searchPlaceholder, allowCustom = false,
+  }: {
+    label: string; field: string;
+    options: import("@/components/ui/searchable-select").SelectOption[];
+    searchPlaceholder?: string;
+    allowCustom?: boolean;
+  }) => (
+    <div>
+      <Label className="text-xs text-muted-foreground">{label}</Label>
+      {editing ? (
+        <>
+          <div className="mt-1">
+            <SearchableSelect
+              value={form[field] ?? ""}
+              onChange={v => setEditField(field, v)}
+              options={options}
+              placeholder={`Select ${label.toLowerCase()}…`}
+              searchPlaceholder={searchPlaceholder ?? `Search ${label.toLowerCase()}…`}
+              allowCustom={allowCustom}
+              error={!!showEditError(field)}
+            />
+          </div>
           <FieldError msg={showEditError(field)} />
         </>
       ) : (
@@ -595,8 +631,8 @@ export default function VendorDetail({ id }: { id: string }) {
         <TabsContent value="bank" className="mt-4">
           <SectionCard title="Bank Account Details">
             <div className="grid grid-cols-2 gap-4">
-              <F label="Bank Name" field="bankName" placeholder="e.g. State Bank of India" />
-              <F label="Branch" field="bankBranch" placeholder="e.g. Connaught Place, Delhi" />
+              <FCombobox label="Bank Name" field="bankName" options={INDIAN_BANKS} searchPlaceholder="Search bank…" allowCustom />
+              <F label="Branch / Location" field="bankBranch" placeholder="e.g. Connaught Place, Delhi" />
               <div>
                 <Label className="text-xs text-muted-foreground">Account Number</Label>
                 {editing ? (
@@ -629,7 +665,7 @@ export default function VendorDetail({ id }: { id: string }) {
                 uppercase mono
                 hint={`${(form.bankIfsc ?? "").length}/11 chars`}
               />
-              <F label="Account Type" field="bankAccountType" placeholder="Current / Savings" />
+              <FCombobox label="Account Type" field="bankAccountType" options={ACCOUNT_TYPES} searchPlaceholder="Search account type…" />
               <F label="UPI ID" field="upiId" placeholder="vendor@upi" />
             </div>
           </SectionCard>
@@ -640,8 +676,8 @@ export default function VendorDetail({ id }: { id: string }) {
           <SectionCard title="Billing Address">
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2"><F label="Address" field="billingAddress" /></div>
-              <F label="City" field="billingCity" />
-              <F label="State" field="billingState" />
+              <FCombobox label="City" field="billingCity" options={INDIAN_CITIES} searchPlaceholder="Search city…" allowCustom />
+              <FCombobox label="State" field="billingState" options={INDIAN_STATES} searchPlaceholder="Search state…" />
               <div>
                 <Label className="text-xs text-muted-foreground">Pincode</Label>
                 {editing ? (
@@ -667,7 +703,7 @@ export default function VendorDetail({ id }: { id: string }) {
                   </p>
                 )}
               </div>
-              <F label="Country" field="billingCountry" />
+              <FCombobox label="Country" field="billingCountry" options={COUNTRIES} searchPlaceholder="Search country…" />
             </div>
           </SectionCard>
         </TabsContent>
