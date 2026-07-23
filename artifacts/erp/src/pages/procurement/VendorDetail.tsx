@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   useGetVendor, getGetVendorQueryKey, useUpdateVendor,
@@ -34,6 +34,46 @@ import { cn } from "@/lib/utils";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
+
+/* ── Date range presets ──────────────────────────────────────────────────────── */
+type SpendPreset = "ytd" | "3m" | "6m" | "12m" | "custom";
+
+const SPEND_PRESETS: { value: SpendPreset; label: string }[] = [
+  { value: "ytd",    label: "YTD" },
+  { value: "3m",     label: "Last 3 months" },
+  { value: "6m",     label: "Last 6 months" },
+  { value: "12m",    label: "Last 12 months" },
+  { value: "custom", label: "Custom range" },
+];
+
+function toDateStr(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+function presetToDates(preset: SpendPreset, customFrom: string, customTo: string): { from: string; to: string } {
+  const now = new Date();
+  if (preset === "ytd") {
+    return { from: `${now.getFullYear()}-01-01`, to: toDateStr(now) };
+  }
+  if (preset === "3m") {
+    const d = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+    return { from: toDateStr(d), to: toDateStr(now) };
+  }
+  if (preset === "6m") {
+    const d = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+    return { from: toDateStr(d), to: toDateStr(now) };
+  }
+  if (preset === "12m") {
+    const d = new Date(now.getFullYear(), now.getMonth() - 12, now.getDate());
+    return { from: toDateStr(d), to: toDateStr(now) };
+  }
+  // custom
+  return { from: customFrom, to: customTo };
+}
+
+function presetLabel(preset: SpendPreset): string {
+  return SPEND_PRESETS.find(p => p.value === preset)?.label ?? "Period";
+}
 
 /* ── Formatters ──────────────────────────────────────────────────────────── */
 const MONTH_LABELS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -103,21 +143,34 @@ export default function VendorDetail({ id }: { id: string }) {
   const [contactTouched, setContactTouched] = useState<Record<string, boolean>>({});
   const [contactSubmitted, setContactSubmitted] = useState(false);
 
+  // ── Spend date range state ──────────────────────────────────────────────────
+  const [spendPreset, setSpendPreset] = useState<SpendPreset>("ytd");
+  const now = new Date();
+  const [customFrom, setCustomFrom] = useState(`${now.getFullYear()}-01-01`);
+  const [customTo,   setCustomTo  ] = useState(toDateStr(now));
+
+  const spendDates = useMemo(
+    () => presetToDates(spendPreset, customFrom, customTo),
+    [spendPreset, customFrom, customTo]
+  );
+
   const { data: vendor, isLoading } = useGetVendor(vendorId, {
     query: { enabled: !!vendorId, queryKey: getGetVendorQueryKey(vendorId) }
   });
 
   const { data: statsData } = useQuery({
-    queryKey: ["vendor-stats", vendorId],
+    queryKey: ["vendor-stats", vendorId, spendDates.from, spendDates.to],
     queryFn: async () => {
       const token = localStorage.getItem("mystics_token");
-      const res = await fetch(`/api/vendors/${vendorId}/stats`, {
+      const params = new URLSearchParams({ from: spendDates.from, to: spendDates.to });
+      const res = await fetch(`/api/vendors/${vendorId}/stats?${params}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return res.json() as Promise<{
         monthlySpend: { month: string; amount: number }[];
         ytdSpend: number;
+        periodSpend: number;
         poCount: number;
         avgPoValue: number;
         lastPoDate: string | null;
@@ -587,17 +640,23 @@ export default function VendorDetail({ id }: { id: string }) {
 
       {/* ── Spend Performance ── */}
       {(() => {
+        // Determine if the range spans multiple years (to show year in month labels)
+        const spansYears = spendDates.from.slice(0, 4) !== spendDates.to.slice(0, 4);
         const chartData = (statsData?.monthlySpend ?? []).map(m => ({
-          month: monthLabel(m.month),
+          month: spansYears
+            ? `${monthLabel(m.month)} '${m.month.slice(2, 4)}`
+            : monthLabel(m.month),
           amount: m.amount,
         }));
-        const hasSpend = (statsData?.ytdSpend ?? 0) > 0 || (statsData?.poCount ?? 0) > 0;
+        const periodSpend = statsData?.periodSpend ?? statsData?.ytdSpend ?? 0;
+        const hasSpend = periodSpend > 0 || (statsData?.poCount ?? 0) > 0;
+        const kpiSpendLabel = spendPreset === "ytd" ? "YTD Spend" : "Period Spend";
 
         const kpis = [
           {
             icon: TrendingUp,
-            label: "YTD Spend",
-            value: fmtAmt(statsData?.ytdSpend),
+            label: kpiSpendLabel,
+            value: fmtAmt(periodSpend),
             accent: "amber",
           },
           {
@@ -631,7 +690,46 @@ export default function VendorDetail({ id }: { id: string }) {
           <SectionCard
             title="Spend Performance"
             actions={
-              <span className="text-[11px] text-muted-foreground">Last 12 months · received POs</span>
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Preset selector */}
+                <Select value={spendPreset} onValueChange={v => setSpendPreset(v as SpendPreset)}>
+                  <SelectTrigger className="h-7 text-xs gap-1 px-2.5 w-auto min-w-[130px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent align="end">
+                    {SPEND_PRESETS.map(p => (
+                      <SelectItem key={p.value} value={p.value} className="text-xs">{p.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Custom date inputs shown only for "custom" preset */}
+                {spendPreset === "custom" && (
+                  <>
+                    <Input
+                      type="date"
+                      value={customFrom}
+                      onChange={e => setCustomFrom(e.target.value)}
+                      max={customTo}
+                      className="h-7 text-xs px-2 w-[130px]"
+                    />
+                    <span className="text-[11px] text-muted-foreground">to</span>
+                    <Input
+                      type="date"
+                      value={customTo}
+                      onChange={e => setCustomTo(e.target.value)}
+                      min={customFrom}
+                      max={toDateStr(new Date())}
+                      className="h-7 text-xs px-2 w-[130px]"
+                    />
+                  </>
+                )}
+
+                {/* Subtitle showing the resolved range */}
+                <span className="text-[11px] text-muted-foreground hidden sm:inline">
+                  {spendDates.from} – {spendDates.to} · received POs
+                </span>
+              </div>
             }
           >
             {/* KPI Strip */}
@@ -656,7 +754,7 @@ export default function VendorDetail({ id }: { id: string }) {
             ) : !hasSpend ? (
               <div className="h-[160px] flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border text-muted-foreground gap-2">
                 <BarChart3 className="w-6 h-6 opacity-40" />
-                <p className="text-sm">No spend data yet for this vendor</p>
+                <p className="text-sm">No spend data for this period</p>
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={160}>

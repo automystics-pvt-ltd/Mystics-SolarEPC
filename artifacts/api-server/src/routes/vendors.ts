@@ -347,37 +347,48 @@ router.get("/vendors/:id/stats", async (req, res): Promise<void> => {
 
   const n = (v: unknown) => v !== null && v !== undefined ? Number(v) : 0;
 
-  // ── Monthly spend: last 12 calendar months ─────────────────────────────────
-  const today   = new Date();
+  // ── Date range: accept from/to query params; default to YTD ───────────────
+  const today = new Date();
+  const fromParam = req.query.from as string | undefined;
+  const toParam   = req.query.to   as string | undefined;
+
+  // Default from = Jan 1 of current year (YTD), default to = today
+  const fromDate = fromParam ? new Date(fromParam + "T00:00:00.000Z") : new Date(today.getFullYear(), 0, 1);
+  const toDate   = toParam   ? new Date(toParam   + "T23:59:59.999Z") : today;
+
+  // ── Build month buckets spanning fromDate → toDate ─────────────────────────
   const months: string[] = [];
-  for (let i = 11; i >= 0; i--) {
-    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-    months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+  const cur = new Date(fromDate.getFullYear(), fromDate.getMonth(), 1);
+  const endMonth = new Date(toDate.getFullYear(), toDate.getMonth(), 1);
+  while (cur <= endMonth) {
+    months.push(`${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, "0")}`);
+    cur.setMonth(cur.getMonth() + 1);
   }
 
   const receivedPOs = allPOs.filter(p => ["FullyReceived", "Closed"].includes(p.status));
 
+  // POs within the selected date range (for chart + period KPIs)
+  const rangedPOs = receivedPOs.filter(p => p.createdAt >= fromDate && p.createdAt <= toDate);
+
   const monthlySpend = months.map(m => ({
     month: m,
-    amount: receivedPOs
+    amount: rangedPOs
       .filter(p => p.createdAt.toISOString().startsWith(m))
       .reduce((s, p) => s + n(p.totalAmount), 0),
   }));
 
   // ── KPIs ───────────────────────────────────────────────────────────────────
-  const thisYear   = today.getFullYear();
-  const ytdStart   = new Date(thisYear, 0, 1);
-  const ytdPOs     = receivedPOs.filter(p => p.createdAt >= ytdStart);
-  const ytdSpend   = ytdPOs.reduce((s, p) => s + n(p.totalAmount), 0);
-
-  const poCount    = allPOs.length;
-  const totalSpend = receivedPOs.reduce((s, p) => s + n(p.totalAmount), 0);
-  const avgPoValue = receivedPOs.length > 0 ? totalSpend / receivedPOs.length : 0;
-  const lastPO     = allPOs[0];
-  const lastPoDate = lastPO ? lastPO.createdAt.toISOString() : null;
+  // periodSpend + avgPoValue are scoped to the selected range;
+  // poCount is all-time; lastPO is always the most recent.
+  const periodSpend = rangedPOs.reduce((s, p) => s + n(p.totalAmount), 0);
+  const avgPoValue  = rangedPOs.length > 0 ? periodSpend / rangedPOs.length : 0;
+  const poCount     = allPOs.length;
+  const lastPO      = allPOs[0];
+  const lastPoDate  = lastPO ? lastPO.createdAt.toISOString() : null;
   const lastPoNumber = lastPO?.poNumber ?? null;
 
-  res.json({ monthlySpend, ytdSpend, poCount, avgPoValue, lastPoDate, lastPoNumber });
+  // ytdSpend kept as alias for backward compat (= periodSpend)
+  res.json({ monthlySpend, ytdSpend: periodSpend, periodSpend, poCount, avgPoValue, lastPoDate, lastPoNumber });
 });
 
 export default router;
