@@ -235,17 +235,17 @@ export default function GRNForm({ poId: initPoId }: { poId?: string }) {
                           {Math.max(0, remaining)}
                         </span>
                       </td>
-                      <td className="px-4 py-3"><Input type="number" min="0" max={remaining} value={item.receivedQty} onChange={e => updateItem(idx, "receivedQty", e.target.value)} className="h-8 w-24 font-mono" /></td>
+                      <td className="px-4 py-3"><Input type="number" inputMode="numeric" min="0" max={remaining} value={item.receivedQty} onChange={e => updateItem(idx, "receivedQty", e.target.value)} className="h-8 w-24 font-mono" /></td>
                       <td className="px-4 py-3">
                         <div>
-                          <Input type="number" min="0" max={remaining} value={item.acceptedQty} onChange={e => updateItem(idx, "acceptedQty", e.target.value)} className={cn("h-8 w-24 font-mono", isOverDelivery && "border-red-400 focus-visible:ring-red-400")} />
+                          <Input type="number" inputMode="numeric" min="0" max={remaining} value={item.acceptedQty} onChange={e => updateItem(idx, "acceptedQty", e.target.value)} className={cn("h-8 w-24 font-mono", isOverDelivery && "border-red-400 focus-visible:ring-red-400")} />
                           {isOverDelivery && (
                             <p className="text-xs text-red-600 dark:text-red-400 mt-0.5 whitespace-nowrap">Exceeds remaining ({remaining})</p>
                           )}
                         </div>
                       </td>
                       <td className="px-4 py-3 font-mono text-red-600 dark:text-red-400">{item.rejectedQty || 0}</td>
-                      <td className="px-4 py-3"><Input type="number" min="0" value={item.damagedQty} onChange={e => updateItem(idx, "damagedQty", e.target.value)} className="h-8 w-24 font-mono" /></td>
+                      <td className="px-4 py-3"><Input type="number" inputMode="numeric" min="0" value={item.damagedQty} onChange={e => updateItem(idx, "damagedQty", e.target.value)} className="h-8 w-24 font-mono" /></td>
                       <td className="px-4 py-3"><Input value={item.rejectionReason} onChange={e => updateItem(idx, "rejectionReason", e.target.value)} placeholder="Reason…" className="h-8 w-36" /></td>
                       <td className="px-4 py-3"><Input value={item.itemRemarks} onChange={e => updateItem(idx, "itemRemarks", e.target.value)} placeholder="Notes…" className="h-8 w-36" /></td>
                     </tr>
@@ -275,16 +275,16 @@ export default function GRNForm({ poId: initPoId }: { poId?: string }) {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label className="text-xs text-muted-foreground mb-1 block">Received Qty</Label>
-                      <Input type="number" min="0" max={remaining} value={item.receivedQty} onChange={e => updateItem(idx, "receivedQty", e.target.value)} className="h-9 font-mono" />
+                      <Input type="number" inputMode="numeric" min="0" max={remaining} value={item.receivedQty} onChange={e => updateItem(idx, "receivedQty", e.target.value)} className="h-9 font-mono" />
                     </div>
                     <div>
                       <Label className="text-xs text-muted-foreground mb-1 block">Accepted Qty</Label>
-                      <Input type="number" min="0" max={remaining} value={item.acceptedQty} onChange={e => updateItem(idx, "acceptedQty", e.target.value)} className={cn("h-9 font-mono", isOverDelivery && "border-red-400")} />
+                      <Input type="number" inputMode="numeric" min="0" max={remaining} value={item.acceptedQty} onChange={e => updateItem(idx, "acceptedQty", e.target.value)} className={cn("h-9 font-mono", isOverDelivery && "border-red-400")} />
                       {isOverDelivery && <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">Exceeds remaining ({remaining})</p>}
                     </div>
                     <div>
                       <Label className="text-xs text-muted-foreground mb-1 block">Damaged Qty</Label>
-                      <Input type="number" min="0" value={item.damagedQty} onChange={e => updateItem(idx, "damagedQty", e.target.value)} className="h-9 font-mono" />
+                      <Input type="number" inputMode="numeric" min="0" value={item.damagedQty} onChange={e => updateItem(idx, "damagedQty", e.target.value)} className="h-9 font-mono" />
                     </div>
                     <div>
                       <Label className="text-xs text-muted-foreground mb-1 block">Rejected: {item.rejectedQty || 0}</Label>

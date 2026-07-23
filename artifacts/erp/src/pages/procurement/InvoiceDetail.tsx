@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CheckCircle2, XCircle, Send, AlertTriangle, CreditCard, Printer, Clock } from "lucide-react";
+import { CheckCircle2, XCircle, Send, AlertTriangle, CreditCard, Printer, Clock, PauseCircle } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
 import { PageHeader, SectionCard, StatusBadge, DetailGrid, DetailRow } from "@/components/shared";
@@ -71,31 +71,41 @@ export default function InvoiceDetail({ id }: { id: string }) {
   const canApprove = isApprover && inv.status === "PendingApproval";
   const canReject = isApprover && inv.status === "PendingApproval";
   const canMarkPaid = inv.status === "Approved";
+  const hasMobileActions = canSubmit || canApprove || canReject || canMarkPaid;
 
-  const actions = (
-    <div className="flex gap-2 flex-wrap">
-      <Button variant="outline" size="sm" className="gap-1.5 print:hidden" onClick={() => window.print()}>
+  const desktopActions = (
+    <div className="hidden lg:flex gap-2 flex-wrap print:hidden">
+      <Button variant="outline" size="sm" className="gap-1.5" onClick={() => window.print()}>
         <Printer className="w-3.5 h-3.5" /> Print
       </Button>
       {canApproveMismatch && (
-        <Button size="sm" variant="outline" className="border-amber-200 text-amber-700 hover:bg-amber-50 print:hidden" onClick={() => setActionDialog("approve-mismatch")}>
+        <Button size="sm" variant="outline" className="border-amber-200 text-amber-700 hover:bg-amber-50" onClick={() => setActionDialog("approve-mismatch")}>
           <AlertTriangle className="w-3.5 h-3.5 mr-1" /> Approve Mismatch
         </Button>
       )}
-      {canSubmit && <Button size="sm" className="gap-1.5 bg-blue-600 hover:bg-blue-700 print:hidden" onClick={() => setActionDialog("submit")}><Send className="w-3.5 h-3.5" /> Submit</Button>}
-      {canApprove && <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 gap-1.5 print:hidden" onClick={() => setActionDialog("approve")}><CheckCircle2 className="w-3.5 h-3.5" /> Approve</Button>}
-      {canReject && <Button size="sm" variant="outline" className="border-red-200 text-red-700 hover:bg-red-50 print:hidden" onClick={() => setActionDialog("reject")}><XCircle className="w-3.5 h-3.5 mr-1" /> Reject</Button>}
-      {canMarkPaid && <Button size="sm" className="bg-green-600 hover:bg-green-700 gap-1.5 print:hidden" onClick={() => setActionDialog("mark-paid")}><CreditCard className="w-3.5 h-3.5" /> Mark Paid</Button>}
+      {canSubmit && <Button size="sm" className="gap-1.5 bg-blue-600 hover:bg-blue-700" onClick={() => setActionDialog("submit")}><Send className="w-3.5 h-3.5" /> Submit</Button>}
+      {canApprove && <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 gap-1.5" onClick={() => setActionDialog("approve")}><CheckCircle2 className="w-3.5 h-3.5" /> Approve</Button>}
+      {canReject && <Button size="sm" variant="outline" className="border-red-200 text-red-700 hover:bg-red-50" onClick={() => setActionDialog("reject")}><XCircle className="w-3.5 h-3.5 mr-1" /> Reject</Button>}
+      {canMarkPaid && <Button size="sm" className="bg-green-600 hover:bg-green-700 gap-1.5" onClick={() => setActionDialog("mark-paid")}><CreditCard className="w-3.5 h-3.5" /> Mark Paid</Button>}
     </div>
   );
 
   return (
-    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-10">
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}
+      className={cn("space-y-6", hasMobileActions ? "pb-28 lg:pb-10" : "pb-10")}
+    >
       <PageHeader
         title={inv.invoiceNumber}
         subtitle={inv.vendorName}
         backHref="/procurement/invoices"
-        actions={actions}
+        actions={
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="gap-1.5 lg:hidden print:hidden" onClick={() => window.print()}>
+              <Printer className="w-3.5 h-3.5" />
+            </Button>
+            {desktopActions}
+          </div>
+        }
       />
 
       {/* Status bar */}
@@ -124,6 +134,24 @@ export default function InvoiceDetail({ id }: { id: string }) {
         <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/40 rounded-lg p-3">
           <p className="text-sm font-bold text-red-800 dark:text-red-400 mb-1">Mismatch Details</p>
           <p className="text-sm text-red-700 dark:text-red-300">{inv.mismatchDetails}</p>
+        </div>
+      )}
+
+      {/* Mismatch approve banner — visible on mobile too */}
+      {canApproveMismatch && (
+        <div className="flex items-center justify-between gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+            <p className="text-sm text-amber-800 font-medium">3-way mismatch requires sign-off before this invoice can proceed.</p>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            className="shrink-0 border-amber-300 text-amber-700 hover:bg-amber-100"
+            onClick={() => setActionDialog("approve-mismatch")}
+          >
+            Approve Mismatch
+          </Button>
         </div>
       )}
 
@@ -208,6 +236,60 @@ export default function InvoiceDetail({ id }: { id: string }) {
             ))}
           </div>
         </SectionCard>
+      )}
+
+      {/* ── Mobile sticky action bar (thumb zone) ───────────────────────────── */}
+      {hasMobileActions && (
+        <div
+          className="lg:hidden fixed bottom-16 left-0 right-0 z-30 print:hidden"
+          style={{ paddingBottom: "env(safe-area-inset-bottom, 0)" }}
+        >
+          <div className="mx-3 mb-2 bg-card border border-border rounded-2xl shadow-xl overflow-hidden">
+            {/* Main actions */}
+            <div className="flex divide-x divide-border">
+              {canSubmit && (
+                <button
+                  type="button"
+                  onClick={() => setActionDialog("submit")}
+                  className="flex-1 flex flex-col items-center justify-center gap-1.5 py-4 text-blue-600 hover:bg-blue-50 active:bg-blue-100 transition-colors"
+                >
+                  <Send className="w-6 h-6" />
+                  <span className="text-[11px] font-bold">Submit</span>
+                </button>
+              )}
+              {canApprove && (
+                <button
+                  type="button"
+                  onClick={() => setActionDialog("approve")}
+                  className="flex-1 flex flex-col items-center justify-center gap-1.5 py-4 text-emerald-600 hover:bg-emerald-50 active:bg-emerald-100 transition-colors"
+                >
+                  <CheckCircle2 className="w-6 h-6" />
+                  <span className="text-[11px] font-bold">Approve</span>
+                </button>
+              )}
+              {canReject && (
+                <button
+                  type="button"
+                  onClick={() => setActionDialog("reject")}
+                  className="flex-1 flex flex-col items-center justify-center gap-1.5 py-4 text-red-600 hover:bg-red-50 active:bg-red-100 transition-colors"
+                >
+                  <XCircle className="w-6 h-6" />
+                  <span className="text-[11px] font-bold">Reject</span>
+                </button>
+              )}
+              {canMarkPaid && (
+                <button
+                  type="button"
+                  onClick={() => setActionDialog("mark-paid")}
+                  className="flex-1 flex flex-col items-center justify-center gap-1.5 py-4 text-green-600 hover:bg-green-50 active:bg-green-100 transition-colors"
+                >
+                  <CreditCard className="w-6 h-6" />
+                  <span className="text-[11px] font-bold">Mark Paid</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Action dialog */}
