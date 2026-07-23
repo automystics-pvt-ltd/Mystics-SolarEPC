@@ -82,11 +82,6 @@ export default function RBACManager() {
   const [selectedRole, setSelectedRole] = useState("director");
   const [pendingToggle, setPendingToggle] = useState<string | null>(null);
 
-  // Guard: only admin/director
-  if (user && user.role !== "admin" && user.role !== "director") {
-    return <Redirect to="/dashboard" />;
-  }
-
   const { data: matrix, isLoading } = useQuery<PermMatrix>({
     queryKey: ["rbac-all"],
     queryFn: () => apiGet<PermMatrix>("/rbac/all"),
@@ -145,6 +140,11 @@ export default function RBACManager() {
       toast({ title: "Permissions reset to defaults", variant: "default" });
     },
   });
+
+  // Guard: only admin/director — placed AFTER all hooks to satisfy Rules of Hooks
+  if (user && user.role !== "admin" && user.role !== "director") {
+    return <Redirect to="/dashboard" />;
+  }
 
   function handleToggle(role: string, mod: string, action: Action, current: boolean) {
     if (role === "admin") return; // admin is immutable
