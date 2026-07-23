@@ -24,41 +24,66 @@ import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useEffect, useRef, useState, useCallback } from "react";
 
-/* ── All nav items for command palette ───────────────────────── */
-const ALL_NAV: { name: string; href: string; icon: React.ElementType; section: string }[] = [
-  { name: "Dashboard",                href: "/dashboard",               icon: LayoutDashboard, section: "Core"          },
-  { name: "Leads",                    href: "/crm/leads",               icon: Users,           section: "Sales & CRM"   },
-  { name: "Quotations",               href: "/crm/quotations",          icon: FileText,        section: "Sales & CRM"   },
-  { name: "Client POs",               href: "/crm/client-pos",          icon: FileCheck,       section: "Sales & CRM"   },
-  { name: "Invoices",                 href: "/crm/invoices",            icon: FilePlus,        section: "Sales & CRM"   },
-  { name: "Tasks",                    href: "/crm/tasks",               icon: CheckSquare,     section: "Sales & CRM"   },
-  { name: "Escalations",              href: "/crm/escalations",         icon: AlertTriangle,   section: "Sales & CRM"   },
-  { name: "Projects Hub",             href: "/projects",                icon: FolderKanban,    section: "Project Mgmt"  },
-  { name: "Contractors",              href: "/projects/contractors",    icon: HardHat,         section: "Project Mgmt"  },
-  { name: "Warehouses",               href: "/inventory/warehouses",    icon: Warehouse,       section: "Inventory"     },
-  { name: "Stock Transfers",          href: "/inventory/stock-transfers", icon: ArrowRightLeft, section: "Inventory"   },
-  { name: "Delivery Challans",        href: "/inventory/delivery-challans", icon: Truck,       section: "Inventory"     },
-  { name: "Stock Ledger",             href: "/inventory/stock-ledger",  icon: BookOpen,        section: "Inventory"     },
-  { name: "Stock Valuation",          href: "/inventory/stock-valuation", icon: Scale,         section: "Inventory"     },
-  { name: "Audits",                   href: "/inventory/audits",        icon: ClipboardCheck,  section: "Inventory"     },
-  { name: "Design Documents",         href: "/engineering/docs",        icon: Layers,          section: "Engineering"   },
-  { name: "Commissioning Checklists", href: "/commissioning",           icon: CheckSquare,     section: "Commissioning" },
-  { name: "AMC Contracts",            href: "/oam/amc",                 icon: Wrench,          section: "O&M & AMC"     },
-  { name: "Maintenance",              href: "/oam/maintenance",         icon: Wrench,          section: "O&M & AMC"     },
-  { name: "Service Tickets",          href: "/oam/tickets",             icon: AlertTriangle,   section: "O&M & AMC"     },
-  { name: "Procurement Dashboard",    href: "/procurement/dashboard",   icon: BarChart2,       section: "Procurement"   },
-  { name: "Vendors",                  href: "/procurement/vendors",     icon: Building2,       section: "Procurement"   },
-  { name: "Materials",                href: "/procurement/materials",   icon: Package,         section: "Procurement"   },
-  { name: "Vendor Quotations",        href: "/procurement/quotations",  icon: ClipboardList,   section: "Procurement"   },
-  { name: "Purchase Orders",          href: "/procurement/pos",         icon: ShoppingCart,    section: "Procurement"   },
-  { name: "GRNs",                     href: "/procurement/grns",        icon: Boxes,           section: "Procurement"   },
-  { name: "GRN Returns",              href: "/procurement/grn-returns", icon: RotateCcw,       section: "Procurement"   },
-  { name: "Procurement Invoices",     href: "/procurement/invoices",    icon: FilePlus,        section: "Procurement"   },
-  { name: "Finance Dashboard",        href: "/finance/dashboard",       icon: DollarSign,      section: "Finance"       },
-  { name: "Reports",                  href: "/reports",                 icon: BarChart3,       section: "Finance"       },
-  { name: "Vendor Performance",       href: "/reports/vendors",         icon: TrendingUp,      section: "Finance"       },
-  { name: "User Management",          href: "/admin/users",             icon: UserCog,         section: "Admin"         },
-  { name: "Audit Logs",               href: "/admin/audit-logs",        icon: ScrollText,      section: "Admin"         },
+/* ── All nav items for command palette ───────────────────────────
+   `roles` mirrors NavRail exactly — item visible when:
+     • no roles field  → visible to all authenticated users
+     • roles field     → only listed roles can see it
+   Unknown / unmapped roles fall through to deny-by-default (they
+   only see items with no roles restriction, i.e. Dashboard).
+─────────────────────────────────────────────────────────────── */
+const ALL_NAV: { name: string; href: string; icon: React.ElementType; section: string; roles?: string[] }[] = [
+  // Core — no role restriction
+  { name: "Dashboard",             href: "/dashboard",               icon: LayoutDashboard, section: "Core" },
+
+  // Sales & CRM — matches NavRail group roles
+  { name: "Leads",                 href: "/crm/leads",               icon: Users,           section: "Sales & CRM",   roles: ["admin","director","sales","pm"] },
+  { name: "Quotations",            href: "/crm/quotations",          icon: FileText,        section: "Sales & CRM",   roles: ["admin","director","sales","pm"] },
+  { name: "Client POs",            href: "/crm/client-pos",          icon: FileCheck,       section: "Sales & CRM",   roles: ["admin","director","sales","pm"] },
+  { name: "Invoices",              href: "/crm/invoices",            icon: FilePlus,        section: "Sales & CRM",   roles: ["admin","director","sales","pm"] },
+  { name: "Tasks",                 href: "/crm/tasks",               icon: CheckSquare,     section: "Sales & CRM",   roles: ["admin","director","sales","pm"] },
+  { name: "Escalations",           href: "/crm/escalations",         icon: AlertTriangle,   section: "Sales & CRM",   roles: ["admin","director","sales","pm"] },
+
+  // Project Mgmt — matches NavRail group roles
+  { name: "Projects Hub",          href: "/projects",                icon: FolderKanban,    section: "Project Mgmt",  roles: ["admin","director","pm","sales"] },
+  { name: "Contractors",           href: "/projects/contractors",    icon: HardHat,         section: "Project Mgmt",  roles: ["admin","director","pm","sales"] },
+
+  // Inventory — matches NavRail group roles
+  { name: "Warehouses",            href: "/inventory/warehouses",    icon: Warehouse,       section: "Inventory",     roles: ["admin","director","warehouse","pm"] },
+  { name: "Stock Transfers",       href: "/inventory/stock-transfers", icon: ArrowRightLeft, section: "Inventory",    roles: ["admin","director","warehouse","pm"] },
+  { name: "Delivery Challans",     href: "/inventory/delivery-challans", icon: Truck,       section: "Inventory",     roles: ["admin","director","warehouse","pm"] },
+  { name: "Stock Ledger",          href: "/inventory/stock-ledger",  icon: BookOpen,        section: "Inventory",     roles: ["admin","director","warehouse","pm"] },
+  { name: "Stock Valuation",       href: "/inventory/stock-valuation", icon: Scale,         section: "Inventory",     roles: ["admin","director","warehouse","pm"] },
+  { name: "Audits",                href: "/inventory/audits",        icon: ClipboardCheck,  section: "Inventory",     roles: ["admin","director","warehouse","pm"] },
+
+  // Engineering — matches NavRail group roles
+  { name: "Design Documents",      href: "/engineering/docs",        icon: Layers,          section: "Engineering",   roles: ["admin","director","pm"] },
+
+  // Commissioning — matches NavRail group roles
+  { name: "Checklists",            href: "/commissioning",           icon: CheckSquare,     section: "Commissioning", roles: ["admin","director","pm"] },
+
+  // O&M & AMC — matches NavRail group roles
+  { name: "AMC Contracts",         href: "/oam/amc",                 icon: Wrench,          section: "O&M & AMC",     roles: ["admin","director","pm"] },
+  { name: "Maintenance",           href: "/oam/maintenance",         icon: Wrench,          section: "O&M & AMC",     roles: ["admin","director","pm"] },
+  { name: "Service Tickets",       href: "/oam/tickets",             icon: AlertTriangle,   section: "O&M & AMC",     roles: ["admin","director","pm"] },
+
+  // Procurement — group roles + per-item roles mirror NavRail exactly
+  { name: "Procurement Dashboard", href: "/procurement/dashboard",   icon: BarChart2,       section: "Procurement",   roles: ["admin","director","pm","warehouse","finance"] },
+  { name: "Vendors",               href: "/procurement/vendors",     icon: Building2,       section: "Procurement",   roles: ["admin","director","pm"] },
+  { name: "Materials",             href: "/procurement/materials",   icon: Package,         section: "Procurement",   roles: ["admin","director","pm"] },
+  { name: "Vendor Quotations",     href: "/procurement/quotations",  icon: ClipboardList,   section: "Procurement",   roles: ["admin","director","pm"] },
+  { name: "Purchase Orders",       href: "/procurement/pos",         icon: ShoppingCart,    section: "Procurement",   roles: ["admin","director","pm","warehouse","finance"] },
+  { name: "GRNs",                  href: "/procurement/grns",        icon: Boxes,           section: "Procurement",   roles: ["admin","director","pm","warehouse","finance"] },
+  { name: "GRN Returns",           href: "/procurement/grn-returns", icon: RotateCcw,       section: "Procurement",   roles: ["admin","director","pm","warehouse"] },
+  { name: "Procurement Invoices",  href: "/procurement/invoices",    icon: FilePlus,        section: "Procurement",   roles: ["admin","director","pm","finance"] },
+
+  // Finance — matches NavRail group roles
+  { name: "Finance Dashboard",     href: "/finance/dashboard",       icon: DollarSign,      section: "Finance",       roles: ["admin","director","finance"] },
+  { name: "Reports",               href: "/reports",                 icon: BarChart3,       section: "Finance",       roles: ["admin","director","finance"] },
+  { name: "Vendor Performance",    href: "/reports/vendors",         icon: TrendingUp,      section: "Finance",       roles: ["admin","director","finance"] },
+
+  // Admin — matches NavRail group roles
+  { name: "User Management",       href: "/admin/users",             icon: UserCog,         section: "Admin",         roles: ["admin","director"] },
+  { name: "Audit Logs",            href: "/admin/audit-logs",        icon: ScrollText,      section: "Admin",         roles: ["admin","director"] },
 ];
 
 /* ── Mobile nav groups ───────────────────────────────────────── */
@@ -158,25 +183,61 @@ const NOTIF_ICON_COLOR: Record<string, string> = {
   approval: "bg-orange-100 text-orange-600",
 };
 
+/* ── Route-level role filter (mirrors NavRail deny-by-default) ── */
+function navItemAllowed(item: typeof ALL_NAV[number], role: string): boolean {
+  // Items with no roles field are visible to all authenticated users.
+  // Items with a roles field require the user's role to be listed.
+  // Unknown/unmapped roles only see items that have no restriction.
+  return !item.roles || item.roles.includes(role);
+}
+
+const RECENT_KEY = "mystics_cmd_recent";
+const MAX_RECENT = 5;
+
+function getRecentHrefs(): string[] {
+  try { return JSON.parse(localStorage.getItem(RECENT_KEY) ?? "[]"); } catch { return []; }
+}
+
+function addRecentHref(href: string) {
+  const prev = getRecentHrefs().filter((h) => h !== href);
+  localStorage.setItem(RECENT_KEY, JSON.stringify([href, ...prev].slice(0, MAX_RECENT)));
+}
+
 /* ── Command Palette ─────────────────────────────────────────── */
 function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [query, setQuery] = useState("");
   const [cursor, setCursor] = useState(0);
+  const [recentHrefs, setRecentHrefs] = useState<string[]>([]);
   const [, setLocation] = useLocation();
   const inputRef = useRef<HTMLInputElement>(null);
+  const { user } = useAuth();
 
-  const results = query.trim()
-    ? ALL_NAV.filter(
+  /* Filter nav by role — route-level, deny-by-default for unknown roles */
+  const role = user?.role ?? "";
+  const roleNav = ALL_NAV.filter((item) => navItemAllowed(item, role));
+
+  /* Recent items (role-filtered) */
+  const recentItems = recentHrefs
+    .map((href) => roleNav.find((n) => n.href === href))
+    .filter(Boolean) as typeof ALL_NAV;
+
+  /* Search results (role-filtered) */
+  const searchResults = query.trim()
+    ? roleNav.filter(
         (item) =>
           item.name.toLowerCase().includes(query.toLowerCase()) ||
           item.section.toLowerCase().includes(query.toLowerCase())
       )
-    : ALL_NAV.slice(0, 8);
+    : [];
+
+  /* Flat list for keyboard navigation */
+  const flatList = query.trim() ? searchResults : [...recentItems, ...roleNav];
 
   useEffect(() => {
     if (open) {
       setQuery("");
       setCursor(0);
+      setRecentHrefs(getRecentHrefs());
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [open]);
@@ -184,18 +245,54 @@ function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void 
   useEffect(() => { setCursor(0); }, [query]);
 
   const navigate = useCallback(
-    (href: string) => { setLocation(href); onClose(); },
+    (href: string) => {
+      addRecentHref(href);
+      setLocation(href);
+      onClose();
+    },
     [setLocation, onClose]
   );
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "ArrowDown") { e.preventDefault(); setCursor((c) => Math.min(c + 1, results.length - 1)); }
+    if (e.key === "ArrowDown") { e.preventDefault(); setCursor((c) => Math.min(c + 1, flatList.length - 1)); }
     else if (e.key === "ArrowUp") { e.preventDefault(); setCursor((c) => Math.max(c - 1, 0)); }
-    else if (e.key === "Enter") { if (results[cursor]) navigate(results[cursor].href); }
+    else if (e.key === "Enter") { if (flatList[cursor]) navigate(flatList[cursor].href); }
     else if (e.key === "Escape") onClose();
   };
 
   if (!open) return null;
+
+  /* Render a single nav item row */
+  const NavRow = ({ item, idx }: { item: typeof ALL_NAV[number]; idx: number }) => (
+    <button
+      key={item.href}
+      onClick={() => navigate(item.href)}
+      onMouseEnter={() => setCursor(idx)}
+      className={cn(
+        "w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors",
+        cursor === idx ? "bg-orange-50 dark:bg-orange-500/10" : "hover:bg-gray-50 dark:hover:bg-muted"
+      )}
+      aria-selected={cursor === idx}
+    >
+      <div className={cn(
+        "h-8 w-8 rounded-lg flex items-center justify-center shrink-0 transition-colors",
+        cursor === idx ? "bg-orange-100 text-[#EA580C]" : "bg-gray-100 dark:bg-muted text-gray-500"
+      )}>
+        <item.icon className="h-4 w-4" aria-hidden />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className={cn("text-[13px] font-semibold", cursor === idx ? "text-gray-900 dark:text-foreground" : "text-gray-700 dark:text-muted-foreground")}>{item.name}</p>
+        <p className="text-[11px] text-gray-400">{item.section}</p>
+      </div>
+      {cursor === idx && <ArrowRight className="h-4 w-4 text-[#EA580C] shrink-0" aria-hidden />}
+    </button>
+  );
+
+  const SectionLabel = ({ label }: { label: string }) => (
+    <div className="px-4 pb-1 pt-2">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{label}</p>
+    </div>
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]" onClick={onClose}>
@@ -227,38 +324,31 @@ function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void 
         </div>
 
         <div className="max-h-[360px] overflow-y-auto scrollbar-thin py-1.5">
-          {!query.trim() && (
-            <div className="px-4 pb-1 pt-1">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Quick Navigation</p>
-            </div>
-          )}
-          {results.length === 0 && (
-            <div className="py-10 text-center text-sm text-gray-400">No results for &ldquo;{query}&rdquo;</div>
-          )}
-          {results.map((item, idx) => (
-            <button
-              key={item.href}
-              onClick={() => navigate(item.href)}
-              onMouseEnter={() => setCursor(idx)}
-              className={cn(
-                "w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors",
-                cursor === idx ? "bg-orange-50 dark:bg-orange-500/10" : "hover:bg-gray-50 dark:hover:bg-muted"
+          {/* Searching: flat filtered list */}
+          {query.trim() && (
+            <>
+              {searchResults.length === 0 && (
+                <div className="py-10 text-center text-sm text-gray-400">No results for &ldquo;{query}&rdquo;</div>
               )}
-              aria-selected={cursor === idx}
-            >
-              <div className={cn(
-                "h-8 w-8 rounded-lg flex items-center justify-center shrink-0 transition-colors",
-                cursor === idx ? "bg-orange-100 text-[#EA580C]" : "bg-gray-100 dark:bg-muted text-gray-500"
-              )}>
-                <item.icon className="h-4 w-4" aria-hidden />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className={cn("text-[13px] font-semibold", cursor === idx ? "text-gray-900 dark:text-foreground" : "text-gray-700 dark:text-muted-foreground")}>{item.name}</p>
-                <p className="text-[11px] text-gray-400">{item.section}</p>
-              </div>
-              {cursor === idx && <ArrowRight className="h-4 w-4 text-[#EA580C] shrink-0" aria-hidden />}
-            </button>
-          ))}
+              {searchResults.map((item, idx) => <NavRow key={item.href} item={item} idx={idx} />)}
+            </>
+          )}
+
+          {/* Not searching: recent + all pages */}
+          {!query.trim() && (
+            <>
+              {recentItems.length > 0 && (
+                <>
+                  <SectionLabel label="Recent" />
+                  {recentItems.map((item, idx) => <NavRow key={`recent-${item.href}`} item={item} idx={idx} />)}
+                </>
+              )}
+              <SectionLabel label="All Pages" />
+              {roleNav.map((item, idx) => (
+                <NavRow key={item.href} item={item} idx={recentItems.length + idx} />
+              ))}
+            </>
+          )}
         </div>
 
         <div className="flex items-center gap-4 px-4 py-2.5 border-t border-gray-100 dark:border-border bg-gray-50/50 dark:bg-muted/30">
@@ -268,6 +358,10 @@ function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void 
               <span className="text-[11px] text-gray-400">{h.label}</span>
             </div>
           ))}
+          <div className="ml-auto flex items-center gap-1.5">
+            <kbd className="px-1.5 py-0.5 rounded-[4px] bg-gray-200 dark:bg-muted text-gray-600 text-[10px] font-mono font-bold">⌘K</kbd>
+            <span className="text-[11px] text-gray-400">close</span>
+          </div>
         </div>
       </motion.div>
     </div>
