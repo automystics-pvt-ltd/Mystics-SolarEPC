@@ -11,6 +11,7 @@ import {
 } from "recharts";
 import { BarChart2 } from "lucide-react";
 import { SectionCard, EmptyState } from "@/components/shared";
+import { formatINRCompact } from "@/lib/currency";
 
 export interface PipelineStage {
   name?: string;
@@ -24,13 +25,7 @@ interface PipelineChartProps {
   isLoading?: boolean;
 }
 
-function formatCurrency(amount?: number | null): string {
-  if (!amount) return "₹0";
-  if (amount >= 10_000_000) return `₹${(amount / 10_000_000).toFixed(1)} Cr`;
-  if (amount >= 100_000) return `₹${(amount / 100_000).toFixed(1)} L`;
-  if (amount >= 1_000) return `₹${(amount / 1_000).toFixed(1)}k`;
-  return `₹${Number(amount).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
-}
+// currency formatting imported from @/lib/currency
 
 // Stage-to-color: blue → emerald gradient (New → Won)
 const STAGE_COLORS: Record<string, string> = {
@@ -76,7 +71,7 @@ function CustomTooltip({ active, payload }: any) {
         <p className="text-muted-foreground">
           Pipeline:{" "}
           <span className="font-semibold text-foreground">
-            {formatCurrency(data.value)}
+            {formatINRCompact(data.value)}
           </span>
         </p>
       )}

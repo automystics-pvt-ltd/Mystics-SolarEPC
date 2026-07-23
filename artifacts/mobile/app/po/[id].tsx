@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useColors } from '@/hooks/useColors';
+import { formatINR } from '@/lib/currency';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useGetPurchaseOrder, useGetPODeliveryStatus } from '@workspace/api-client-react';
 
@@ -88,7 +89,7 @@ export default function PODetailScreen() {
           </View>
           <Text style={styles.vendorName}>{po.vendorName}</Text>
           <Text style={styles.amount}>
-            ₹{Number(po.amount).toLocaleString('en-IN')}
+            {formatINR(po.amount)}
           </Text>
           {po.poDate && (
             <Text style={styles.poDate}>
@@ -115,7 +116,7 @@ export default function PODetailScreen() {
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <InfoRow
             label="Amount"
-            value={`₹${Number(po.amount).toLocaleString('en-IN')}`}
+            value={formatINR(po.amount)}
           />
           {po.poDate && (
             <>

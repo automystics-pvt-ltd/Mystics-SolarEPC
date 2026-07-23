@@ -3,6 +3,7 @@ import { Boxes, Truck, BookOpen, Scale, ClipboardCheck } from "lucide-react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import { PageHeader, DataTable, StatusBadge } from "@/components/shared";
+import { formatINR } from "@/lib/currency";
 import type { ColumnDef } from "@tanstack/react-table";
 
 // ─── GRNsList ─────────────────────────────────────────────────────────────────
@@ -258,9 +259,6 @@ export function StockLedgerList() {
 
 // ─── StockValuationList ───────────────────────────────────────────────────────
 
-function formatINR(v: number) {
-  return `₹${v.toLocaleString("en-IN")}`;
-}
 
 export function StockValuationList() {
   const { data, isLoading } = useGetStockValuation();

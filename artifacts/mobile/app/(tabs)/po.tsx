@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useColors } from '@/hooks/useColors';
+import { formatINR } from '@/lib/currency';
 import { useGetPurchaseOrders } from '@workspace/api-client-react';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -139,7 +140,7 @@ export default function POScreen() {
             </Text>
             <View style={styles.cardFooter}>
               <Text style={[styles.amount, { color: colors.primary }]}>
-                ₹{Number(item.amount).toLocaleString('en-IN')}
+                {formatINR(item.amount)}
               </Text>
               {item.poDate && (
                 <Text style={[styles.dateText, { color: colors.mutedForeground }]}>

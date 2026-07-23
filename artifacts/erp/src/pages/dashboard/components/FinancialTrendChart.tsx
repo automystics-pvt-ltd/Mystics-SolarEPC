@@ -11,28 +11,14 @@ import {
 } from "recharts";
 import { SectionCard } from "@/components/shared";
 import { useGetDashboard } from "@workspace/api-client-react";
+import { formatINRAxis, formatINR } from "@/lib/currency";
 
 const MONTH_NAMES = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
-function formatCurrencyAxis(amount?: number | null): string {
-  if (!amount) return "₹0";
-  if (amount >= 10_000_000) return `₹${(amount / 10_000_000).toFixed(1)}Cr`;
-  if (amount >= 100_000) return `₹${(amount / 100_000).toFixed(0)}L`;
-  if (amount >= 1_000) return `₹${(amount / 1_000).toFixed(0)}k`;
-  return `₹${Number(amount).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
-}
-
-function formatCurrencyFull(amount?: number | null): string {
-  if (amount == null) return "₹0";
-  return Number(amount).toLocaleString("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  });
-}
+// currency formatting imported from @/lib/currency
 
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
@@ -47,7 +33,7 @@ function CustomTooltip({ active, payload, label }: any) {
           />
           <span className="text-muted-foreground">{entry.name}:</span>
           <span className="font-semibold" style={{ color: entry.color }}>
-            {formatCurrencyFull(entry.value)}
+            {formatINR(entry.value)}
           </span>
         </div>
       ))}
@@ -128,7 +114,7 @@ export function FinancialTrendChart() {
               tickLine={false}
               tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
               width={46}
-              tickFormatter={(v) => formatCurrencyAxis(v)}
+              tickFormatter={(v) => formatINRAxis(v)}
             />
             <Tooltip content={<CustomTooltip />} />
             <Legend

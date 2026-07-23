@@ -10,16 +10,13 @@ import { exportToCsv } from "@/lib/export";
 import { cn } from "@/lib/utils";
 import { PageHeader, StatCard, SkeletonStats, SectionCard, StatusBadge } from "@/components/shared";
 import { motion } from "framer-motion";
+import { formatINR } from "@/lib/currency";
 
 const COLORS = ["#10B981", "#F59E0B", "#F97316", "#EF4444", "#991B1B"];
 const STATUS_COLORS: Record<string, string> = {
   Paid: "#10B981", Approved: "#3B82F6", PendingApproval: "#F59E0B",
   "3WayMismatch": "#EF4444", Draft: "#9CA3AF",
 };
-
-function INR(v: number) {
-  return v.toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
-}
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
@@ -29,7 +26,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
       {payload.map((p: any) => (
         <div key={p.name} style={{ color: p.color }} className="flex justify-between gap-4">
           <span>{p.name}:</span>
-          <span className="font-semibold">{INR(p.value)}</span>
+          <span className="font-semibold">{formatINR(p.value)}</span>
         </div>
       ))}
     </div>
@@ -92,14 +89,14 @@ export default function FinanceDashboard() {
         />
         <StatCard
           label="Total Payable"
-          value={INR(summary?.totalPayable ?? 0)}
+          value={formatINR(summary?.totalPayable ?? 0)}
           icon={DollarSign}
           iconBg="bg-blue-50"
           iconColor="text-blue-600"
         />
         <StatCard
           label="Amount Paid"
-          value={INR(summary?.totalPaid ?? 0)}
+          value={formatINR(summary?.totalPaid ?? 0)}
           icon={CheckCircle2}
           iconBg="bg-emerald-50"
           iconColor="text-emerald-600"
@@ -107,7 +104,7 @@ export default function FinanceDashboard() {
         />
         <StatCard
           label="Outstanding"
-          value={INR(summary?.totalPending ?? 0)}
+          value={formatINR(summary?.totalPending ?? 0)}
           icon={AlertCircle}
           iconBg="bg-red-50"
           iconColor="text-red-600"
@@ -161,7 +158,7 @@ export default function FinanceDashboard() {
                     <Cell key={i} fill={STATUS_COLORS[entry.name] ?? COLORS[i % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(v, name, props) => [props.payload.amount ? INR(props.payload.amount) : v, name]} />
+                <Tooltip formatter={(v, name, props) => [props.payload.amount ? formatINR(props.payload.amount) : v, name]} />
               </PieChart>
             </ResponsiveContainer>
           </SectionCard>
@@ -198,10 +195,10 @@ export default function FinanceDashboard() {
                 return (
                   <tr key={i} className="border-b border-border/40 hover:bg-muted/20">
                     <td className="px-4 py-2.5 font-medium text-foreground">{v.vendor}</td>
-                    <td className="px-4 py-2.5 text-right text-muted-foreground">{INR(v.total)}</td>
-                    <td className="px-4 py-2.5 text-right text-emerald-600 font-medium">{INR(v.paid)}</td>
+                    <td className="px-4 py-2.5 text-right text-muted-foreground">{formatINR(v.total)}</td>
+                    <td className="px-4 py-2.5 text-right text-emerald-600 font-medium">{formatINR(v.paid)}</td>
                     <td className={cn("px-4 py-2.5 text-right font-semibold", v.pending > 0 ? "text-orange-700" : "text-muted-foreground")}>
-                      {INR(v.pending)}
+                      {formatINR(v.pending)}
                     </td>
                     <td className="px-4 py-2.5 text-right">
                       <div className="flex items-center justify-end gap-2">

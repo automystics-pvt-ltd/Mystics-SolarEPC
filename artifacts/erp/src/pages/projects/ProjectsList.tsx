@@ -14,6 +14,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion } from "framer-motion";
+import { formatINRCompact } from "@/lib/currency";
 
 const createProjectSchema = z.object({
   name: z.string().min(1, "Project name is required"),
@@ -23,12 +24,6 @@ const createProjectSchema = z.object({
   plannedEnd: z.string().optional(),
 });
 
-function formatCurrency(amount?: number) {
-  if (!amount) return "₹0";
-  if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(2)} Cr`;
-  if (amount >= 100000) return `₹${(amount / 100000).toFixed(1)} L`;
-  return `₹${Number(amount).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
-}
 
 function getStatusColor(status: string) {
   switch (status) {
@@ -147,7 +142,7 @@ export function ProjectsList() {
         </div>
         <div className="bg-white rounded-[12px] premium-shadow border border-gray-100 p-5 flex flex-col justify-between h-[100px]">
           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Total Budget</p>
-          <p className="text-2xl font-bold tracking-tight text-gray-900 font-mono">{formatCurrency(summary?.totalBudget)}</p>
+          <p className="text-2xl font-bold tracking-tight text-gray-900 font-mono">{formatINRCompact(summary?.totalBudget)}</p>
         </div>
         <div className="bg-emerald-50 rounded-[12px] border border-emerald-100 p-5 flex flex-col justify-between h-[100px]">
           <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-widest">On Track</p>
@@ -211,7 +206,7 @@ export function ProjectsList() {
                     </TableCell>
                     <TableCell className="py-4 text-right">
                       <Link href={`/projects/${project.id}`} className="block font-mono font-bold text-[15px] text-gray-900">
-                        {formatCurrency(project.contractValue ?? undefined)}
+                        {formatINRCompact(project.contractValue ?? undefined)}
                       </Link>
                     </TableCell>
                     <TableCell className="py-4 px-6">

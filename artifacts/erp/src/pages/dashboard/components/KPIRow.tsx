@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatINRCompact } from "@/lib/currency";
 
 export interface KPICardDef {
   id: string;
@@ -123,13 +124,6 @@ export function KPIRow({ cards, isLoading }: KPIRowProps) {
 
 /* ── Helpers for building the standard Mystics KPI set ── */
 
-function formatCurrency(v?: number | null): string {
-  if (!v) return "₹0";
-  if (v >= 10_000_000) return `₹${(v / 10_000_000).toFixed(1)}Cr`;
-  if (v >= 100_000)    return `₹${(v / 100_000).toFixed(1)}L`;
-  if (v >= 1_000)      return `₹${(v / 1_000).toFixed(0)}k`;
-  return `₹${v}`;
-}
 
 export interface KPIData {
   activeProjects: number;
@@ -156,7 +150,7 @@ export function buildKPICards(data: KPIData): KPICardDef[] {
     {
       id: "revenue-pipeline",
       label: "Revenue Pipeline",
-      value: formatCurrency(data.revenuePipeline),
+      value: formatINRCompact(data.revenuePipeline),
       trend: data.revenuePipeline > 0 ? "up" : "flat",
       trendLabel: "This FY",
       href: "/crm/quotations",

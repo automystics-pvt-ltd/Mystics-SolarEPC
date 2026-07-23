@@ -13,12 +13,9 @@ import { exportToCsv } from "@/lib/export";
 import { cn } from "@/lib/utils";
 import { PageHeader, StatCard, SectionCard, StatusBadge } from "@/components/shared";
 import { motion } from "framer-motion";
+import { formatINR } from "@/lib/currency";
 
 const COLORS = ["#EA580C", "#F97316", "#3B82F6", "#10B981", "#8B5CF6", "#EC4899", "#06B6D4", "#84CC16"];
-
-function INR(v: number) {
-  return v.toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
-}
 
 function KPICard({ title, value, sub, icon: Icon, color = "orange" }: any) {
   const iconBg: Record<string, string> = {
@@ -53,7 +50,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
       {payload.map((p: any) => (
         <div key={p.name} style={{ color: p.color }} className="flex gap-2">
           <span>{p.name}:</span>
-          <span className="font-semibold">{typeof p.value === 'number' && p.value > 1000 ? INR(p.value) : p.value}</span>
+          <span className="font-semibold">{typeof p.value === 'number' && p.value > 1000 ? formatINR(p.value) : p.value}</span>
         </div>
       ))}
     </div>
@@ -70,9 +67,9 @@ function ProcurementReport() {
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <KPICard title="Total POs" value={summary?.total ?? 0} icon={FileText} color="orange" />
-        <KPICard title="Total Value" value={INR(summary?.totalValue ?? 0)} icon={TrendingUp} color="blue" />
-        <KPICard title="Open Value" value={INR(summary?.openValue ?? 0)} icon={Package} color="purple" />
-        <KPICard title="Closed Value" value={INR(summary?.closedValue ?? 0)} icon={BarChart3} color="green" />
+        <KPICard title="Total Value" value={formatINR(summary?.totalValue ?? 0)} icon={TrendingUp} color="blue" />
+        <KPICard title="Open Value" value={formatINR(summary?.openValue ?? 0)} icon={Package} color="purple" />
+        <KPICard title="Closed Value" value={formatINR(summary?.closedValue ?? 0)} icon={BarChart3} color="green" />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <SectionCard title="Monthly PO Trend">
@@ -120,7 +117,7 @@ function ProcurementReport() {
                 <tr key={i} className="border-b border-border/40 hover:bg-muted/20">
                   <td className="px-4 py-2 font-medium text-foreground">{v.vendor}</td>
                   <td className="px-4 py-2 text-center text-muted-foreground">{v.count}</td>
-                  <td className="px-4 py-2 text-right font-semibold text-foreground">{INR(v.value)}</td>
+                  <td className="px-4 py-2 text-right font-semibold text-foreground">{formatINR(v.value)}</td>
                 </tr>
               ))}
             </tbody>
@@ -225,9 +222,9 @@ function InvoiceReport() {
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <KPICard title="Total Invoices" value={summary?.total ?? 0} icon={FileText} color="orange" />
-        <KPICard title="Total Payable" value={INR(summary?.totalPayable ?? 0)} icon={TrendingUp} color="blue" />
-        <KPICard title="Amount Paid" value={INR(summary?.totalPaid ?? 0)} icon={BarChart3} color="green" />
-        <KPICard title="Outstanding" value={INR(summary?.totalPending ?? 0)} icon={Package} color="purple" />
+        <KPICard title="Total Payable" value={formatINR(summary?.totalPayable ?? 0)} icon={TrendingUp} color="blue" />
+        <KPICard title="Amount Paid" value={formatINR(summary?.totalPaid ?? 0)} icon={BarChart3} color="green" />
+        <KPICard title="Outstanding" value={formatINR(summary?.totalPending ?? 0)} icon={Package} color="purple" />
       </div>
       <SectionCard title="Invoice Aging Analysis">
         <ResponsiveContainer width="100%" height={220}>
@@ -266,9 +263,9 @@ function InvoiceReport() {
               {byVendor.map((v: any, i: number) => (
                 <tr key={i} className="border-b border-border/40 hover:bg-muted/20">
                   <td className="px-4 py-2 font-medium text-foreground">{v.vendor}</td>
-                  <td className="px-4 py-2 text-right text-muted-foreground">{INR(v.total)}</td>
-                  <td className="px-4 py-2 text-right text-emerald-600">{INR(v.paid)}</td>
-                  <td className="px-4 py-2 text-right text-orange-600 font-semibold">{INR(v.pending)}</td>
+                  <td className="px-4 py-2 text-right text-muted-foreground">{formatINR(v.total)}</td>
+                  <td className="px-4 py-2 text-right text-emerald-600">{formatINR(v.paid)}</td>
+                  <td className="px-4 py-2 text-right text-orange-600 font-semibold">{formatINR(v.pending)}</td>
                   <td className="px-4 py-2 text-right text-muted-foreground text-xs">
                     {v.total > 0 ? ((v.paid / v.total) * 100).toFixed(0) : 0}%
                   </td>
@@ -292,7 +289,7 @@ function InventoryReport() {
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <KPICard title="Total Items" value={summary?.totalItems ?? 0} icon={Boxes} color="orange" />
-        <KPICard title="Total Value" value={INR(summary?.totalValue ?? 0)} icon={TrendingUp} color="blue" />
+        <KPICard title="Total Value" value={formatINR(summary?.totalValue ?? 0)} icon={TrendingUp} color="blue" />
         <KPICard title="Warehouses" value={summary?.warehouses ?? 0} icon={Package} color="green" />
         <KPICard title="Low Stock Items" value={summary?.lowStockItems ?? 0} icon={BarChart3} color="purple" />
       </div>
@@ -337,9 +334,9 @@ function ProjectsReport() {
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <KPICard title="Total Projects" value={summary?.total ?? 0} icon={FolderKanban} color="orange" />
-        <KPICard title="Total Budget" value={INR(summary?.totalBudget ?? 0)} icon={TrendingUp} color="blue" />
-        <KPICard title="Total Expenses" value={INR(summary?.totalExpenses ?? 0)} icon={BarChart3} color="purple" />
-        <KPICard title="PO Value" value={INR(summary?.totalPOValue ?? 0)} icon={Package} color="green" />
+        <KPICard title="Total Budget" value={formatINR(summary?.totalBudget ?? 0)} icon={TrendingUp} color="blue" />
+        <KPICard title="Total Expenses" value={formatINR(summary?.totalExpenses ?? 0)} icon={BarChart3} color="purple" />
+        <KPICard title="PO Value" value={formatINR(summary?.totalPOValue ?? 0)} icon={Package} color="green" />
       </div>
       <SectionCard title="Budget vs Expenses by Project">
         <ResponsiveContainer width="100%" height={240}>
@@ -380,10 +377,10 @@ function ProjectsReport() {
                 <tr key={i} className="border-b border-border/40 hover:bg-muted/20">
                   <td className="px-4 py-2 font-medium text-foreground">{p.name}</td>
                   <td className="px-4 py-2"><StatusBadge status={p.status} /></td>
-                  <td className="px-4 py-2 text-right text-muted-foreground">{INR(p.budget)}</td>
-                  <td className="px-4 py-2 text-right text-muted-foreground">{INR(p.expenses)}</td>
+                  <td className="px-4 py-2 text-right text-muted-foreground">{formatINR(p.budget)}</td>
+                  <td className="px-4 py-2 text-right text-muted-foreground">{formatINR(p.expenses)}</td>
                   <td className={cn("px-4 py-2 text-right font-semibold", p.remaining < 0 ? "text-red-600" : "text-emerald-600")}>
-                    {INR(p.remaining)}
+                    {formatINR(p.remaining)}
                   </td>
                   <td className="px-4 py-2 text-right">
                     <div className="flex items-center justify-end gap-2">

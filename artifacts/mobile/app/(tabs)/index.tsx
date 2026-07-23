@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
+import { formatINR } from '@/lib/currency';
 import { useAuth } from '@/context/AuthContext';
 import { useOffline } from '@/context/OfflineContext';
 import { OfflineBanner } from '@/components/OfflineBanner';
@@ -182,7 +183,7 @@ export default function HomeScreen() {
                 {po.vendorName}
               </Text>
               <Text style={[styles.poAmount, { color: colors.primary }]}>
-                ₹{Number(po.amount).toLocaleString('en-IN')}
+                {formatINR(po.amount)}
               </Text>
             </TouchableOpacity>
           ))

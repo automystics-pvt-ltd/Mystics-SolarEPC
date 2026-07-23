@@ -11,10 +11,7 @@ import { exportToCsv } from "@/lib/export";
 import { cn } from "@/lib/utils";
 import { PageHeader, StatCard, SectionCard, EmptyState } from "@/components/shared";
 import { motion } from "framer-motion";
-
-function INR(v: number) {
-  return v.toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
-}
+import { formatINR } from "@/lib/currency";
 
 function ScoreBar({ score }: { score: number }) {
   const color = score >= 80 ? "bg-emerald-500" : score >= 60 ? "bg-amber-500" : "bg-red-500";
@@ -233,7 +230,7 @@ export default function VendorPerformance() {
                     <td className="px-4 py-3 font-semibold text-foreground">{v.name}</td>
                     <td className="px-4 py-3 text-muted-foreground text-xs">{v.category || "—"}</td>
                     <td className="px-4 py-3 text-center text-muted-foreground">{v.totalPOs}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-foreground">{INR(v.totalSpend)}</td>
+                    <td className="px-4 py-3 text-right font-semibold text-foreground">{formatINR(v.totalSpend)}</td>
                     <td className="px-4 py-3 text-center">
                       <RateBadge rate={v.acceptanceRate} />
                     </td>
