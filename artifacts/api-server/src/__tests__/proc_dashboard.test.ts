@@ -340,6 +340,274 @@ describe("Procurement Dashboard – thisMonthSpend and lastMonthSpend boundaries
   });
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Date-range boundary inclusion tests (Task 69)
+// Uses an isolated year (2019) so no other data interferes.
+// Range under test: 2019-03-01 → 2019-05-31  (3 months)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const BOUNDARY_YEAR  = 2019;
+const BOUNDARY_FROM  = `${BOUNDARY_YEAR}-03-01`;
+const BOUNDARY_TO    = `${BOUNDARY_YEAR}-05-31`;
+const BOUNDARY_VENDOR = `DASH-BOUNDARY-${RUN}`;
+
+// Dates exactly on the boundaries (UTC, matching how the route builds fromDate/toDate)
+const ON_FROM_DATE      = new Date(`${BOUNDARY_FROM}T00:00:00.000Z`); // included
+const BEFORE_FROM_DATE  = new Date(`${BOUNDARY_YEAR}-02-28T23:59:59.000Z`); // excluded
+const ON_TO_DATE        = new Date(`${BOUNDARY_TO}T23:59:59.000Z`); // included
+const AFTER_TO_DATE     = new Date(`${BOUNDARY_YEAR}-06-01T00:00:00.000Z`); // excluded
+
+// Mid-range date for a PO that must always appear
+const MID_RANGE_DATE = new Date(`${BOUNDARY_YEAR}-04-15T12:00:00.000Z`);
+
+const boundaryPOIds: number[] = [];
+
+beforeAll(async () => {
+  async function insertBoundaryPO(
+    overrides: Partial<typeof procurementPOsTable.$inferInsert> = {},
+  ): Promise<typeof procurementPOsTable.$inferSelect> {
+    seqNo += 1;
+    const poNumber = `BND${RUN}${seqNo}`.slice(0, 30);
+    const [po] = await db
+      .insert(procurementPOsTable)
+      .values({
+        poNumber,
+        vendorName: BOUNDARY_VENDOR,
+        status: "FullyReceived",
+        totalAmount: "1000",
+        createdAt: MID_RANGE_DATE,
+        updatedAt: MID_RANGE_DATE,
+        ...overrides,
+      })
+      .returning();
+    boundaryPOIds.push(po.id);
+    insertedPOIds.push(po.id);
+    return po;
+  }
+
+  // PO exactly on the from boundary → MUST be included in ytdSpend
+  await insertBoundaryPO({ totalAmount: "111", createdAt: ON_FROM_DATE, updatedAt: ON_FROM_DATE });
+  // PO one instant before from → MUST NOT be included
+  await insertBoundaryPO({ totalAmount: "222", createdAt: BEFORE_FROM_DATE, updatedAt: BEFORE_FROM_DATE });
+  // PO exactly on the to boundary → MUST be included
+  await insertBoundaryPO({ totalAmount: "333", createdAt: ON_TO_DATE, updatedAt: ON_TO_DATE });
+  // PO one instant after to → MUST NOT be included
+  await insertBoundaryPO({ totalAmount: "444", createdAt: AFTER_TO_DATE, updatedAt: AFTER_TO_DATE });
+  // Mid-range PO for an interior month → MUST be included
+  await insertBoundaryPO({ totalAmount: "555", createdAt: MID_RANGE_DATE, updatedAt: MID_RANGE_DATE });
+});
+
+afterAll(async () => {
+  // boundaryPOIds are already tracked in insertedPOIds — cleaned up by the outer afterAll
+});
+
+describe("Procurement Dashboard – date-range boundary inclusion", () => {
+  it("ytdSpend includes a PO created exactly on the 'from' date", async () => {
+    const res = await api.get(
+      `/api/procurement-dashboard?from=${BOUNDARY_FROM}&to=${BOUNDARY_TO}`,
+    );
+    expect(res.status).toBe(200);
+
+    // Included POs: 111 (on from) + 333 (on to) + 555 (mid-range) = 999
+    // Excluded POs: 222 (before from) + 444 (after to)
+    const { ytdSpend } = res.body.summary;
+    expect(ytdSpend).toBe(999);
+  });
+
+  it("ytdSpend excludes a PO created one instant before the 'from' date", async () => {
+    const res = await api.get(
+      `/api/procurement-dashboard?from=${BOUNDARY_FROM}&to=${BOUNDARY_TO}`,
+    );
+    expect(res.status).toBe(200);
+
+    // 222 must not contribute — total stays at 999, not 1221
+    const { ytdSpend } = res.body.summary;
+    expect(ytdSpend).not.toBe(1221);
+    expect(ytdSpend).toBe(999);
+  });
+
+  it("ytdSpend includes a PO created exactly on the 'to' date", async () => {
+    // Already verified above (333 is counted), but assert explicitly for clarity.
+    const res = await api.get(
+      `/api/procurement-dashboard?from=${BOUNDARY_FROM}&to=${BOUNDARY_TO}`,
+    );
+    expect(res.status).toBe(200);
+    // 333 is in May 2019 (the 'to' month), so it's part of the 999 total.
+    expect(res.body.summary.ytdSpend).toBeGreaterThanOrEqual(333);
+  });
+
+  it("ytdSpend excludes a PO created one instant after the 'to' date", async () => {
+    const res = await api.get(
+      `/api/procurement-dashboard?from=${BOUNDARY_FROM}&to=${BOUNDARY_TO}`,
+    );
+    expect(res.status).toBe(200);
+
+    // 444 (June 2019) must not appear — total must not include 444
+    const { ytdSpend } = res.body.summary;
+    expect(ytdSpend).toBe(999); // not 1443
+  });
+
+  it("monthlySpend array covers exactly the months in the requested range", async () => {
+    const res = await api.get(
+      `/api/procurement-dashboard?from=${BOUNDARY_FROM}&to=${BOUNDARY_TO}`,
+    );
+    expect(res.status).toBe(200);
+
+    const { monthlySpend } = res.body;
+    expect(Array.isArray(monthlySpend)).toBe(true);
+
+    // Range 2019-03-01 → 2019-05-31 spans exactly 3 months
+    const months = monthlySpend.map((b: any) => b.month as string);
+    expect(months).toContain(`${BOUNDARY_YEAR}-03`);
+    expect(months).toContain(`${BOUNDARY_YEAR}-04`);
+    expect(months).toContain(`${BOUNDARY_YEAR}-05`);
+    // Must NOT contain months outside the range
+    expect(months).not.toContain(`${BOUNDARY_YEAR}-02`);
+    expect(months).not.toContain(`${BOUNDARY_YEAR}-06`);
+
+    // The array length must be exactly 3 (March, April, May)
+    // Filter to our boundary range to avoid interference from other DB data
+    const boundaryMonths = months.filter(
+      (m: string) => m >= `${BOUNDARY_YEAR}-03` && m <= `${BOUNDARY_YEAR}-05`,
+    );
+    expect(boundaryMonths.length).toBe(3);
+  });
+
+  it("monthly spend buckets correctly attribute boundary-date POs to the right month", async () => {
+    const res = await api.get(
+      `/api/procurement-dashboard?from=${BOUNDARY_FROM}&to=${BOUNDARY_TO}`,
+    );
+    expect(res.status).toBe(200);
+
+    const { monthlySpend } = res.body;
+
+    const marchBucket = monthlySpend.find((b: any) => b.month === `${BOUNDARY_YEAR}-03`);
+    const aprilBucket = monthlySpend.find((b: any) => b.month === `${BOUNDARY_YEAR}-04`);
+    const mayBucket   = monthlySpend.find((b: any) => b.month === `${BOUNDARY_YEAR}-05`);
+
+    expect(marchBucket).toBeDefined();
+    expect(aprilBucket).toBeDefined();
+    expect(mayBucket).toBeDefined();
+
+    // ON_FROM_DATE = 2019-03-01 → March bucket gets 111
+    expect(marchBucket.amount).toBe(111);
+    // MID_RANGE_DATE = 2019-04-15 → April bucket gets 555
+    expect(aprilBucket.amount).toBe(555);
+    // ON_TO_DATE = 2019-05-31 → May bucket gets 333
+    expect(mayBucket.amount).toBe(333);
+  });
+
+  it("topVendors for boundary range only reflects POs within the range", async () => {
+    const res = await api.get(
+      `/api/procurement-dashboard?from=${BOUNDARY_FROM}&to=${BOUNDARY_TO}`,
+    );
+    expect(res.status).toBe(200);
+
+    const { topVendors } = res.body;
+    const myVendor = topVendors.find((v: any) => v.vendorName === BOUNDARY_VENDOR);
+
+    // 3 POs within range (111 + 333 + 555 = 999)
+    expect(myVendor).toBeDefined();
+    expect(myVendor.spend).toBe(999);
+    expect(myVendor.poCount).toBe(3);
+  });
+
+  it("appliedRange echoes from/to when provided", async () => {
+    const res = await api.get(
+      `/api/procurement-dashboard?from=${BOUNDARY_FROM}&to=${BOUNDARY_TO}`,
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.appliedRange.from).toBe(BOUNDARY_FROM);
+    expect(res.body.appliedRange.to).toBe(BOUNDARY_TO);
+  });
+
+  it("cross-year range: monthlySpend spans correct months and ytdSpend sums only those months", async () => {
+    // Range Dec 2018 → Feb 2019: 3 months crossing a year boundary
+    const crossFrom = "2018-12-01";
+    const crossTo   = "2019-02-28";
+    const CROSS_VENDOR = `DASH-CROSS-${RUN}`;
+    const crossPOIds: number[] = [];
+
+    seqNo += 1;
+    const [dec] = await db.insert(procurementPOsTable).values({
+      poNumber: `CRS${RUN}${seqNo}D`.slice(0, 30),
+      vendorName: CROSS_VENDOR,
+      status: "FullyReceived",
+      totalAmount: "2000",
+      createdAt: new Date("2018-12-15T12:00:00.000Z"),
+      updatedAt: new Date("2018-12-15T12:00:00.000Z"),
+    }).returning();
+    crossPOIds.push(dec.id);
+
+    seqNo += 1;
+    const [feb] = await db.insert(procurementPOsTable).values({
+      poNumber: `CRS${RUN}${seqNo}F`.slice(0, 30),
+      vendorName: CROSS_VENDOR,
+      status: "FullyReceived",
+      totalAmount: "3000",
+      createdAt: new Date("2019-02-10T12:00:00.000Z"),
+      updatedAt: new Date("2019-02-10T12:00:00.000Z"),
+    }).returning();
+    crossPOIds.push(feb.id);
+
+    // PO outside range (Nov 2018) — must not be counted
+    seqNo += 1;
+    const [nov] = await db.insert(procurementPOsTable).values({
+      poNumber: `CRS${RUN}${seqNo}N`.slice(0, 30),
+      vendorName: CROSS_VENDOR,
+      status: "FullyReceived",
+      totalAmount: "9999",
+      createdAt: new Date("2018-11-30T12:00:00.000Z"),
+      updatedAt: new Date("2018-11-30T12:00:00.000Z"),
+    }).returning();
+    crossPOIds.push(nov.id);
+
+    try {
+      const res = await api.get(
+        `/api/procurement-dashboard?from=${crossFrom}&to=${crossTo}`,
+      );
+      expect(res.status).toBe(200);
+
+      const { monthlySpend, summary, topVendors } = res.body;
+
+      // Months must be: 2018-12, 2019-01, 2019-02
+      const months = monthlySpend.map((b: any) => b.month as string);
+      expect(months).toContain("2018-12");
+      expect(months).toContain("2019-01");
+      expect(months).toContain("2019-02");
+      expect(months).not.toContain("2018-11");
+      expect(months).not.toContain("2019-03");
+
+      // ytdSpend = 2000 + 3000 = 5000 (not 14999 which would include Nov)
+      const crossVendor = topVendors.find((v: any) => v.vendorName === CROSS_VENDOR);
+      expect(crossVendor).toBeDefined();
+      expect(crossVendor.spend).toBe(5000);
+      expect(crossVendor.poCount).toBe(2);
+
+      // Use vendorMonthlySpend (vendor-scoped) for exact bucket assertions
+      // so other vendors' POs in those months don't affect the numbers.
+      const { vendorMonthlySpend } = res.body;
+      const crossVendorMonths: { month: string; amount: number }[] =
+        vendorMonthlySpend[CROSS_VENDOR] ?? [];
+
+      const decBucket = crossVendorMonths.find((b) => b.month === "2018-12");
+      const janBucket = crossVendorMonths.find((b) => b.month === "2019-01");
+      const febBucket = crossVendorMonths.find((b) => b.month === "2019-02");
+
+      expect(decBucket).toBeDefined();
+      expect(janBucket).toBeDefined();
+      expect(febBucket).toBeDefined();
+      expect(decBucket!.amount).toBe(2000);
+      expect(janBucket!.amount).toBe(0);
+      expect(febBucket!.amount).toBe(3000);
+    } finally {
+      if (crossPOIds.length) {
+        await db.delete(procurementPOsTable).where(inArray(procurementPOsTable.id, crossPOIds));
+      }
+    }
+  });
+});
+
 describe("Procurement Dashboard – integration shape and new fields", () => {
   it("GET /api/procurement-dashboard returns 200 with all required top-level and summary fields", async () => {
     const res = await api.get("/api/procurement-dashboard");
