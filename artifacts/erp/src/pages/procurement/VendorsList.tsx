@@ -9,36 +9,98 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Plus, Building2 } from "lucide-react";
+import { Plus, Building2, AlertCircle } from "lucide-react";
 import { PageHeader, DataTable, StatusBadge } from "@/components/shared";
+import { useToast } from "@/components/ui/use-toast";
+import { validateVendorCore, hasErrors, type VendorErrors } from "@/lib/vendor-validation";
 import type { ColumnDef } from "@tanstack/react-table";
+import { cn } from "@/lib/utils";
 
 const STATUS_OPTIONS = [
-  { label: "Active", value: "Active" },
-  { label: "Inactive", value: "Inactive" },
+  { label: "Active",      value: "Active"      },
+  { label: "Inactive",    value: "Inactive"    },
   { label: "Blacklisted", value: "Blacklisted" },
 ];
 
+const EMPTY_FORM = { name: "", status: "Active", billingCountry: "India" } as Record<string, any>;
+
+/* ── Small helper to display a field error ─────────────────────────────── */
+function FieldError({ msg }: { msg?: string }) {
+  if (!msg) return null;
+  return (
+    <p className="mt-1 flex items-center gap-1 text-xs text-red-500">
+      <AlertCircle className="h-3 w-3 shrink-0" />
+      {msg}
+    </p>
+  );
+}
+
 export default function VendorsList() {
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState<any>({ name: "", status: "Active", billingCountry: "India" });
+  const [form, setForm] = useState<Record<string, any>>(EMPTY_FORM);
+  const [errors, setErrors] = useState<VendorErrors>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [submitAttempted, setSubmitAttempted] = useState(false);
   const qc = useQueryClient();
 
   const { data: vendors = [], isLoading } = useGetVendors({});
   const createMut = useCreateVendor();
 
+  /* ── Helpers ── */
+  const touch = (field: string) => setTouched(t => ({ ...t, [field]: true }));
+
+  const setField = (field: string, value: any, uppercase = false) => {
+    const v = uppercase ? value.toUpperCase() : value;
+    const next = { ...form, [field]: v };
+    setForm(next);
+    // Revalidate eagerly once a field has been touched or submit was attempted
+    if (touched[field] || submitAttempted) {
+      setErrors(validateVendorCore(next));
+    }
+  };
+
+  const showError = (field: string) =>
+    (touched[field] || submitAttempted) ? errors[field] : undefined;
+
+  const resetDialog = () => {
+    setForm(EMPTY_FORM);
+    setErrors({});
+    setTouched({});
+    setSubmitAttempted(false);
+  };
+
   const handleCreate = () => {
-    createMut.mutate({ data: form }, {
+    setSubmitAttempted(true);
+    const e = validateVendorCore(form);
+    setErrors(e);
+    if (hasErrors(e)) return;
+
+    createMut.mutate({ data: form as any }, {
       onSuccess: (v) => {
         qc.invalidateQueries({ queryKey: getGetVendorsQueryKey() });
         setOpen(false);
-        setForm({ name: "", status: "Active", billingCountry: "India" });
+        resetDialog();
         setLocation(`/procurement/vendors/${v.id}`);
-      }
+      },
+      onError: (err: any) => {
+        // Parse server-side field errors if available
+        const apiErrors = err?.response?.data?.fields ?? err?.data?.fields;
+        if (apiErrors) {
+          setErrors(prev => ({ ...prev, ...apiErrors }));
+        } else {
+          toast({
+            title: "Failed to create vendor",
+            description: err?.response?.data?.error ?? err?.message ?? "Something went wrong",
+            variant: "destructive",
+          });
+        }
+      },
     });
   };
 
+  /* ── Table columns ── */
   const columns: ColumnDef<any, any>[] = [
     {
       accessorKey: "name",
@@ -54,9 +116,9 @@ export default function VendorsList() {
     },
     {
       accessorKey: "gstin",
-      header: "Category / GSTIN",
+      header: "GSTIN",
       cell: ({ row }) => (
-        <span className="text-sm text-muted-foreground font-mono">
+        <span className="text-sm text-muted-foreground font-mono tracking-wide">
           {row.original.gstin ?? "—"}
         </span>
       ),
@@ -102,38 +164,153 @@ export default function VendorsList() {
     },
   ];
 
+  const anyError = submitAttempted && hasErrors(errors);
+
   return (
     <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-10">
       <PageHeader
         title="Vendors"
         subtitle="Approved supplier and contractor registry"
         actions={
-          <Dialog open={open} onOpenChange={setOpen}>
+          <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetDialog(); }}>
             <DialogTrigger asChild>
               <Button className="gap-2"><Plus className="w-4 h-4" /> Add Vendor</Button>
             </DialogTrigger>
+
             <DialogContent className="sm:max-w-lg">
-              <DialogHeader><DialogTitle>New Vendor</DialogTitle></DialogHeader>
+              <DialogHeader>
+                <DialogTitle>New Vendor</DialogTitle>
+              </DialogHeader>
+
               <div className="space-y-4 pt-2">
-                <div><Label>Vendor Name *</Label><Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Waaree Energies Ltd" className="mt-1" /></div>
+
+                {/* Vendor Name */}
+                <div>
+                  <Label>
+                    Vendor Name <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    value={form.name}
+                    onChange={e => setField("name", e.target.value)}
+                    onBlur={() => touch("name")}
+                    placeholder="e.g. Waaree Energies Ltd"
+                    className={cn("mt-1", showError("name") && "border-red-400 focus-visible:ring-red-300")}
+                  />
+                  <FieldError msg={showError("name")} />
+                </div>
+
+                {/* Trade Name + Status */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Trade Name</Label><Input value={form.tradeName ?? ""} onChange={e => setForm({ ...form, tradeName: e.target.value })} className="mt-1" /></div>
-                  <div><Label>Status</Label>
-                    <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
+                  <div>
+                    <Label>Trade Name</Label>
+                    <Input
+                      value={form.tradeName ?? ""}
+                      onChange={e => setField("tradeName", e.target.value)}
+                      placeholder="e.g. SK Traders"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label>Status</Label>
+                    <Select value={form.status} onValueChange={v => setField("status", v)}>
                       <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                      <SelectContent><SelectItem value="Active">Active</SelectItem><SelectItem value="Inactive">Inactive</SelectItem></SelectContent>
+                      <SelectContent>
+                        {STATUS_OPTIONS.map(o => (
+                          <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                        ))}
+                      </SelectContent>
                     </Select>
                   </div>
                 </div>
+
+                {/* GSTIN + PAN */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div><Label>GSTIN</Label><Input value={form.gstin ?? ""} onChange={e => setForm({ ...form, gstin: e.target.value })} placeholder="27AABCU9603R1ZX" className="mt-1" /></div>
-                  <div><Label>PAN</Label><Input value={form.pan ?? ""} onChange={e => setForm({ ...form, pan: e.target.value })} placeholder="AABCU9603R" className="mt-1" /></div>
+                  <div>
+                    <Label>GSTIN</Label>
+                    <Input
+                      value={form.gstin ?? ""}
+                      onChange={e => setField("gstin", e.target.value, true)}
+                      onBlur={() => touch("gstin")}
+                      placeholder="27AABCU9603R1ZX"
+                      maxLength={15}
+                      className={cn("mt-1 font-mono tracking-wide", showError("gstin") && "border-red-400 focus-visible:ring-red-300")}
+                    />
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">
+                      {(form.gstin ?? "").length}/15 chars
+                    </p>
+                    <FieldError msg={showError("gstin")} />
+                  </div>
+                  <div>
+                    <Label>PAN</Label>
+                    <Input
+                      value={form.pan ?? ""}
+                      onChange={e => setField("pan", e.target.value, true)}
+                      onBlur={() => touch("pan")}
+                      placeholder="AABCU9603R"
+                      maxLength={10}
+                      className={cn("mt-1 font-mono tracking-wide", showError("pan") && "border-red-400 focus-visible:ring-red-300")}
+                    />
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">
+                      {(form.pan ?? "").length}/10 chars
+                    </p>
+                    <FieldError msg={showError("pan")} />
+                  </div>
                 </div>
-                <div><Label>Primary Email</Label><Input type="email" value={form.primaryEmail ?? ""} onChange={e => setForm({ ...form, primaryEmail: e.target.value })} className="mt-1" /></div>
-                <div><Label>Primary Phone</Label><Input value={form.primaryPhone ?? ""} onChange={e => setForm({ ...form, primaryPhone: e.target.value })} className="mt-1" /></div>
-                <div className="flex justify-end gap-2 pt-2">
-                  <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-                  <Button onClick={handleCreate} disabled={!form.name || createMut.isPending}>{createMut.isPending ? "Creating…" : "Create & Open"}</Button>
+
+                {/* Primary Email */}
+                <div>
+                  <Label>Primary Email</Label>
+                  <Input
+                    type="email"
+                    value={form.primaryEmail ?? ""}
+                    onChange={e => setField("primaryEmail", e.target.value)}
+                    onBlur={() => touch("primaryEmail")}
+                    placeholder="vendor@example.com"
+                    className={cn("mt-1", showError("primaryEmail") && "border-red-400 focus-visible:ring-red-300")}
+                  />
+                  <FieldError msg={showError("primaryEmail")} />
+                </div>
+
+                {/* Primary Phone */}
+                <div>
+                  <Label>Primary Phone</Label>
+                  <Input
+                    value={form.primaryPhone ?? ""}
+                    onChange={e => {
+                      // Only allow digits, max 10
+                      const v = e.target.value.replace(/\D/g, "").slice(0, 10);
+                      setField("primaryPhone", v);
+                    }}
+                    onBlur={() => touch("primaryPhone")}
+                    placeholder="9876543210"
+                    maxLength={10}
+                    inputMode="numeric"
+                    className={cn("mt-1", showError("primaryPhone") && "border-red-400 focus-visible:ring-red-300")}
+                  />
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    {(form.primaryPhone ?? "").length}/10 digits · Indian mobile
+                  </p>
+                  <FieldError msg={showError("primaryPhone")} />
+                </div>
+
+                {/* Error summary + actions */}
+                {anyError && (
+                  <div className="rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 px-3 py-2 flex items-center gap-2 text-xs text-red-600 dark:text-red-400">
+                    <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                    Please fix {Object.keys(errors).length} validation error{Object.keys(errors).length !== 1 ? "s" : ""} before creating
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-2 pt-1">
+                  <Button variant="outline" onClick={() => { setOpen(false); resetDialog(); }}>
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleCreate}
+                    disabled={createMut.isPending}
+                  >
+                    {createMut.isPending ? "Creating…" : "Create & Open"}
+                  </Button>
                 </div>
               </div>
             </DialogContent>
