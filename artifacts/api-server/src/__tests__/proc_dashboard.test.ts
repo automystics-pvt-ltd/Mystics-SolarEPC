@@ -18,6 +18,7 @@ import {
   procurementPOsTable,
   procGRNsTable,
   procInvoicesTable,
+  vendorsTable,
 } from "@workspace/db";
 import { inArray } from "drizzle-orm";
 
@@ -48,9 +49,10 @@ const THIS_MONTH_DATE = new Date("2026-07-05T10:00:00.000Z");
 const LAST_MONTH_DATE = new Date("2026-06-05T10:00:00.000Z");
 
 // IDs of rows we insert, cleaned up in afterAll
-const insertedPOIds:  number[] = [];
-const insertedGRNIds: number[] = [];
-const insertedInvIds: number[] = [];
+const insertedPOIds:    number[] = [];
+const insertedGRNIds:   number[] = [];
+const insertedInvIds:   number[] = [];
+const insertedVendorIds: number[] = [];
 
 // ── Helper: insert a PO and track its id ────────────────────────────────────
 
@@ -180,6 +182,8 @@ afterAll(async () => {
     await db.delete(procGRNsTable).where(inArray(procGRNsTable.id, insertedGRNIds));
   if (insertedPOIds.length)
     await db.delete(procurementPOsTable).where(inArray(procurementPOsTable.id, insertedPOIds));
+  if (insertedVendorIds.length)
+    await db.delete(vendorsTable).where(inArray(vendorsTable.id, insertedVendorIds));
 });
 
 // ── Tests ────────────────────────────────────────────────────────────────────
@@ -750,5 +754,112 @@ describe("Procurement Dashboard – integration shape and new fields", () => {
       expect(g).toHaveProperty("status");
       expect(g).toHaveProperty("createdAt");
     }
+  });
+});
+
+// ── Vendor-id grouping ────────────────────────────────────────────────────────
+// The same physical vendor can appear under slightly different name strings
+// (e.g. "ABC Electricals" vs "ABC Electricals Pvt Ltd").  When both POs share
+// the same vendorId FK the dashboard must merge them into a single topVendors
+// entry rather than splitting spend across two rows.
+
+describe("Procurement Dashboard – vendor-id grouping prevents split spend", () => {
+  // Use a year that no other test touches so the vendor is guaranteed top-of-list.
+  const MERGE_YEAR   = 2019;
+  const MERGE_FROM   = `${MERGE_YEAR}-01-01`;
+  const MERGE_TO     = `${MERGE_YEAR}-12-31`;
+  const MERGE_DATE   = new Date(`${MERGE_YEAR}-03-15T10:00:00.000Z`);
+
+  let mergeVendorId: number;
+  const mergePOIds: number[] = [];
+
+  beforeAll(async () => {
+    // Create a real vendor record so the FK constraint is satisfied.
+    const [vendor] = await db
+      .insert(vendorsTable)
+      .values({ name: `MergeVendor-${RUN}`, code: `MV${RUN}`.slice(0, 20) })
+      .returning();
+    mergeVendorId = vendor.id;
+    insertedVendorIds.push(vendor.id);
+
+    // PO 1 — linked to the vendor, name as registered
+    const [po1] = await db
+      .insert(procurementPOsTable)
+      .values({
+        poNumber: `MRG1-${RUN}`.slice(0, 30),
+        vendorId: mergeVendorId,
+        vendorName: `MergeVendor-${RUN}`,
+        status: "FullyReceived",
+        totalAmount: "6000",
+        createdAt: MERGE_DATE,
+        updatedAt: MERGE_DATE,
+      })
+      .returning();
+    mergePOIds.push(po1.id);
+    insertedPOIds.push(po1.id);
+
+    // PO 2 — same vendorId but vendorName has " Pvt Ltd" appended
+    const [po2] = await db
+      .insert(procurementPOsTable)
+      .values({
+        poNumber: `MRG2-${RUN}`.slice(0, 30),
+        vendorId: mergeVendorId,
+        vendorName: `MergeVendor-${RUN} Pvt Ltd`,
+        status: "FullyReceived",
+        totalAmount: "4000",
+        createdAt: MERGE_DATE,
+        updatedAt: MERGE_DATE,
+      })
+      .returning();
+    mergePOIds.push(po2.id);
+    insertedPOIds.push(po2.id);
+  });
+
+  it("merges two POs with the same vendorId but different vendorName strings into one topVendors entry", async () => {
+    const res = await api.get(
+      `/api/procurement-dashboard?from=${MERGE_FROM}&to=${MERGE_TO}`,
+    );
+    expect(res.status).toBe(200);
+
+    const { topVendors } = res.body;
+    expect(Array.isArray(topVendors)).toBe(true);
+
+    // There must be exactly ONE entry for our vendor (not two with different names).
+    const entries = topVendors.filter(
+      (v: any) =>
+        v.vendorName === `MergeVendor-${RUN}` ||
+        v.vendorName === `MergeVendor-${RUN} Pvt Ltd`,
+    );
+    expect(entries).toHaveLength(1);
+
+    // Combined spend must be 6000 + 4000 = 10000.
+    expect(entries[0].spend).toBe(10000);
+    // Both POs must be counted.
+    expect(entries[0].poCount).toBe(2);
+  });
+
+  it("vendorMonthlySpend for the merged vendor reflects combined spend across both POs", async () => {
+    const res = await api.get(
+      `/api/procurement-dashboard?from=${MERGE_FROM}&to=${MERGE_TO}`,
+    );
+    expect(res.status).toBe(200);
+
+    const { topVendors, vendorMonthlySpend } = res.body;
+
+    // Find whichever name the dashboard chose as display label.
+    const mergedEntry = topVendors.find(
+      (v: any) =>
+        v.vendorName === `MergeVendor-${RUN}` ||
+        v.vendorName === `MergeVendor-${RUN} Pvt Ltd`,
+    );
+    expect(mergedEntry).toBeDefined();
+
+    const monthlyData = vendorMonthlySpend[mergedEntry.vendorName];
+    expect(Array.isArray(monthlyData)).toBe(true);
+
+    // March bucket must carry the full merged spend (6000 + 4000).
+    const marchBucket = monthlyData.find((b: any) => b.month === `${MERGE_YEAR}-03`);
+    expect(marchBucket).toBeDefined();
+    expect(marchBucket.amount).toBe(10000);
   });
 });

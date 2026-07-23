@@ -145,9 +145,13 @@ router.get("/procurement-dashboard", async (req, res): Promise<void> => {
       .groupBy(sql`to_char(${procurementPOsTable.createdAt}, 'YYYY-MM')`)
       .orderBy(sql`to_char(${procurementPOsTable.createdAt}, 'YYYY-MM')`),
 
-    /* 6: Top 5 vendors by spend (period-scoped) */
+    /* 6: Top 5 vendors by spend (period-scoped).
+       Group by COALESCE(vendor_id::text, vendor_name) so the same physical vendor
+       is merged into one row even when POs were created under slightly different
+       name strings — as long as the PO is linked to a vendor record via vendorId. */
     db.select({
-      vendorName: procurementPOsTable.vendorName,
+      groupKey:   sql<string>`coalesce(${procurementPOsTable.vendorId}::text, ${procurementPOsTable.vendorName})`,
+      vendorName: sql<string>`max(${procurementPOsTable.vendorName})`,
       spend:      sql<string>`sum(${procurementPOsTable.totalAmount}::numeric)`,
       poCount:    sql<number>`count(*)::int`,
     }).from(procurementPOsTable)
@@ -156,7 +160,7 @@ router.get("/procurement-dashboard", async (req, res): Promise<void> => {
         gte(procurementPOsTable.createdAt, fromDate),
         lte(procurementPOsTable.createdAt, toDate),
       ))
-      .groupBy(procurementPOsTable.vendorName)
+      .groupBy(sql`coalesce(${procurementPOsTable.vendorId}::text, ${procurementPOsTable.vendorName})`)
       .orderBy(sql`sum(${procurementPOsTable.totalAmount}::numeric) desc`)
       .limit(5),
 
@@ -219,8 +223,11 @@ router.get("/procurement-dashboard", async (req, res): Promise<void> => {
       .orderBy(desc(procurementPOsTable.createdAt))
       .limit(10),
 
-    /* 13: Range-received POs (minimal cols) for vendor monthly drill-down */
+    /* 13: Range-received POs (minimal cols) for vendor monthly drill-down.
+       vendorId is included so the monthly bucketing uses the same stable
+       coalesce(vendorId, vendorName) key as the top-vendors SQL query. */
     db.select({
+      vendorId:    procurementPOsTable.vendorId,
       vendorName:  procurementPOsTable.vendorName,
       totalAmount: procurementPOsTable.totalAmount,
       createdAt:   procurementPOsTable.createdAt,
@@ -285,24 +292,30 @@ router.get("/procurement-dashboard", async (req, res): Promise<void> => {
   const monthlySpend = rangeMonths.map(m => ({ month: m, amount: spendByMonth.get(m) ?? 0 }));
 
   /* ── Top vendors ────────────────────────────────────────────────────── */
-  const topVendors = topVendorsRaw.map(v => ({
+  // topVendorsRaw is already SQL-grouped by coalesce(vendorId::text, vendorName),
+  // so same-vendor POs with slightly different name strings are merged at the DB level.
+  // groupKey is carried through to match rangeReceivedPOs for the monthly drill-down.
+  const topVendorBuckets = topVendorsRaw.map(v => ({
+    groupKey:   v.groupKey,
     vendorName: v.vendorName ?? "Unknown",
     spend:      n(v.spend),
     poCount:    v.poCount,
   }));
+  const topVendors = topVendorBuckets.map(({ vendorName, spend, poCount }) => ({ vendorName, spend, poCount }));
 
   /* ── Vendor monthly spend — O(n+m) using a pre-built Map ────────────── */
+  // Key by the same coalesce expression: vendorId (when set) otherwise vendorName.
   const vendorMonthAmounts = new Map<string, Map<string, number>>();
   for (const po of rangeReceivedPOs) {
-    const month  = po.createdAt.toISOString().slice(0, 7);
-    const vendor = po.vendorName ?? "Unknown";
-    const mm     = vendorMonthAmounts.get(vendor) ?? new Map<string, number>();
+    const month    = po.createdAt.toISOString().slice(0, 7);
+    const groupKey = po.vendorId != null ? String(po.vendorId) : (po.vendorName ?? "Unknown");
+    const mm       = vendorMonthAmounts.get(groupKey) ?? new Map<string, number>();
     mm.set(month, (mm.get(month) ?? 0) + n(po.totalAmount));
-    vendorMonthAmounts.set(vendor, mm);
+    vendorMonthAmounts.set(groupKey, mm);
   }
   const vendorMonthlySpend: Record<string, { month: string; amount: number }[]> = {};
-  for (const { vendorName } of topVendors) {
-    const mm = vendorMonthAmounts.get(vendorName) ?? new Map<string, number>();
+  for (const { vendorName, groupKey } of topVendorBuckets) {
+    const mm = vendorMonthAmounts.get(groupKey) ?? new Map<string, number>();
     vendorMonthlySpend[vendorName] = rangeMonths.map(m => ({ month: m, amount: mm.get(m) ?? 0 }));
   }
 
