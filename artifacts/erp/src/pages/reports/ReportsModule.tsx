@@ -7,6 +7,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Loader2, Download, TrendingUp, Package, FileText, BarChart3, Boxes, FolderKanban } from "lucide-react";
+import { SkeletonList } from "@/components/shared";
 import { apiGet } from "@/lib/fetch";
 import { exportToCsv } from "@/lib/export";
 import { cn } from "@/lib/utils";
@@ -62,7 +63,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 // ─── Procurement Tab ──────────────────────────────────────────────────────────
 function ProcurementReport() {
   const { data, isLoading } = useQuery({ queryKey: ["reports-procurement"], queryFn: () => apiGet<any>("/reports/procurement") });
-  if (isLoading) return <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-orange-500" /></div>;
+  if (isLoading) return <SkeletonList rows={5} />;
   if (!data) return null;
   const { summary, byStatus = [], byVendor = [], monthly = [] } = data;
   return (
@@ -133,7 +134,7 @@ function ProcurementReport() {
 // ─── GRN Tab ──────────────────────────────────────────────────────────────────
 function GRNReport() {
   const { data, isLoading } = useQuery({ queryKey: ["reports-grn"], queryFn: () => apiGet<any>("/reports/grn") });
-  if (isLoading) return <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-orange-500" /></div>;
+  if (isLoading) return <SkeletonList rows={5} />;
   if (!data) return null;
   const { summary, byStatus = [], vendorRejections = [] } = data;
   return (
@@ -209,7 +210,7 @@ function GRNReport() {
 // ─── Invoice Tab ──────────────────────────────────────────────────────────────
 function InvoiceReport() {
   const { data, isLoading } = useQuery({ queryKey: ["reports-invoices"], queryFn: () => apiGet<any>("/reports/invoices") });
-  if (isLoading) return <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-orange-500" /></div>;
+  if (isLoading) return <SkeletonList rows={5} />;
   if (!data) return null;
   const { summary, aging, byVendor = [] } = data;
   const agingData = [
@@ -284,7 +285,7 @@ function InvoiceReport() {
 // ─── Inventory Tab ─────────────────────────────────────────────────────────────
 function InventoryReport() {
   const { data, isLoading } = useQuery({ queryKey: ["reports-inventory"], queryFn: () => apiGet<any>("/reports/inventory") });
-  if (isLoading) return <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-orange-500" /></div>;
+  if (isLoading) return <SkeletonList rows={5} />;
   if (!data) return null;
   const { summary, lowStock = [], txnByType = [] } = data;
   return (
@@ -329,7 +330,7 @@ function InventoryReport() {
 // ─── Projects Tab ─────────────────────────────────────────────────────────────
 function ProjectsReport() {
   const { data, isLoading } = useQuery({ queryKey: ["reports-projects"], queryFn: () => apiGet<any>("/reports/projects") });
-  if (isLoading) return <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-orange-500" /></div>;
+  if (isLoading) return <SkeletonList rows={5} />;
   if (!data) return null;
   const { summary, projects = [] } = data;
   return (

@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useGetProject, getGetProjectQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import { LayoutDashboard, Activity, Package, FileText, DollarSign, Milestone, AlertOctagon } from "lucide-react";
+import { Plus, LayoutDashboard, Activity, Package, FileText, DollarSign, Milestone, AlertOctagon } from "lucide-react";
 import { ProjectOverview } from "./tabs/ProjectOverview";
 import { ProjectActivities } from "./tabs/ProjectActivities";
 import { ProjectMRs } from "./tabs/ProjectMRs";

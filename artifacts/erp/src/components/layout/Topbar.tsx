@@ -1,19 +1,16 @@
-import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/lib/auth";
-import { useTheme } from "@/lib/theme";
 import {
-  Bell, Search, PanelLeftClose, PanelLeftOpen, CheckCheck,
-  ExternalLink, ArrowRight, Moon, Sun, Monitor, LogOut,
-  ChevronDown, CheckCircle2, Info, AlertCircle,
+  Bell, PanelLeftClose, PanelLeftOpen, CheckCheck, ExternalLink,
+  Command, Search, ArrowRight,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Sidebar } from "./Sidebar";
 import { Link, useLocation } from "wouter";
 import { Menu } from "lucide-react";
@@ -23,342 +20,295 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost, apiPatch } from "@/lib/fetch";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useEffect, useRef, useState, useCallback } from "react";
+import {
+  LayoutDashboard, Users, FileText, FileCheck, FilePlus, CheckSquare,
+  AlertTriangle, FolderKanban, HardHat, Warehouse, Boxes, Truck,
+  BookOpen, Scale, ClipboardCheck, Zap, Layers, CheckSquare2, Wrench,
+  Building2, Package, ClipboardList, ShoppingCart, BarChart2, ArrowRightLeft,
+  RotateCcw, DollarSign, BarChart3, UserCog, ScrollText, TrendingUp,
+} from "lucide-react";
 
-// ── Breadcrumb config ─────────────────────────────────────────────────────────
+/* ── All nav items for command palette ───────────────────────── */
+const ALL_NAV: { name: string; href: string; icon: React.ElementType; section: string }[] = [
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, section: "Core" },
+  { name: "Leads", href: "/crm/leads", icon: Users, section: "Sales & CRM" },
+  { name: "Quotations", href: "/crm/quotations", icon: FileText, section: "Sales & CRM" },
+  { name: "Client POs", href: "/crm/client-pos", icon: FileCheck, section: "Sales & CRM" },
+  { name: "Invoices", href: "/crm/invoices", icon: FilePlus, section: "Sales & CRM" },
+  { name: "Tasks", href: "/crm/tasks", icon: CheckSquare, section: "Sales & CRM" },
+  { name: "Escalations", href: "/crm/escalations", icon: AlertTriangle, section: "Sales & CRM" },
+  { name: "Projects Hub", href: "/projects", icon: FolderKanban, section: "Project Mgmt" },
+  { name: "Contractors", href: "/projects/contractors", icon: HardHat, section: "Project Mgmt" },
+  { name: "Warehouses", href: "/inventory/warehouses", icon: Warehouse, section: "Inventory" },
+  { name: "Stock Transfers", href: "/inventory/stock-transfers", icon: ArrowRightLeft, section: "Inventory" },
+  { name: "Delivery Challans", href: "/inventory/delivery-challans", icon: Truck, section: "Inventory" },
+  { name: "Stock Ledger", href: "/inventory/stock-ledger", icon: BookOpen, section: "Inventory" },
+  { name: "Stock Valuation", href: "/inventory/stock-valuation", icon: Scale, section: "Inventory" },
+  { name: "Audits", href: "/inventory/audits", icon: ClipboardCheck, section: "Inventory" },
+  { name: "Design Documents", href: "/engineering/docs", icon: Layers, section: "Engineering" },
+  { name: "Commissioning Checklists", href: "/commissioning", icon: CheckSquare2, section: "Commissioning" },
+  { name: "AMC Contracts", href: "/oam/amc", icon: Wrench, section: "O&M & AMC" },
+  { name: "Maintenance", href: "/oam/maintenance", icon: Wrench, section: "O&M & AMC" },
+  { name: "Service Tickets", href: "/oam/tickets", icon: AlertTriangle, section: "O&M & AMC" },
+  { name: "Procurement Dashboard", href: "/procurement/dashboard", icon: BarChart2, section: "Procurement" },
+  { name: "Vendors", href: "/procurement/vendors", icon: Building2, section: "Procurement" },
+  { name: "Materials", href: "/procurement/materials", icon: Package, section: "Procurement" },
+  { name: "Vendor Quotations", href: "/procurement/quotations", icon: ClipboardList, section: "Procurement" },
+  { name: "Purchase Orders", href: "/procurement/pos", icon: ShoppingCart, section: "Procurement" },
+  { name: "GRNs", href: "/procurement/grns", icon: Boxes, section: "Procurement" },
+  { name: "GRN Returns", href: "/procurement/grn-returns", icon: RotateCcw, section: "Procurement" },
+  { name: "Procurement Invoices", href: "/procurement/invoices", icon: FilePlus, section: "Procurement" },
+  { name: "Finance Dashboard", href: "/finance/dashboard", icon: DollarSign, section: "Finance" },
+  { name: "Reports", href: "/reports", icon: BarChart3, section: "Finance" },
+  { name: "Vendor Performance", href: "/reports/vendors", icon: TrendingUp, section: "Finance" },
+  { name: "User Management", href: "/admin/users", icon: UserCog, section: "Admin" },
+  { name: "Audit Logs", href: "/admin/audit-logs", icon: ScrollText, section: "Admin" },
+];
 
-type Crumb = { label: string; href?: string };
+/* ── Breadcrumb route map ────────────────────────────────────── */
+interface BreadcrumbItem { label: string; href?: string }
 
-function getBreadcrumbs(path: string): Crumb[] {
-  const EXACT: Record<string, Crumb[]> = {
-    "/dashboard":                   [{ label: "Dashboard" }],
-    "/crm/leads":                   [{ label: "Sales & CRM" }, { label: "Leads" }],
-    "/crm/quotations":              [{ label: "Sales & CRM" }, { label: "Quotations" }],
-    "/crm/client-pos":              [{ label: "Sales & CRM" }, { label: "Client POs" }],
-    "/crm/invoices":                [{ label: "Sales & CRM" }, { label: "Invoices" }],
-    "/crm/tasks":                   [{ label: "Sales & CRM" }, { label: "Tasks" }],
-    "/crm/escalations":             [{ label: "Sales & CRM" }, { label: "Escalations" }],
-    "/projects":                    [{ label: "Projects" }, { label: "Projects Hub" }],
-    "/projects/contractors":        [{ label: "Projects", href: "/projects" }, { label: "Contractors" }],
-    "/inventory/warehouses":        [{ label: "Inventory" }, { label: "Warehouses" }],
-    "/inventory/stock-transfers":   [{ label: "Inventory" }, { label: "Stock Transfers" }],
-    "/inventory/delivery-challans": [{ label: "Inventory" }, { label: "Delivery Challans" }],
-    "/inventory/stock-ledger":      [{ label: "Inventory" }, { label: "Stock Ledger" }],
-    "/inventory/stock-valuation":   [{ label: "Inventory" }, { label: "Stock Valuation" }],
-    "/inventory/audits":            [{ label: "Inventory" }, { label: "Audits" }],
-    "/engineering/docs":            [{ label: "Engineering" }, { label: "Design Documents" }],
-    "/commissioning":               [{ label: "Engineering" }, { label: "Commissioning" }],
-    "/oam/amc":                     [{ label: "O&M & AMC" }, { label: "AMC Contracts" }],
-    "/oam/maintenance":             [{ label: "O&M & AMC" }, { label: "Maintenance" }],
-    "/oam/tickets":                 [{ label: "O&M & AMC" }, { label: "Service Tickets" }],
-    "/procurement/dashboard":       [{ label: "Procurement" }, { label: "Overview" }],
-    "/procurement/vendors":         [{ label: "Procurement", href: "/procurement/dashboard" }, { label: "Vendors" }],
-    "/procurement/materials":       [{ label: "Procurement", href: "/procurement/dashboard" }, { label: "Materials" }],
-    "/procurement/quotations":      [{ label: "Procurement", href: "/procurement/dashboard" }, { label: "Vendor Quotations" }],
-    "/procurement/quotations/new":  [{ label: "Procurement", href: "/procurement/dashboard" }, { label: "Vendor Quotations", href: "/procurement/quotations" }, { label: "New Quotation" }],
-    "/procurement/pos":             [{ label: "Procurement", href: "/procurement/dashboard" }, { label: "Purchase Orders" }],
-    "/procurement/grns":            [{ label: "Procurement", href: "/procurement/dashboard" }, { label: "GRNs" }],
-    "/procurement/grns/new":        [{ label: "Procurement", href: "/procurement/dashboard" }, { label: "GRNs", href: "/procurement/grns" }, { label: "New GRN" }],
-    "/procurement/grn-returns":     [{ label: "Procurement", href: "/procurement/dashboard" }, { label: "GRN Returns" }],
-    "/procurement/grn-returns/new": [{ label: "Procurement", href: "/procurement/dashboard" }, { label: "GRN Returns", href: "/procurement/grn-returns" }, { label: "New Return" }],
-    "/procurement/invoices":        [{ label: "Procurement", href: "/procurement/dashboard" }, { label: "Invoices" }],
-    "/procurement/invoices/new":    [{ label: "Procurement", href: "/procurement/dashboard" }, { label: "Invoices", href: "/procurement/invoices" }, { label: "New Invoice" }],
-    "/finance/dashboard":           [{ label: "Finance & Reports" }, { label: "Finance Overview" }],
-    "/reports":                     [{ label: "Finance & Reports", href: "/finance/dashboard" }, { label: "Reports" }],
-    "/reports/vendors":             [{ label: "Finance & Reports", href: "/finance/dashboard" }, { label: "Vendor Performance" }],
-    "/admin/users":                 [{ label: "Administration" }, { label: "User Management" }],
-    "/admin/audit-logs":            [{ label: "Administration", href: "/admin/users" }, { label: "Audit Logs" }],
-  };
+const STATIC_ROUTES: Record<string, BreadcrumbItem[]> = {
+  "/dashboard": [{ label: "Dashboard" }],
+  "/crm/leads": [{ label: "Sales & CRM", href: "/crm/leads" }, { label: "Leads" }],
+  "/crm/quotations": [{ label: "Sales & CRM", href: "/crm/leads" }, { label: "Quotations" }],
+  "/crm/client-pos": [{ label: "Sales & CRM", href: "/crm/leads" }, { label: "Client POs" }],
+  "/crm/invoices": [{ label: "Sales & CRM", href: "/crm/leads" }, { label: "Invoices" }],
+  "/crm/tasks": [{ label: "Sales & CRM", href: "/crm/leads" }, { label: "Tasks" }],
+  "/crm/escalations": [{ label: "Sales & CRM", href: "/crm/leads" }, { label: "Escalations" }],
+  "/projects": [{ label: "Project Mgmt", href: "/projects" }, { label: "Projects Hub" }],
+  "/projects/contractors": [{ label: "Project Mgmt", href: "/projects" }, { label: "Contractors" }],
+  "/inventory/warehouses": [{ label: "Inventory", href: "/inventory/warehouses" }, { label: "Warehouses" }],
+  "/inventory/stock-transfers": [{ label: "Inventory", href: "/inventory/warehouses" }, { label: "Stock Transfers" }],
+  "/inventory/delivery-challans": [{ label: "Inventory", href: "/inventory/warehouses" }, { label: "Delivery Challans" }],
+  "/inventory/stock-ledger": [{ label: "Inventory", href: "/inventory/warehouses" }, { label: "Stock Ledger" }],
+  "/inventory/stock-valuation": [{ label: "Inventory", href: "/inventory/warehouses" }, { label: "Stock Valuation" }],
+  "/inventory/audits": [{ label: "Inventory", href: "/inventory/warehouses" }, { label: "Audits" }],
+  "/engineering/docs": [{ label: "Engineering" }, { label: "Design Documents" }],
+  "/commissioning": [{ label: "Commissioning" }],
+  "/oam/amc": [{ label: "O&M & AMC" }, { label: "AMC Contracts" }],
+  "/oam/maintenance": [{ label: "O&M & AMC" }, { label: "Maintenance" }],
+  "/oam/tickets": [{ label: "O&M & AMC" }, { label: "Service Tickets" }],
+  "/procurement/dashboard": [{ label: "Procurement", href: "/procurement/dashboard" }, { label: "Dashboard" }],
+  "/procurement/vendors": [{ label: "Procurement", href: "/procurement/dashboard" }, { label: "Vendors" }],
+  "/procurement/materials": [{ label: "Procurement", href: "/procurement/dashboard" }, { label: "Materials" }],
+  "/procurement/quotations": [{ label: "Procurement", href: "/procurement/dashboard" }, { label: "Vendor Quotations" }],
+  "/procurement/pos": [{ label: "Procurement", href: "/procurement/dashboard" }, { label: "Purchase Orders" }],
+  "/procurement/grns": [{ label: "Procurement", href: "/procurement/dashboard" }, { label: "GRNs" }],
+  "/procurement/grn-returns": [{ label: "Procurement", href: "/procurement/dashboard" }, { label: "GRN Returns" }],
+  "/procurement/invoices": [{ label: "Procurement", href: "/procurement/dashboard" }, { label: "Invoices" }],
+  "/finance/dashboard": [{ label: "Finance & Reports", href: "/finance/dashboard" }, { label: "Finance Dashboard" }],
+  "/reports": [{ label: "Finance & Reports", href: "/finance/dashboard" }, { label: "Reports" }],
+  "/reports/vendors": [{ label: "Finance & Reports", href: "/finance/dashboard" }, { label: "Vendor Performance" }],
+  "/admin/users": [{ label: "Admin" }, { label: "User Management" }],
+  "/admin/audit-logs": [{ label: "Admin" }, { label: "Audit Logs" }],
+};
 
-  if (EXACT[path]) return EXACT[path];
-
-  if (path.startsWith("/crm/leads/"))               return [{ label: "Sales & CRM" }, { label: "Leads", href: "/crm/leads" }, { label: "Lead Detail" }];
-  if (path.startsWith("/crm/quotations/"))          return [{ label: "Sales & CRM" }, { label: "Quotations", href: "/crm/quotations" }, { label: "Quotation Detail" }];
-  if (path.startsWith("/projects/"))               return [{ label: "Projects" }, { label: "Projects Hub", href: "/projects" }, { label: "Project Workspace" }];
-  if (path.startsWith("/inventory/warehouses/"))   return [{ label: "Inventory" }, { label: "Warehouses", href: "/inventory/warehouses" }, { label: "Warehouse Detail" }];
-  if (path.startsWith("/engineering/docs/"))       return [{ label: "Engineering" }, { label: "Design Documents", href: "/engineering/docs" }, { label: "Document Detail" }];
-  if (path.startsWith("/commissioning/"))          return [{ label: "Engineering" }, { label: "Commissioning", href: "/commissioning" }, { label: "Checklist Detail" }];
-  if (path.startsWith("/procurement/vendors/"))    return [{ label: "Procurement", href: "/procurement/dashboard" }, { label: "Vendors", href: "/procurement/vendors" }, { label: "Vendor Detail" }];
-  if (path.match(/\/procurement\/quotations\/\d+\/edit/)) return [{ label: "Procurement", href: "/procurement/dashboard" }, { label: "Vendor Quotations", href: "/procurement/quotations" }, { label: "Edit Quotation" }];
-  if (path.match(/\/procurement\/material-requests\//)) return [{ label: "Procurement", href: "/procurement/dashboard" }, { label: "Vendor Quotations", href: "/procurement/quotations" }, { label: "Compare Vendors" }];
-  if (path.startsWith("/procurement/quotations/")) return [{ label: "Procurement", href: "/procurement/dashboard" }, { label: "Vendor Quotations", href: "/procurement/quotations" }, { label: "Quotation Detail" }];
-  if (path.startsWith("/procurement/pos/"))        return [{ label: "Procurement", href: "/procurement/dashboard" }, { label: "Purchase Orders", href: "/procurement/pos" }, { label: "PO Detail" }];
-  if (path.startsWith("/procurement/grns/"))       return [{ label: "Procurement", href: "/procurement/dashboard" }, { label: "GRNs", href: "/procurement/grns" }, { label: "GRN Detail" }];
-  if (path.startsWith("/procurement/grn-returns/")) return [{ label: "Procurement", href: "/procurement/dashboard" }, { label: "GRN Returns", href: "/procurement/grn-returns" }, { label: "Return Detail" }];
-  if (path.startsWith("/procurement/invoices/"))   return [{ label: "Procurement", href: "/procurement/dashboard" }, { label: "Invoices", href: "/procurement/invoices" }, { label: "Invoice Detail" }];
-
+function getBreadcrumbs(path: string): BreadcrumbItem[] {
+  if (STATIC_ROUTES[path]) return STATIC_ROUTES[path];
+  if (path.startsWith("/crm/leads/"))
+    return [{ label: "Sales & CRM", href: "/crm/leads" }, { label: "Leads", href: "/crm/leads" }, { label: "Lead Detail" }];
+  if (path.startsWith("/crm/quotations/"))
+    return [{ label: "Sales & CRM", href: "/crm/leads" }, { label: "Quotations", href: "/crm/quotations" }, { label: "Quotation" }];
+  if (path.match(/^\/projects\/\d+/))
+    return [{ label: "Project Mgmt", href: "/projects" }, { label: "Projects Hub", href: "/projects" }, { label: "Workspace" }];
+  if (path.match(/^\/inventory\/warehouses\/\d+/))
+    return [{ label: "Inventory", href: "/inventory/warehouses" }, { label: "Warehouses", href: "/inventory/warehouses" }, { label: "Warehouse Detail" }];
+  if (path.match(/^\/procurement\/vendors\/\d+/))
+    return [{ label: "Procurement", href: "/procurement/dashboard" }, { label: "Vendors", href: "/procurement/vendors" }, { label: "Vendor Detail" }];
+  if (path.match(/^\/procurement\/quotations\/\d+/))
+    return [{ label: "Procurement", href: "/procurement/dashboard" }, { label: "Vendor Quotations", href: "/procurement/quotations" }, { label: "Quotation" }];
+  if (path.match(/^\/procurement\/pos\/\d+/))
+    return [{ label: "Procurement", href: "/procurement/dashboard" }, { label: "Purchase Orders", href: "/procurement/pos" }, { label: "PO Detail" }];
+  if (path.match(/^\/procurement\/grns\/\d+/))
+    return [{ label: "Procurement", href: "/procurement/dashboard" }, { label: "GRNs", href: "/procurement/grns" }, { label: "GRN Detail" }];
+  if (path.match(/^\/procurement\/grn-returns\/\d+/))
+    return [{ label: "Procurement", href: "/procurement/dashboard" }, { label: "GRN Returns", href: "/procurement/grn-returns" }, { label: "Return Detail" }];
+  if (path.match(/^\/procurement\/invoices\/\d+/))
+    return [{ label: "Procurement", href: "/procurement/dashboard" }, { label: "Invoices", href: "/procurement/invoices" }, { label: "Invoice Detail" }];
+  if (path.match(/^\/engineering\/docs\/\d+/))
+    return [{ label: "Engineering" }, { label: "Design Documents", href: "/engineering/docs" }, { label: "Document" }];
+  if (path.match(/^\/commissioning\/\d+/))
+    return [{ label: "Commissioning", href: "/commissioning" }, { label: "Checklist Detail" }];
   return [{ label: "Mystics ERP" }];
 }
 
-// ── FY label ──────────────────────────────────────────────────────────────────
-
 function getFYLabel() {
   const now = new Date();
-  const fy = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
-  return `FY ${fy}–${String(fy + 1).slice(-2)}`;
+  const month = now.getMonth() + 1;
+  const fyStart = month >= 4 ? now.getFullYear() : now.getFullYear() - 1;
+  return `FY ${fyStart}-${String(fyStart + 1).slice(-2)}`;
 }
 
-// ── All nav items (for command palette) ──────────────────────────────────────
+const NOTIF_ICON_COLOR: Record<string, string> = {
+  info: "bg-blue-100 text-blue-600",
+  warning: "bg-amber-100 text-amber-600",
+  success: "bg-emerald-100 text-emerald-600",
+  error: "bg-red-100 text-red-600",
+  approval: "bg-orange-100 text-orange-600",
+};
 
-const CMD_NAV = [
-  { section: "Overview",          name: "Dashboard",             href: "/dashboard" },
-  { section: "Sales & CRM",       name: "Leads",                 href: "/crm/leads" },
-  { section: "Sales & CRM",       name: "Quotations",            href: "/crm/quotations" },
-  { section: "Sales & CRM",       name: "Client POs",            href: "/crm/client-pos" },
-  { section: "Sales & CRM",       name: "Invoices",              href: "/crm/invoices" },
-  { section: "Sales & CRM",       name: "Tasks",                 href: "/crm/tasks" },
-  { section: "Sales & CRM",       name: "Escalations",           href: "/crm/escalations" },
-  { section: "Projects",          name: "Projects Hub",          href: "/projects" },
-  { section: "Projects",          name: "Contractors",           href: "/projects/contractors" },
-  { section: "Engineering",       name: "Design Documents",      href: "/engineering/docs" },
-  { section: "Engineering",       name: "Commissioning",         href: "/commissioning" },
-  { section: "O&M & AMC",         name: "AMC Contracts",         href: "/oam/amc" },
-  { section: "O&M & AMC",         name: "Maintenance",           href: "/oam/maintenance" },
-  { section: "O&M & AMC",         name: "Service Tickets",       href: "/oam/tickets" },
-  { section: "Inventory",         name: "Warehouses",            href: "/inventory/warehouses" },
-  { section: "Inventory",         name: "Stock Transfers",       href: "/inventory/stock-transfers" },
-  { section: "Inventory",         name: "Delivery Challans",     href: "/inventory/delivery-challans" },
-  { section: "Inventory",         name: "Stock Ledger",          href: "/inventory/stock-ledger" },
-  { section: "Inventory",         name: "Stock Valuation",       href: "/inventory/stock-valuation" },
-  { section: "Inventory",         name: "Audits",                href: "/inventory/audits" },
-  { section: "Procurement",       name: "Procurement Overview",  href: "/procurement/dashboard" },
-  { section: "Procurement",       name: "Vendors",               href: "/procurement/vendors" },
-  { section: "Procurement",       name: "Materials",             href: "/procurement/materials" },
-  { section: "Procurement",       name: "Vendor Quotations",     href: "/procurement/quotations" },
-  { section: "Procurement",       name: "Purchase Orders",       href: "/procurement/pos" },
-  { section: "Procurement",       name: "GRNs",                  href: "/procurement/grns" },
-  { section: "Procurement",       name: "GRN Returns",           href: "/procurement/grn-returns" },
-  { section: "Procurement",       name: "Proc. Invoices",        href: "/procurement/invoices" },
-  { section: "Finance & Reports", name: "Finance Overview",      href: "/finance/dashboard" },
-  { section: "Finance & Reports", name: "Reports",               href: "/reports" },
-  { section: "Finance & Reports", name: "Vendor Performance",    href: "/reports/vendors" },
-  { section: "Administration",    name: "User Management",       href: "/admin/users" },
-  { section: "Administration",    name: "Audit Logs",            href: "/admin/audit-logs" },
-];
-
-// ── Command Palette ───────────────────────────────────────────────────────────
-
+/* ── Command Palette ─────────────────────────────────────────── */
 function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [query, setQuery] = useState("");
-  const [activeIdx, setActiveIdx] = useState(0);
-  const [, navigate] = useLocation();
+  const [cursor, setCursor] = useState(0);
+  const [, setLocation] = useLocation();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [recents, setRecents] = useState<typeof CMD_NAV>(() => {
-    try { return JSON.parse(sessionStorage.getItem("recent_nav") ?? "[]"); }
-    catch { return []; }
-  });
 
-  const filtered = query.trim()
-    ? CMD_NAV.filter(
-        (i) =>
-          i.name.toLowerCase().includes(query.toLowerCase()) ||
-          i.section.toLowerCase().includes(query.toLowerCase())
+  const results = query.trim()
+    ? ALL_NAV.filter(
+        (item) =>
+          item.name.toLowerCase().includes(query.toLowerCase()) ||
+          item.section.toLowerCase().includes(query.toLowerCase())
       )
-    : CMD_NAV;
+    : ALL_NAV.slice(0, 8);
 
   useEffect(() => {
     if (open) {
       setQuery("");
-      setActiveIdx(0);
-      setTimeout(() => inputRef.current?.focus(), 60);
+      setCursor(0);
+      setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [open]);
-  useEffect(() => { setActiveIdx(0); }, [query]);
 
-  const go = (href: string) => {
-    const item = CMD_NAV.find(i => i.href === href);
-    if (item) {
-      const updated = [item, ...recents.filter(r => r.href !== href)].slice(0, 5);
-      setRecents(updated);
-      sessionStorage.setItem("recent_nav", JSON.stringify(updated));
+  useEffect(() => {
+    setCursor(0);
+  }, [query]);
+
+  const navigate = useCallback(
+    (href: string) => {
+      setLocation(href);
+      onClose();
+    },
+    [setLocation, onClose]
+  );
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setCursor((c) => Math.min(c + 1, results.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setCursor((c) => Math.max(c - 1, 0));
+    } else if (e.key === "Enter") {
+      if (results[cursor]) navigate(results[cursor].href);
+    } else if (e.key === "Escape") {
+      onClose();
     }
-    navigate(href);
-    onClose();
   };
 
-  const handleKey = (e: React.KeyboardEvent) => {
-    if (e.key === "ArrowDown") { e.preventDefault(); setActiveIdx((i) => Math.min(i + 1, filtered.length - 1)); }
-    if (e.key === "ArrowUp")   { e.preventDefault(); setActiveIdx((i) => Math.max(i - 1, 0)); }
-    if (e.key === "Enter" && filtered[activeIdx]) go(filtered[activeIdx].href);
-    if (e.key === "Escape") onClose();
-  };
-
-  // Group by section
-  const groups = filtered.reduce<Record<string, typeof filtered>>((acc, item) => {
-    (acc[item.section] = acc[item.section] ?? []).push(item);
-    return acc;
-  }, {});
-
-  let globalIdx = 0;
+  if (!open) return null;
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="p-0 max-w-[500px] overflow-hidden gap-0 shadow-modal border-border/60">
-        {/* Input */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-border/60">
-          <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]"
+      onClick={onClose}
+    >
+      {/* Backdrop */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+      />
+
+      {/* Panel */}
+      <motion.div
+        initial={{ opacity: 0, y: -12, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: -12, scale: 0.97 }}
+        transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+        className="relative w-full max-w-lg bg-white rounded-2xl shadow-modal border border-gray-200 overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-label="Command palette"
+        aria-modal
+      >
+        {/* Search input */}
+        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-gray-100">
+          <Search className="h-4 w-4 text-gray-400 shrink-0" aria-hidden />
           <input
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={handleKey}
-            placeholder="Search modules and pages…"
-            className="flex-1 text-sm text-foreground placeholder:text-muted-foreground outline-none bg-transparent"
+            onKeyDown={handleKeyDown}
+            placeholder="Search pages and modules…"
+            className="flex-1 text-[14px] font-medium text-gray-900 placeholder:text-gray-400 outline-none bg-transparent"
+            aria-label="Search command palette"
           />
-          <kbd className="hidden sm:flex items-center text-[10px] font-mono text-muted-foreground bg-muted border border-border rounded px-1.5 py-0.5">
+          <kbd className="hidden sm:flex items-center gap-1 px-1.5 py-0.5 rounded-[4px] bg-gray-100 text-gray-500 text-[10px] font-mono font-bold">
             ESC
           </kbd>
         </div>
 
         {/* Results */}
-        <ScrollArea className="max-h-[380px]">
-          {filtered.length === 0 ? (
-            <div className="text-center py-10 text-muted-foreground text-sm">
-              No results for "{query}"
+        <div className="max-h-[360px] overflow-y-auto scrollbar-thin py-1.5">
+          {!query.trim() && (
+            <div className="px-4 pb-1 pt-1">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                Quick Navigation
+              </p>
             </div>
-          ) : (
-            <>
-              {/* Recent section — shown only when no query and recents exist */}
-              {!query.trim() && recents.length > 0 && (
-                <div>
-                  <p className="px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
-                    Recent
-                  </p>
-                  {recents.map((item) => {
-                    const idx = globalIdx++;
-                    return (
-                      <div
-                        key={"recent-" + item.href}
-                        onClick={() => go(item.href)}
-                        onMouseEnter={() => setActiveIdx(idx)}
-                        className={cn(
-                          "flex items-center justify-between px-4 py-2.5 cursor-pointer text-[13px] transition-colors",
-                          idx === activeIdx
-                            ? "bg-primary/8 text-primary dark:bg-primary/15"
-                            : "text-foreground hover:bg-muted/60"
-                        )}
-                      >
-                        <span className="font-medium">{item.name}</span>
-                        {idx === activeIdx && (
-                          <ArrowRight className="h-3.5 w-3.5 text-primary" />
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-              {/* Main groups */}
-              {Object.entries(groups).map(([section, items]) => (
-                <div key={section}>
-                  <p className="px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
-                    {!query.trim() && recents.length > 0 ? "All Navigation" : section}
-                  </p>
-                  {items.map((item) => {
-                    const idx = globalIdx++;
-                    return (
-                      <div
-                        key={item.href}
-                        onClick={() => go(item.href)}
-                        onMouseEnter={() => setActiveIdx(idx)}
-                        className={cn(
-                          "flex items-center justify-between px-4 py-2.5 cursor-pointer text-[13px] transition-colors",
-                          idx === activeIdx
-                            ? "bg-primary/8 text-primary dark:bg-primary/15"
-                            : "text-foreground hover:bg-muted/60"
-                        )}
-                      >
-                        <span className="font-medium">{item.name}</span>
-                        {idx === activeIdx && (
-                          <ArrowRight className="h-3.5 w-3.5 text-primary" />
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              ))}
-            </>
           )}
-        </ScrollArea>
+          {results.length === 0 && (
+            <div className="py-10 text-center text-sm text-gray-400">
+              No results for &ldquo;{query}&rdquo;
+            </div>
+          )}
+          {results.map((item, idx) => (
+            <button
+              key={item.href}
+              onClick={() => navigate(item.href)}
+              onMouseEnter={() => setCursor(idx)}
+              className={cn(
+                "w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors",
+                cursor === idx ? "bg-orange-50" : "hover:bg-gray-50"
+              )}
+              aria-selected={cursor === idx}
+            >
+              <div
+                className={cn(
+                  "h-8 w-8 rounded-lg flex items-center justify-center shrink-0 transition-colors",
+                  cursor === idx ? "bg-orange-100 text-[#EA580C]" : "bg-gray-100 text-gray-500"
+                )}
+              >
+                <item.icon className="h-4 w-4" aria-hidden />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className={cn("text-[13px] font-semibold", cursor === idx ? "text-gray-900" : "text-gray-700")}>
+                  {item.name}
+                </p>
+                <p className="text-[11px] text-gray-400">{item.section}</p>
+              </div>
+              {cursor === idx && (
+                <ArrowRight className="h-4 w-4 text-[#EA580C] shrink-0" aria-hidden />
+              )}
+            </button>
+          ))}
+        </div>
 
-        {/* Footer */}
-        <div className="flex items-center gap-4 px-4 py-2 border-t border-border/60 bg-muted/40">
-          {[["↑↓", "navigate"], ["↵", "go"], ["ESC", "close"]].map(([key, hint]) => (
-            <div key={key} className="flex items-center gap-1 text-[10px] text-muted-foreground">
-              <kbd className="font-mono bg-background border border-border rounded px-1 py-0.5">{key}</kbd>
-              {hint}
+        {/* Footer hint */}
+        <div className="flex items-center gap-4 px-4 py-2.5 border-t border-gray-100 bg-gray-50/50">
+          {[
+            { keys: "↑↓", label: "navigate" },
+            { keys: "↵", label: "open" },
+            { keys: "esc", label: "close" },
+          ].map((hint) => (
+            <div key={hint.label} className="flex items-center gap-1.5">
+              <kbd className="px-1.5 py-0.5 rounded-[4px] bg-gray-200 text-gray-600 text-[10px] font-mono font-bold">
+                {hint.keys}
+              </kbd>
+              <span className="text-[11px] text-gray-400">{hint.label}</span>
             </div>
           ))}
         </div>
-      </DialogContent>
-    </Dialog>
+      </motion.div>
+    </div>
   );
 }
 
-// ── Theme toggle ──────────────────────────────────────────────────────────────
-
-function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
-  const options: Array<{ value: "light" | "dark" | "system"; icon: React.ElementType; label: string }> = [
-    { value: "light", icon: Sun, label: "Light" },
-    { value: "dark", icon: Moon, label: "Dark" },
-    { value: "system", icon: Monitor, label: "System" },
-  ];
-  const current = options.find((o) => o.value === theme) ?? options[0];
-  const Icon = current.icon;
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          aria-label="Toggle theme"
-          className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <Icon className="h-4 w-4" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-36 shadow-popover" sideOffset={8}>
-        {options.map(({ value, icon: OptionIcon, label }) => (
-          <DropdownMenuItem
-            key={value}
-            onClick={() => setTheme(value)}
-            className={cn("gap-2.5 text-[13px] cursor-pointer", theme === value && "font-semibold text-primary")}
-          >
-            <OptionIcon className="h-3.5 w-3.5" />
-            {label}
-            {theme === value && <span className="ml-auto text-primary">✓</span>}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
-// ── Notification icon map ─────────────────────────────────────────────────────
-
-const NOTIF_ICON: Record<string, React.ElementType> = {
-  success:  CheckCircle2,
-  info:     Info,
-  warning:  AlertCircle,
-  error:    AlertCircle,
-  approval: CheckCircle2,
-};
-
-// ── Notification dot colors ───────────────────────────────────────────────────
-
-const NOTIF_ICON_CLASS: Record<string, string> = {
-  info:     "bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400",
-  warning:  "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
-  success:  "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400",
-  error:    "bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400",
-  approval: "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400",
-};
-
-const NOTIF_DOT: Record<string, string> = {
-  info: "bg-blue-500", warning: "bg-amber-500",
-  success: "bg-emerald-500", error: "bg-red-500", approval: "bg-orange-500",
-};
-
-// ── Notification Bell ─────────────────────────────────────────────────────────
-
+/* ── Notification bell ───────────────────────────────────────── */
 function NotificationBell({ userId }: { userId: number }) {
   const qc = useQueryClient();
   const [, setLocation] = useLocation();
@@ -366,15 +316,13 @@ function NotificationBell({ userId }: { userId: number }) {
   const { data: countData } = useQuery({
     queryKey: ["notifications-count", userId],
     queryFn: () => apiGet<{ count: number }>("/notifications/unread-count", { userId }),
-    refetchInterval: 30_000,
-    retry: false,
+    refetchInterval: 30000,
   });
 
   const { data: notifications = [] } = useQuery({
     queryKey: ["notifications", userId],
-    queryFn: () => apiGet<any[]>("/notifications", { userId, limit: 25 }),
-    refetchInterval: 60_000,
-    retry: false,
+    queryFn: () => apiGet<any[]>("/notifications", { userId, limit: 20 }),
+    refetchInterval: 60000,
   });
 
   const markRead = useMutation({
@@ -385,7 +333,7 @@ function NotificationBell({ userId }: { userId: number }) {
     },
   });
 
-  const markAll = useMutation({
+  const markAllRead = useMutation({
     mutationFn: () => apiPost("/notifications/read-all", { userId }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["notifications"] });
@@ -398,40 +346,44 @@ function NotificationBell({ userId }: { userId: number }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           aria-label={`Notifications${unread > 0 ? `, ${unread} unread` : ""}`}
-          className="relative h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="relative h-9 w-9 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-full focus-ring"
         >
-          <Bell className="h-4 w-4" />
+          <Bell className="h-4 w-4" aria-hidden />
           {unread > 0 && (
-            <span className="absolute top-0.5 right-0.5 h-[14px] min-w-[14px] px-0.5 rounded-full bg-red-500 text-white text-[8px] font-bold flex items-center justify-center ring-1 ring-background">
+            <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center ring-2 ring-white">
               {unread > 9 ? "9+" : unread}
             </span>
           )}
-        </button>
+        </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-[340px] p-0 shadow-popover" sideOffset={8}>
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border/60">
+      <DropdownMenuContent align="end" className="w-80 p-0 shadow-popover" sideOffset={8}>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
           <div>
-            <p className="text-[13px] font-bold text-foreground">Notifications</p>
-            <p className="text-[11px] text-muted-foreground">
-              {unread > 0 ? `${unread} unread` : "All caught up"}
-            </p>
+            <p className="text-[13px] font-bold text-gray-900">Notifications</p>
+            {unread > 0 && (
+              <p className="text-[11px] text-gray-500">{unread} unread</p>
+            )}
           </div>
           {unread > 0 && (
-            <button
-              onClick={() => markAll.mutate()}
-              className="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold text-primary hover:bg-primary/8 rounded-md transition-colors"
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 gap-1"
+              onClick={() => markAllRead.mutate()}
             >
-              <CheckCheck className="h-3 w-3" /> Mark all read
-            </button>
+              <CheckCheck className="h-3 w-3" aria-hidden /> Mark all read
+            </Button>
           )}
         </div>
-        <ScrollArea className="h-[300px]">
+        <ScrollArea className="h-[360px]">
           {(notifications as any[]).length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 gap-2">
-              <Bell className="h-8 w-8 text-muted-foreground/30" />
-              <p className="text-[12px] text-muted-foreground">No notifications</p>
+            <div className="flex flex-col items-center justify-center py-10 text-gray-400">
+              <Bell className="h-8 w-8 mb-2 opacity-20" aria-hidden />
+              <p className="text-sm">No notifications yet</p>
             </div>
           ) : (
             (notifications as any[]).map((n: any) => (
@@ -441,31 +393,50 @@ function NotificationBell({ userId }: { userId: number }) {
                   if (!n.isRead) markRead.mutate(n.id);
                   if (n.actionUrl) setLocation(n.actionUrl);
                 }}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === "Enter" && setLocation(n.actionUrl)}
                 className={cn(
-                  "flex items-start gap-3 px-4 py-3 border-b border-border/40 cursor-pointer hover:bg-muted/50 transition-colors group",
-                  !n.isRead && "bg-primary/[0.04] dark:bg-primary/[0.07]"
+                  "flex items-start gap-3 px-4 py-3 border-b border-gray-50 cursor-pointer hover:bg-gray-50 transition-colors group",
+                  !n.isRead && "bg-orange-50/40"
                 )}
               >
                 <div
                   className={cn(
-                    "h-7 w-7 rounded-full flex items-center justify-center shrink-0 mt-0.5",
-                    NOTIF_ICON_CLASS[n.type] ?? "bg-muted text-muted-foreground"
+                    "h-8 w-8 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5",
+                    NOTIF_ICON_COLOR[n.type] ?? "bg-gray-100 text-gray-600"
                   )}
                 >
-                  {(() => { const NIcon = NOTIF_ICON[n.type] ?? Info; return <NIcon className="h-3.5 w-3.5" />; })()}
+                  {n.type === "approval"
+                    ? "A"
+                    : n.type === "info"
+                    ? "i"
+                    : n.type === "warning"
+                    ? "!"
+                    : n.type === "success"
+                    ? "✓"
+                    : "!"}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className={cn("text-[12px] leading-snug", !n.isRead ? "font-semibold text-foreground" : "font-medium text-foreground/80")}>{n.title}</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{n.message}</p>
-                  {n.entityRef && <p className="text-[10px] text-primary font-mono mt-1">{n.entityRef}</p>}
-                  <p className="text-[10px] text-muted-foreground/60 mt-1">
+                  <p className={cn("text-[12px] leading-tight", n.isRead ? "text-gray-600 font-medium" : "text-gray-900 font-bold")}>
+                    {n.title}
+                  </p>
+                  <p className="text-[11px] text-gray-500 mt-0.5 leading-tight line-clamp-2">
+                    {n.message}
+                  </p>
+                  {n.entityRef && (
+                    <p className="text-[10px] text-orange-600 font-mono mt-1">{n.entityRef}</p>
+                  )}
+                  <p className="text-[10px] text-gray-400 mt-1">
                     {new Date(n.createdAt).toLocaleString("en-IN", { dateStyle: "short", timeStyle: "short" })}
                   </p>
                 </div>
-                <div className="flex flex-col items-end gap-2 shrink-0">
-                  {!n.isRead && <div className={cn("h-2 w-2 rounded-full", NOTIF_DOT[n.type] ?? "bg-muted-foreground")} />}
-                  {n.actionUrl && <ExternalLink className="h-3 w-3 text-muted-foreground/30 group-hover:text-muted-foreground" />}
-                </div>
+                {!n.isRead && (
+                  <div className="h-2 w-2 rounded-full bg-orange-500 shrink-0 mt-1.5" />
+                )}
+                {n.actionUrl && (
+                  <ExternalLink className="h-3 w-3 text-gray-300 group-hover:text-gray-500 shrink-0 mt-1" aria-hidden />
+                )}
               </div>
             ))
           )}
@@ -475,192 +446,185 @@ function NotificationBell({ userId }: { userId: number }) {
   );
 }
 
-// ── Topbar ────────────────────────────────────────────────────────────────────
-
+/* ── Topbar ──────────────────────────────────────────────────── */
 export function Topbar() {
   const { user, logout } = useAuth();
   const [location] = useLocation();
   const { toggle, isCollapsed } = useSidebar();
-  const [cmdOpen, setCmdOpen] = useState(false);
-  const fyLabel = getFYLabel();
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const breadcrumbs = getBreadcrumbs(location);
+  const fyLabel = getFYLabel();
 
   const initials = user?.name
-    ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    ? user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
     : "U";
 
-  // Cmd+K
+  /* ── Cmd+K / Ctrl+K to open palette ── */
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
-        setCmdOpen((v) => !v);
+        setPaletteOpen((o) => !o);
       }
     };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
   }, []);
 
   return (
     <>
-      <header className="h-14 bg-card border-b border-border/70 flex items-center gap-3 px-4 shrink-0 z-10">
+      <header className="h-14 bg-white/90 backdrop-blur-md border-b border-gray-200/60 flex items-center gap-3 px-4 sm:px-5 shrink-0 z-10 sticky top-0">
         {/* Desktop sidebar toggle */}
         <button
           onClick={toggle}
           aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="hidden lg:flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="hidden lg:flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-colors focus-ring"
         >
           {isCollapsed ? (
-            <PanelLeftOpen className="h-4 w-4" />
+            <PanelLeftOpen className="h-4 w-4" aria-hidden />
           ) : (
-            <PanelLeftClose className="h-4 w-4" />
+            <PanelLeftClose className="h-4 w-4" aria-hidden />
           )}
         </button>
 
-        {/* Mobile sheet */}
+        {/* Mobile menu */}
         <Sheet>
           <SheetTrigger asChild>
-            <button
-              aria-label="Open navigation"
-              className="lg:hidden h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-muted transition-colors"
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Open navigation menu"
+              className="lg:hidden text-gray-600 h-9 w-9 focus-ring"
             >
-              <Menu className="h-5 w-5" />
-            </button>
+              <Menu className="h-5 w-5" aria-hidden />
+            </Button>
           </SheetTrigger>
-          <SheetContent
-            side="left"
-            className="p-0 w-[252px] border-r-0"
-            style={{ background: "linear-gradient(180deg, #0D1548 0%, #090E28 100%)" }}
-          >
-            <Sidebar className="flex w-full" />
+          <SheetContent side="left" className="p-0 w-[240px] bg-[#0c1445] border-r-0">
+            <Sidebar className="w-full flex" />
           </SheetContent>
         </Sheet>
 
         {/* Breadcrumb */}
-        <nav aria-label="Breadcrumb" className="hidden sm:flex items-center flex-1 min-w-0">
-          <AnimatePresence mode="wait">
-            <motion.ol
-              key={location}
-              initial={{ opacity: 0, y: 2 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.12 }}
-              className="flex items-center gap-1.5 list-none m-0 p-0 min-w-0"
-            >
-              {breadcrumbs.map((crumb, i) => {
-                const isLast = i === breadcrumbs.length - 1;
-                return (
-                  <li key={i} className="flex items-center gap-1.5 min-w-0">
-                    {i > 0 && <span className="text-border text-xs shrink-0 select-none">/</span>}
-                    {crumb.href && !isLast ? (
-                      <Link href={crumb.href}>
-                        <span className="text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors truncate cursor-pointer">
-                          {crumb.label}
-                        </span>
-                      </Link>
-                    ) : (
-                      <span
-                        className={cn(
-                          "text-[13px] truncate",
-                          isLast
-                            ? "font-semibold text-foreground"
-                            : "font-medium text-muted-foreground"
-                        )}
-                      >
-                        {crumb.label}
-                      </span>
+        <nav
+          aria-label="Breadcrumb"
+          className="hidden sm:flex items-center gap-1.5 flex-1 min-w-0"
+        >
+          {breadcrumbs.map((crumb, idx) => {
+            const isLast = idx === breadcrumbs.length - 1;
+            return (
+              <div key={idx} className="flex items-center gap-1.5 min-w-0">
+                {idx > 0 && <span className="text-gray-300 text-xs flex-shrink-0">/</span>}
+                {crumb.href && !isLast ? (
+                  <Link href={crumb.href}>
+                    <span className="text-[13px] font-medium text-gray-400 hover:text-gray-700 transition-colors cursor-pointer truncate">
+                      {crumb.label}
+                    </span>
+                  </Link>
+                ) : (
+                  <motion.span
+                    key={crumb.label}
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={cn(
+                      "text-[13px] truncate",
+                      isLast ? "font-bold text-gray-900" : "font-medium text-gray-400"
                     )}
-                  </li>
-                );
-              })}
-            </motion.ol>
-          </AnimatePresence>
+                    aria-current={isLast ? "page" : undefined}
+                  >
+                    {crumb.label}
+                  </motion.span>
+                )}
+              </div>
+            );
+          })}
         </nav>
 
-        {/* Mobile: just page name */}
-        <div className="sm:hidden flex-1 min-w-0">
-          <span className="text-[14px] font-semibold text-foreground truncate">
-            {breadcrumbs[breadcrumbs.length - 1]?.label}
-          </span>
-        </div>
-
-        {/* Right side */}
-        <div className="flex items-center gap-1.5 shrink-0 ml-auto">
-          {/* Search trigger */}
-          <button
-            onClick={() => setCmdOpen(true)}
-            aria-label="Open command palette"
-            className="hidden md:flex items-center gap-2 h-8 px-3 rounded-lg border border-border/70 bg-muted/50 text-muted-foreground hover:text-foreground hover:border-border hover:bg-muted transition-all text-[12px]"
-          >
-            <Search className="h-3.5 w-3.5" />
-            <span>Search…</span>
-            <kbd className="hidden lg:flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground/60 ml-1">
-              <span className="text-[11px]">⌘</span>K
+        {/* Cmd+K search trigger */}
+        <button
+          onClick={() => setPaletteOpen(true)}
+          aria-label="Open command palette (Cmd+K)"
+          className="flex items-center gap-2 h-9 px-3 rounded-lg bg-gray-100/80 hover:bg-gray-200/80 text-gray-400 hover:text-gray-700 transition-colors text-[13px] focus-ring shrink-0"
+        >
+          <Search className="h-3.5 w-3.5" aria-hidden />
+          <span className="hidden md:inline font-medium text-[12px]">Search…</span>
+          <div className="hidden md:flex items-center gap-0.5">
+            <kbd className="h-5 px-1 rounded-[4px] bg-white border border-gray-200 text-gray-500 text-[10px] font-mono font-bold shadow-sm">
+              ⌘K
             </kbd>
-          </button>
-          <button
-            onClick={() => setCmdOpen(true)}
-            aria-label="Search"
-            className="md:hidden h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-          >
-            <Search className="h-4 w-4" />
-          </button>
-
-          {/* FY badge */}
-          <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/8 dark:bg-primary/15 border border-primary/15">
-            <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-            <span className="text-[10px] font-bold text-primary tracking-wide">{fyLabel}</span>
           </div>
+        </button>
 
-          {/* Theme */}
-          <ThemeToggle />
+        {/* Right actions */}
+        <div className="flex items-center gap-1.5">
+          {/* FY pill */}
+          <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-50 border border-orange-100/60">
+            <div className="h-1.5 w-1.5 rounded-full bg-[#EA580C]" />
+            <span className="text-[11px] font-bold text-[#EA580C] tracking-wide">{fyLabel}</span>
+          </div>
 
           {/* Notifications */}
           {user?.id ? (
             <NotificationBell userId={user.id} />
           ) : (
-            <button className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground" disabled>
-              <Bell className="h-4 w-4" />
-            </button>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Notifications"
+              className="relative h-9 w-9 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-full focus-ring"
+            >
+              <Bell className="h-4 w-4" aria-hidden />
+            </Button>
           )}
 
-          {/* User menu */}
+          {/* User avatar */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button
+              <Button
+                variant="ghost"
+                className="h-9 w-9 rounded-full p-0 hover:bg-gray-100 ml-1 focus-ring"
                 aria-label="User menu"
-                className="flex items-center gap-2 h-8 pl-1 pr-2.5 rounded-lg hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <Avatar className="h-6 w-6">
-                  <AvatarFallback className="text-[10px] font-bold bg-gradient-to-br from-blue-900 to-blue-700 text-white border border-white/10">
+                <Avatar className="h-8 w-8 ring-2 ring-white shadow-sm">
+                  <AvatarFallback
+                    className="text-white text-[12px] font-bold"
+                    style={{ background: "linear-gradient(135deg, #1E293B, #0F172A)" }}
+                  >
                     {initials}
                   </AvatarFallback>
                 </Avatar>
-                <div className="hidden md:flex flex-col items-start leading-none">
-                  <span className="text-[12px] font-semibold text-foreground">{user?.name?.split(" ")[0]}</span>
-                  <span className="text-[10px] text-muted-foreground capitalize">{(user as any)?.role}</span>
-                </div>
-                <ChevronDown className="h-3 w-3 text-muted-foreground hidden md:block" />
-              </button>
+              </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 shadow-popover" sideOffset={8}>
-              <div className="px-3 py-2 border-b border-border/60">
-                <p className="text-[13px] font-semibold text-foreground">{user?.name}</p>
-                <p className="text-[11px] text-muted-foreground">{(user as any)?.email}</p>
-                <span className="inline-flex items-center mt-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-primary/10 text-primary">
-                  {(user as any)?.role}
-                </span>
-              </div>
+            <DropdownMenuContent className="w-56 mt-2 shadow-popover" align="end">
+              <DropdownMenuLabel className="font-normal p-3">
+                <div className="flex flex-col gap-1">
+                  <p className="text-sm font-bold text-gray-900">{user?.name}</p>
+                  <p className="text-xs text-gray-500">{user?.email}</p>
+                  <Badge
+                    variant="outline"
+                    className="mt-1 w-fit text-[10px] uppercase font-bold text-gray-600 bg-gray-50"
+                  >
+                    {user?.role}
+                  </Badge>
+                </div>
+              </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="gap-2.5 text-[13px] cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/8"
-                onClick={logout}>
-                <LogOut className="h-3.5 w-3.5" /> Sign out
+              <DropdownMenuItem
+                onClick={() => logout()}
+                className="text-red-600 font-medium cursor-pointer p-3 focus:text-red-700 focus:bg-red-50"
+              >
+                Sign Out
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </header>
 
-      <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
+      {/* Command Palette (portal) */}
+      <AnimatePresence>
+        {paletteOpen && (
+          <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+        )}
+      </AnimatePresence>
     </>
   );
 }

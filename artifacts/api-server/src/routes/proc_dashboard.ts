@@ -92,4 +92,20 @@ router.get("/procurement-dashboard", async (_req, res): Promise<void> => {
   });
 });
 
+/* ── Badge counts for sidebar ── */
+router.get("/procurement/badge-counts", async (_req, res): Promise<void> => {
+  const [draftPOs, pendingInvoices] = await Promise.all([
+    db.select({ count: sql<number>`count(*)::int` })
+      .from(procurementPOsTable)
+      .where(sql`${procurementPOsTable.status} = 'Draft'`),
+    db.select({ count: sql<number>`count(*)::int` })
+      .from(procInvoicesTable)
+      .where(sql`${procInvoicesTable.status} IN ('Draft', 'PendingApproval')`),
+  ]);
+  res.json({
+    draftPOs: draftPOs[0]?.count ?? 0,
+    pendingInvoices: pendingInvoices[0]?.count ?? 0,
+  });
+});
+
 export default router;
