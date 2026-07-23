@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request } from "express";
 import pg from "pg";
 import {
   db, procurementQuotationsTable, procQuotationItemsTable,
@@ -12,6 +12,7 @@ import {
 import { eq, desc, and, sql, inArray, or } from "drizzle-orm";
 import jwt from "jsonwebtoken";
 import { ObjectStorageService } from "../lib/objectStorage";
+import { approveQuotationAndGeneratePO } from "../lib/quotationApprovalService";
 
 const router: IRouter = Router();
 const JWT_SECRET = process.env.SESSION_SECRET ?? "mystics-erp-secret";
@@ -487,6 +488,8 @@ router.delete("/procurement-quotations/:id", async (req, res): Promise<void> => 
   res.json({ ok: true });
 });
 
+
+
 // ── SUBMIT ────────────────────────────────────────────────────────────────────
 router.post("/procurement-quotations/:id/submit", async (req, res): Promise<void> => {
   const id = Number(req.params.id);
@@ -609,102 +612,24 @@ router.post("/procurement-quotations/:id/request-revision", async (req, res): Pr
   res.json(result);
 });
 
-// ── APPROVE ───────────────────────────────────────────────────────────────────
+// ── APPROVE — delegates to shared service (also used by Approval Workbench) ───
 router.post("/procurement-quotations/:id/approve", async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const actor = getActor(req);
   const { userName = actor?.name ?? "System", userId = actor?.userId, userRole = actor?.role, remarks } = req.body;
   if (!remarks) { res.status(400).json({ error: "Approval remarks are required" }); return; }
-  const [existing] = await db.select().from(procurementQuotationsTable).where(eq(procurementQuotationsTable.id, id));
-  if (!existing) { res.status(404).json({ error: "Not found" }); return; }
-  if (existing.status !== "UnderReview") {
-    res.status(400).json({ error: `Cannot approve: must be UnderReview (currently ${existing.status})` }); return;
-  }
 
-  const items = await db.select().from(procQuotationItemsTable).where(eq(procQuotationItemsTable.quotationId, id)).orderBy(procQuotationItemsTable.lineNo);
-  let vendor: typeof vendorsTable.$inferSelect | null = null;
-  if (existing.vendorId) {
-    const [v] = await db.select().from(vendorsTable).where(eq(vendorsTable.id, existing.vendorId));
-    vendor = v ?? null;
-  }
-  const year = new Date().getFullYear();
-  const poNumber = `PO-${year}-${String(poProcCounter++).padStart(4, "0")}`;
-  const today = new Date().toISOString().split("T")[0]!;
-  const now = new Date();
-
-  let qFresh: typeof procurementQuotationsTable.$inferSelect;
-  let po: typeof procurementPOsTable.$inferSelect;
   try {
-    [qFresh, po] = await db.transaction(async (tx) => {
-      const [q] = await tx.update(procurementQuotationsTable).set({
-        status: "Approved",
-        approvedAt: now, approvedBy: userId, approvedByName: userName,
-        approvalRemarks: remarks, updatedAt: now,
-        lockedAt: now, lockedBy: userId,
-      } as any).where(eq(procurementQuotationsTable.id, id)).returning();
-      if (!q) throw new Error("Quotation not found");
-
-      const [newPO] = await tx.insert(procurementPOsTable).values({
-        poNumber, quotationId: id, vendorId: existing.vendorId,
-        vendorName: existing.vendorSnapshotName ?? vendor?.name ?? "Unknown",
-        vendorGstin: vendor?.gstin ?? null, vendorAddress: vendor?.billingAddress ?? null,
-        vendorContact: vendor?.primaryPhone ?? null,
-        status: "Draft", poDate: today,
-        paymentTerms: existing.paymentTerms, warrantyMonths: existing.warrantyMonths,
-        freightCharges: existing.freightCharges, otherCharges: existing.otherCharges,
-        subtotal: existing.subtotal, totalGst: existing.totalGst, totalAmount: existing.totalAmount,
-        approvedBy: userId, approvedByName: userName, approvedAt: now,
-        createdBy: userId, createdByName: userName,
-      }).returning();
-
-      if (items.length > 0) {
-        await tx.insert(procPOItemsTable).values(items.map(item => ({
-          poId: newPO.id, lineNo: item.lineNo, materialId: item.materialId,
-          materialCode: item.materialCode, materialName: item.materialName, description: item.description,
-          uom: item.uom, hsnSacCode: item.hsnSacCode, brand: item.brand,
-          qty: item.qty, unitPrice: item.unitPrice, discountPct: item.discountPct,
-          discountAmount: item.discountAmount, taxableAmount: item.taxableAmount,
-          gstRate: item.gstRate, totalGst: item.totalGst, lineTotal: item.lineTotal,
-        })));
-      }
-
-      const [qUpdated] = await tx.update(procurementQuotationsTable)
-        .set({ poGenerated: true })
-        .where(eq(procurementQuotationsTable.id, id))
-        .returning();
-
-      return [qUpdated ?? q, newPO];
-    });
+    const { quotation: qFresh, po } = await approveQuotationAndGeneratePO(
+      id, remarks, { userId: userId ?? null, role: userRole, name: userName },
+    );
+    const result = await loadFullQuotation(id);
+    res.json({ ...result, po: { ...po, createdAt: po.createdAt?.toISOString?.() ?? null } });
   } catch (err: any) {
-    res.status(500).json({ error: `Approval failed: ${err?.message ?? "PO generation error"}. No changes saved. Please try again.` }); return;
+    const msg = err?.message ?? "Approval failed";
+    const status = msg.includes("Cannot approve") ? 400 : msg.includes("not found") ? 404 : 500;
+    res.status(status).json({ error: `${msg}. No changes were saved. Please try again.` });
   }
-
-  // Sync approval request
-  if ((existing as any).approvalRequestId) {
-    await syncApprovalRequest((existing as any).approvalRequestId, "approved", remarks, userId);
-  }
-
-  await logAudit(id, "Approved", userName, userId, userRole, remarks, null, { status: "Approved" });
-  await logAudit(id, "POGenerated", userName, userId, userRole, `PO ${poNumber} generated`);
-
-  // Notify submitter + all procurement staff
-  const notifyIds = [qFresh.submittedBy, ...(await getUserIdsByRoles(["pm", "director"]))];
-  await emitNotifications(notifyIds, {
-    type: "success", title: "Quotation Approved & PO Generated",
-    message: `${qFresh.referenceId} approved by ${userName}. PO ${poNumber} has been generated automatically.`,
-    entityId: id, entityRef: qFresh.referenceId, actionUrl: `/procurement/quotations/${id}`,
-  });
-
-  const [auditLogs, versions, attachments] = await Promise.all([
-    db.select().from(quotationAuditLogsTable).where(eq(quotationAuditLogsTable.quotationId, id)).orderBy(desc(quotationAuditLogsTable.createdAt)),
-    db.select().from(quotationVersionsTable).where(eq(quotationVersionsTable.quotationId, id)).orderBy(desc(quotationVersionsTable.version)),
-    db.select().from(quotationAttachmentsTable).where(eq(quotationAttachmentsTable.quotationId, id)).orderBy(desc(quotationAttachmentsTable.uploadedAt)),
-  ]);
-  const approvalRequest = await getApprovalRequestForQuotation((qFresh as any).approvalRequestId ?? null);
-  res.json({
-    quotation: fmtQ(qFresh, items.map(fmtItem), versions, auditLogs.map(a => ({ ...a, createdAt: a.createdAt.toISOString() })), attachments.map(a => ({ ...a, uploadedAt: a.uploadedAt.toISOString() })), approvalRequest),
-    po: { ...po, createdAt: po.createdAt.toISOString() },
-  });
 });
 
 // ── REJECT ────────────────────────────────────────────────────────────────────

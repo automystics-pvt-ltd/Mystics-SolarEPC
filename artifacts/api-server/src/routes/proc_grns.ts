@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import {
   db, procGRNsTable, procGRNItemsTable, procGRNAuditLogsTable,
   procurementPOsTable, procPOItemsTable, procPOAuditLogsTable,
-  grnCommentsTable, notificationsTable, stockLedgerTable,
+  grnCommentsTable, notificationsTable, stockLedgerTable, procurementQuotationsTable,
 } from "@workspace/db";
 import { eq, desc, and, sql } from "drizzle-orm";
 import pg from "pg";
@@ -144,7 +144,20 @@ router.get("/proc-grns/:id", async (req, res): Promise<void> => {
     db.select().from(procGRNAuditLogsTable).where(eq(procGRNAuditLogsTable.grnId, id)).orderBy(desc(procGRNAuditLogsTable.createdAt)),
     db.select().from(grnCommentsTable).where(eq(grnCommentsTable.grnId, id)).orderBy(grnCommentsTable.createdAt),
   ]);
-  res.json(fmtGRN(grn, items, auditLogs, comments));
+  // Back-link: resolve quotation from the linked PO
+  let quotationId: number | null = null;
+  let quotationRef: string | null = null;
+  if (grn.poId) {
+    const [po] = await db.select({ qId: procurementPOsTable.quotationId })
+      .from(procurementPOsTable).where(eq(procurementPOsTable.id, grn.poId));
+    if (po?.qId) {
+      quotationId = po.qId;
+      const [quot] = await db.select({ referenceId: procurementQuotationsTable.referenceId })
+        .from(procurementQuotationsTable).where(eq(procurementQuotationsTable.id, po.qId));
+      quotationRef = quot?.referenceId ?? null;
+    }
+  }
+  res.json({ ...fmtGRN(grn, items, auditLogs, comments), quotationId, quotationRef });
 });
 
 // ── CREATE ────────────────────────────────────────────────────────────────────

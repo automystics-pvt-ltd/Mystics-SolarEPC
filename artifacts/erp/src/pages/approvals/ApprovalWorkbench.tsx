@@ -258,10 +258,12 @@ function RequestRow({ req, selected, onSelect, onClick, canAct, onApprove, onRej
   canAct: boolean; onApprove: () => void; onReject: () => void;
 }) {
   const prio = PRIORITY_META[req.priority] ?? PRIORITY_META.medium!;
+  const slaBreached = !!(req.slaDeadline && new Date(req.slaDeadline) < new Date() && req.status === "pending");
   return (
     <div className={cn(
       "flex items-center gap-3 px-4 py-3 border-b border-border/40 hover:bg-muted/20 transition-colors group",
-      selected && "bg-primary/5 border-l-[3px] border-l-primary"
+      selected && "bg-primary/5 border-l-[3px] border-l-primary",
+      slaBreached && !selected && "bg-amber-50/50 border-l-[3px] border-l-amber-400"
     )}>
       <Checkbox checked={selected} onCheckedChange={onSelect} className="shrink-0" />
       <div className={cn("h-2.5 w-2.5 rounded-full shrink-0", prio.dot)} />
@@ -269,6 +271,9 @@ function RequestRow({ req, selected, onSelect, onClick, canAct, onApprove, onRej
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-[13px] font-semibold text-foreground truncate">{req.title}</span>
           <ModuleBadge module={req.module} />
+          {req.entityType === "quotation" && req.entityRef && (
+            <span className="text-[10px] font-mono font-bold bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded">{req.entityRef}</span>
+          )}
         </div>
         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
           <span className="font-mono text-[11px] text-muted-foreground">{req.refNumber}</span>
@@ -276,7 +281,6 @@ function RequestRow({ req, selected, onSelect, onClick, canAct, onApprove, onRej
           <span className="text-[11px] text-muted-foreground">{req.requesterName}</span>
           <span className="text-muted-foreground/30 text-[10px]">·</span>
           <span className="text-[11px] text-muted-foreground tabular-nums">{relTime(req.createdAt)}</span>
-          {req.entityRef && <span className="text-[10px] font-mono text-muted-foreground/60">{req.entityRef}</span>}
         </div>
       </div>
       <div className="flex items-center gap-2 shrink-0">
@@ -799,15 +803,17 @@ function RequestList({ items, loading, tab, user, onOpen, onApprove, onReject, o
   const [search, setSearch]   = useState("");
   const [modFilter, setModFilter] = useState("all");
   const [priFilter, setPriFilter] = useState("all");
+  const [entityFilter, setEntityFilter] = useState("all");
   const [selected, setSelected]  = useState<Set<number>>(new Set());
 
   const filtered = useMemo(() => {
     let r = items;
-    if (search)              r = r.filter(i => i.title.toLowerCase().includes(search.toLowerCase()) || i.refNumber.includes(search) || i.requesterName.toLowerCase().includes(search.toLowerCase()));
-    if (modFilter !== "all") r = r.filter(i => i.module === modFilter);
-    if (priFilter !== "all") r = r.filter(i => i.priority === priFilter);
+    if (search)                  r = r.filter(i => i.title.toLowerCase().includes(search.toLowerCase()) || i.refNumber.includes(search) || i.requesterName.toLowerCase().includes(search.toLowerCase()) || (i.entityRef ?? "").toLowerCase().includes(search.toLowerCase()));
+    if (modFilter !== "all")     r = r.filter(i => i.module === modFilter);
+    if (priFilter !== "all")     r = r.filter(i => i.priority === priFilter);
+    if (entityFilter !== "all")  r = r.filter(i => i.entityType === entityFilter);
     return r;
-  }, [items, search, modFilter, priFilter]);
+  }, [items, search, modFilter, priFilter, entityFilter]);
 
   const toggleAll  = (v: boolean) => setSelected(v ? new Set(filtered.map(r => r.id)) : new Set());
   const toggle     = (id: number) => setSelected(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
@@ -852,6 +858,16 @@ function RequestList({ items, loading, tab, user, onOpen, onApprove, onReject, o
           <SelectContent>
             <SelectItem value="all">All priorities</SelectItem>
             {Object.entries(PRIORITY_META).map(([v, m]) => <SelectItem key={v} value={v}>{m.label}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={entityFilter} onValueChange={setEntityFilter}>
+          <SelectTrigger className="h-8 text-xs w-32"><SelectValue placeholder="Type" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All types</SelectItem>
+            <SelectItem value="quotation">Quotations</SelectItem>
+            <SelectItem value="purchase_order">Purchase Orders</SelectItem>
+            <SelectItem value="invoice">Invoices</SelectItem>
+            <SelectItem value="grn">GRN</SelectItem>
           </SelectContent>
         </Select>
         <span className="text-[11px] text-muted-foreground ml-auto">{filtered.length} {filtered.length === 1 ? "item" : "items"}</span>
@@ -1010,7 +1026,17 @@ export default function ApprovalWorkbench() {
     ids.forEach(id => rejectMut.mutate({ id, comment: "Bulk rejected" }));
   };
 
-  const openDetail = (req: ApprovalRequest) => { setSelectedReq(req); setSheetOpen(true); };
+  const [, setLocation] = useLocation();
+
+  const openDetail = (req: ApprovalRequest) => {
+    // Navigate directly to the entity detail page for known entity types
+    if (req.entityType === "quotation" && req.entityRef) {
+      // Find the quotation by entityRef — navigate to the list and rely on entityUrl if set
+      if (req.entityUrl) { setLocation(req.entityUrl); return; }
+      // Fallback: open in sheet
+    }
+    setSelectedReq(req); setSheetOpen(true);
+  };
 
   // Header stats
   const pendingCount   = (pendingQ.data?.length   ?? 0) as number;

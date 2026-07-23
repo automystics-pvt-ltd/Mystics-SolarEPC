@@ -166,15 +166,15 @@ export default function ProcurementQuotationDetail({ id }: { id: string }) {
   const token = localStorage.getItem("mystics_token") ?? "";
 
   const reopenMut = useMutation({
-    mutationFn: (reason: string) =>
-      apiPost(`/procurement-quotations/${qId}/reopen`, { reason, userName: user.name, userId: user.id }),
+    // Actor identity (role/userId) is derived from the Bearer token server-side — only reason goes in body
+    mutationFn: (reason: string) => apiPost(`/procurement-quotations/${qId}/reopen`, { reason }),
     onSuccess: () => { invalidate(); setActionDialog(null); setReopenReason(""); toast({ title: "Quotation reopened for revision" }); },
     onError: (e: any) => toast({ title: "Failed to reopen", description: e?.message ?? "Error", variant: "destructive" }),
   });
 
   const deleteAttachmentMut = useMutation({
-    mutationFn: (attachmentId: number) =>
-      apiDelete(`/procurement-quotations/${qId}/attachments/${attachmentId}`),
+    // Actor identity is derived from the Bearer token server-side — no userId/role in body
+    mutationFn: (attId: number) => apiDelete(`/procurement-quotations/${qId}/attachments/${attId}`),
     onSuccess: () => { invalidate(); toast({ title: "Attachment removed" }); },
     onError: () => toast({ title: "Failed to remove attachment", variant: "destructive" }),
   });
@@ -205,30 +205,25 @@ export default function ProcurementQuotationDetail({ id }: { id: string }) {
   /* ── File upload ─────────────────────────────────────────────────────────── */
   const handleFileUpload = async (file: File) => {
     setUploading(true);
+    let attachmentId: number | null = null;
     try {
-      // Step 1: request presigned URL
-      const urlRes = await fetch(`${BASE}api/procurement-quotations/${qId}/attachments/request-url`, {
+      // Step 1: Register metadata + get presigned URL in one call
+      const metaRes = await fetch(`${BASE}api/procurement-quotations/${qId}/attachments`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }),
+        body: JSON.stringify({ fileName: file.name, fileSize: file.size, mimeType: file.type, userName: user.name, userId: user.id, userRole: user.role }),
       });
-      if (!urlRes.ok) throw new Error("Failed to get upload URL");
-      const { uploadURL } = await urlRes.json();
+      if (!metaRes.ok) throw new Error("Failed to register attachment");
+      const { uploadURL, attachment } = await metaRes.json();
+      attachmentId = attachment?.id ?? null;
 
-      // Step 2: upload directly to GCS
+      // Step 2: Upload directly to GCS
       const uploadRes = await fetch(uploadURL, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
-      if (!uploadRes.ok) throw new Error("Upload to storage failed");
-
-      // Step 3: extract objectPath from presigned URL
-      const url = new URL(uploadURL);
-      const objectPath = `/objects${url.pathname.split("/objects").pop() ?? url.pathname}`;
-
-      // Step 4: register in DB
-      await fetch(`${BASE}api/procurement-quotations/${qId}/attachments`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ objectPath, fileName: file.name, fileSize: file.size, mimeType: file.type, userName: user.name, userId: user.id }),
-      });
+      if (!uploadRes.ok) {
+        // Cleanup orphaned DB row
+        if (attachmentId) await fetch(`${BASE}api/procurement-quotations/${qId}/attachments/${attachmentId}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+        throw new Error("Upload to storage failed");
+      }
 
       invalidate();
       toast({ title: `${file.name} uploaded` });
@@ -236,6 +231,20 @@ export default function ProcurementQuotationDetail({ id }: { id: string }) {
       toast({ title: "Upload failed", description: e.message, variant: "destructive" });
     } finally {
       setUploading(false);
+    }
+  };
+
+  /* ── Authenticated download ──────────────────────────────────────────────── */
+  const downloadAttachment = async (att: any) => {
+    try {
+      const res = await fetch(`${BASE}api/storage${att.fileKey}`, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) throw new Error("Download failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = att.fileName; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    } catch {
+      toast({ title: "Download failed", description: "Could not fetch the file", variant: "destructive" });
     }
   };
 
@@ -448,7 +457,7 @@ export default function ProcurementQuotationDetail({ id }: { id: string }) {
                             </div>
                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                               <Button size="icon" variant="ghost" className="h-7 w-7"
-                                onClick={() => window.open(`${BASE}api/procurement-quotations/${qId}/attachments/${att.id}/download`, "_blank")}>
+                                onClick={() => downloadAttachment(att)} title="Download">
                                 <Download className="h-3.5 w-3.5" />
                               </Button>
                               {!isLocked && (

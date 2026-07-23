@@ -10,7 +10,10 @@ export const auditActionEnum = pgEnum("audit_action", [
   "Created", "Updated", "Submitted", "ReviewStarted",
   "RevisionRequested", "Approved", "Rejected", "Deleted",
   "CommentAdded", "DocumentUploaded", "POGenerated",
-  "Reopened", "Cancelled", "AttachmentAdded", "AttachmentRemoved", "Escalated",
+  "Reopened", "Cancelled",
+  "AttachmentAdded", "AttachmentRemoved",
+  "AttachmentUploaded", "AttachmentDeleted",
+  "Escalated",
 ]);
 
 export const procurementQuotationsTable = pgTable("procurement_quotations", {
@@ -67,6 +70,7 @@ export const procurementQuotationsTable = pgTable("procurement_quotations", {
   lockedBy: integer("locked_by"),
   reopenedAt: timestamp("reopened_at"),
   reopenedBy: integer("reopened_by"),
+  reopenedByName: text("reopened_by_name"),
   reopenReason: text("reopen_reason"),
 
   // Central approval engine link
@@ -122,7 +126,7 @@ export const quotationAttachmentsTable = pgTable("quotation_attachments", {
   id: serial("id").primaryKey(),
   quotationId: integer("quotation_id").notNull().references(() => procurementQuotationsTable.id, { onDelete: "cascade" }),
   fileName: text("file_name").notNull(),
-  objectPath: text("object_path").notNull(), // GCS object path
+  fileKey: text("file_key").notNull(), // Stable object path, e.g. /objects/private-objects/<uuid>
   fileSize: integer("file_size"),
   mimeType: text("mime_type"),
   uploadedBy: integer("uploaded_by"),

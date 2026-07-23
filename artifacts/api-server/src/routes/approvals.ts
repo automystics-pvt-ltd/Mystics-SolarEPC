@@ -4,7 +4,9 @@ import {
   approvalWorkflowsTable, approvalWorkflowStepsTable,
   approvalRequestsTable, approvalRequestStepsTable,
   approvalActionsTable, approvalDelegatesTable,
+  procurementQuotationsTable, notificationsTable,
 } from "@workspace/db";
+import { approveQuotationAndGeneratePO, rejectQuotation } from "../lib/quotationApprovalService";
 import { eq, and, or, inArray, desc, sql, ne, gte, lte } from "drizzle-orm";
 import jwt from "jsonwebtoken";
 
@@ -439,6 +441,34 @@ router.patch("/approvals/:id/approve", async (req, res): Promise<void> => {
     }
   }
 
+  // ── Bidirectional sync for quotation entities — run BEFORE updating approval request ──
+  // If this is the terminal approval step for a quotation, the quotation approval (which
+  // generates the PO) must succeed before we commit the approval request to "approved".
+  // This prevents the approved request / missing PO inconsistency.
+  if (newStatus === "approved" && r.entityType === "quotation") {
+    const [quot] = await db.select().from(procurementQuotationsTable)
+      .where(eq(procurementQuotationsTable.approvalRequestId, id));
+    if (quot) {
+      try {
+        await approveQuotationAndGeneratePO(
+          quot.id,
+          comment ?? "Approved via Approval Workbench",
+          { userId: actor.userId, role: actor.role, name: (actor as any).name ?? "Approver" },
+        );
+        // approveQuotationAndGeneratePO also syncs the approval request to approved,
+        // so the db.update below will be a no-op for that field — that's fine.
+      } catch (syncErr: any) {
+        // PO/quotation sync failed — roll back the step so the request stays actionable
+        await db.update(approvalRequestStepsTable)
+          .set({ status: "pending", actedById: null, actedAt: null, comment: null })
+          .where(eq(approvalRequestStepsTable.id, myStep.id));
+        console.error("Workbench quotation sync error:", syncErr?.message);
+        res.status(500).json({ error: `Approval processing failed: ${syncErr?.message}. Please retry.` });
+        return;
+      }
+    }
+  }
+
   await db.update(approvalRequestsTable)
     .set({ currentStep: newStep, status: newStatus, updatedAt: new Date(),
            resolvedAt: newStatus === "approved" ? new Date() : null })
@@ -464,6 +494,9 @@ router.patch("/approvals/:id/reject", async (req, res): Promise<void> => {
   await db.update(approvalRequestStepsTable)
     .set({ status: "rejected", actedById: actor.userId, actedAt: new Date(), comment })
     .where(eq(approvalRequestStepsTable.id, myStep.id));
+
+  const [rFull] = await db.select().from(approvalRequestsTable).where(eq(approvalRequestsTable.id, id));
+
   await db.update(approvalRequestsTable)
     .set({ status: "rejected", updatedAt: new Date(), resolvedAt: new Date() })
     .where(eq(approvalRequestsTable.id, id));
@@ -471,6 +504,28 @@ router.patch("/approvals/:id/reject", async (req, res): Promise<void> => {
     requestId: id, stepId: myStep.id, actorId: actor.userId,
     actionType: "rejected", comment,
   });
+
+  // ── Bidirectional sync: propagate full rejection to quotation ───────────
+  // Uses the shared rejectQuotation service so all rejection metadata fields
+  // (rejectedAt, rejectedBy, rejectedByName, approvalRemarks) are set identically
+  // to the detail-page reject route.
+  if (rFull?.entityType === "quotation") {
+    const [quot] = await db.select().from(procurementQuotationsTable)
+      .where(eq(procurementQuotationsTable.approvalRequestId, id));
+    if (quot) {
+      try {
+        await rejectQuotation(
+          quot.id,
+          comment,
+          { userId: actor.userId, role: actor.role, name: (actor as any).name ?? "Approver" },
+        );
+      } catch (syncErr: any) {
+        // Only log — approval request is already rejected; quotation may already be terminal
+        console.error("Workbench quotation reject sync:", syncErr?.message);
+      }
+    }
+  }
+
   res.json({ ok: true });
 });
 
@@ -533,6 +588,84 @@ router.post("/approvals/:id/comment", async (req, res): Promise<void> => {
     requestId: id, actorId: actor.userId, actionType: "commented", comment,
   });
   res.json({ ok: true });
+});
+
+/* ══════════════════════════════════════════════════════════════════════════
+   DELEGATION RULES  (profile-level delegate rules, separate from per-step delegation)
+══════════════════════════════════════════════════════════════════════════ */
+
+// List current user's delegation rules
+router.get("/approvals/my-delegates", async (req, res): Promise<void> => {
+  const actor = getActor(req);
+  if (!actor) { res.status(401).json({ error: "Unauthorized" }); return; }
+  const rows = await db.select().from(approvalDelegatesTable)
+    .where(eq(approvalDelegatesTable.fromUserId, actor.userId));
+  res.json(rows);
+});
+
+// Create a new profile-level delegation rule
+router.post("/approvals/delegate", async (req, res): Promise<void> => {
+  const actor = getActor(req);
+  if (!actor) { res.status(401).json({ error: "Unauthorized" }); return; }
+  const { toUserId, module, startDate, endDate } = req.body;
+  if (!toUserId) { res.status(400).json({ error: "toUserId required" }); return; }
+  const [row] = await db.insert(approvalDelegatesTable).values({
+    fromUserId: actor.userId,
+    toUserId:   Number(toUserId),
+    module:     module ?? null,
+    startDate:  startDate  ? new Date(startDate)  : new Date(),
+    endDate:    endDate    ? new Date(endDate)     : null,
+    isActive:   true,
+  }).returning();
+  res.status(201).json(row);
+});
+
+// Delete a profile-level delegation rule
+router.delete("/approvals/delegate/:id", async (req, res): Promise<void> => {
+  const actor = getActor(req);
+  if (!actor) { res.status(401).json({ error: "Unauthorized" }); return; }
+  const delegateId = Number(req.params.id);
+  const [row] = await db.select().from(approvalDelegatesTable)
+    .where(eq(approvalDelegatesTable.id, delegateId));
+  if (!row) { res.status(404).json({ error: "Delegation rule not found" }); return; }
+  if (row.fromUserId !== actor.userId && actor.role !== "admin") {
+    res.status(403).json({ error: "Forbidden" }); return;
+  }
+  await db.delete(approvalDelegatesTable).where(eq(approvalDelegatesTable.id, delegateId));
+  res.json({ ok: true });
+});
+
+/* ══════════════════════════════════════════════════════════════════════════
+   OVERDUE STEPS ENDPOINT
+══════════════════════════════════════════════════════════════════════════ */
+
+router.get("/approval-requests/overdue", async (req, res): Promise<void> => {
+  const actor = getActor(req);
+  if (!actor) { res.status(401).json({ error: "Unauthorized" }); return; }
+  if (!["admin", "director"].includes(actor.role)) {
+    res.status(403).json({ error: "Forbidden" }); return;
+  }
+  const now = new Date();
+  const overdueSteps = await db.select({
+    step: approvalRequestStepsTable,
+    request: approvalRequestsTable,
+  })
+    .from(approvalRequestStepsTable)
+    .innerJoin(approvalRequestsTable, eq(approvalRequestsTable.id, approvalRequestStepsTable.requestId))
+    .where(and(
+      eq(approvalRequestStepsTable.status, "pending"),
+      eq(approvalRequestStepsTable.isEscalated, false),
+      lte(approvalRequestStepsTable.slaDeadline, now),
+    ))
+    .orderBy(approvalRequestStepsTable.slaDeadline);
+  res.json(overdueSteps.map(r => ({
+    ...r.step,
+    requestTitle:     r.request.title,
+    requestRefNumber: r.request.refNumber,
+    module:           r.request.module,
+    entityType:       r.request.entityType,
+    entityRef:        r.request.entityRef,
+  })));
 });
 
 /* ══════════════════════════════════════════════════════════════════════════

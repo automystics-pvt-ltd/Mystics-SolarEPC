@@ -84,6 +84,9 @@ export function apiPatch<T>(path: string, body?: unknown): Promise<T> {
   });
 }
 
-export function apiDelete<T>(path: string): Promise<T> {
-  return apiFetch<T>(`/api${path}`, { method: 'DELETE' });
+export function apiDelete<T>(path: string, body?: unknown): Promise<T> {
+  return apiFetch<T>(`/api${path}`, {
+    method: 'DELETE',
+    ...(body ? { body: JSON.stringify(body) } : {}),
+  });
 }

@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import {
   db, procInvoicesTable, procInvoiceItemsTable, procInvoiceAuditLogsTable,
   procurementPOsTable, procPOItemsTable, procGRNsTable, procGRNItemsTable,
-  invoiceCommentsTable, invoicePaymentsTable, notificationsTable,
+  invoiceCommentsTable, invoicePaymentsTable, notificationsTable, procurementQuotationsTable,
 } from "@workspace/db";
 import { eq, desc, and, sql, or, gte, lte, ilike } from "drizzle-orm";
 import { requireAuth, requirePermission } from "../lib/rbac";
@@ -194,7 +194,20 @@ router.get("/proc-invoices/:id", async (req, res): Promise<void> => {
     db.select().from(invoiceCommentsTable).where(eq(invoiceCommentsTable.invoiceId, id)).orderBy(invoiceCommentsTable.createdAt),
     db.select().from(invoicePaymentsTable).where(eq(invoicePaymentsTable.invoiceId, id)).orderBy(desc(invoicePaymentsTable.createdAt)),
   ]);
-  res.json(fmtInvoice(inv, items, auditLogs, comments, payments));
+  // Back-link: resolve quotation from the linked PO
+  let quotationId: number | null = null;
+  let quotationRef: string | null = null;
+  if (inv.poId) {
+    const [po] = await db.select({ qId: procurementPOsTable.quotationId })
+      .from(procurementPOsTable).where(eq(procurementPOsTable.id, inv.poId));
+    if (po?.qId) {
+      quotationId = po.qId;
+      const [quot] = await db.select({ referenceId: procurementQuotationsTable.referenceId })
+        .from(procurementQuotationsTable).where(eq(procurementQuotationsTable.id, po.qId));
+      quotationRef = quot?.referenceId ?? null;
+    }
+  }
+  res.json({ ...fmtInvoice(inv, items, auditLogs, comments, payments), quotationId, quotationRef });
 });
 
 // ── CREATE (with 3-way match + duplicate detection) ───────────────────────────

@@ -551,6 +551,21 @@ export default function ProcurementPODetail({ id }: { id: string }) {
         </div>
       )}
 
+      {/* ── Quotation back-link ──────────────────────────────────────────────── */}
+      {p.quotationId && (
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-muted/30 border border-border rounded-xl text-sm">
+          <FileText className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+          <span className="text-muted-foreground">Created from quotation</span>
+          <button
+            className="font-mono font-semibold text-primary hover:underline flex items-center gap-1"
+            onClick={() => setLocation(`/procurement/quotations/${p.quotationId}`)}
+          >
+            {p.quotationRef ?? `VQ #${p.quotationId}`}
+            <ExternalLink className="w-3 h-3" />
+          </button>
+        </div>
+      )}
+
       {/* ── Order Details ────────────────────────────────────────────────────── */}
       <SectionCard title="Order Details">
         <DetailGrid cols={4}>
