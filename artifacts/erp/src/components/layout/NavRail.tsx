@@ -72,6 +72,21 @@ export const RAIL: RailEntry[] = [
     ],
   },
   {
+    type: "group", key: "procurement", icon: ShoppingCart, label: "Procurement",
+    hasBadge: true,
+    roles: ["admin","director","pm","warehouse","finance"],
+    items: [
+      { name: "Dashboard",          href: "/procurement/dashboard",   icon: BarChart2 },
+      { name: "Vendors",            href: "/procurement/vendors",     icon: Building2,    roles: ["admin","director","pm"] },
+      { name: "Materials",          href: "/procurement/materials",   icon: Package,      roles: ["admin","director","pm"] },
+      { name: "Vendor Quotations",  href: "/procurement/quotations",  icon: ClipboardList,roles: ["admin","director","pm"] },
+      { name: "Purchase Orders",    href: "/procurement/pos",         icon: ShoppingCart },
+      { name: "GRNs",               href: "/procurement/grns",        icon: Boxes },
+      { name: "GRN Returns",        href: "/procurement/grn-returns", icon: RotateCcw,    roles: ["admin","director","pm","warehouse"] },
+      { name: "Invoices",           href: "/procurement/invoices",    icon: FilePlus,     roles: ["admin","director","pm","finance"] },
+    ],
+  },
+  {
     type: "group", key: "projects", icon: FolderKanban, label: "Projects",
     roles: ["admin","director","pm","sales"],
     items: [
@@ -112,21 +127,6 @@ export const RAIL: RailEntry[] = [
       { name: "AMC Contracts",   href: "/oam/amc",        icon: FileText },
       { name: "Maintenance",     href: "/oam/maintenance", icon: Calendar },
       { name: "Service Tickets", href: "/oam/tickets",     icon: AlertTriangle },
-    ],
-  },
-  {
-    type: "group", key: "procurement", icon: ShoppingCart, label: "Procurement",
-    hasBadge: true,
-    roles: ["admin","director","pm","warehouse","finance"],
-    items: [
-      { name: "Dashboard",          href: "/procurement/dashboard",   icon: BarChart2 },
-      { name: "Vendors",            href: "/procurement/vendors",     icon: Building2,    roles: ["admin","director","pm"] },
-      { name: "Materials",          href: "/procurement/materials",   icon: Package,      roles: ["admin","director","pm"] },
-      { name: "Vendor Quotations",  href: "/procurement/quotations",  icon: ClipboardList,roles: ["admin","director","pm"] },
-      { name: "Purchase Orders",    href: "/procurement/pos",         icon: ShoppingCart },
-      { name: "GRNs",               href: "/procurement/grns",        icon: Boxes },
-      { name: "GRN Returns",        href: "/procurement/grn-returns", icon: RotateCcw,    roles: ["admin","director","pm","warehouse"] },
-      { name: "Invoices",           href: "/procurement/invoices",    icon: FilePlus,     roles: ["admin","director","pm","finance"] },
     ],
   },
   { type: "separator", key: "s2" },
