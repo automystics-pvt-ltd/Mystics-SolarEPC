@@ -1,189 +1,626 @@
+import { useState } from "react";
 import { useGetProcurementDashboard } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
-  ShoppingCart, AlertTriangle, Package, FileText, TrendingUp,
-  ArrowRight, BarChart2,
+  ShoppingCart, AlertTriangle, FileText, TrendingUp, TrendingDown,
+  ArrowRight, Zap, Clock, Building2, ChevronRight, CheckCircle2,
+  AlertCircle, Boxes, FilePlus, DollarSign, ClipboardList, Calendar,
+  Activity, RotateCcw, Minus,
 } from "lucide-react";
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+  AreaChart, Area, PieChart, Pie, Cell,
+  XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
-import { PageHeader, StatCard, SectionCard, SkeletonStats, SkeletonList, StatusBadge } from "@/components/shared";
+import { SkeletonStats, SkeletonList, StatusBadge } from "@/components/shared";
 
-const fmt = (n: number | null | undefined) =>
-  n != null ? `₹${Number(n).toLocaleString("en-IN", { maximumFractionDigits: 0 })}` : "—";
-
+/* ─── Formatters ─────────────────────────────────────────────────────────── */
 const MONTH_LABELS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
+function fmt(n: number | null | undefined) {
+  if (n == null) return "—";
+  if (n >= 10_000_000) return `₹${(n / 10_000_000).toFixed(1)}Cr`;
+  if (n >= 100_000)    return `₹${(n / 100_000).toFixed(1)}L`;
+  return `₹${Number(n).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+}
+function fmtFull(n: number | null | undefined) {
+  if (n == null) return "—";
+  return `₹${Number(n).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+}
+function relTime(iso: string) {
+  const s = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (s < 60)     return "just now";
+  if (s < 3600)   return `${Math.floor(s / 60)}m ago`;
+  if (s < 86400)  return `${Math.floor(s / 3600)}h ago`;
+  if (s < 604800) return `${Math.floor(s / 86400)}d ago`;
+  return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+}
+function daysSince(iso: string) {
+  return Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+}
+
+/* ─── Constants ──────────────────────────────────────────────────────────── */
+const PIPELINE_STAGES = [
+  { key: "Draft",             short: "Draft",   color: "#94a3b8", bg: "bg-slate-100",  border: "border-slate-200",   text: "text-slate-600"   },
+  { key: "Issued",            short: "Issued",  color: "#3b82f6", bg: "bg-blue-50",    border: "border-blue-200",    text: "text-blue-700"    },
+  { key: "Acknowledged",      short: "Ack'd",   color: "#8b5cf6", bg: "bg-violet-50",  border: "border-violet-200",  text: "text-violet-700"  },
+  { key: "PartiallyReceived", short: "Partial", color: "#f97316", bg: "bg-orange-50",  border: "border-orange-200",  text: "text-orange-700"  },
+  { key: "FullyReceived",     short: "Rcvd",    color: "#10b981", bg: "bg-emerald-50", border: "border-emerald-200", text: "text-emerald-700" },
+  { key: "Closed",            short: "Closed",  color: "#16a34a", bg: "bg-green-50",   border: "border-green-200",   text: "text-green-700"   },
+  { key: "Cancelled",         short: "Cxld",    color: "#ef4444", bg: "bg-red-50",     border: "border-red-200",     text: "text-red-700"     },
+];
+const DONUT_COLORS: Record<string, string> = {
+  Draft: "#94a3b8", Issued: "#3b82f6", Acknowledged: "#8b5cf6",
+  PartiallyReceived: "#f97316", FullyReceived: "#10b981", Closed: "#16a34a", Cancelled: "#ef4444",
+};
+const ACTIVITY_META: Record<string, { icon: React.ElementType; label: string; cls: string }> = {
+  po:      { icon: ShoppingCart, label: "Purchase Order", cls: "bg-blue-100 text-blue-700"       },
+  grn:     { icon: Boxes,        label: "GRN",            cls: "bg-emerald-100 text-emerald-700"  },
+  invoice: { icon: FilePlus,     label: "Invoice",        cls: "bg-violet-100 text-violet-700"    },
+};
+
+/* ─── Animation ──────────────────────────────────────────────────────────── */
+const wrap = { hidden: {}, show: { transition: { staggerChildren: 0.055 } } };
+const fade = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0, transition: { duration: 0.28, ease: "easeOut" } } };
+
+/* ─── Accent palette ─────────────────────────────────────────────────────── */
+type Accent = "default"|"red"|"amber"|"emerald"|"blue"|"violet";
+const ACCENT: Record<Accent, { bg: string; icon: string }> = {
+  default: { bg: "from-white to-slate-50/80 border-border",           icon: "bg-primary/10 text-primary"       },
+  red:     { bg: "from-red-50 to-rose-50/60 border-red-200",          icon: "bg-red-100 text-red-600"          },
+  amber:   { bg: "from-amber-50 to-orange-50/60 border-amber-200",    icon: "bg-amber-100 text-amber-700"      },
+  emerald: { bg: "from-emerald-50 to-green-50/60 border-emerald-200", icon: "bg-emerald-100 text-emerald-700"  },
+  blue:    { bg: "from-blue-50 to-sky-50/60 border-blue-200",         icon: "bg-blue-100 text-blue-700"        },
+  violet:  { bg: "from-violet-50 to-purple-50/60 border-violet-200",  icon: "bg-violet-100 text-violet-700"    },
+};
+type AlertColor = "red"|"amber"|"blue";
+const ALERT_STYLE: Record<AlertColor, { lb: string; bg: string; ib: string; badge: string; bb: string }> = {
+  red:   { lb:"border-l-red-500",   bg:"bg-red-50/50",   ib:"bg-red-100 text-red-600",     badge:"bg-red-100 text-red-700",     bb:"border-red-200"   },
+  amber: { lb:"border-l-amber-500", bg:"bg-amber-50/50", ib:"bg-amber-100 text-amber-700", badge:"bg-amber-100 text-amber-700", bb:"border-amber-200" },
+  blue:  { lb:"border-l-blue-500",  bg:"bg-blue-50/50",  ib:"bg-blue-100 text-blue-700",   badge:"bg-blue-100 text-blue-700",   bb:"border-blue-200"  },
+};
+
+/* ─── Leaf components ────────────────────────────────────────────────────── */
+function KPICard({ label, value, sub, trend, trendLabel, icon: Icon, accent = "default", onClick }: {
+  label: string; value: string | number; sub?: string;
+  trend?: "up"|"down"|"neutral"; trendLabel?: string;
+  icon: React.ElementType; accent?: Accent; onClick?: () => void;
+}) {
+  const a  = ACCENT[accent];
+  const TI = trend === "up" ? TrendingUp : trend === "down" ? TrendingDown : Minus;
+  const tc = trend === "up" ? "text-emerald-600" : trend === "down" ? "text-red-500" : "text-muted-foreground";
+  return (
+    <div onClick={onClick} className={cn(
+      "bg-gradient-to-br border rounded-xl p-4 flex flex-col gap-3 transition-all duration-200 select-none",
+      a.bg, onClick && "cursor-pointer hover:shadow-md hover:-translate-y-0.5"
+    )}>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-muted-foreground leading-tight">{label}</p>
+        <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center shrink-0", a.icon)}>
+          <Icon className="h-4 w-4" />
+        </div>
+      </div>
+      <div>
+        <div className="text-[26px] font-bold text-foreground leading-none tabular-nums">{value}</div>
+        {sub && <p className="mt-1 text-[11px] text-muted-foreground leading-snug">{sub}</p>}
+      </div>
+      {trendLabel && (
+        <div className={cn("flex items-center gap-1 text-[11px] font-semibold", tc)}>
+          <TI className="h-3 w-3 shrink-0" />{trendLabel}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DashCard({ title, sub, actions, children, className }: {
+  title: string; sub?: string; actions?: React.ReactNode; children: React.ReactNode; className?: string;
+}) {
+  return (
+    <div className={cn("bg-card border border-border rounded-xl overflow-hidden", className)}>
+      <div className="flex items-start justify-between gap-3 px-5 py-3.5 border-b border-border/60">
+        <div>
+          <p className="text-[13px] font-bold text-foreground">{title}</p>
+          {sub && <p className="text-[11px] text-muted-foreground mt-0.5">{sub}</p>}
+        </div>
+        {actions}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Pipeline({ poByStatus, totalPOs, onNav }: {
+  poByStatus: Record<string, number>; totalPOs: number; onNav: () => void;
+}) {
+  const stages = PIPELINE_STAGES.filter(s => s.key !== "Cancelled" || (poByStatus[s.key] ?? 0) > 0);
+  return (
+    <div className="flex items-stretch gap-1 overflow-x-auto pb-1">
+      {stages.map((s, i) => {
+        const count = poByStatus[s.key] ?? 0;
+        const pct   = totalPOs > 0 ? Math.round((count / totalPOs) * 100) : 0;
+        return (
+          <div key={s.key} className="flex items-center flex-1 min-w-[72px]">
+            <button onClick={onNav} className={cn(
+              "flex-1 rounded-xl p-3 text-center transition-all hover:shadow-sm hover:-translate-y-0.5 border",
+              s.bg, s.border
+            )}>
+              <div className={cn("text-xl font-bold tabular-nums", s.text)}>{count}</div>
+              <div className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mt-0.5 leading-tight">{s.short}</div>
+              <div className={cn("text-[10px] font-semibold mt-0.5", s.text)}>{pct}%</div>
+              <div className="mt-2 h-1 bg-white/60 rounded-full overflow-hidden">
+                <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: s.color }} />
+              </div>
+            </button>
+            {i < stages.length - 1 && <ChevronRight className="h-3 w-3 text-muted-foreground/20 shrink-0 mx-0.5" />}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function SpendTooltip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-popover border border-border rounded-lg shadow-lg px-3 py-2 text-sm">
+      <p className="font-semibold text-foreground mb-0.5">{label}</p>
+      <p className="text-primary font-bold tabular-nums">{fmtFull(payload[0]?.value)}</p>
+    </div>
+  );
+}
+
+function ActionRow({ left, right, onClick }: { left: React.ReactNode; right: React.ReactNode; onClick: () => void }) {
+  return (
+    <div onClick={onClick} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-muted/30 cursor-pointer border-b border-border/40 last:border-b-0 transition-colors">
+      <div className="min-w-0 flex-1">{left}</div>
+      <div className="shrink-0 flex items-center gap-2">{right}</div>
+    </div>
+  );
+}
+
+function AlertRow({ icon: Icon, color, title, sub, count, onClick }: {
+  icon: React.ElementType; color: AlertColor; title: string; sub: string; count: number; onClick?: () => void;
+}) {
+  const c = ALERT_STYLE[color];
+  return (
+    <div onClick={onClick} className={cn(
+      "flex items-center gap-3 px-4 py-3 border-l-[3px] transition-all",
+      c.lb, c.bg, onClick && "cursor-pointer hover:opacity-90"
+    )}>
+      <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center shrink-0", c.ib)}>
+        <Icon className="h-4 w-4" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[13px] font-semibold text-foreground">{title}</p>
+        <p className="text-[11px] text-muted-foreground">{sub}</p>
+      </div>
+      <span className={cn("text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 border", c.badge, c.bb)}>{count}</span>
+    </div>
+  );
+}
+
+function ActivityRow({ event }: { event: any }) {
+  const meta = ACTIVITY_META[event.type] ?? { icon: Activity, label: event.type, cls: "bg-muted text-muted-foreground" };
+  const Icon = meta.icon;
+  return (
+    <div className="flex gap-3 py-2.5 group">
+      <div className="flex flex-col items-center">
+        <div className={cn("h-7 w-7 rounded-full flex items-center justify-center shrink-0", meta.cls)}>
+          <Icon className="h-3.5 w-3.5" />
+        </div>
+        <div className="flex-1 w-px bg-border/40 mt-1 group-last:hidden" />
+      </div>
+      <div className="flex-1 pb-2 min-w-0">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-[12px] font-semibold text-foreground leading-tight truncate">
+              {meta.label} · <span className="font-mono">{event.ref}</span>
+            </p>
+            <p className="text-[11px] text-muted-foreground truncate">{event.vendorName}</p>
+          </div>
+          <div className="flex flex-col items-end gap-1 shrink-0">
+            <StatusBadge status={event.status} />
+            <span className="text-[10px] text-muted-foreground/60 tabular-nums">{relTime(event.createdAt)}</span>
+          </div>
+        </div>
+        {event.amount != null && (
+          <p className="mt-0.5 text-[11px] font-semibold text-foreground/60 tabular-nums">{fmt(event.amount)}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function InsightChip({ icon: Icon, text, cls }: { icon: React.ElementType; text: string; cls: string }) {
+  return (
+    <div className={cn("flex items-start gap-2.5 px-3.5 py-2.5 rounded-xl border text-[12px] font-medium leading-snug", cls)}>
+      <Icon className="h-4 w-4 mt-0.5 shrink-0" />{text}
+    </div>
+  );
+}
+
+/* ─── Main dashboard ─────────────────────────────────────────────────────── */
 export default function ProcurementDashboard() {
   const [, setLocation] = useLocation();
+  const [tab, setTab]   = useState<"invoices"|"grns"|"overdue">("invoices");
   const { data, isLoading } = useGetProcurementDashboard();
 
   if (isLoading) return (
-    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6">
-      <SkeletonStats count={6} />
-      <SkeletonList rows={6} />
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+      <SkeletonStats count={5} /><SkeletonList rows={4} /><SkeletonList rows={6} />
     </motion.div>
   );
 
-  const d = data as any;
-  const summary = d?.summary ?? {};
-  const overduePOs: any[] = d?.overduePOs ?? [];
-  const pendingGRNs: any[] = d?.pendingGRNs ?? [];
-  const pendingInvoices: any[] = d?.pendingInvoices ?? [];
-  const monthlySpend: any[] = (d?.monthlySpend ?? []).map((m: any, i: number) => ({
-    month: MONTH_LABELS[i] ?? m.month,
-    amount: m.amount,
+  /* data */
+  const d   = data as any;
+  const s   = d?.summary ?? {};
+  const overduePOs: any[]      = d?.overduePOs           ?? [];
+  const pendingGRNs: any[]     = d?.pendingGRNs           ?? [];
+  const pendingInvoices: any[] = d?.pendingInvoices        ?? [];
+  const approaching: any[]     = d?.approachingDeadlines   ?? [];
+  const topVendors: any[]      = d?.topVendors             ?? [];
+  const recentActivity: any[]  = d?.recentActivity         ?? [];
+  const monthlySpend: any[]    = (d?.monthlySpend ?? []).map((m: any, i: number) => ({
+    month: MONTH_LABELS[i] ?? m.month, amount: m.amount,
   }));
 
+  /* derived */
+  const spendDelta = s.lastMonthSpend > 0
+    ? ((s.thisMonthSpend - s.lastMonthSpend) / s.lastMonthSpend) * 100 : null;
+  const pendingActions = (s.pendingGRNs ?? 0) + (s.pendingInvoices ?? 0);
+  const donutData = Object.entries(s.poByStatus ?? {})
+    .map(([status, count]) => ({ name: status, value: count as number, color: DONUT_COLORS[status] ?? "#94a3b8" }))
+    .filter(d => d.value > 0);
+  const maxVendorSpend = topVendors[0]?.spend ?? 1;
+
+  /* insights */
+  const insights: { icon: React.ElementType; text: string; cls: string }[] = [];
+  if (spendDelta !== null && Math.abs(spendDelta) >= 5)
+    insights.push({
+      icon: spendDelta > 0 ? TrendingUp : TrendingDown,
+      text: `Spend is ${spendDelta > 0 ? "up" : "down"} ${Math.abs(spendDelta).toFixed(0)}% vs last month (${fmt(s.thisMonthSpend)} this month)`,
+      cls: spendDelta > 0 ? "bg-amber-50 border-amber-200 text-amber-800" : "bg-emerald-50 border-emerald-200 text-emerald-800",
+    });
+  if (s.overduePOs > 0)
+    insights.push({ icon: AlertTriangle, cls: "bg-red-50 border-red-200 text-red-800",
+      text: `${s.overduePOs} overdue PO${s.overduePOs > 1 ? "s" : ""} need immediate follow-up with vendors` });
+  const staleInv = pendingInvoices.filter((i: any) => daysSince(i.createdAt) > 7);
+  if (staleInv.length > 0)
+    insights.push({ icon: Clock, cls: "bg-violet-50 border-violet-200 text-violet-800",
+      text: `${staleInv.length} invoice${staleInv.length > 1 ? "s" : ""} ${staleInv.length > 1 ? "have" : "has"} been pending for over 7 days` });
+  if (topVendors.length > 0 && s.ytdSpend > 0) {
+    const pct = Math.round((topVendors[0].spend / s.ytdSpend) * 100);
+    if (pct >= 25)
+      insights.push({ icon: Building2, cls: "bg-blue-50 border-blue-200 text-blue-800",
+        text: `${topVendors[0].vendorName} accounts for ${pct}% of YTD spend — consider diversifying` });
+  }
+  if (s.approachingDeadlines > 0)
+    insights.push({ icon: Calendar, cls: "bg-orange-50 border-orange-200 text-orange-800",
+      text: `${s.approachingDeadlines} PO${s.approachingDeadlines > 1 ? "s" : ""} due within 7 days — confirm delivery with vendors` });
+  if (s.mismatchCount > 0)
+    insights.push({ icon: AlertCircle, cls: "bg-rose-50 border-rose-200 text-rose-800",
+      text: `${s.mismatchCount} invoice${s.mismatchCount > 1 ? "s" : ""} ${s.mismatchCount > 1 ? "have" : "has"} 3-way match mismatches requiring sign-off` });
+  if (insights.length === 0)
+    insights.push({ icon: CheckCircle2, cls: "bg-emerald-50 border-emerald-200 text-emerald-800",
+      text: "All procurement metrics look healthy — no critical issues detected" });
+
+  const now = new Date();
+
   return (
-    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-10">
-      <PageHeader
-        title="Procurement Overview"
-        subtitle="Monitor PO pipeline, GRN delivery status, and vendor invoices"
-      />
+    <motion.div variants={wrap} initial="hidden" animate="show" className="space-y-5 pb-10">
 
-      {/* Stats row */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        <StatCard label="Open POs" value={summary.openPOs ?? 0} icon={ShoppingCart}
-          iconBg="bg-blue-50" iconColor="text-blue-600" compact />
-        <StatCard label="Overdue POs" value={summary.overduePOs ?? 0} icon={AlertTriangle}
-          iconBg="bg-red-50" iconColor="text-red-600" compact />
-        <StatCard label="Pending GRNs" value={summary.pendingGRNs ?? 0} icon={Package}
-          iconBg="bg-amber-50" iconColor="text-amber-600" compact />
-        <StatCard label="Pending Invoices" value={summary.pendingInvoices ?? 0} icon={FileText}
-          iconBg="bg-purple-50" iconColor="text-purple-600" compact />
-        <StatCard label="Total POs" value={summary.totalPOs ?? 0} icon={BarChart2}
-          iconBg="bg-muted" iconColor="text-muted-foreground" compact />
-        <StatCard label="YTD Spend" value={fmt(summary.ytdSpend)} icon={TrendingUp}
-          iconBg="bg-emerald-50" iconColor="text-emerald-600" compact />
-      </div>
+      {/* Header */}
+      <motion.div variants={fade} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold text-foreground tracking-tight">Procurement Overview</h1>
+          <p className="text-[12px] text-muted-foreground mt-0.5">
+            Pipeline · Spend analytics · Risk signals &nbsp;·&nbsp;
+            <span className="tabular-nums">Updated {now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span>
+          </p>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          {([
+            { label: "POs",      icon: ShoppingCart, href: "/procurement/pos"      },
+            { label: "GRNs",     icon: Boxes,        href: "/procurement/grns"     },
+            { label: "Invoices", icon: FilePlus,     href: "/procurement/invoices" },
+            { label: "Vendors",  icon: Building2,    href: "/procurement/vendors"  },
+          ] as const).map(({ label, icon: Icon, href }) => (
+            <Button key={href} size="sm" variant="outline" className="text-xs gap-1.5 h-8" onClick={() => setLocation(href)}>
+              <Icon className="h-3.5 w-3.5" />{label}
+            </Button>
+          ))}
+        </div>
+      </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Monthly spend bar chart */}
-        <SectionCard title="Monthly Spend (Received POs)" noPadding={false}>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={monthlySpend} barSize={20}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={v => v >= 100000 ? `${(v/100000).toFixed(1)}L` : String(v)} />
-              <Tooltip formatter={(v: any) => fmt(v)} />
-              <Bar dataKey="amount" fill="#f97316" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </SectionCard>
+      {/* KPI Strip */}
+      <motion.div variants={fade} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <KPICard label="YTD Spend" value={fmt(s.ytdSpend)} icon={DollarSign} accent="amber"
+          sub={s.committedValue > 0 ? `+${fmt(s.committedValue)} committed` : "Received POs"}
+          trend={spendDelta != null ? (spendDelta >= 0 ? "up" : "down") : undefined}
+          trendLabel={spendDelta != null ? `${spendDelta > 0 ? "+" : ""}${spendDelta.toFixed(1)}% vs last month` : undefined}
+          onClick={() => setLocation("/procurement/pos")} />
+        <KPICard label="Active POs" value={s.openPOs ?? 0} icon={ShoppingCart} accent="blue"
+          sub={`of ${s.totalPOs ?? 0} total · ${s.poByStatus?.Draft ?? 0} draft`}
+          onClick={() => setLocation("/procurement/pos")} />
+        <KPICard label="Overdue POs" value={s.overduePOs ?? 0} icon={AlertTriangle}
+          accent={s.overduePOs > 0 ? "red" : "emerald"}
+          sub={s.overduePOs > 0 ? "Needs immediate action" : "All on schedule"}
+          onClick={() => setLocation("/procurement/pos")} />
+        <KPICard label="Pending Actions" value={pendingActions} icon={ClipboardList} accent="violet"
+          sub={`${s.pendingGRNs ?? 0} GRNs · ${s.pendingInvoices ?? 0} Invoices`}
+          onClick={() => setLocation("/procurement/invoices")} />
+        <KPICard label="Mismatch Alerts" value={s.mismatchCount ?? 0} icon={AlertCircle}
+          accent={s.mismatchCount > 0 ? "amber" : "emerald"}
+          sub={s.mismatchCount > 0 ? "Invoice mismatches" : "All invoices matched"}
+          onClick={() => setLocation("/procurement/invoices")} />
+      </motion.div>
 
-        {/* PO status breakdown */}
-        <SectionCard title="PO Status Breakdown">
-          <div className="space-y-2">
-            {Object.entries(summary.poByStatus ?? {}).map(([status, count]: any) => {
-              const barColors: Record<string, string> = {
-                Draft: "bg-muted-foreground/40", Issued: "bg-blue-400", Acknowledged: "bg-amber-400",
-                PartiallyReceived: "bg-orange-400", FullyReceived: "bg-emerald-400",
-                Closed: "bg-green-600", Cancelled: "bg-red-400",
-              };
-              const total = summary.totalPOs || 1;
-              const pct = Math.round((count / total) * 100);
-              return (
-                <div key={status} className="flex items-center gap-3">
-                  <span className="text-xs text-muted-foreground w-28 shrink-0">{status}</span>
-                  <div className="flex-1 bg-muted rounded-full h-2">
-                    <div className={cn("h-2 rounded-full", barColors[status] ?? "bg-muted-foreground")} style={{ width: `${pct}%` }} />
-                  </div>
-                  <span className="text-xs font-bold text-foreground w-6 text-right">{count}</span>
-                </div>
-              );
-            })}
+      {/* Smart Insights */}
+      <motion.div variants={fade}>
+        <div className="flex items-center gap-2 mb-2">
+          <Zap className="h-3.5 w-3.5 text-primary" />
+          <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Smart Insights</span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
+          {insights.map((ins, i) => <InsightChip key={i} icon={ins.icon} text={ins.text} cls={ins.cls} />)}
+        </div>
+      </motion.div>
+
+      {/* Pipeline */}
+      <motion.div variants={fade}>
+        <DashCard title="Procurement Pipeline" sub={`${s.totalPOs ?? 0} total POs across all stages`}>
+          <div className="p-4">
+            <Pipeline poByStatus={s.poByStatus ?? {}} totalPOs={s.totalPOs ?? 1} onNav={() => setLocation("/procurement/pos")} />
           </div>
-        </SectionCard>
-      </div>
+        </DashCard>
+      </motion.div>
 
-      {/* Overdue POs */}
-      {overduePOs.length > 0 && (
-        <SectionCard
-          title={`Overdue POs (${overduePOs.length})`}
-          accent
-          noPadding
+      {/* Charts */}
+      <motion.div variants={fade} className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <DashCard title="Monthly Spend Trend" sub={`${now.getFullYear()} · Received & closed POs`} className="lg:col-span-2">
+          <div className="px-4 pt-2 pb-4">
+            <ResponsiveContainer width="100%" height={210}>
+              <AreaChart data={monthlySpend} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%"   stopColor="#f97316" stopOpacity={0.22} />
+                    <stop offset="100%" stopColor="#f97316" stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} width={42}
+                  tickFormatter={v => v >= 100_000 ? `${(v/100_000).toFixed(0)}L` : v >= 1000 ? `${(v/1000).toFixed(0)}K` : String(v)} />
+                <Tooltip content={<SpendTooltip />} />
+                <Area type="monotone" dataKey="amount" stroke="#f97316" strokeWidth={2} fill="url(#sg)"
+                  dot={{ r: 3, fill: "#f97316", strokeWidth: 0 }}
+                  activeDot={{ r: 5, fill: "#f97316", strokeWidth: 2, stroke: "#fff" }} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </DashCard>
+
+        <DashCard title="PO Distribution" sub={`${s.totalPOs ?? 0} total`}>
+          <div className="flex flex-col items-center px-4 py-3">
+            <ResponsiveContainer width="100%" height={150}>
+              <PieChart>
+                <Pie data={donutData} cx="50%" cy="50%" innerRadius={42} outerRadius={66}
+                  paddingAngle={2} dataKey="value" startAngle={90} endAngle={-270}>
+                  {donutData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                </Pie>
+                <Tooltip formatter={(v: any, name: any) => [v, name]} />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="w-full space-y-1.5 mt-1 pb-2">
+              {donutData.map(d => (
+                <div key={d.name} className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
+                    <span className="text-[11px] text-muted-foreground truncate">{d.name}</span>
+                  </div>
+                  <span className="text-[11px] font-bold text-foreground tabular-nums">{d.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </DashCard>
+      </motion.div>
+
+      {/* Action Queue + Top Vendors */}
+      <motion.div variants={fade} className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <DashCard title="Pending Actions" sub="Items requiring your attention" className="lg:col-span-2"
+          actions={
+            <div className="flex bg-muted rounded-lg p-0.5 gap-0.5">
+              {([
+                { key: "invoices", label: "Invoices", count: s.pendingInvoices ?? 0 },
+                { key: "grns",     label: "GRNs",     count: s.pendingGRNs ?? 0     },
+                { key: "overdue",  label: "Overdue",  count: s.overduePOs ?? 0      },
+              ] as const).map(t => (
+                <button key={t.key} onClick={() => setTab(t.key)} className={cn(
+                  "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all",
+                  tab === t.key ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                )}>
+                  {t.label}
+                  {t.count > 0 && (
+                    <span className={cn("text-[10px] font-bold px-1.5 py-px rounded-full leading-none",
+                      tab === t.key ? "bg-primary/10 text-primary" : "bg-muted-foreground/20 text-muted-foreground"
+                    )}>{t.count}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          }
         >
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/30 border-b border-border/60">
-                <tr>
-                  {["PO Number", "Vendor", "Deadline", "Days Overdue", "Status", "Value", ""].map(h => (
-                    <th key={h} className="text-left px-5 py-2.5 text-xs font-bold text-muted-foreground uppercase">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/40">
-                {overduePOs.map((po: any) => (
-                  <tr key={po.id} className="hover:bg-muted/30 cursor-pointer" onClick={() => setLocation(`/procurement/pos/${po.id}`)}>
-                    <td className="px-5 py-3 font-mono font-bold text-foreground">{po.poNumber}</td>
-                    <td className="px-5 py-3 text-foreground">{po.vendorName}</td>
-                    <td className="px-5 py-3 text-muted-foreground">{po.deliveryDeadline}</td>
-                    <td className="px-5 py-3"><StatusBadge status="Overdue" /></td>
-                    <td className="px-5 py-3"><StatusBadge status={po.status} /></td>
-                    <td className="px-5 py-3 font-mono text-foreground">{fmt(po.totalAmount)}</td>
-                    <td className="px-5 py-3"><ArrowRight className="w-4 h-4 text-muted-foreground" /></td>
-                  </tr>
+          <div>
+            {tab === "invoices" && (pendingInvoices.length === 0
+              ? <div className="py-10 text-center text-muted-foreground text-sm">No pending invoices</div>
+              : pendingInvoices.map((inv: any) => (
+                  <ActionRow key={inv.id} onClick={() => setLocation(`/procurement/invoices/${inv.id}`)}
+                    left={<div>
+                      <p className="font-mono font-bold text-[13px] text-foreground">{inv.invoiceNumber}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        {inv.vendorName}
+                        {inv.totalAmount != null && <> · <span className="font-semibold tabular-nums">{fmt(inv.totalAmount)}</span></>}
+                        {daysSince(inv.createdAt) > 0 && <span className="text-muted-foreground/50 ml-1">· {daysSince(inv.createdAt)}d old</span>}
+                      </p>
+                    </div>}
+                    right={<div className="flex flex-col items-end gap-1">
+                      <StatusBadge status={inv.status} />
+                      {inv.matchStatus === "MismatchPending" && <StatusBadge status="MismatchFlagged" />}
+                      <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/30" />
+                    </div>}
+                  />
+                ))
+            )}
+            {tab === "grns" && (pendingGRNs.length === 0
+              ? <div className="py-10 text-center text-muted-foreground text-sm">No pending GRNs</div>
+              : pendingGRNs.map((g: any) => (
+                  <ActionRow key={g.id} onClick={() => setLocation(`/procurement/grns/${g.id}`)}
+                    left={<div>
+                      <p className="font-mono font-bold text-[13px] text-foreground">{g.grnNumber}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        {g.vendorName}<span className="text-muted-foreground/50 ml-1">· {daysSince(g.createdAt)}d old</span>
+                      </p>
+                    </div>}
+                    right={<div className="flex flex-col items-end gap-1">
+                      <StatusBadge status={g.status} />
+                      <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/30" />
+                    </div>}
+                  />
+                ))
+            )}
+            {tab === "overdue" && (overduePOs.length === 0
+              ? <div className="py-10 text-center text-muted-foreground text-sm">No overdue POs 🎉</div>
+              : overduePOs.map((po: any) => (
+                  <ActionRow key={po.id} onClick={() => setLocation(`/procurement/pos/${po.id}`)}
+                    left={<div>
+                      <p className="font-mono font-bold text-[13px] text-foreground">{po.poNumber}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        {po.vendorName}
+                        {po.totalAmount != null && <> · <span className="font-semibold tabular-nums">{fmt(po.totalAmount)}</span></>}
+                        {po.deliveryDeadline && <span className="ml-1">· Due {po.deliveryDeadline}</span>}
+                      </p>
+                    </div>}
+                    right={<div className="flex flex-col items-end gap-1">
+                      <span className="text-[11px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-200">{po.daysOverdue}d overdue</span>
+                      <StatusBadge status={po.status} />
+                    </div>}
+                  />
+                ))
+            )}
+            <div className="px-5 py-3 border-t border-border/40">
+              <button onClick={() => setLocation(tab === "invoices" ? "/procurement/invoices" : tab === "grns" ? "/procurement/grns" : "/procurement/pos")}
+                className="text-[12px] font-semibold text-primary hover:underline flex items-center gap-1">
+                View all <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+        </DashCard>
+
+        <DashCard title="Top Vendors by Spend" sub="YTD received POs">
+          {topVendors.length === 0
+            ? <div className="py-10 text-center text-muted-foreground text-sm">No spend data yet</div>
+            : <div className="p-4 space-y-4">
+                {topVendors.map((v: any, i: number) => (
+                  <div key={v.vendorName}>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="text-[10px] font-bold text-muted-foreground/40 tabular-nums w-4 shrink-0">#{i+1}</span>
+                      <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <span className="text-[10px] font-bold text-primary">{v.vendorName?.[0]?.toUpperCase()}</span>
+                      </div>
+                      <span className="text-[12px] font-semibold text-foreground truncate flex-1">{v.vendorName}</span>
+                      <span className="text-[12px] font-bold text-foreground tabular-nums shrink-0">{fmt(v.spend)}</span>
+                    </div>
+                    <div className="ml-10 h-1.5 bg-muted rounded-full overflow-hidden">
+                      <motion.div className="h-full rounded-full bg-primary"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${Math.round((v.spend / maxVendorSpend) * 100)}%` }}
+                        transition={{ duration: 0.8, delay: i * 0.1, ease: "easeOut" }} />
+                    </div>
+                    <p className="ml-10 mt-0.5 text-[10px] text-muted-foreground">{v.poCount} PO{v.poCount !== 1 ? "s" : ""}</p>
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+          }
+          <div className="px-4 py-3 border-t border-border/40">
+            <button onClick={() => setLocation("/procurement/vendors")} className="text-[12px] font-semibold text-primary hover:underline flex items-center gap-1">
+              All vendors <ArrowRight className="h-3.5 w-3.5" />
+            </button>
           </div>
-        </SectionCard>
-      )}
+        </DashCard>
+      </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Pending GRNs */}
-        <SectionCard
-          title="Pending GRNs"
-          actions={<Button size="sm" variant="outline" className="text-xs" onClick={() => setLocation("/procurement/grns")}>View all</Button>}
-          noPadding
-        >
-          {pendingGRNs.length === 0 ? (
-            <div className="py-10 text-center text-muted-foreground text-sm">No pending GRNs</div>
-          ) : (
-            <div className="divide-y divide-border/40">
-              {pendingGRNs.slice(0, 5).map((g: any) => (
-                <div key={g.id} className="flex items-center justify-between px-5 py-3 hover:bg-muted/30 cursor-pointer" onClick={() => setLocation(`/procurement/grns/${g.id}`)}>
-                  <div>
-                    <p className="font-mono font-bold text-sm text-foreground">{g.grnNumber}</p>
-                    <p className="text-xs text-muted-foreground">{g.vendorName}</p>
-                  </div>
-                  <StatusBadge status={g.status} />
+      {/* Alerts + Activity */}
+      <motion.div variants={fade} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <DashCard title="Risk & Alerts" sub="Items requiring attention">
+          <div className="divide-y divide-border/30">
+            {s.overduePOs > 0 && (
+              <AlertRow icon={AlertTriangle} color="red"
+                title={`${s.overduePOs} Overdue Purchase Order${s.overduePOs > 1 ? "s" : ""}`}
+                sub="Past delivery deadline — follow up with vendors"
+                count={s.overduePOs} onClick={() => setLocation("/procurement/pos")} />
+            )}
+            {s.mismatchCount > 0 && (
+              <AlertRow icon={AlertCircle} color="amber"
+                title={`${s.mismatchCount} Invoice Mismatch${s.mismatchCount > 1 ? "es" : ""}`}
+                sub="3-way match failed — review and sign off"
+                count={s.mismatchCount} onClick={() => setLocation("/procurement/invoices")} />
+            )}
+            {s.approachingDeadlines > 0 && (
+              <AlertRow icon={Calendar} color="blue"
+                title={`${s.approachingDeadlines} PO${s.approachingDeadlines > 1 ? "s" : ""} Due This Week`}
+                sub="Delivery deadline within 7 days"
+                count={s.approachingDeadlines} onClick={() => setLocation("/procurement/pos")} />
+            )}
+            {s.pendingApprovalCount > 0 && (
+              <AlertRow icon={FileText} color="blue"
+                title={`${s.pendingApprovalCount} Invoice${s.pendingApprovalCount > 1 ? "s" : ""} Awaiting Approval`}
+                sub="In the finance approval queue"
+                count={s.pendingApprovalCount} onClick={() => setLocation("/procurement/invoices")} />
+            )}
+            {!s.overduePOs && !s.mismatchCount && !s.approachingDeadlines && !s.pendingApprovalCount && (
+              <div className="flex flex-col items-center justify-center py-10 gap-2">
+                <CheckCircle2 className="h-8 w-8 text-emerald-500/40" />
+                <p className="text-sm text-muted-foreground">No active alerts — all clear</p>
+              </div>
+            )}
+            {approaching.slice(0, 3).map((po: any) => (
+              <div key={po.id} onClick={() => setLocation(`/procurement/pos/${po.id}`)}
+                className="flex items-center justify-between gap-3 px-4 py-2.5 bg-blue-50/40 hover:bg-blue-50/80 cursor-pointer transition-colors">
+                <div className="min-w-0">
+                  <p className="font-mono text-[12px] font-semibold text-foreground truncate">{po.poNumber}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">{po.vendorName}</p>
                 </div>
-              ))}
-            </div>
-          )}
-        </SectionCard>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[11px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full border border-blue-200">
+                    {po.daysLeft === 0 ? "Today" : `${po.daysLeft}d left`}
+                  </span>
+                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/30" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </DashCard>
 
-        {/* Pending Invoices */}
-        <SectionCard
-          title="Pending Invoices"
-          actions={<Button size="sm" variant="outline" className="text-xs" onClick={() => setLocation("/procurement/invoices")}>View all</Button>}
-          noPadding
+        <DashCard title="Recent Activity" sub="Latest procurement events"
+          actions={
+            <Button size="sm" variant="ghost" className="text-xs text-muted-foreground h-7 px-2 gap-1">
+              <RotateCcw className="h-3 w-3" />Refresh
+            </Button>
+          }
         >
-          {pendingInvoices.length === 0 ? (
-            <div className="py-10 text-center text-muted-foreground text-sm">No pending invoices</div>
-          ) : (
-            <div className="divide-y divide-border/40">
-              {pendingInvoices.slice(0, 5).map((i: any) => (
-                <div key={i.id} className="flex items-center justify-between px-5 py-3 hover:bg-muted/30 cursor-pointer" onClick={() => setLocation(`/procurement/invoices/${i.id}`)}>
-                  <div>
-                    <p className="font-mono font-bold text-sm text-foreground">{i.invoiceNumber}</p>
-                    <p className="text-xs text-muted-foreground">{i.vendorName} · {fmt(i.totalAmount)}</p>
-                  </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <StatusBadge status={i.status} />
-                    {i.matchStatus === "MismatchPending" && <StatusBadge status="MismatchFlagged" />}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </SectionCard>
-      </div>
+          <div className="px-4 py-3">
+            {recentActivity.length === 0
+              ? <div className="py-8 text-center text-muted-foreground text-sm">No recent activity</div>
+              : recentActivity.map((e: any) => <ActivityRow key={`${e.type}-${e.id}`} event={e} />)
+            }
+          </div>
+        </DashCard>
+      </motion.div>
+
     </motion.div>
   );
 }

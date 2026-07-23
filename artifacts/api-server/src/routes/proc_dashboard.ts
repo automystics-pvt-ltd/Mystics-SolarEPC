@@ -1,98 +1,138 @@
 import { Router, type IRouter } from "express";
-import { db, procurementPOsTable, procGRNsTable, procInvoicesTable, procPOItemsTable } from "@workspace/db";
-import { desc, sql, and, lt, notInArray } from "drizzle-orm";
+import { db, procurementPOsTable, procGRNsTable, procInvoicesTable } from "@workspace/db";
+import { desc, sql } from "drizzle-orm";
 
 const router: IRouter = Router();
 
 function n(v: unknown) { return v !== null && v !== undefined ? Number(v) : null; }
 
 router.get("/procurement-dashboard", async (_req, res): Promise<void> => {
-  const today = new Date();
-  const todayStr = today.toISOString().split("T")[0];
+  const today      = new Date();
+  const todayStr   = today.toISOString().split("T")[0];
+  const thisYear   = today.getFullYear();
+  const thisMonth  = today.getMonth();
+  const yearStart  = `${thisYear}-01-01`;
 
-  // Fetch all POs and classify
-  const allPOs = await db.select().from(procurementPOsTable).orderBy(desc(procurementPOsTable.createdAt));
+  const thisMonthStr  = `${thisYear}-${String(thisMonth + 1).padStart(2, "0")}`;
+  const lastMonthDate = new Date(thisYear, thisMonth - 1, 1);
+  const lastMonthStr  = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth() + 1).padStart(2, "0")}`;
+
+  const sevenDaysFromNow = new Date(today);
+  sevenDaysFromNow.setDate(today.getDate() + 7);
+  const sevenDaysStr = sevenDaysFromNow.toISOString().split("T")[0];
+
+  const [allPOs, allGRNs, allInvoices] = await Promise.all([
+    db.select().from(procurementPOsTable).orderBy(desc(procurementPOsTable.createdAt)),
+    db.select().from(procGRNsTable).orderBy(desc(procGRNsTable.createdAt)).limit(100),
+    db.select().from(procInvoicesTable).orderBy(desc(procInvoicesTable.createdAt)).limit(100),
+  ]);
+
   const activePOStatuses = ["Draft", "Issued", "Acknowledged", "PartiallyReceived"];
-  const openPOs = allPOs.filter(p => activePOStatuses.includes(p.status));
+  const openPOs    = allPOs.filter(p => activePOStatuses.includes(p.status));
   const overduePOs = openPOs.filter(p => {
     const deadline = p.deliveryDeadline || p.expectedDeliveryDate;
     return deadline && deadline < todayStr;
   });
+  const approachingDLs = openPOs.filter(p => {
+    const deadline = p.deliveryDeadline || p.expectedDeliveryDate;
+    return deadline && deadline >= todayStr && deadline <= sevenDaysStr;
+  });
 
-  // PO status counts
   const poByStatus: Record<string, number> = {};
   for (const po of allPOs) {
     poByStatus[po.status] = (poByStatus[po.status] || 0) + 1;
   }
 
-  // Monthly spend (from fully received + closed POs, current year)
-  const yearStart = `${today.getFullYear()}-01-01`;
   const monthlySpend: { month: string; amount: number }[] = [];
   for (let m = 1; m <= 12; m++) {
-    const monthStr = `${today.getFullYear()}-${String(m).padStart(2, "0")}`;
+    const monthStr = `${thisYear}-${String(m).padStart(2, "0")}`;
     const monthPOs = allPOs.filter(p =>
       ["FullyReceived", "Closed"].includes(p.status) &&
       p.createdAt.toISOString().startsWith(monthStr)
     );
-    monthlySpend.push({
-      month: monthStr,
-      amount: monthPOs.reduce((sum, p) => sum + (n(p.totalAmount) ?? 0), 0),
-    });
+    monthlySpend.push({ month: monthStr, amount: monthPOs.reduce((s, p) => s + (n(p.totalAmount) ?? 0), 0) });
   }
 
-  // Pending GRNs
-  const pendingGRNs = await db.select().from(procGRNsTable)
-    .where(sql`${procGRNsTable.status} IN ('Draft', 'Submitted')`)
-    .orderBy(desc(procGRNsTable.createdAt))
-    .limit(20);
+  const receivedPOs    = allPOs.filter(p => ["FullyReceived", "Closed"].includes(p.status));
+  const ytdSpend       = receivedPOs.filter(p => p.createdAt >= new Date(yearStart))
+                           .reduce((s, p) => s + (n(p.totalAmount) ?? 0), 0);
+  const thisMonthSpend = receivedPOs.filter(p => p.createdAt.toISOString().startsWith(thisMonthStr))
+                           .reduce((s, p) => s + (n(p.totalAmount) ?? 0), 0);
+  const lastMonthSpend = receivedPOs.filter(p => p.createdAt.toISOString().startsWith(lastMonthStr))
+                           .reduce((s, p) => s + (n(p.totalAmount) ?? 0), 0);
+  const committedValue = openPOs.reduce((s, p) => s + (n(p.totalAmount) ?? 0), 0);
 
-  // Pending invoices
-  const pendingInvoices = await db.select().from(procInvoicesTable)
-    .where(sql`${procInvoicesTable.status} IN ('Draft', 'PendingApproval', 'OnHold')`)
-    .orderBy(desc(procInvoicesTable.createdAt))
-    .limit(20);
+  const pendingGRNs             = allGRNs.filter(g => ["Draft", "Submitted"].includes(g.status));
+  const pendingInvoices         = allInvoices.filter(i => ["Draft", "PendingApproval", "OnHold"].includes(i.status));
+  const mismatchInvoices        = allInvoices.filter(i => i.matchStatus === "MismatchPending");
+  const pendingApprovalInvoices = allInvoices.filter(i => i.status === "PendingApproval");
 
-  // Recent activity (last 30 days)
-  const thirtyDaysAgo = new Date(today);
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const vendorMap = new Map<string, { spend: number; poCount: number }>();
+  for (const po of receivedPOs) {
+    const name = po.vendorName ?? "Unknown";
+    const cur  = vendorMap.get(name) ?? { spend: 0, poCount: 0 };
+    vendorMap.set(name, { spend: cur.spend + (n(po.totalAmount) ?? 0), poCount: cur.poCount + 1 });
+  }
+  const topVendors = [...vendorMap.entries()]
+    .sort((a, b) => b[1].spend - a[1].spend)
+    .slice(0, 5)
+    .map(([vendorName, v]) => ({ vendorName, spend: v.spend, poCount: v.poCount }));
 
-  // Total spend YTD
-  const ytdSpend = allPOs
-    .filter(p => ["FullyReceived", "Closed"].includes(p.status) && p.createdAt >= new Date(yearStart))
-    .reduce((sum, p) => sum + (n(p.totalAmount) ?? 0), 0);
+  const poEvents  = allPOs.slice(0, 10).map(p => ({
+    type: "po" as const, id: p.id, ref: p.poNumber, vendorName: p.vendorName ?? "",
+    status: p.status, amount: n(p.totalAmount), createdAt: p.createdAt.toISOString(),
+  }));
+  const grnEvents = allGRNs.slice(0, 10).map(g => ({
+    type: "grn" as const, id: g.id, ref: g.grnNumber, vendorName: g.vendorName ?? "",
+    status: g.status, amount: null as null, createdAt: g.createdAt.toISOString(),
+  }));
+  const invEvents = allInvoices.slice(0, 10).map(i => ({
+    type: "invoice" as const, id: i.id, ref: i.invoiceNumber, vendorName: i.vendorName ?? "",
+    status: i.status, amount: n(i.totalAmount), createdAt: i.createdAt.toISOString(),
+  }));
+  const recentActivity = [...poEvents, ...grnEvents, ...invEvents]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 12);
 
   res.json({
     summary: {
-      totalPOs: allPOs.length,
-      openPOs: openPOs.length,
-      overduePOs: overduePOs.length,
-      pendingGRNs: pendingGRNs.length,
-      pendingInvoices: pendingInvoices.length,
-      ytdSpend,
-      poByStatus,
+      totalPOs: allPOs.length, openPOs: openPOs.length,
+      overduePOs: overduePOs.length, pendingGRNs: pendingGRNs.length,
+      pendingInvoices: pendingInvoices.length, ytdSpend,
+      thisMonthSpend, lastMonthSpend,
+      mismatchCount: mismatchInvoices.length,
+      approachingDeadlines: approachingDLs.length,
+      pendingApprovalCount: pendingApprovalInvoices.length,
+      committedValue, poByStatus,
     },
     overduePOs: overduePOs.map(p => ({
-      id: p.id, poNumber: p.poNumber, vendorName: p.vendorName,
-      status: p.status, deliveryDeadline: p.deliveryDeadline ?? p.expectedDeliveryDate,
+      id: p.id, poNumber: p.poNumber, vendorName: p.vendorName, status: p.status,
+      deliveryDeadline: p.deliveryDeadline ?? p.expectedDeliveryDate,
       daysOverdue: p.deliveryDeadline
-        ? Math.floor((today.getTime() - new Date(p.deliveryDeadline).getTime()) / (1000 * 60 * 60 * 24))
-        : 0,
+        ? Math.max(0, Math.floor((today.getTime() - new Date(p.deliveryDeadline).getTime()) / 86_400_000)) : 0,
       totalAmount: n(p.totalAmount),
     })),
-    pendingGRNs: pendingGRNs.map(g => ({
+    approachingDeadlines: approachingDLs.map(p => ({
+      id: p.id, poNumber: p.poNumber, vendorName: p.vendorName, status: p.status,
+      deliveryDeadline: p.deliveryDeadline ?? p.expectedDeliveryDate,
+      daysLeft: p.deliveryDeadline
+        ? Math.max(0, Math.floor((new Date(p.deliveryDeadline).getTime() - today.getTime()) / 86_400_000)) : 7,
+      totalAmount: n(p.totalAmount),
+    })),
+    pendingGRNs: pendingGRNs.slice(0, 8).map(g => ({
       id: g.id, grnNumber: g.grnNumber, poId: g.poId,
       vendorName: g.vendorName, status: g.status, createdAt: g.createdAt.toISOString(),
     })),
-    pendingInvoices: pendingInvoices.map(i => ({
-      id: i.id, invoiceNumber: i.invoiceNumber, poId: i.poId,
-      vendorName: i.vendorName, status: i.status, matchStatus: i.matchStatus,
+    pendingInvoices: pendingInvoices.slice(0, 8).map(i => ({
+      id: i.id, invoiceNumber: i.invoiceNumber, poId: i.poId, vendorName: i.vendorName,
+      status: i.status, matchStatus: i.matchStatus,
       totalAmount: n(i.totalAmount), createdAt: i.createdAt.toISOString(),
     })),
-    monthlySpend,
+    monthlySpend, topVendors, recentActivity,
   });
 });
 
-/* ── Badge counts for sidebar ── */
+/* ── Badge counts for sidebar ─────────────────────────────────────────────── */
 router.get("/procurement/badge-counts", async (_req, res): Promise<void> => {
   const [draftPOs, pendingInvoices] = await Promise.all([
     db.select({ count: sql<number>`count(*)::int` })
@@ -102,10 +142,7 @@ router.get("/procurement/badge-counts", async (_req, res): Promise<void> => {
       .from(procInvoicesTable)
       .where(sql`${procInvoicesTable.status} IN ('Draft', 'PendingApproval')`),
   ]);
-  res.json({
-    draftPOs: draftPOs[0]?.count ?? 0,
-    pendingInvoices: pendingInvoices[0]?.count ?? 0,
-  });
+  res.json({ draftPOs: draftPOs[0]?.count ?? 0, pendingInvoices: pendingInvoices[0]?.count ?? 0 });
 });
 
 export default router;

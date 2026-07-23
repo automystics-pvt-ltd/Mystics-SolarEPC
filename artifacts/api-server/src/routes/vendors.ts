@@ -119,6 +119,8 @@ function fmtVendor(
     paymentTerms: v.paymentTerms, creditLimit: v.creditLimit, tags: v.tags, notes: v.notes,
     primaryContactName: primaryContact?.name ?? null,
     primaryContactDesignation: primaryContact?.designation ?? null,
+    primaryContactPhone: primaryContact?.phone ?? null,
+    primaryContactEmail: primaryContact?.email ?? null,
     contacts,
     createdBy: v.createdBy, updatedBy: v.updatedBy,
     createdAt: v.createdAt.toISOString(), updatedAt: v.updatedAt.toISOString(),

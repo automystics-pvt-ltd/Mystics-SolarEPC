@@ -84,11 +84,40 @@ export default function VendorDetail({ id }: { id: string }) {
   const setPrimaryMut     = useMutation({
     mutationFn: ({ cid }: { cid: number }) =>
       apiPatch<unknown>(`/vendors/${vendorId}/contacts/${cid}/set-primary`),
+    // Optimistic update: flip isPrimary in the cache instantly so the star
+    // switches without waiting for a refetch.
+    onMutate: async ({ cid }) => {
+      await qc.cancelQueries({ queryKey: getGetVendorQueryKey(vendorId) });
+      const prev = qc.getQueryData(getGetVendorQueryKey(vendorId));
+      qc.setQueryData(getGetVendorQueryKey(vendorId), (old: any) => {
+        if (!old) return old;
+        const contacts = (old.contacts ?? []).map((c: any) => ({
+          ...c,
+          isPrimary: c.id === cid,
+        }));
+        const primary = contacts.find((c: any) => c.id === cid);
+        return {
+          ...old,
+          contacts,
+          primaryContactName:        primary?.name ?? old.primaryContactName,
+          primaryContactDesignation: primary?.designation ?? old.primaryContactDesignation,
+          primaryContactPhone:       primary?.phone ?? old.primaryContactPhone,
+          primaryContactEmail:       primary?.email ?? old.primaryContactEmail,
+        };
+      });
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      // Roll back on failure
+      if (ctx?.prev) qc.setQueryData(getGetVendorQueryKey(vendorId), ctx.prev);
+      toast({ title: "Failed to update primary contact", variant: "destructive" });
+    },
     onSuccess: () => {
+      // Refetch to get authoritative server state, and update the vendor list
       qc.invalidateQueries({ queryKey: getGetVendorQueryKey(vendorId) });
+      qc.invalidateQueries({ queryKey: getGetVendorsQueryKey() });
       toast({ title: "Primary contact updated" });
     },
-    onError: () => toast({ title: "Failed to update primary contact", variant: "destructive" }),
   });
 
   if (isLoading || !vendor) return (

@@ -138,22 +138,30 @@ export default function VendorsList() {
       ),
     },
     {
-      accessorKey: "primaryPhone",
+      accessorKey: "primaryContactPhone",
       header: "Phone",
-      cell: ({ row }) => (
-        <span className="text-sm text-muted-foreground">
-          {row.original.primaryPhone ?? "—"}
-        </span>
-      ),
+      cell: ({ row }) => {
+        // Prefer the primary contact's phone; fall back to vendor-level phone
+        const phone = row.original.primaryContactPhone ?? row.original.primaryPhone;
+        return (
+          <span className="text-sm text-muted-foreground">
+            {phone ?? "—"}
+          </span>
+        );
+      },
     },
     {
-      accessorKey: "primaryEmail",
+      accessorKey: "primaryContactEmail",
       header: "Email",
-      cell: ({ row }) => (
-        <span className="text-sm text-muted-foreground">
-          {row.original.primaryEmail ?? "—"}
-        </span>
-      ),
+      cell: ({ row }) => {
+        // Prefer the primary contact's email; fall back to vendor-level email
+        const email = row.original.primaryContactEmail ?? row.original.primaryEmail;
+        return (
+          <span className="text-sm text-muted-foreground truncate max-w-[180px] block">
+            {email ?? "—"}
+          </span>
+        );
+      },
     },
     {
       accessorKey: "status",
