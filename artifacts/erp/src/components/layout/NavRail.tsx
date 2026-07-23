@@ -33,7 +33,7 @@ import {
   ClipboardList, Building2, Package, RotateCcw, Boxes,
   BarChart2, BarChart3, TrendingUp, UserCog, ScrollText, X,
   ChevronRight, Users2, FileCode, Calendar, Receipt, Star, Clock,
-  Trash2, Pin, PinOff,
+  Trash2, Pin, PinOff, ListChecks, GitBranch,
 } from "lucide-react";
 
 /* ════════════════════════════════════════════════════════════════
@@ -57,7 +57,8 @@ type HistoryEntry = { href: string; name: string; section: string; ts: number };
    Module definitions  (single source of truth for the whole app)
 ════════════════════════════════════════════════════════════════ */
 export const RAIL: RailEntry[] = [
-  { type: "link",      key: "dashboard", icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+  { type: "link",      key: "dashboard", icon: LayoutDashboard, label: "Dashboard",           href: "/dashboard" },
+  { type: "link",      key: "approvals", icon: ListChecks,     label: "Approval Workbench",  href: "/approvals"  },
   { type: "separator", key: "s1" },
   {
     type: "group", key: "crm", icon: Users2, label: "Sales & CRM",

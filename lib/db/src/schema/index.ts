@@ -20,3 +20,4 @@ export * from "./proc_invoices";
 export * from "./notifications";
 export * from "./grn_returns";
 export * from "./stock_transfers";
+export * from "./approvals";

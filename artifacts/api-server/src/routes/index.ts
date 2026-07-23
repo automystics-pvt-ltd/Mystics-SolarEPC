@@ -25,6 +25,7 @@ import grnReturnsRouter from "./grn_returns";
 import stockTransfersRouter from "./stock_transfers";
 import reportsRouter from "./reports";
 import usersRouter from "./users";
+import approvalsRouter from "./approvals";
 
 const router: IRouter = Router();
 
@@ -54,5 +55,6 @@ router.use(grnReturnsRouter);
 router.use(stockTransfersRouter);
 router.use(reportsRouter);
 router.use(usersRouter);
+router.use(approvalsRouter);
 
 export default router;

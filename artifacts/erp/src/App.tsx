@@ -77,6 +77,9 @@ const FinanceDashboard = lazy(() => import('@/pages/finance/FinanceDashboard'));
 const UserManagement = lazy(() => import('@/pages/admin/UserManagement'));
 const AuditLogs = lazy(() => import('@/pages/admin/AuditLogs'));
 
+// Approvals — lazy loaded
+const ApprovalWorkbench = lazy(() => import('@/pages/approvals/ApprovalWorkbench'));
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -210,6 +213,9 @@ function Router() {
       {/* Admin */}
       <Route path="/admin/users">{() => <ProtectedRoute component={UserManagement} />}</Route>
       <Route path="/admin/audit-logs">{() => <ProtectedRoute component={AuditLogs} />}</Route>
+
+      {/* Approvals */}
+      <Route path="/approvals">{() => <ProtectedRoute component={ApprovalWorkbench} />}</Route>
 
       <Route component={NotFound} />
     </Switch>
