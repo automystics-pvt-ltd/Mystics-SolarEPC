@@ -285,10 +285,41 @@ router.post("/vendors/:id/contacts", async (req, res): Promise<void> => {
   const vendorExists = await db.select({ id: vendorsTable.id }).from(vendorsTable).where(eq(vendorsTable.id, vendorId)).limit(1);
   if (!vendorExists.length) { res.status(404).json({ error: "Vendor not found" }); return; }
 
+  // Enforce single primary: demote all others before inserting a primary contact
+  if (body.isPrimary) {
+    await db.update(vendorContactsTable)
+      .set({ isPrimary: false })
+      .where(eq(vendorContactsTable.vendorId, vendorId));
+  }
+
   const [contact] = await db.insert(vendorContactsTable)
     .values({ ...body, name: body.name.trim(), vendorId })
     .returning();
   res.status(201).json(contact);
+});
+
+// Set one contact as the primary; clears isPrimary on all siblings
+router.patch("/vendors/:id/contacts/:cid/set-primary", async (req, res): Promise<void> => {
+  const vendorId = Number(req.params.id);
+  const cid      = Number(req.params.cid);
+  if (!vendorId || !cid) { res.status(400).json({ error: "Invalid ID" }); return; }
+
+  // Verify the contact belongs to this vendor
+  const [contact] = await db.select()
+    .from(vendorContactsTable)
+    .where(and(eq(vendorContactsTable.id, cid), eq(vendorContactsTable.vendorId, vendorId)));
+  if (!contact) { res.status(404).json({ error: "Contact not found" }); return; }
+
+  // Demote all, then promote the target
+  await db.update(vendorContactsTable)
+    .set({ isPrimary: false })
+    .where(eq(vendorContactsTable.vendorId, vendorId));
+  const [updated] = await db.update(vendorContactsTable)
+    .set({ isPrimary: true })
+    .where(eq(vendorContactsTable.id, cid))
+    .returning();
+
+  res.json(updated);
 });
 
 router.delete("/vendors/:id/contacts/:cid", async (req, res): Promise<void> => {

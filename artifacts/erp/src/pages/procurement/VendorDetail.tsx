@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
+import { useMutation } from "@tanstack/react-query";
 import {
   useGetVendor, getGetVendorQueryKey, useUpdateVendor,
   useAddVendorContact, useDeleteVendorContact, useDeleteVendor,
   getGetVendorsQueryKey,
 } from "@workspace/api-client-react";
+import { apiPatch } from "@/lib/fetch";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -75,10 +77,19 @@ export default function VendorDetail({ id }: { id: string }) {
       addRecentEntry(authUser.id, `/procurement/vendors/${vendorId}`, vendor.name, "Vendors");
   }, [vendor?.name, vendorId, authUser?.id]);
 
-  const updateMut      = useUpdateVendor();
-  const addContactMut  = useAddVendorContact();
-  const delContactMut  = useDeleteVendorContact();
-  const deleteMut      = useDeleteVendor();
+  const updateMut         = useUpdateVendor();
+  const addContactMut     = useAddVendorContact();
+  const delContactMut     = useDeleteVendorContact();
+  const deleteMut         = useDeleteVendor();
+  const setPrimaryMut     = useMutation({
+    mutationFn: ({ cid }: { cid: number }) =>
+      apiPatch<unknown>(`/vendors/${vendorId}/contacts/${cid}/set-primary`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: getGetVendorQueryKey(vendorId) });
+      toast({ title: "Primary contact updated" });
+    },
+    onError: () => toast({ title: "Failed to update primary contact", variant: "destructive" }),
+  });
 
   if (isLoading || !vendor) return (
     <div className="flex h-60 items-center justify-center">
@@ -617,17 +628,25 @@ export default function VendorDetail({ id }: { id: string }) {
                       <FieldError msg={showContactError("phone")} />
                     </div>
 
-                    {/* Primary checkbox */}
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="is-primary"
-                        checked={contactForm.isPrimary}
-                        onChange={e => setContactField("isPrimary", e.target.checked)}
-                        className="w-4 h-4"
-                      />
-                      <label htmlFor="is-primary" className="text-sm">Mark as primary contact</label>
-                    </div>
+                    {/* Primary toggle */}
+                    <button
+                      type="button"
+                      onClick={() => setContactField("isPrimary", !contactForm.isPrimary)}
+                      className={cn(
+                        "flex items-center gap-2 w-full rounded-lg border px-3 py-2.5 text-sm transition-colors",
+                        contactForm.isPrimary
+                          ? "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-400"
+                          : "border-border bg-muted/20 text-muted-foreground hover:border-amber-200 hover:text-amber-600"
+                      )}
+                    >
+                      <Star className={cn("w-4 h-4 shrink-0", contactForm.isPrimary && "fill-amber-500 text-amber-500")} />
+                      <span className="font-medium">
+                        {contactForm.isPrimary ? "Will be set as primary contact" : "Set as primary contact"}
+                      </span>
+                      {contactForm.isPrimary && (
+                        <span className="ml-auto text-[11px] opacity-60">click to unset</span>
+                      )}
+                    </button>
 
                     {contactSubmitted && hasErrors(contactErrors) && (
                       <div className="rounded-lg border border-red-200 bg-red-50 dark:border-red-800/40 dark:bg-red-950/30 px-3 py-2.5">
@@ -661,16 +680,32 @@ export default function VendorDetail({ id }: { id: string }) {
             ) : (
               <div className="space-y-2">
                 {((vendor as any).contacts ?? []).map((c: any) => (
-                  <div key={c.id} className="bg-muted/20 border border-border rounded-xl p-4 flex items-center gap-4">
-                    <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center shrink-0 text-sm font-bold text-muted-foreground">
+                  <div
+                    key={c.id}
+                    className={cn(
+                      "border rounded-xl p-4 flex items-center gap-4 transition-colors",
+                      c.isPrimary
+                        ? "bg-amber-50/60 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800/50"
+                        : "bg-muted/20 border-border"
+                    )}
+                  >
+                    {/* Avatar */}
+                    <div className={cn(
+                      "w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-sm font-bold",
+                      c.isPrimary
+                        ? "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400"
+                        : "bg-muted text-muted-foreground"
+                    )}>
                       {c.name[0]?.toUpperCase()}
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-semibold text-foreground">{c.name}</span>
                         {c.isPrimary && (
                           <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800/60">
-                            <Star className="w-2.5 h-2.5 mr-0.5" /> Primary
+                            <Star className="w-2.5 h-2.5 mr-0.5 fill-amber-500" /> Primary
                           </Badge>
                         )}
                       </div>
@@ -680,9 +715,24 @@ export default function VendorDetail({ id }: { id: string }) {
                         {c.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{c.phone}</span>}
                       </div>
                     </div>
+
+                    {/* Set Primary star — shown only for non-primary contacts */}
+                    {!c.isPrimary && (
+                      <Button
+                        variant="ghost" size="icon"
+                        className="h-8 w-8 text-muted-foreground/40 hover:text-amber-500 shrink-0"
+                        title="Set as primary contact"
+                        onClick={() => setPrimaryMut.mutate({ cid: c.id })}
+                        disabled={setPrimaryMut.isPending}
+                      >
+                        <Star className="w-4 h-4" />
+                      </Button>
+                    )}
+
+                    {/* Delete */}
                     <Button
                       variant="ghost" size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-red-500"
+                      className="h-8 w-8 text-muted-foreground hover:text-red-500 shrink-0"
                       onClick={() => delContact(c.id)}
                       disabled={delContactMut.isPending}
                     >
