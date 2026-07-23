@@ -118,22 +118,14 @@ function useDashboardPrefs() {
 ════════════════════════════════════════════════════════════════ */
 interface WelcomeBarProps {
   name: string;
-  kpiData: KPIData;
-  isLoading: boolean;
   isRefreshing: boolean;
   onRefresh: () => void;
   onCustomize: () => void;
 }
 
-function WelcomeBar({ name, kpiData, isLoading, isRefreshing, onRefresh, onCustomize }: WelcomeBarProps) {
+function WelcomeBar({ name, isRefreshing, onRefresh, onCustomize }: WelcomeBarProps) {
   const { greeting, date } = getGreeting(name);
   const fy = getFYLabel();
-
-  const inlineStats = [
-    { label: "Active Projects",   value: isLoading ? "—" : kpiData.activeProjects },
-    { label: "Pending Approvals", value: isLoading ? "—" : kpiData.pendingApprovals, alert: kpiData.pendingApprovals > 0 },
-    { label: "Overdue Tasks",     value: isLoading ? "—" : kpiData.overdueTaskCount,  alert: kpiData.overdueTaskCount > 0 },
-  ];
 
   return (
     <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
@@ -144,24 +136,6 @@ function WelcomeBar({ name, kpiData, isLoading, isRefreshing, onRefresh, onCusto
             {greeting} 👋
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">{date}</p>
-        </div>
-
-        {/* Centre: inline mini-stats */}
-        <div className="hidden md:flex items-center gap-px rounded-lg border border-border overflow-hidden">
-          {inlineStats.map((stat, i) => (
-            <div key={i} className={cn(
-              "flex flex-col items-center px-5 py-2.5 bg-muted/30 hover:bg-muted/60 transition-colors min-w-[100px]",
-              i < inlineStats.length - 1 && "border-r border-border"
-            )}>
-              <span className={cn(
-                "text-[18px] font-bold leading-none tabular-nums",
-                stat.alert ? "text-amber-600 dark:text-amber-400" : "text-foreground"
-              )}>
-                {stat.value}
-              </span>
-              <span className="text-[10px] text-muted-foreground mt-1 whitespace-nowrap">{stat.label}</span>
-            </div>
-          ))}
         </div>
 
         {/* Right: controls */}
@@ -552,8 +526,6 @@ export function Dashboard() {
       {/* Welcome Bar */}
       <WelcomeBar
         name={firstName}
-        kpiData={kpiData}
-        isLoading={isLoading}
         isRefreshing={isRefreshing}
         onRefresh={handleRefresh}
         onCustomize={() => setCustomizeOpen(true)}
