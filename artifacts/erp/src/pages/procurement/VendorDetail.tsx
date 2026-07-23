@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   useGetVendor, getGetVendorQueryKey, useUpdateVendor,
   useAddVendorContact, useDeleteVendorContact, useDeleteVendor,
@@ -22,7 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Edit3, Save, X, Plus, Trash2, Building2, Shield, Phone, Mail, CreditCard, Users, Banknote, Star, AlertCircle, User } from "lucide-react";
+import { Edit3, Save, X, Plus, Trash2, Building2, Shield, Phone, Mail, CreditCard, Users, Banknote, Star, AlertCircle, User, TrendingUp, ShoppingCart, CalendarDays, BarChart3 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { PageHeader, SectionCard, StatusBadge } from "@/components/shared";
 import { addRecentEntry } from "@/lib/recentHistory";
@@ -31,6 +31,41 @@ import { validateVendorFull, validateContact, hasErrors, type VendorErrors } fro
 import { SearchableSelect, type SelectOption } from "@/components/ui/searchable-select";
 import { INDIAN_BANKS, ACCOUNT_TYPES, INDIAN_STATES, INDIAN_CITIES, COUNTRIES, GST_STATE_CODES, GST_STATE_CODE_MAP, getStatesForCountry, getCitiesForState, getStateLabel } from "@/lib/vendor-select-data";
 import { cn } from "@/lib/utils";
+import {
+  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+} from "recharts";
+
+/* ── Formatters ──────────────────────────────────────────────────────────── */
+const MONTH_LABELS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+function fmtAmt(n: number | null | undefined) {
+  if (n == null) return "—";
+  if (n >= 10_000_000) return `₹${(n / 10_000_000).toFixed(1)}Cr`;
+  if (n >= 100_000)    return `₹${(n / 100_000).toFixed(1)}L`;
+  return `₹${Number(n).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+}
+function fmtAmtFull(n: number | null | undefined) {
+  if (n == null) return "—";
+  return `₹${Number(n).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+}
+function monthLabel(yyyymm: string) {
+  const mm = parseInt(yyyymm.split("-")[1] ?? "1", 10);
+  return MONTH_LABELS[mm - 1] ?? yyyymm;
+}
+function fmtDate(iso: string | null) {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function VendorSpendTooltip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-popover border border-border rounded-lg shadow-lg px-3 py-2 text-sm">
+      <p className="font-semibold text-foreground mb-0.5">{label}</p>
+      <p className="text-primary font-bold tabular-nums">{fmtAmtFull(payload[0]?.value)}</p>
+    </div>
+  );
+}
 
 /* ── Inline field error (top-level so it's stable across renders) ─────────── */
 function FieldError({ msg }: { msg?: string }) {
@@ -70,6 +105,26 @@ export default function VendorDetail({ id }: { id: string }) {
 
   const { data: vendor, isLoading } = useGetVendor(vendorId, {
     query: { enabled: !!vendorId, queryKey: getGetVendorQueryKey(vendorId) }
+  });
+
+  const { data: statsData } = useQuery({
+    queryKey: ["vendor-stats", vendorId],
+    queryFn: async () => {
+      const token = localStorage.getItem("mystics_token");
+      const res = await fetch(`/api/vendors/${vendorId}/stats`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json() as Promise<{
+        monthlySpend: { month: string; amount: number }[];
+        ytdSpend: number;
+        poCount: number;
+        avgPoValue: number;
+        lastPoDate: string | null;
+        lastPoNumber: string | null;
+      }>;
+    },
+    enabled: !!vendorId,
   });
 
   useEffect(() => {
@@ -527,6 +582,106 @@ export default function VendorDetail({ id }: { id: string }) {
               </>
             )}
           </div>
+        );
+      })()}
+
+      {/* ── Spend Performance ── */}
+      {(() => {
+        const chartData = (statsData?.monthlySpend ?? []).map(m => ({
+          month: monthLabel(m.month),
+          amount: m.amount,
+        }));
+        const hasSpend = (statsData?.ytdSpend ?? 0) > 0 || (statsData?.poCount ?? 0) > 0;
+
+        const kpis = [
+          {
+            icon: TrendingUp,
+            label: "YTD Spend",
+            value: fmtAmt(statsData?.ytdSpend),
+            accent: "amber",
+          },
+          {
+            icon: ShoppingCart,
+            label: "Total POs",
+            value: statsData?.poCount != null ? String(statsData.poCount) : "—",
+            accent: "blue",
+          },
+          {
+            icon: BarChart3,
+            label: "Avg PO Value",
+            value: fmtAmt(statsData?.avgPoValue),
+            accent: "violet",
+          },
+          {
+            icon: CalendarDays,
+            label: "Last PO",
+            value: statsData?.lastPoDate ? fmtDate(statsData.lastPoDate) : "—",
+            accent: "emerald",
+          },
+        ] as const;
+
+        const accentMap = {
+          amber:   "bg-amber-50 border-amber-100 text-amber-700 dark:bg-amber-950/30 dark:border-amber-800/40 dark:text-amber-400",
+          blue:    "bg-blue-50 border-blue-100 text-blue-700 dark:bg-blue-950/30 dark:border-blue-800/40 dark:text-blue-400",
+          violet:  "bg-violet-50 border-violet-100 text-violet-700 dark:bg-violet-950/30 dark:border-violet-800/40 dark:text-violet-400",
+          emerald: "bg-emerald-50 border-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:border-emerald-800/40 dark:text-emerald-400",
+        } as const;
+
+        return (
+          <SectionCard
+            title="Spend Performance"
+            actions={
+              <span className="text-[11px] text-muted-foreground">Last 12 months · received POs</span>
+            }
+          >
+            {/* KPI Strip */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+              {kpis.map(({ icon: Icon, label, value, accent }) => (
+                <div key={label} className={cn(
+                  "flex items-center gap-3 rounded-xl border px-4 py-3",
+                  accentMap[accent]
+                )}>
+                  <Icon className="w-4 h-4 shrink-0 opacity-70" />
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide opacity-70 leading-none mb-0.5">{label}</p>
+                    <p className="text-[15px] font-bold leading-tight truncate">{value}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Area Chart */}
+            {!statsData ? (
+              <div className="h-[160px] animate-pulse bg-muted/40 rounded-xl" />
+            ) : !hasSpend ? (
+              <div className="h-[160px] flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border text-muted-foreground gap-2">
+                <BarChart3 className="w-6 h-6 opacity-40" />
+                <p className="text-sm">No spend data yet for this vendor</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={160}>
+                <AreaChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="vsg" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%"   stopColor="#f97316" stopOpacity={0.22} />
+                      <stop offset="100%" stopColor="#f97316" stopOpacity={0.02} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+                  <YAxis
+                    tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                    axisLine={false} tickLine={false} width={42}
+                    tickFormatter={v => v >= 100_000 ? `${(v / 100_000).toFixed(0)}L` : v >= 1000 ? `${(v / 1000).toFixed(0)}K` : String(v)}
+                  />
+                  <Tooltip content={<VendorSpendTooltip />} />
+                  <Area type="monotone" dataKey="amount" stroke="#f97316" strokeWidth={2} fill="url(#vsg)"
+                    dot={{ r: 3, fill: "#f97316", strokeWidth: 0 }}
+                    activeDot={{ r: 5, fill: "#f97316", strokeWidth: 2, stroke: "#fff" }} />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
+          </SectionCard>
         );
       })()}
 

@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { db, vendorsTable, vendorContactsTable } from "@workspace/db";
-import { eq, desc, ilike, or, and, ne, inArray } from "drizzle-orm";
+import { db, vendorsTable, vendorContactsTable, procurementPOsTable } from "@workspace/db";
+import { eq, desc, ilike, or, and, ne, inArray, gte } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -329,6 +329,55 @@ router.delete("/vendors/:id/contacts/:cid", async (req, res): Promise<void> => {
   if (!cid) { res.status(400).json({ error: "Invalid contact ID" }); return; }
   await db.delete(vendorContactsTable).where(eq(vendorContactsTable.id, cid));
   res.json({ ok: true });
+});
+
+// ── VENDOR STATS (spend chart + KPIs) ────────────────────────────────────────
+router.get("/vendors/:id/stats", async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  if (!id) { res.status(400).json({ error: "Invalid vendor ID" }); return; }
+
+  const [vendor] = await db.select({ id: vendorsTable.id, name: vendorsTable.name })
+    .from(vendorsTable).where(eq(vendorsTable.id, id)).limit(1);
+  if (!vendor) { res.status(404).json({ error: "Vendor not found" }); return; }
+
+  // Fetch all POs for this vendor (by vendorId FK)
+  const allPOs = await db.select().from(procurementPOsTable)
+    .where(eq(procurementPOsTable.vendorId, id))
+    .orderBy(desc(procurementPOsTable.createdAt));
+
+  const n = (v: unknown) => v !== null && v !== undefined ? Number(v) : 0;
+
+  // ── Monthly spend: last 12 calendar months ─────────────────────────────────
+  const today   = new Date();
+  const months: string[] = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+  }
+
+  const receivedPOs = allPOs.filter(p => ["FullyReceived", "Closed"].includes(p.status));
+
+  const monthlySpend = months.map(m => ({
+    month: m,
+    amount: receivedPOs
+      .filter(p => p.createdAt.toISOString().startsWith(m))
+      .reduce((s, p) => s + n(p.totalAmount), 0),
+  }));
+
+  // ── KPIs ───────────────────────────────────────────────────────────────────
+  const thisYear   = today.getFullYear();
+  const ytdStart   = new Date(thisYear, 0, 1);
+  const ytdPOs     = receivedPOs.filter(p => p.createdAt >= ytdStart);
+  const ytdSpend   = ytdPOs.reduce((s, p) => s + n(p.totalAmount), 0);
+
+  const poCount    = allPOs.length;
+  const totalSpend = receivedPOs.reduce((s, p) => s + n(p.totalAmount), 0);
+  const avgPoValue = receivedPOs.length > 0 ? totalSpend / receivedPOs.length : 0;
+  const lastPO     = allPOs[0];
+  const lastPoDate = lastPO ? lastPO.createdAt.toISOString() : null;
+  const lastPoNumber = lastPO?.poNumber ?? null;
+
+  res.json({ monthlySpend, ytdSpend, poCount, avgPoValue, lastPoDate, lastPoNumber });
 });
 
 export default router;
