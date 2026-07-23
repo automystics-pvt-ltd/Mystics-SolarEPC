@@ -17,7 +17,9 @@ import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
 import { useOffline } from '@/context/OfflineContext';
 import { OfflineBanner } from '@/components/OfflineBanner';
+import { SearchPickerModal, PickerItem } from '@/components/SearchPickerModal';
 import { apiPost } from '@/lib/api';
+import { useGetPurchaseOrders, useGetWarehouses } from '@workspace/api-client-react';
 
 interface LineItem {
   id: string;
@@ -42,11 +44,32 @@ export default function NewGRNScreen() {
 
   const today = new Date().toISOString().split('T')[0];
 
-  const [poId, setPoId] = useState('');
-  const [warehouseId, setWarehouseId] = useState('');
+  // PO picker
+  const [selectedPo, setSelectedPo] = useState<PickerItem | null>(null);
+  const [poPickerOpen, setPoPickerOpen] = useState(false);
+
+  // Warehouse picker
+  const [selectedWarehouse, setSelectedWarehouse] = useState<PickerItem | null>(null);
+  const [warehousePickerOpen, setWarehousePickerOpen] = useState(false);
+
   const [receivedDate, setReceivedDate] = useState(today);
   const [lines, setLines] = useState<LineItem[]>([emptyLine()]);
   const [submitting, setSubmitting] = useState(false);
+
+  const { data: pos, isLoading: posLoading } = useGetPurchaseOrders();
+  const { data: warehouses, isLoading: warehousesLoading } = useGetWarehouses();
+
+  const poItems: PickerItem[] = (pos ?? []).map((po) => ({
+    id: po.id,
+    label: po.poNumber,
+    sublabel: po.vendorName ? `Vendor: ${po.vendorName}` : undefined,
+  }));
+
+  const warehouseItems: PickerItem[] = (warehouses ?? []).map((wh) => ({
+    id: wh.id,
+    label: wh.name,
+    sublabel: wh.location ?? undefined,
+  }));
 
   const updateLine = (id: string, key: keyof LineItem, value: string) => {
     setLines((prev) => prev.map((l) => (l.id === id ? { ...l, [key]: value } : l)));
@@ -62,8 +85,8 @@ export default function NewGRNScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!poId.trim() || !warehouseId.trim()) {
-      Alert.alert('Missing fields', 'PO ID and Warehouse ID are required.');
+    if (!selectedPo || !selectedWarehouse) {
+      Alert.alert('Missing fields', 'Please select a Purchase Order and Warehouse.');
       return;
     }
     const validLines = lines.filter((l) => l.itemName.trim() && l.receivedQty);
@@ -73,8 +96,8 @@ export default function NewGRNScreen() {
     }
 
     const payload = {
-      poId: Number(poId),
-      warehouseId: Number(warehouseId),
+      poId: selectedPo.id,
+      warehouseId: selectedWarehouse.id,
       receivedDate,
       lineItems: validLines.map((l) => ({
         itemName: l.itemName.trim(),
@@ -91,7 +114,7 @@ export default function NewGRNScreen() {
       if (isOnline) {
         await apiPost('/api/grns', payload);
       } else {
-        await enqueue('CREATE_GRN', payload, `GRN for PO #${poId}`);
+        await enqueue('CREATE_GRN', payload, `GRN for PO ${selectedPo.label}`);
       }
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert(
@@ -112,6 +135,33 @@ export default function NewGRNScreen() {
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <OfflineBanner />
+
+      {/* PO Picker Modal */}
+      <SearchPickerModal
+        visible={poPickerOpen}
+        title="Select Purchase Order"
+        items={poItems}
+        loading={posLoading}
+        onSelect={(item) => {
+          setSelectedPo(item);
+          setPoPickerOpen(false);
+        }}
+        onClose={() => setPoPickerOpen(false)}
+      />
+
+      {/* Warehouse Picker Modal */}
+      <SearchPickerModal
+        visible={warehousePickerOpen}
+        title="Select Warehouse"
+        items={warehouseItems}
+        loading={warehousesLoading}
+        onSelect={(item) => {
+          setSelectedWarehouse(item);
+          setWarehousePickerOpen(false);
+        }}
+        onClose={() => setWarehousePickerOpen(false)}
+      />
+
       <ScrollView
         contentContainerStyle={[
           styles.body,
@@ -126,31 +176,61 @@ export default function NewGRNScreen() {
             RECEIPT DETAILS
           </Text>
 
-          <Text style={[styles.label, { color: colors.foreground }]}>PO Number / ID *</Text>
-          <View style={[styles.inputWrap, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.label, { color: colors.foreground }]}>Purchase Order *</Text>
+          <TouchableOpacity
+            style={[styles.pickerWrap, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => setPoPickerOpen(true)}
+            activeOpacity={0.7}
+          >
             <Feather name="file-text" size={15} color={colors.mutedForeground} />
-            <TextInput
-              style={[styles.input, { color: colors.foreground }]}
-              placeholder="Purchase order ID"
-              placeholderTextColor={colors.mutedForeground}
-              value={poId}
-              onChangeText={setPoId}
-              keyboardType="numeric"
-            />
-          </View>
+            <View style={styles.pickerTextWrap}>
+              {selectedPo ? (
+                <>
+                  <Text style={[styles.pickerValue, { color: colors.foreground }]} numberOfLines={1}>
+                    {selectedPo.label}
+                  </Text>
+                  {selectedPo.sublabel ? (
+                    <Text style={[styles.pickerSublabel, { color: colors.mutedForeground }]} numberOfLines={1}>
+                      {selectedPo.sublabel}
+                    </Text>
+                  ) : null}
+                </>
+              ) : (
+                <Text style={[styles.pickerPlaceholder, { color: colors.mutedForeground }]}>
+                  {posLoading ? 'Loading orders…' : 'Select purchase order'}
+                </Text>
+              )}
+            </View>
+            <Feather name="chevron-down" size={15} color={colors.mutedForeground} />
+          </TouchableOpacity>
 
-          <Text style={[styles.label, { color: colors.foreground }]}>Warehouse ID *</Text>
-          <View style={[styles.inputWrap, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.label, { color: colors.foreground }]}>Warehouse *</Text>
+          <TouchableOpacity
+            style={[styles.pickerWrap, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => setWarehousePickerOpen(true)}
+            activeOpacity={0.7}
+          >
             <Feather name="map-pin" size={15} color={colors.mutedForeground} />
-            <TextInput
-              style={[styles.input, { color: colors.foreground }]}
-              placeholder="Warehouse ID"
-              placeholderTextColor={colors.mutedForeground}
-              value={warehouseId}
-              onChangeText={setWarehouseId}
-              keyboardType="numeric"
-            />
-          </View>
+            <View style={styles.pickerTextWrap}>
+              {selectedWarehouse ? (
+                <>
+                  <Text style={[styles.pickerValue, { color: colors.foreground }]} numberOfLines={1}>
+                    {selectedWarehouse.label}
+                  </Text>
+                  {selectedWarehouse.sublabel ? (
+                    <Text style={[styles.pickerSublabel, { color: colors.mutedForeground }]} numberOfLines={1}>
+                      {selectedWarehouse.sublabel}
+                    </Text>
+                  ) : null}
+                </>
+              ) : (
+                <Text style={[styles.pickerPlaceholder, { color: colors.mutedForeground }]}>
+                  {warehousesLoading ? 'Loading warehouses…' : 'Select warehouse'}
+                </Text>
+              )}
+            </View>
+            <Feather name="chevron-down" size={15} color={colors.mutedForeground} />
+          </TouchableOpacity>
 
           <Text style={[styles.label, { color: colors.foreground }]}>Received Date</Text>
           <View style={[styles.inputWrap, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -276,6 +356,20 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   label: { fontSize: 13, fontFamily: 'Inter_600SemiBold', marginBottom: 6, marginTop: 12 },
+  pickerWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    minHeight: 46,
+    paddingVertical: 8,
+  },
+  pickerTextWrap: { flex: 1 },
+  pickerValue: { fontSize: 14, fontFamily: 'Inter_500Medium' },
+  pickerSublabel: { fontSize: 12, fontFamily: 'Inter_400Regular', marginTop: 1 },
+  pickerPlaceholder: { fontSize: 14, fontFamily: 'Inter_400Regular' },
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',

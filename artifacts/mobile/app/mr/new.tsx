@@ -17,7 +17,9 @@ import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
 import { useOffline } from '@/context/OfflineContext';
 import { OfflineBanner } from '@/components/OfflineBanner';
+import { SearchPickerModal, PickerItem } from '@/components/SearchPickerModal';
 import { apiPost } from '@/lib/api';
+import { useGetProjects } from '@workspace/api-client-react';
 
 interface MRLine {
   id: string;
@@ -45,10 +47,19 @@ export default function NewMRScreen() {
   thirtyDays.setDate(thirtyDays.getDate() + 30);
   const defaultDue = thirtyDays.toISOString().split('T')[0];
 
-  const [projectId, setProjectId] = useState('');
+  const [selectedProject, setSelectedProject] = useState<PickerItem | null>(null);
+  const [projectPickerOpen, setProjectPickerOpen] = useState(false);
   const [requiredByDate, setRequiredByDate] = useState(defaultDue);
   const [lines, setLines] = useState<MRLine[]>([emptyLine()]);
   const [submitting, setSubmitting] = useState(false);
+
+  const { data: projects, isLoading: projectsLoading } = useGetProjects();
+
+  const projectItems: PickerItem[] = (projects ?? []).map((p) => ({
+    id: p.id,
+    label: p.name,
+    sublabel: p.siteLocation ?? undefined,
+  }));
 
   const updateLine = (id: string, key: keyof MRLine, value: string) => {
     setLines((prev) => prev.map((l) => (l.id === id ? { ...l, [key]: value } : l)));
@@ -62,8 +73,8 @@ export default function NewMRScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!projectId.trim()) {
-      Alert.alert('Missing field', 'Project ID is required.');
+    if (!selectedProject) {
+      Alert.alert('Missing field', 'Please select a project.');
       return;
     }
     const validLines = lines.filter((l) => l.itemName.trim() && l.qty);
@@ -73,7 +84,7 @@ export default function NewMRScreen() {
     }
 
     const payload = {
-      projectId: Number(projectId),
+      projectId: selectedProject.id,
       requiredByDate,
       items: validLines.map((l) => ({
         itemName: l.itemName.trim(),
@@ -88,7 +99,7 @@ export default function NewMRScreen() {
       if (isOnline) {
         await apiPost('/api/material-requests', payload);
       } else {
-        await enqueue('CREATE_MR', payload, `MR for project #${projectId}`);
+        await enqueue('CREATE_MR', payload, `MR for ${selectedProject.label}`);
       }
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert(
@@ -109,6 +120,20 @@ export default function NewMRScreen() {
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <OfflineBanner />
+
+      {/* Project Picker Modal */}
+      <SearchPickerModal
+        visible={projectPickerOpen}
+        title="Select Project"
+        items={projectItems}
+        loading={projectsLoading}
+        onSelect={(item) => {
+          setSelectedProject(item);
+          setProjectPickerOpen(false);
+        }}
+        onClose={() => setProjectPickerOpen(false)}
+      />
+
       <ScrollView
         contentContainerStyle={[
           styles.body,
@@ -123,20 +148,33 @@ export default function NewMRScreen() {
             REQUEST DETAILS
           </Text>
 
-          <Text style={[styles.label, { color: colors.foreground }]}>Project ID *</Text>
-          <View
-            style={[styles.inputWrap, { backgroundColor: colors.card, borderColor: colors.border }]}
+          <Text style={[styles.label, { color: colors.foreground }]}>Project *</Text>
+          <TouchableOpacity
+            style={[styles.pickerWrap, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => setProjectPickerOpen(true)}
+            activeOpacity={0.7}
           >
             <Feather name="briefcase" size={15} color={colors.mutedForeground} />
-            <TextInput
-              style={[styles.input, { color: colors.foreground }]}
-              placeholder="Project ID"
-              placeholderTextColor={colors.mutedForeground}
-              value={projectId}
-              onChangeText={setProjectId}
-              keyboardType="numeric"
-            />
-          </View>
+            <View style={styles.pickerTextWrap}>
+              {selectedProject ? (
+                <>
+                  <Text style={[styles.pickerValue, { color: colors.foreground }]} numberOfLines={1}>
+                    {selectedProject.label}
+                  </Text>
+                  {selectedProject.sublabel ? (
+                    <Text style={[styles.pickerSublabel, { color: colors.mutedForeground }]} numberOfLines={1}>
+                      {selectedProject.sublabel}
+                    </Text>
+                  ) : null}
+                </>
+              ) : (
+                <Text style={[styles.pickerPlaceholder, { color: colors.mutedForeground }]}>
+                  {projectsLoading ? 'Loading projects…' : 'Select project'}
+                </Text>
+              )}
+            </View>
+            <Feather name="chevron-down" size={15} color={colors.mutedForeground} />
+          </TouchableOpacity>
 
           <Text style={[styles.label, { color: colors.foreground }]}>Required By Date</Text>
           <View
@@ -276,6 +314,20 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   label: { fontSize: 13, fontFamily: 'Inter_600SemiBold', marginBottom: 6, marginTop: 12 },
+  pickerWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    minHeight: 46,
+    paddingVertical: 8,
+  },
+  pickerTextWrap: { flex: 1 },
+  pickerValue: { fontSize: 14, fontFamily: 'Inter_500Medium' },
+  pickerSublabel: { fontSize: 12, fontFamily: 'Inter_400Regular', marginTop: 1 },
+  pickerPlaceholder: { fontSize: 14, fontFamily: 'Inter_400Regular' },
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
