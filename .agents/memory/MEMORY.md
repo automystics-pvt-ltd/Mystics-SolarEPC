@@ -4,3 +4,4 @@
 - [Mystics ERP design system rules](mystics-erp-design-system.md) — StatusBadge covers all 50+ statuses; DetailRow has fullWidth prop; shared component barrel at @/components/shared
 - [Mystics ERP navigation system](mystics-erp-nav-system.md) — 56px NavRail + flyout replaced sidebar; Shell/Topbar updated; mobile uses bottom tabs + MobileNavSheet
 - [Mystics ERP shared component contracts](mystics-erp-shared-components.md) — EmptyState accepts heading/message aliases; SkeletonBar+SkeletonCards exist; CompactStatCard exported
+- [Mystics ERP hooks rule](mystics-erp-hooks-rule.md) — ProcurementDashboard had useMemo/useCallback after an early conditional return; always place ALL hooks before any conditional return in function components

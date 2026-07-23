@@ -502,30 +502,7 @@ export default function ProcurementDashboard() {
     setSelectedCategory("");
   }, []);
 
-  /* ── Skeleton while loading for the first time ──────────────────────────── */
-  if (isLoading && !data) return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <div className="h-6 w-48 bg-muted rounded animate-pulse" />
-          <div className="h-4 w-64 bg-muted/60 rounded animate-pulse" />
-        </div>
-        <div className="h-8 w-32 bg-muted rounded animate-pulse" />
-      </div>
-      <SkeletonStats count={5} />
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
-        {[1,2,3].map(i => <div key={i} className="h-12 bg-muted/50 rounded-xl animate-pulse" />)}
-      </div>
-      <SkeletonList rows={4} />
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 h-72 bg-muted/50 rounded-xl animate-pulse" />
-        <div className="h-72 bg-muted/50 rounded-xl animate-pulse" />
-      </div>
-      <SkeletonList rows={6} />
-    </motion.div>
-  );
-
-  /* ── Data extraction ─────────────────────────────────────────────────────── */
+  /* ── Data extraction (safe when data is undefined during initial load) ────── */
   const d   = data as any ?? {};
   const s   = d.summary ?? {};
   const overduePOs: any[]      = d.overduePOs           ?? [];
@@ -615,6 +592,29 @@ export default function ProcurementDashboard() {
   const navGRNs     = useCallback(() => setLocation("/procurement/grns"),     [setLocation]);
   const navInvoices = useCallback(() => setLocation("/procurement/invoices"), [setLocation]);
   const navVendors  = useCallback(() => setLocation("/procurement/vendors"),  [setLocation]);
+
+  /* ── Skeleton while loading for the first time (after all hooks) ─────────── */
+  if (isLoading && !data) return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <div className="h-6 w-48 bg-muted rounded animate-pulse" />
+          <div className="h-4 w-64 bg-muted/60 rounded animate-pulse" />
+        </div>
+        <div className="h-8 w-32 bg-muted rounded animate-pulse" />
+      </div>
+      <SkeletonStats count={5} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
+        {[1,2,3].map(i => <div key={i} className="h-12 bg-muted/50 rounded-xl animate-pulse" />)}
+      </div>
+      <SkeletonList rows={4} />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 h-72 bg-muted/50 rounded-xl animate-pulse" />
+        <div className="h-72 bg-muted/50 rounded-xl animate-pulse" />
+      </div>
+      <SkeletonList rows={6} />
+    </motion.div>
+  );
 
   return (
     <motion.div variants={wrap} initial="hidden" animate="show" className="space-y-5 pb-10">

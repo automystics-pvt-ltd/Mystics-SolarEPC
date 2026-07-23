@@ -55,3 +55,34 @@ export const materialsTable = pgTable("materials", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+/* ── Supplier Links ─────────────────────────────────────────── */
+export const materialSuppliersTable = pgTable("material_suppliers", {
+  id: serial("id").primaryKey(),
+  materialId: integer("material_id").notNull().references(() => materialsTable.id, { onDelete: "cascade" }),
+  vendorId: integer("vendor_id"),
+  vendorName: text("vendor_name").notNull(),
+  supplierPartCode: varchar("supplier_part_code", { length: 100 }),
+  unitPrice: numeric("unit_price", { precision: 14, scale: 2 }),
+  currency: varchar("currency", { length: 5 }).default("INR"),
+  leadTimeDays: integer("lead_time_days"),
+  minOrderQty: numeric("min_order_qty", { precision: 12, scale: 3 }),
+  isPreferred: boolean("is_preferred").default(false),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+/* ── Audit Log ──────────────────────────────────────────────── */
+export const materialAuditLogsTable = pgTable("material_audit_logs", {
+  id: serial("id").primaryKey(),
+  materialId: integer("material_id").notNull().references(() => materialsTable.id, { onDelete: "cascade" }),
+  action: varchar("action", { length: 50 }).notNull(),
+  fieldChanged: text("field_changed"),
+  oldValue: text("old_value"),
+  newValue: text("new_value"),
+  performedBy: integer("performed_by"),
+  performedByName: text("performed_by_name"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
