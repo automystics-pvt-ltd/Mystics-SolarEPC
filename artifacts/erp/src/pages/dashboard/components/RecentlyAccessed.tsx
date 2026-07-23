@@ -10,13 +10,18 @@ import { getRecentEntries } from "@/lib/recentHistory";
 import { HREF_META } from "@/components/layout/NavRail";
 import { SectionCard, EmptyState } from "@/components/shared";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth";
 
 interface RecentlyAccessedProps {
   maxItems?: number;
 }
 
 export function RecentlyAccessed({ maxItems = 6 }: RecentlyAccessedProps) {
-  const entries = useMemo(() => getRecentEntries().slice(0, maxItems), []);
+  const { user } = useAuth();
+  const entries = useMemo(
+    () => (user?.id ? getRecentEntries(user.id) : []).slice(0, maxItems),
+    [user?.id, maxItems]
+  );
 
   return (
     <SectionCard

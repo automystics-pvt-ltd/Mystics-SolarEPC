@@ -22,7 +22,6 @@ import { useAuth } from "@/lib/auth";
 import { addRecentEntry, clearRecentEntries } from "@/lib/recentHistory";
 import { useQuery } from "@tanstack/react-query";
 import { apiGet } from "@/lib/fetch";
-import { addRecentEntry, RECENT_KEY } from "@/lib/recentHistory";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
