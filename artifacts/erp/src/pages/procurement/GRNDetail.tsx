@@ -17,6 +17,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
 import { StatusBadge, DetailRow, DetailGrid, SectionCard, PageHeader } from "@/components/shared";
 import { addRecentEntry } from "@/lib/recentHistory";
+import { useAuth } from "@/lib/auth";
 
 function formatDate(d?: string | null) {
   if (!d) return "—";
@@ -174,14 +175,15 @@ export default function GRNDetail({ id }: { id: string }) {
   const { toast } = useToast();
   const qc = useQueryClient();
   const grnId = Number(id);
+  const { user: authUser } = useAuth();
   const user = (() => { try { return JSON.parse(localStorage.getItem("mystics_user") ?? "{}"); } catch { return {}; } })();
   const isApprover = ["admin", "approver"].includes(user.role);
 
   const { data: grn, isLoading } = useGetProcGrn(grnId, { query: { enabled: !!grnId, queryKey: getGetProcGrnQueryKey(grnId) } });
 
   useEffect(() => {
-    if (grn?.grnNumber) addRecentEntry(`/procurement/grns/${grnId}`, grn.grnNumber, "GRNs");
-  }, [grn?.grnNumber, grnId]);
+    if (grn?.grnNumber && authUser?.id) addRecentEntry(authUser.id, `/procurement/grns/${grnId}`, grn.grnNumber, "GRNs");
+  }, [grn?.grnNumber, grnId, authUser?.id]);
 
   const submitMut = useSubmitProcGrn();
   const approveMut = useApproveProcGrn();

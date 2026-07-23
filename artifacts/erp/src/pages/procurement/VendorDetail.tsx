@@ -15,12 +15,14 @@ import { Edit3, Save, X, Plus, Trash2, Building2, Shield, Phone, Mail, CreditCar
 import { useToast } from "@/components/ui/use-toast";
 import { PageHeader, SectionCard, StatusBadge, DetailGrid, DetailRow } from "@/components/shared";
 import { addRecentEntry } from "@/lib/recentHistory";
+import { useAuth } from "@/lib/auth";
 
 export default function VendorDetail({ id }: { id: string }) {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const qc = useQueryClient();
   const vendorId = Number(id);
+  const { user: authUser } = useAuth();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<any>({});
   const [contactOpen, setContactOpen] = useState(false);
@@ -31,8 +33,8 @@ export default function VendorDetail({ id }: { id: string }) {
   });
 
   useEffect(() => {
-    if (vendor?.name) addRecentEntry(`/procurement/vendors/${vendorId}`, vendor.name, "Vendors");
-  }, [vendor?.name, vendorId]);
+    if (vendor?.name && authUser?.id) addRecentEntry(authUser.id, `/procurement/vendors/${vendorId}`, vendor.name, "Vendors");
+  }, [vendor?.name, vendorId, authUser?.id]);
 
   const updateMut = useUpdateVendor();
   const addContactMut = useAddVendorContact();

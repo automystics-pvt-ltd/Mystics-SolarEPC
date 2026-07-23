@@ -39,8 +39,8 @@ export default function GRNReturnDetail({ id }: { id: string }) {
   });
 
   useEffect(() => {
-    if (rtv?.returnNumber) addRecentEntry(`/procurement/grn-returns/${id}`, rtv.returnNumber, "GRN Returns");
-  }, [rtv?.returnNumber, id]);
+    if (rtv?.returnNumber && user?.id) addRecentEntry(user.id, `/procurement/grn-returns/${id}`, rtv.returnNumber, "GRN Returns");
+  }, [rtv?.returnNumber, id, user?.id]);
 
   const submitMut = useMutation({
     mutationFn: () => apiPatch(`/grn-returns/${id}/submit`, { userId: user?.id, userName: user?.name, remarks }),

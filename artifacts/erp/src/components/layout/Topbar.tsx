@@ -257,32 +257,34 @@ function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void 
   /* Flat list for keyboard navigation */
   const flatList: PaletteItem[] = query.trim() ? searchResults : [...recentItems, ...roleNav];
 
+  const userId = user?.id;
+
   // Re-read localStorage whenever `open` becomes true (picks up entries added
   // from detail pages or since the palette was last opened).
   useEffect(() => {
     if (open) {
       setQuery("");
       setCursor(0);
-      setRecentEntries(getRecentEntries());
+      setRecentEntries(userId ? getRecentEntries(userId) : []);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
-  }, [open]);
+  }, [open, userId]);
 
   // Also refresh whenever the user's role changes so that entries for
   // sections the user can no longer access are flushed from the display.
   useEffect(() => {
-    setRecentEntries(getRecentEntries());
-  }, [role]);
+    setRecentEntries(userId ? getRecentEntries(userId) : []);
+  }, [role, userId]);
 
   useEffect(() => { setCursor(0); }, [query]);
 
   const navigate = useCallback(
     (item: PaletteItem) => {
-      addRecentEntry(item.href, item.label, item.section);
+      if (userId) addRecentEntry(userId, item.href, item.label, item.section);
       setLocation(item.href);
       onClose();
     },
-    [setLocation, onClose]
+    [userId, setLocation, onClose]
   );
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

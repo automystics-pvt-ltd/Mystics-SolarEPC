@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { StatusBadge, DetailRow, DetailGrid, SectionCard, PageHeader } from "@/components/shared";
 import { addRecentEntry } from "@/lib/recentHistory";
+import { useAuth } from "@/lib/auth";
 
 function formatDate(d?: string | null) {
   if (!d) return "—";
@@ -86,6 +87,7 @@ export default function ProcurementPODetail({ id }: { id: string }) {
   const { toast } = useToast();
   const qc = useQueryClient();
   const poId = Number(id);
+  const { user: authUser } = useAuth();
   const user = (() => { try { return JSON.parse(localStorage.getItem("mystics_user") ?? "{}"); } catch { return {}; } })();
 
   // Dispatch form state
@@ -108,8 +110,8 @@ export default function ProcurementPODetail({ id }: { id: string }) {
   const { data: po, isLoading } = useGetProcurementPO(poId, { query: { enabled: !!poId, queryKey: getGetProcurementPOQueryKey(poId) } });
 
   useEffect(() => {
-    if (po?.poNumber) addRecentEntry(`/procurement/pos/${poId}`, po.poNumber, "Purchase Orders");
-  }, [po?.poNumber, poId]);
+    if (po?.poNumber && authUser?.id) addRecentEntry(authUser.id, `/procurement/pos/${poId}`, po.poNumber, "Purchase Orders");
+  }, [po?.poNumber, poId, authUser?.id]);
 
   const updateMut  = useUpdateProcurementPO();
   const dispatchMut = useRecordProcurementPODispatch();

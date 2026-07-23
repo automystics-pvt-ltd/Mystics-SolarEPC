@@ -3,6 +3,9 @@
  *
  * Entries can be either list pages (matching ALL_NAV) or detail pages
  * (e.g. /procurement/pos/42) with a human-readable label and section.
+ *
+ * The storage key is scoped per user ID so that shared-device users never
+ * see each other's navigation history.
  */
 
 export interface RecentEntry {
@@ -13,16 +16,20 @@ export interface RecentEntry {
   section: string;
 }
 
-export const RECENT_KEY = "mystics_cmd_recent";
 export const MAX_RECENT = 8;
 
+/** Returns the localStorage key scoped to the given user ID. */
+export function getRecentKey(userId: number): string {
+  return `mystics_cmd_recent_${userId}`;
+}
+
 /**
- * Read recent entries from localStorage.
+ * Read recent entries from localStorage for the given user.
  * Handles the legacy format (string[]) and the new RecentEntry[] format.
  */
-export function getRecentEntries(): RecentEntry[] {
+export function getRecentEntries(userId: number): RecentEntry[] {
   try {
-    const raw = JSON.parse(localStorage.getItem(RECENT_KEY) ?? "[]");
+    const raw = JSON.parse(localStorage.getItem(getRecentKey(userId)) ?? "[]");
     if (!Array.isArray(raw)) return [];
     // Legacy format: string[]
     if (raw.length > 0 && typeof raw[0] === "string") {
@@ -38,13 +45,22 @@ export function getRecentEntries(): RecentEntry[] {
 }
 
 /**
- * Prepend an entry to the recent list (deduped by href, capped at MAX_RECENT).
+ * Prepend an entry to the recent list for the given user
+ * (deduped by href, capped at MAX_RECENT).
  */
-export function addRecentEntry(href: string, label: string, section: string) {
-  const prev = getRecentEntries().filter((e) => e.href !== href);
+export function addRecentEntry(userId: number, href: string, label: string, section: string) {
+  const prev = getRecentEntries(userId).filter((e) => e.href !== href);
   const entry: RecentEntry = { href, label, section };
   localStorage.setItem(
-    RECENT_KEY,
+    getRecentKey(userId),
     JSON.stringify([entry, ...prev].slice(0, MAX_RECENT))
   );
+}
+
+/**
+ * Clear the recent history for the given user.
+ * Call this on logout so the next user starts with a clean slate.
+ */
+export function clearRecentEntries(userId: number) {
+  localStorage.removeItem(getRecentKey(userId));
 }

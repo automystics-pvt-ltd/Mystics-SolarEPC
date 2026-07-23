@@ -19,6 +19,7 @@ import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/lib/auth";
+import { addRecentEntry, clearRecentEntries } from "@/lib/recentHistory";
 import { useQuery } from "@tanstack/react-query";
 import { apiGet } from "@/lib/fetch";
 import { addRecentEntry, RECENT_KEY } from "@/lib/recentHistory";
@@ -173,13 +174,10 @@ function pushHistory(entry: Omit<HistoryEntry, "ts">) {
   const prev = readHistory().filter((h) => h.href !== entry.href);
   const next = [{ ...entry, ts: Date.now() }, ...prev].slice(0, MAX_HISTORY);
   localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
-  // Keep command-palette list in sync via the shared RecentEntry[] format
-  addRecentEntry(entry.href, entry.name, entry.section);
 }
 
 function clearHistory() {
   localStorage.removeItem(HISTORY_KEY);
-  localStorage.removeItem(RECENT_KEY);
 }
 
 function readFavorites(): string[] {
@@ -221,15 +219,19 @@ function useProcBadge() {
   return (data?.draftPOs ?? 0) + (data?.pendingInvoices ?? 0);
 }
 
-function useNavHistory(location: string): HistoryEntry[] {
+function useNavHistory(location: string, userId?: number): HistoryEntry[] {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
 
   // Refresh from localStorage on mount and whenever location changes
   useEffect(() => {
     const meta = HREF_META[location];
-    if (meta) pushHistory({ href: location, name: meta.name, section: meta.section });
+    if (meta) {
+      pushHistory({ href: location, name: meta.name, section: meta.section });
+      // Keep the user-scoped command palette list in sync
+      if (userId) addRecentEntry(userId, location, meta.name, meta.section);
+    }
     setHistory(readHistory());
-  }, [location]);
+  }, [location, userId]);
 
   return history;
 }
@@ -629,7 +631,7 @@ export function NavRail() {
   const { user, logout } = useAuth();
   const [openKey, setOpenKey] = useState<string | null>(null);
   const procBadge = useProcBadge();
-  const history = useNavHistory(location);
+  const history = useNavHistory(location, user?.id);
   const [favorites, toggleFavorite] = useFavorites();
 
   const role = user?.role ?? "";
@@ -830,7 +832,7 @@ export function NavRail() {
                   history={history}
                   location={location}
                   onNav={closeFlyout}
-                  onClear={() => { clearHistory(); setOpenKey(null); }}
+                  onClear={() => { clearHistory(); if (user?.id) clearRecentEntries(user.id); setOpenKey(null); }}
                 />
               )}
               {openKey === "favorites" && (

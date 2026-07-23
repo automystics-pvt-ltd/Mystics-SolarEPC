@@ -17,6 +17,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
 import { PageHeader, SectionCard, StatusBadge, DetailGrid, DetailRow } from "@/components/shared";
 import { addRecentEntry } from "@/lib/recentHistory";
+import { useAuth } from "@/lib/auth";
 
 const fmt = (n: number | null | undefined) =>
   n != null ? `₹${Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : "—";
@@ -26,14 +27,15 @@ export default function InvoiceDetail({ id }: { id: string }) {
   const { toast } = useToast();
   const qc = useQueryClient();
   const invId = Number(id);
+  const { user: authUser } = useAuth();
   const user = (() => { try { return JSON.parse(localStorage.getItem("mystics_user") ?? "{}"); } catch { return {}; } })();
   const isApprover = ["admin", "approver"].includes(user.role);
 
   const { data: invoice, isLoading } = useGetProcInvoice(invId, { query: { enabled: !!invId, queryKey: getGetProcInvoiceQueryKey(invId) } });
 
   useEffect(() => {
-    if (invoice?.invoiceNumber) addRecentEntry(`/procurement/invoices/${invId}`, invoice.invoiceNumber, "Procurement Invoices");
-  }, [invoice?.invoiceNumber, invId]);
+    if (invoice?.invoiceNumber && authUser?.id) addRecentEntry(authUser.id, `/procurement/invoices/${invId}`, invoice.invoiceNumber, "Procurement Invoices");
+  }, [invoice?.invoiceNumber, invId, authUser?.id]);
 
   const submitMut = useSubmitProcInvoice();
   const approveMut = useApproveProcInvoice();

@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { setAuthTokenGetter, getGetMeQueryKey } from "@workspace/api-client-react";
 import { useGetMe, User } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
+import { clearRecentEntries } from "@/lib/recentHistory";
 
 interface AuthContextType {
   user: User | null;
@@ -54,6 +55,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    // Clear this user's navigation history before signing out so the next
+    // user on a shared device starts with a clean command palette.
+    if (user?.id) clearRecentEntries(user.id);
     localStorage.removeItem("mystics_token");
     setToken(null);
     setUser(null);

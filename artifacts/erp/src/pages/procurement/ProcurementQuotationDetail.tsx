@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { PageHeader, SectionCard, DetailGrid, DetailRow, StatusBadge } from "@/components/shared";
 import { addRecentEntry } from "@/lib/recentHistory";
+import { useAuth } from "@/lib/auth";
 
 const ACTION_ICONS: Record<string, any> = {
   Created: FileText, Submitted: Send, ReviewStarted: Eye, Approved: CheckCircle2,
@@ -35,14 +36,15 @@ export default function ProcurementQuotationDetail({ id }: { id: string }) {
   const { toast } = useToast();
   const qc = useQueryClient();
   const qId = Number(id);
+  const { user: authUser } = useAuth();
   const [actionDialog, setActionDialog] = useState<string | null>(null);
   const [remarks, setRemarks] = useState("");
 
   const { data: quotation, isLoading } = useGetProcurementQuotation(qId, { query: { enabled: !!qId, queryKey: getGetProcurementQuotationQueryKey(qId) } });
 
   useEffect(() => {
-    if (quotation?.referenceId) addRecentEntry(`/procurement/quotations/${qId}`, quotation.referenceId, "Vendor Quotations");
-  }, [quotation?.referenceId, qId]);
+    if (quotation?.referenceId && authUser?.id) addRecentEntry(authUser.id, `/procurement/quotations/${qId}`, quotation.referenceId, "Vendor Quotations");
+  }, [quotation?.referenceId, qId, authUser?.id]);
 
   const submitMut = useSubmitProcurementQuotation();
   const reviewMut = useStartProcurementQuotationReview();
