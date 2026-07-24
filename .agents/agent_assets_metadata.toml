@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "hZXlCMBWKDuFtxu4DtYtT"
+uri = "file://solarepc-deploy.tar.gz"
+type = "unspecified"
+title = "solarepc-deploy.tar.gz — Production deployment package"
