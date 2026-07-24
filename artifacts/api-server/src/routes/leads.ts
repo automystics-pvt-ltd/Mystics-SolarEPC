@@ -1,10 +1,12 @@
 import { Router, type IRouter } from "express";
+import { requireAuth, requirePermission } from "../lib/rbac";
 import { db, leadsTable, siteSurveysTable } from "@workspace/db";
 import { z } from "zod";
 import { eq, desc, and, sql, ilike, or } from "drizzle-orm";
 import { CreateLeadBody, UpdateLeadBody, GetLeadParams, UpdateLeadParams, DeleteLeadParams, AssignLeadParams, AssignLeadBody } from "@workspace/api-zod";
 
 const router: IRouter = Router();
+router.use(requireAuth());
 
 function fmt(l: typeof leadsTable.$inferSelect) {
   return { id: l.id, source: l.source, ownerId: l.ownerId, ownerName: null, territory: l.territory, companyName: l.companyName, contactName: l.contactName, contactPhone: l.contactPhone, contactEmail: l.contactEmail, productInterest: l.productInterest, estimatedValue: l.estimatedValue ? Number(l.estimatedValue) : null, score: l.score, status: l.status, notes: l.notes, createdAt: l.createdAt.toISOString() };
@@ -17,7 +19,7 @@ router.get("/leads", async (req, res): Promise<void> => {
   res.json(rows.map(fmt));
 });
 
-router.post("/leads", async (req, res): Promise<void> => {
+router.post("/leads", requirePermission("crm", "create"), async (req, res): Promise<void> => {
   const parsed = CreateLeadBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const [row] = await db.insert(leadsTable).values({ ...parsed.data, estimatedValue: parsed.data.estimatedValue?.toString() }).returning();
@@ -44,7 +46,7 @@ router.get("/leads/:id", async (req, res): Promise<void> => {
   res.json(fmt(row));
 });
 
-router.patch("/leads/:id", async (req, res): Promise<void> => {
+router.patch("/leads/:id", requirePermission("crm", "edit"), async (req, res): Promise<void> => {
   const params = UpdateLeadParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const parsed = UpdateLeadBody.safeParse(req.body);
@@ -56,7 +58,7 @@ router.patch("/leads/:id", async (req, res): Promise<void> => {
   res.json(fmt(row));
 });
 
-router.delete("/leads/:id", async (req, res): Promise<void> => {
+router.delete("/leads/:id", requirePermission("crm", "delete"), async (req, res): Promise<void> => {
   const params = DeleteLeadParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const [row] = await db.delete(leadsTable).where(eq(leadsTable.id, params.data.id)).returning();
@@ -64,7 +66,7 @@ router.delete("/leads/:id", async (req, res): Promise<void> => {
   res.json({ success: true });
 });
 
-router.post("/leads/:id/assign", async (req, res): Promise<void> => {
+router.post("/leads/:id/assign", requirePermission("crm", "edit"), async (req, res): Promise<void> => {
   const params = AssignLeadParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const body = AssignLeadBody.safeParse(req.body);
@@ -103,7 +105,7 @@ router.get("/leads/:id/survey", async (req, res): Promise<void> => {
   res.json(fmtSurvey(row));
 });
 
-router.post("/leads/:id/survey", async (req, res): Promise<void> => {
+router.post("/leads/:id/survey", requirePermission("crm", "edit"), async (req, res): Promise<void> => {
   const { eq } = await import("drizzle-orm");
   const leadId = Number(req.params.id);
   const parsed = UpsertSurveyBody.safeParse(req.body);

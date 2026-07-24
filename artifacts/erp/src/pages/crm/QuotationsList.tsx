@@ -1,4 +1,5 @@
 import { useGetQuotations, getGetQuotationsQueryKey } from "@workspace/api-client-react";
+import { CanCreate } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
 import { Plus, FileText } from "lucide-react";
 import { useLocation } from "wouter";
@@ -94,12 +95,14 @@ export function QuotationsList() {
         title="CRM Quotations"
         subtitle="Client-facing proposals and cost estimates"
         actions={
-          <Button
-            onClick={() => setLocation("/crm/quotations/new")}
-            className="bg-[#EA580C] hover:bg-[#C2410C] text-white font-bold tracking-wide rounded-[8px] h-9 px-4 shadow-sm"
-          >
-            <Plus className="h-4 w-4 mr-2" /> Create Quotation
-          </Button>
+          <CanCreate module="crm">
+            <Button
+              onClick={() => setLocation("/crm/quotations/new")}
+              className="bg-[#EA580C] hover:bg-[#C2410C] text-white font-bold tracking-wide rounded-[8px] h-9 px-4 shadow-sm"
+            >
+              <Plus className="h-4 w-4 mr-2" /> Create Quotation
+            </Button>
+          </CanCreate>
         }
       />
 

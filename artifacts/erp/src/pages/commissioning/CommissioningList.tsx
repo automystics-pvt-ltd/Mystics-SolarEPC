@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useQueryClient } from "@tanstack/react-query";
+import { CanCreate } from "@/lib/permissions";
 import { CheckSquare, Plus, Clock, CheckCircle2, Pen } from "lucide-react";
 import { motion } from "framer-motion";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -117,7 +118,8 @@ export default function CommissioningList() {
   ];
 
   const newChecklistDialog = (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <CanCreate module="commissioning">
+      <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button size="sm" className="gap-1.5"><Plus className="w-3.5 h-3.5" /> New Checklist</Button>
       </DialogTrigger>
@@ -135,6 +137,7 @@ export default function CommissioningList() {
         </form>
       </DialogContent>
     </Dialog>
+    </CanCreate>
   );
 
   return (

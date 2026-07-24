@@ -9,7 +9,7 @@
  *  • Graceful fallback to nav-derived defaults if DB is empty on first boot.
  */
 import jwt from "jsonwebtoken";
-import type { Request, Response, NextFunction } from "express";
+import type { Request, Response, NextFunction, RequestHandler } from "express";
 import { db, rolePermissionsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 
@@ -143,7 +143,7 @@ export async function getPermissionsForRole(role: string): Promise<Record<string
 }
 
 /* ── Express middleware factory ─────────────────────────────────────────── */
-export function requirePermission(module: string, action: string) {
+export function requirePermission(module: string, action: string): RequestHandler {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const token = req.headers.authorization?.replace("Bearer ", "");
     if (!token) { res.status(401).json({ error: "Unauthorized" }); return; }
@@ -163,7 +163,7 @@ export function requirePermission(module: string, action: string) {
 }
 
 /* ── Require authenticated (no permission check — just auth) ────────────── */
-export function requireAuth() {
+export function requireAuth(): RequestHandler {
   return (req: Request, res: Response, next: NextFunction): void => {
     const token = req.headers.authorization?.replace("Bearer ", "");
     if (!token) { res.status(401).json({ error: "Unauthorized" }); return; }

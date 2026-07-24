@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useQueryClient } from "@tanstack/react-query";
 import { FileCheck, Plus, IndianRupee } from "lucide-react";
+import { CanCreate } from "@/lib/permissions";
 import { motion } from "framer-motion";
 import type { ColumnDef } from "@tanstack/react-table";
 import { PageHeader, StatCard, DataTable, StatusBadge } from "@/components/shared";
@@ -125,7 +126,8 @@ export default function AmcContractsList() {
   ];
 
   const newContractDialog = (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <CanCreate module="oam">
+      <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button size="sm" className="gap-1.5 shrink-0"><Plus className="w-3.5 h-3.5" /> New AMC Contract</Button>
       </DialogTrigger>
@@ -158,6 +160,7 @@ export default function AmcContractsList() {
         </form>
       </DialogContent>
     </Dialog>
+    </CanCreate>
   );
 
   return (

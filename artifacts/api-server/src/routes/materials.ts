@@ -173,7 +173,7 @@ router.post("/materials/import", requirePermission("materials", "import"), async
 });
 
 /* ── POST /materials/bulk — bulk operations ──────────────────────────── */
-router.post("/materials/bulk", requireAuth(), async (req, res): Promise<void> => {
+router.post("/materials/bulk", requirePermission("admin", "admin"), async (req, res): Promise<void> => {
   const user = getUser(req);
   const { action, ids }: { action: string; ids: number[] } = req.body;
   if (!ids?.length) { res.status(400).json({ error: "No IDs provided" }); return; }
@@ -195,7 +195,7 @@ router.post("/materials/bulk", requireAuth(), async (req, res): Promise<void> =>
 });
 
 /* ── POST /materials/seed — demo data ────────────────────────────────── */
-router.post("/materials/seed", async (req, res): Promise<void> => {
+router.post("/materials/seed", requirePermission("admin", "admin"), async (req, res): Promise<void> => {
   // Seed categories
   const catDefs = [
     { name: "Solar Modules", code: "SOL", description: "PV modules and panels" },
@@ -391,7 +391,7 @@ router.get("/materials/:id/suppliers", async (req, res): Promise<void> => {
   res.json(rows.map(fmtSupplier));
 });
 
-router.post("/materials/:id/suppliers", async (req, res): Promise<void> => {
+router.post("/materials/:id/suppliers", requirePermission("procurement", "create"), async (req, res): Promise<void> => {
   const user = getUser(req);
   const materialId = Number(req.params.id);
   const { unitPrice, minOrderQty, ...rest } = req.body;
@@ -404,7 +404,7 @@ router.post("/materials/:id/suppliers", async (req, res): Promise<void> => {
   res.status(201).json(fmtSupplier(row));
 });
 
-router.patch("/materials/:id/suppliers/:sid", async (req, res): Promise<void> => {
+router.patch("/materials/:id/suppliers/:sid", requirePermission("procurement", "edit"), async (req, res): Promise<void> => {
   const user = getUser(req);
   const materialId = Number(req.params.id);
   const { unitPrice, minOrderQty, ...rest } = req.body;
@@ -418,7 +418,7 @@ router.patch("/materials/:id/suppliers/:sid", async (req, res): Promise<void> =>
   res.json(fmtSupplier(row));
 });
 
-router.delete("/materials/:id/suppliers/:sid", async (req, res): Promise<void> => {
+router.delete("/materials/:id/suppliers/:sid", requirePermission("procurement", "delete"), async (req, res): Promise<void> => {
   const user = getUser(req);
   const materialId = Number(req.params.id);
   const [row] = await db.select().from(materialSuppliersTable)

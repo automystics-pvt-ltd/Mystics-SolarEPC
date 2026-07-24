@@ -1,4 +1,5 @@
 import { Router, type Request, type IRouter } from "express";
+import { requireAuth, requirePermission } from "../lib/rbac";
 import {
   db, usersTable,
   approvalWorkflowsTable, approvalWorkflowStepsTable,
@@ -12,6 +13,7 @@ import { eq, and, or, inArray, desc, sql, ne, gte, lte } from "drizzle-orm";
 import jwt from "jsonwebtoken";
 
 const router: IRouter = Router();
+router.use(requireAuth());
 const JWT_SECRET = process.env.SESSION_SECRET ?? "mystics-erp-secret";
 
 /* ── Auth helper ─────────────────────────────────────────────────────────── */
@@ -152,7 +154,7 @@ router.get("/approval-workflows", async (_req, res): Promise<void> => {
   })));
 });
 
-router.post("/approval-workflows", async (req, res): Promise<void> => {
+router.post("/approval-workflows", requirePermission("approvals", "admin"), async (req, res): Promise<void> => {
   const actor = getActor(req);
   if (!actor) { res.status(401).json({ error: "Unauthorized" }); return; }
   const { steps = [], ...body } = req.body;
@@ -176,7 +178,7 @@ router.get("/approval-workflows/:id", async (req, res): Promise<void> => {
   res.json({ ...wf, createdAt: wf.createdAt.toISOString(), updatedAt: wf.updatedAt.toISOString(), steps });
 });
 
-router.patch("/approval-workflows/:id", async (req, res): Promise<void> => {
+router.patch("/approval-workflows/:id", requirePermission("approvals", "admin"), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const { steps, ...body } = req.body;
   const [wf] = await db.update(approvalWorkflowsTable)
@@ -192,7 +194,7 @@ router.patch("/approval-workflows/:id", async (req, res): Promise<void> => {
   res.json(wf);
 });
 
-router.delete("/approval-workflows/:id", async (req, res): Promise<void> => {
+router.delete("/approval-workflows/:id", requirePermission("approvals", "admin"), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   await db.delete(approvalWorkflowsTable).where(eq(approvalWorkflowsTable.id, id));
   res.json({ ok: true });
@@ -407,7 +409,7 @@ router.get("/approvals/:id", async (req, res): Promise<void> => {
 /* ══════════════════════════════════════════════════════════════════════════
    SUBMIT NEW REQUEST
 ══════════════════════════════════════════════════════════════════════════ */
-router.post("/approvals", async (req, res): Promise<void> => {
+router.post("/approvals", requirePermission("approvals", "create"), async (req, res): Promise<void> => {
   const actor = getActor(req);
   if (!actor) { res.status(401).json({ error: "Unauthorized" }); return; }
   const body = req.body;
@@ -500,7 +502,7 @@ async function canAct(requestId: number, actor: { userId: number; role: string }
   return { ok: !!mine, r, steps, myStep: mine };
 }
 
-router.patch("/approvals/:id/approve", async (req, res): Promise<void> => {
+router.patch("/approvals/:id/approve", requirePermission("approvals", "approve"), async (req, res): Promise<void> => {
   const actor = getActor(req);
   if (!actor) { res.status(401).json({ error: "Unauthorized" }); return; }
   const id = Number(req.params.id);
@@ -600,7 +602,7 @@ router.patch("/approvals/:id/approve", async (req, res): Promise<void> => {
   res.json({ ok: true, status: newStatus });
 });
 
-router.patch("/approvals/:id/reject", async (req, res): Promise<void> => {
+router.patch("/approvals/:id/reject", requirePermission("approvals", "approve"), async (req, res): Promise<void> => {
   const actor = getActor(req);
   if (!actor) { res.status(401).json({ error: "Unauthorized" }); return; }
   const id = Number(req.params.id);
@@ -684,7 +686,7 @@ router.patch("/approvals/:id/reject", async (req, res): Promise<void> => {
   res.json({ ok: true });
 });
 
-router.patch("/approvals/:id/recall", async (req, res): Promise<void> => {
+router.patch("/approvals/:id/recall", requirePermission("approvals", "approve"), async (req, res): Promise<void> => {
   const actor = getActor(req);
   if (!actor) { res.status(401).json({ error: "Unauthorized" }); return; }
   const id = Number(req.params.id);
@@ -707,7 +709,7 @@ router.patch("/approvals/:id/recall", async (req, res): Promise<void> => {
   res.json({ ok: true });
 });
 
-router.patch("/approvals/:id/delegate", async (req, res): Promise<void> => {
+router.patch("/approvals/:id/delegate", requirePermission("approvals", "approve"), async (req, res): Promise<void> => {
   const actor = getActor(req);
   if (!actor) { res.status(401).json({ error: "Unauthorized" }); return; }
   const id = Number(req.params.id);
@@ -733,7 +735,7 @@ router.patch("/approvals/:id/delegate", async (req, res): Promise<void> => {
   res.json({ ok: true });
 });
 
-router.post("/approvals/:id/comment", async (req, res): Promise<void> => {
+router.post("/approvals/:id/comment", requirePermission("approvals", "view"), async (req, res): Promise<void> => {
   const actor = getActor(req);
   if (!actor) { res.status(401).json({ error: "Unauthorized" }); return; }
   const id = Number(req.params.id);
@@ -750,7 +752,7 @@ router.post("/approvals/:id/comment", async (req, res): Promise<void> => {
 ══════════════════════════════════════════════════════════════════════════ */
 
 // Create a new profile-level delegation rule
-router.post("/approvals/delegate", async (req, res): Promise<void> => {
+router.post("/approvals/delegate", requirePermission("approvals", "edit"), async (req, res): Promise<void> => {
   const actor = getActor(req);
   if (!actor) { res.status(401).json({ error: "Unauthorized" }); return; }
   const { toUserId, module, startDate, endDate } = req.body;
@@ -767,7 +769,7 @@ router.post("/approvals/delegate", async (req, res): Promise<void> => {
 });
 
 // Delete a profile-level delegation rule
-router.delete("/approvals/delegate/:id", async (req, res): Promise<void> => {
+router.delete("/approvals/delegate/:id", requirePermission("approvals", "edit"), async (req, res): Promise<void> => {
   const actor = getActor(req);
   if (!actor) { res.status(401).json({ error: "Unauthorized" }); return; }
   const delegateId = Number(req.params.id);
@@ -817,7 +819,7 @@ router.get("/approval-requests/overdue", async (req, res): Promise<void> => {
 /* ══════════════════════════════════════════════════════════════════════════
    SEED DEMO DATA
 ══════════════════════════════════════════════════════════════════════════ */
-router.post("/approvals/seed", async (req, res): Promise<void> => {
+router.post("/approvals/seed", requirePermission("admin", "admin"), async (req, res): Promise<void> => {
   const actor = getActor(req);
   if (!actor || !["admin", "director"].includes(actor.role))
     { res.status(403).json({ error: "Admin only" }); return; }

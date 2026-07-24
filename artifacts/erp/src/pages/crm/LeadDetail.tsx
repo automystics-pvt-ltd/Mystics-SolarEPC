@@ -16,6 +16,7 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { StatusBadge, DetailRow, DetailGrid, SectionCard, PageHeader } from "@/components/shared";
 import { apiGet } from "@/lib/fetch";
+import { usePermissions } from "@/lib/permissions";
 
 function formatDate(d?: string | null) {
   if (!d) return "—";
@@ -58,7 +59,7 @@ export function LeadDetail({ id }: { id: string }) {
   });
 
   const { user } = useAuth();
-  const isAdmin = user?.role === "Admin";
+  const { canEdit: isAdmin } = usePermissions("crm");
 
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<any>({});

@@ -5,14 +5,17 @@ import { LayoutDashboard, Users, FolderKanban, ShoppingCart, Warehouse } from "l
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { NavStateProvider, useNavState } from "@/lib/nav-state";
+import { useQuery } from "@tanstack/react-query";
+import { apiGet } from "@/lib/fetch";
+import { useAuth } from "@/lib/auth";
 
 /* ── Mobile bottom-nav tabs ──────────────────────────────────────── */
-const BOTTOM_TABS = [
-  { href: "/dashboard",       icon: LayoutDashboard, label: "Home"        },
-  { href: "/crm/leads",       icon: Users,           label: "CRM"         },
-  { href: "/projects",        icon: FolderKanban,    label: "Projects"    },
-  { href: "/procurement/pos", icon: ShoppingCart,    label: "Procurement" },
-  { href: "/inventory/warehouses", icon: Warehouse,  label: "Inventory"   },
+const BOTTOM_TABS: { href: string; icon: React.ElementType; label: string; module?: string }[] = [
+  { href: "/dashboard",            icon: LayoutDashboard, label: "Home"        },
+  { href: "/crm/leads",            icon: Users,           label: "CRM",         module: "crm"         },
+  { href: "/projects",             icon: FolderKanban,    label: "Projects",    module: "projects"    },
+  { href: "/procurement/pos",      icon: ShoppingCart,    label: "Procurement", module: "procurement" },
+  { href: "/inventory/warehouses", icon: Warehouse,       label: "Inventory",   module: "inventory"   },
 ];
 
 interface ShellProps { children: ReactNode }
@@ -20,6 +23,24 @@ interface ShellProps { children: ReactNode }
 function ShellInner({ children }: ShellProps) {
   const [location] = useLocation();
   const { navOpen } = useNavState();
+  const { user } = useAuth();
+  const role = user?.role ?? "";
+
+  const { data: permMap } = useQuery<Record<string, Record<string, boolean>>>({
+    queryKey: ["rbac-my-permissions"],
+    queryFn: () => apiGet("/rbac/my-permissions"),
+    enabled: !!user,
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    refetchOnWindowFocus: false,
+  });
+
+  const visibleTabs = BOTTOM_TABS.filter((tab) => {
+    if (!tab.module) return true;
+    if (role === "admin") return true;
+    if (!permMap) return true; // still loading — show all
+    return permMap[tab.module]?.view !== false;
+  });
 
   return (
     <div className="flex h-[100dvh] w-full overflow-hidden bg-background print:block print:h-auto print:overflow-visible">
@@ -61,7 +82,7 @@ function ShellInner({ children }: ShellProps) {
         style={{ paddingBottom: "env(safe-area-inset-bottom,0)" }}
       >
         <div className="flex items-stretch h-16">
-          {BOTTOM_TABS.map((tab) => {
+          {visibleTabs.map((tab) => {
             const isActive =
               location === tab.href ||
               (tab.href !== "/projects" && location.startsWith(tab.href + "/")) ||

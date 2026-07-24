@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { PageHeader, SectionCard, StatusBadge, DetailGrid, DetailRow } from "@/components/shared";
 import { addRecentEntry } from "@/lib/recentHistory";
 import { useAuth } from "@/lib/auth";
+import { usePermissions } from "@/lib/permissions";
 
 const fmt = (n: number | null | undefined) =>
   n != null ? `₹${Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : "—";
@@ -29,7 +30,7 @@ export default function InvoiceDetail({ id }: { id: string }) {
   const invId = Number(id);
   const { user: authUser } = useAuth();
   const user = (() => { try { return JSON.parse(localStorage.getItem("mystics_user") ?? "{}"); } catch { return {}; } })();
-  const isApprover = ["admin", "approver"].includes(user.role);
+  const { canApprove: isApprover } = usePermissions("procurement");
 
   const { data: invoice, isLoading } = useGetProcInvoice(invId, { query: { enabled: !!invId, queryKey: getGetProcInvoiceQueryKey(invId) } });
 

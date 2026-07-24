@@ -26,65 +26,63 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { addRecentEntry, getRecentEntries, type RecentEntry } from "@/lib/recentHistory";
 
 /* ── All nav items for command palette ───────────────────────────
-   `roles` mirrors NavRail exactly — item visible when:
-     • no roles field  → visible to all authenticated users
-     • roles field     → only listed roles can see it
-   Unknown / unmapped roles fall through to deny-by-default (they
-   only see items with no roles restriction, i.e. Dashboard).
+   `module` mirrors NavRail group keys — item visible when:
+     • no module field → visible to all authenticated users
+     • module field    → visible only if permMap[module].view !== false
 ─────────────────────────────────────────────────────────────── */
-const ALL_NAV: { name: string; href: string; icon: React.ElementType; section: string; roles?: string[] }[] = [
-  // Core — no role restriction
+const ALL_NAV: { name: string; href: string; icon: React.ElementType; section: string; module?: string }[] = [
+  // Core — no module restriction (visible to all authenticated users)
   { name: "Dashboard",             href: "/dashboard",               icon: LayoutDashboard, section: "Core" },
 
-  // Sales & CRM — matches NavRail group roles
-  { name: "Leads",                 href: "/crm/leads",               icon: Users,           section: "Sales & CRM",   roles: ["admin","director","sales","pm"] },
-  { name: "Quotations",            href: "/crm/quotations",          icon: FileText,        section: "Sales & CRM",   roles: ["admin","director","sales","pm"] },
-  { name: "Client POs",            href: "/crm/client-pos",          icon: FileCheck,       section: "Sales & CRM",   roles: ["admin","director","sales","pm"] },
-  { name: "Invoices",              href: "/crm/invoices",            icon: FilePlus,        section: "Sales & CRM",   roles: ["admin","director","sales","pm"] },
-  { name: "Tasks",                 href: "/crm/tasks",               icon: CheckSquare,     section: "Sales & CRM",   roles: ["admin","director","sales","pm"] },
-  { name: "Escalations",           href: "/crm/escalations",         icon: AlertTriangle,   section: "Sales & CRM",   roles: ["admin","director","sales","pm"] },
+  // Sales & CRM
+  { name: "Leads",                 href: "/crm/leads",               icon: Users,           section: "Sales & CRM",   module: "crm" },
+  { name: "Quotations",            href: "/crm/quotations",          icon: FileText,        section: "Sales & CRM",   module: "crm" },
+  { name: "Client POs",            href: "/crm/client-pos",          icon: FileCheck,       section: "Sales & CRM",   module: "crm" },
+  { name: "Invoices",              href: "/crm/invoices",            icon: FilePlus,        section: "Sales & CRM",   module: "crm" },
+  { name: "Tasks",                 href: "/crm/tasks",               icon: CheckSquare,     section: "Sales & CRM",   module: "crm" },
+  { name: "Escalations",           href: "/crm/escalations",         icon: AlertTriangle,   section: "Sales & CRM",   module: "crm" },
 
-  // Project Mgmt — matches NavRail group roles
-  { name: "Projects Hub",          href: "/projects",                icon: FolderKanban,    section: "Project Mgmt",  roles: ["admin","director","pm","sales"] },
-  { name: "Contractors",           href: "/projects/contractors",    icon: HardHat,         section: "Project Mgmt",  roles: ["admin","director","pm","sales"] },
+  // Project Mgmt
+  { name: "Projects Hub",          href: "/projects",                icon: FolderKanban,    section: "Project Mgmt",  module: "projects" },
+  { name: "Contractors",           href: "/projects/contractors",    icon: HardHat,         section: "Project Mgmt",  module: "projects" },
 
-  // Inventory — matches NavRail group roles
-  { name: "Warehouses",            href: "/inventory/warehouses",    icon: Warehouse,       section: "Inventory",     roles: ["admin","director","warehouse","pm"] },
-  { name: "Stock Transfers",       href: "/inventory/stock-transfers", icon: ArrowRightLeft, section: "Inventory",    roles: ["admin","director","warehouse","pm"] },
-  { name: "Delivery Challans",     href: "/inventory/delivery-challans", icon: Truck,       section: "Inventory",     roles: ["admin","director","warehouse","pm"] },
-  { name: "Stock Ledger",          href: "/inventory/stock-ledger",  icon: BookOpen,        section: "Inventory",     roles: ["admin","director","warehouse","pm"] },
-  { name: "Stock Valuation",       href: "/inventory/stock-valuation", icon: Scale,         section: "Inventory",     roles: ["admin","director","warehouse","pm"] },
-  { name: "Audits",                href: "/inventory/audits",        icon: ClipboardCheck,  section: "Inventory",     roles: ["admin","director","warehouse","pm"] },
+  // Inventory
+  { name: "Warehouses",            href: "/inventory/warehouses",    icon: Warehouse,       section: "Inventory",     module: "inventory" },
+  { name: "Stock Transfers",       href: "/inventory/stock-transfers", icon: ArrowRightLeft, section: "Inventory",    module: "inventory" },
+  { name: "Delivery Challans",     href: "/inventory/delivery-challans", icon: Truck,       section: "Inventory",     module: "inventory" },
+  { name: "Stock Ledger",          href: "/inventory/stock-ledger",  icon: BookOpen,        section: "Inventory",     module: "inventory" },
+  { name: "Stock Valuation",       href: "/inventory/stock-valuation", icon: Scale,         section: "Inventory",     module: "inventory" },
+  { name: "Audits",                href: "/inventory/audits",        icon: ClipboardCheck,  section: "Inventory",     module: "inventory" },
 
-  // Engineering — matches NavRail group roles
-  { name: "Design Documents",      href: "/engineering/docs",        icon: Layers,          section: "Engineering",   roles: ["admin","director","pm"] },
+  // Engineering
+  { name: "Design Documents",      href: "/engineering/docs",        icon: Layers,          section: "Engineering",   module: "engineering" },
 
-  // Commissioning — matches NavRail group roles
-  { name: "Checklists",            href: "/commissioning",           icon: CheckSquare,     section: "Commissioning", roles: ["admin","director","pm"] },
+  // Commissioning
+  { name: "Checklists",            href: "/commissioning",           icon: CheckSquare,     section: "Commissioning", module: "commissioning" },
 
-  // O&M & AMC — matches NavRail group roles
-  { name: "AMC Contracts",         href: "/oam/amc",                 icon: Wrench,          section: "O&M & AMC",     roles: ["admin","director","pm"] },
-  { name: "Maintenance",           href: "/oam/maintenance",         icon: Wrench,          section: "O&M & AMC",     roles: ["admin","director","pm"] },
-  { name: "Service Tickets",       href: "/oam/tickets",             icon: AlertTriangle,   section: "O&M & AMC",     roles: ["admin","director","pm"] },
+  // O&M & AMC
+  { name: "AMC Contracts",         href: "/oam/amc",                 icon: Wrench,          section: "O&M & AMC",     module: "oam" },
+  { name: "Maintenance",           href: "/oam/maintenance",         icon: Wrench,          section: "O&M & AMC",     module: "oam" },
+  { name: "Service Tickets",       href: "/oam/tickets",             icon: AlertTriangle,   section: "O&M & AMC",     module: "oam" },
 
-  // Procurement — group roles + per-item roles mirror NavRail exactly
-  { name: "Procurement Dashboard", href: "/procurement/dashboard",   icon: BarChart2,       section: "Procurement",   roles: ["admin","director","pm","warehouse","finance"] },
-  { name: "Vendors",               href: "/procurement/vendors",     icon: Building2,       section: "Procurement",   roles: ["admin","director","pm"] },
-  { name: "Materials",             href: "/procurement/materials",   icon: Package,         section: "Procurement",   roles: ["admin","director","pm"] },
-  { name: "Vendor Quotations",     href: "/procurement/quotations",  icon: ClipboardList,   section: "Procurement",   roles: ["admin","director","pm"] },
-  { name: "Purchase Orders",       href: "/procurement/pos",         icon: ShoppingCart,    section: "Procurement",   roles: ["admin","director","pm","warehouse","finance"] },
-  { name: "GRNs",                  href: "/procurement/grns",        icon: Boxes,           section: "Procurement",   roles: ["admin","director","pm","warehouse","finance"] },
-  { name: "GRN Returns",           href: "/procurement/grn-returns", icon: RotateCcw,       section: "Procurement",   roles: ["admin","director","pm","warehouse"] },
-  { name: "Procurement Invoices",  href: "/procurement/invoices",    icon: FilePlus,        section: "Procurement",   roles: ["admin","director","pm","finance"] },
+  // Procurement
+  { name: "Procurement Dashboard", href: "/procurement/dashboard",   icon: BarChart2,       section: "Procurement",   module: "procurement" },
+  { name: "Vendors",               href: "/procurement/vendors",     icon: Building2,       section: "Procurement",   module: "procurement" },
+  { name: "Materials",             href: "/procurement/materials",   icon: Package,         section: "Procurement",   module: "procurement" },
+  { name: "Vendor Quotations",     href: "/procurement/quotations",  icon: ClipboardList,   section: "Procurement",   module: "procurement" },
+  { name: "Purchase Orders",       href: "/procurement/pos",         icon: ShoppingCart,    section: "Procurement",   module: "procurement" },
+  { name: "GRNs",                  href: "/procurement/grns",        icon: Boxes,           section: "Procurement",   module: "procurement" },
+  { name: "GRN Returns",           href: "/procurement/grn-returns", icon: RotateCcw,       section: "Procurement",   module: "procurement" },
+  { name: "Procurement Invoices",  href: "/procurement/invoices",    icon: FilePlus,        section: "Procurement",   module: "procurement" },
 
-  // Finance — matches NavRail group roles
-  { name: "Finance Dashboard",     href: "/finance/dashboard",       icon: DollarSign,      section: "Finance",       roles: ["admin","director","finance"] },
-  { name: "Reports",               href: "/reports",                 icon: BarChart3,       section: "Finance",       roles: ["admin","director","finance"] },
-  { name: "Vendor Performance",    href: "/reports/vendors",         icon: TrendingUp,      section: "Finance",       roles: ["admin","director","finance"] },
+  // Finance
+  { name: "Finance Dashboard",     href: "/finance/dashboard",       icon: DollarSign,      section: "Finance",       module: "finance" },
+  { name: "Reports",               href: "/reports",                 icon: BarChart3,       section: "Finance",       module: "finance" },
+  { name: "Vendor Performance",    href: "/reports/vendors",         icon: TrendingUp,      section: "Finance",       module: "finance" },
 
-  // Admin — matches NavRail group roles
-  { name: "User Management",       href: "/admin/users",             icon: UserCog,         section: "Admin",         roles: ["admin","director"] },
-  { name: "Audit Logs",            href: "/admin/audit-logs",        icon: ScrollText,      section: "Admin",         roles: ["admin","director"] },
+  // Admin
+  { name: "User Management",       href: "/admin/users",             icon: UserCog,         section: "Admin",         module: "admin" },
+  { name: "Audit Logs",            href: "/admin/audit-logs",        icon: ScrollText,      section: "Admin",         module: "admin" },
 ];
 
 /* ── Mobile nav groups ───────────────────────────────────────── */
@@ -184,12 +182,16 @@ const NOTIF_ICON_COLOR: Record<string, string> = {
   approval: "bg-orange-100 text-orange-600",
 };
 
-/* ── Route-level role filter (mirrors NavRail deny-by-default) ── */
-function navItemAllowed(item: typeof ALL_NAV[number], role: string): boolean {
-  // Items with no roles field are visible to all authenticated users.
-  // Items with a roles field require the user's role to be listed.
-  // Unknown/unmapped roles only see items that have no restriction.
-  return !item.roles || item.roles.includes(role);
+/* ── Route-level permission filter (mirrors NavRail deny-by-default) ── */
+function navItemAllowed(
+  item: { module?: string },
+  role: string,
+  permMap?: Record<string, Record<string, boolean>>
+): boolean {
+  if (role === "admin") return true;
+  if (!item.module) return true; // no restriction — visible to all authenticated users
+  if (!permMap) return true; // still loading
+  return permMap[item.module]?.view !== false;
 }
 
 /* ── Palette item (unified type for nav + detail entries) ────── */
@@ -198,11 +200,11 @@ interface PaletteItem {
   label: string;
   section: string;
   icon: React.ElementType;
-  roles?: string[];
+  module?: string;
 }
 
 function navToPaletteItem(n: typeof ALL_NAV[number]): PaletteItem {
-  return { href: n.href, label: n.name, section: n.section, icon: n.icon, roles: n.roles };
+  return { href: n.href, label: n.name, section: n.section, icon: n.icon, module: n.module };
 }
 
 /** Convert a RecentEntry to a PaletteItem; returns null if unresolvable. */
@@ -210,14 +212,14 @@ function recentEntryToPaletteItem(entry: RecentEntry): PaletteItem | null {
   // Exact nav item match (list pages)
   const navItem = ALL_NAV.find((n) => n.href === entry.href);
   if (navItem) return navToPaletteItem(navItem);
-  // Detail page — inherit icon and roles from parent nav item
+  // Detail page — inherit icon and module from parent nav item
   const parent = ALL_NAV.find((n) => entry.href.startsWith(n.href + "/"));
   return {
     href: entry.href,
     label: entry.label || entry.href,
     section: entry.section || parent?.section || "",
     icon: parent?.icon ?? FileText,
-    roles: parent?.roles,
+    module: parent?.module,
   };
 }
 
@@ -230,19 +232,26 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   const inputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
 
-  /* Filter nav by role — route-level, deny-by-default for unknown roles */
+  /* Filter nav by RBAC permission map — same cache key as NavRail */
   const role = user?.role ?? "";
+  const { data: permMap } = useQuery<Record<string, Record<string, boolean>>>({
+    queryKey: ["rbac-my-permissions"],
+    queryFn: () => apiGet("/rbac/my-permissions"),
+    enabled: !!user,
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    refetchOnWindowFocus: false,
+  });
   const roleNav: PaletteItem[] = ALL_NAV
-    .filter((item) => navItemAllowed(item, role))
+    .filter((item) => navItemAllowed(item, role, permMap))
     .map(navToPaletteItem);
 
-  /* Recent items: include detail-page entries + nav items, role-filtered */
+  /* Recent items: permission-filtered */
   const recentItems: PaletteItem[] = recentEntries
     .map(recentEntryToPaletteItem)
     .filter((item): item is PaletteItem => {
       if (!item) return false;
-      if (!item.roles) return true;
-      return item.roles.includes(role);
+      return navItemAllowed(item, role, permMap);
     });
 
   /* Search results (role-filtered, searches both label and section) */

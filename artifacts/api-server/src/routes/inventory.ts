@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import { requireAuth, requirePermission } from "../lib/rbac";
 import { db, warehousesTable, warehouseLocationsTable, grnsTable, qcChecksTable, deliveryChallansTable, stockLedgerTable, stockValuationTable, inventoryAuditsTable } from "@workspace/db";
 import { eq, desc, and } from "drizzle-orm";
 import {
@@ -10,6 +11,7 @@ import {
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
+router.use(requireAuth());
 
 let grnCounter = 1;
 let challanCounter = 1;
@@ -34,7 +36,7 @@ router.get("/warehouses", async (req, res): Promise<void> => {
   res.json(rows.map(fmtWH));
 });
 
-router.post("/warehouses", async (req, res): Promise<void> => {
+router.post("/warehouses", requirePermission("inventory", "create"), async (req, res): Promise<void> => {
   const parsed = CreateWarehouseBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const [row] = await db.insert(warehousesTable).values(parsed.data).returning();
@@ -48,7 +50,7 @@ router.get("/warehouses/:id/locations", async (req, res): Promise<void> => {
   res.json(rows.map(l => ({ id: l.id, warehouseId: l.warehouseId, zone: l.zone, rack: l.rack, bin: l.bin, currentItemId: l.currentItemId, currentItemName: l.currentItemName })));
 });
 
-router.post("/warehouses/:id/locations", async (req, res): Promise<void> => {
+router.post("/warehouses/:id/locations", requirePermission("inventory", "create"), async (req, res): Promise<void> => {
   const params = CreateWarehouseLocationParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const body = CreateWarehouseLocationBody.safeParse(req.body);
@@ -79,7 +81,7 @@ router.get("/grns", async (req, res): Promise<void> => {
   res.json(rows.map(fmtGRN));
 });
 
-router.post("/grns", async (req, res): Promise<void> => {
+router.post("/grns", requirePermission("inventory", "create"), async (req, res): Promise<void> => {
   const parsed = CreateGRNBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const grnNumber = `GRN-${String(++grnCounter).padStart(4, "0")}`;
@@ -101,7 +103,7 @@ router.get("/grns/:id", async (req, res): Promise<void> => {
   res.json(fmtGRN(row));
 });
 
-router.post("/grns/:id/qc-check", async (req, res): Promise<void> => {
+router.post("/grns/:id/qc-check", requirePermission("inventory", "edit"), async (req, res): Promise<void> => {
   const params = CreateQCCheckParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const body = CreateQCCheckBody.safeParse(req.body);
@@ -120,7 +122,7 @@ router.get("/delivery-challans", async (req, res): Promise<void> => {
   res.json(rows.map(c => ({ id: c.id, warehouseId: c.warehouseId, projectId: c.projectId, challanNumber: c.challanNumber, issuedTo: c.issuedTo, lineItems: c.lineItems ?? [], issuedDate: c.issuedDate, purpose: c.purpose, referenceDoc: c.referenceDoc })));
 });
 
-router.post("/delivery-challans", async (req, res): Promise<void> => {
+router.post("/delivery-challans", requirePermission("inventory", "create"), async (req, res): Promise<void> => {
   const parsed = CreateDeliveryChallanBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const challanNumber = `DC-${String(++challanCounter).padStart(4, "0")}`;
@@ -158,14 +160,14 @@ router.get("/inventory-audits", async (req, res): Promise<void> => {
   res.json(rows.map(a => ({ id: a.id, warehouseId: a.warehouseId, auditDate: a.auditDate, auditorId: a.auditorId, systemQty: a.systemQty ? Number(a.systemQty) : null, physicalQty: a.physicalQty ? Number(a.physicalQty) : null, varianceQty: a.varianceQty ? Number(a.varianceQty) : null, varianceValue: a.varianceValue ? Number(a.varianceValue) : null, status: a.status, notes: a.notes })));
 });
 
-router.post("/inventory-audits", async (req, res): Promise<void> => {
+router.post("/inventory-audits", requirePermission("inventory", "create"), async (req, res): Promise<void> => {
   const parsed = CreateInventoryAuditBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const [row] = await db.insert(inventoryAuditsTable).values({ ...parsed.data, systemQty: parsed.data.systemQty?.toString(), physicalQty: parsed.data.physicalQty?.toString() }).returning();
   res.status(201).json({ id: row.id, warehouseId: row.warehouseId, auditDate: row.auditDate, auditorId: row.auditorId, systemQty: row.systemQty ? Number(row.systemQty) : null, physicalQty: row.physicalQty ? Number(row.physicalQty) : null, varianceQty: null, varianceValue: null, status: row.status, notes: row.notes });
 });
 
-router.post("/inventory-audits/:id/reconcile", async (req, res): Promise<void> => {
+router.post("/inventory-audits/:id/reconcile", requirePermission("inventory", "edit"), async (req, res): Promise<void> => {
   const params = ReconcileInventoryAuditParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const body = ReconcileInventoryAuditBody.safeParse(req.body);

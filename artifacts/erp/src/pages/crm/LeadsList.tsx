@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Plus, Search, Filter, Building2, UserCircle, Target, ChevronsUpDown, Check, Download } from "lucide-react";
 import { SkeletonList, EmptyState } from "@/components/shared";
 import { exportToCsv } from "@/lib/export";
+import { CanCreate, CanExport } from "@/lib/permissions";
 import { Link } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -201,21 +202,24 @@ export function LeadsList() {
         </div>
         
         <div className="flex gap-2">
-          <Button variant="outline" className="h-10 gap-2" onClick={() => {
-            exportToCsv(
-              `leads-pipeline-${new Date().toISOString().slice(0, 10)}.csv`,
-              ["Company", "Contact", "Email", "Phone", "Stage", "Source", "Territory", "Est. Value (₹)", "Product Interest"],
-              (filteredLeads ?? []).map((l: any) => [l.companyName, l.contactName, l.contactEmail ?? "", l.contactPhone ?? "", l.status, l.source ?? "", l.territory ?? "", l.estimatedValue ?? 0, l.productInterest ?? ""])
-            );
-          }}>
-            <Download className="h-4 w-4" /> Export CSV
-          </Button>
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-[#EA580C] hover:bg-[#C2410C] text-white font-bold tracking-wide rounded-[8px] h-10 px-5 shadow-sm">
-                <Plus className="h-4 w-4 mr-2" /> New Lead
-              </Button>
-            </DialogTrigger>
+          <CanExport module="crm">
+            <Button variant="outline" className="h-10 gap-2" onClick={() => {
+              exportToCsv(
+                `leads-pipeline-${new Date().toISOString().slice(0, 10)}.csv`,
+                ["Company", "Contact", "Email", "Phone", "Stage", "Source", "Territory", "Est. Value (₹)", "Product Interest"],
+                (filteredLeads ?? []).map((l: any) => [l.companyName, l.contactName, l.contactEmail ?? "", l.contactPhone ?? "", l.status, l.source ?? "", l.territory ?? "", l.estimatedValue ?? 0, l.productInterest ?? ""])
+              );
+            }}>
+              <Download className="h-4 w-4" /> Export CSV
+            </Button>
+          </CanExport>
+          <CanCreate module="crm">
+            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-[#EA580C] hover:bg-[#C2410C] text-white font-bold tracking-wide rounded-[8px] h-10 px-5 shadow-sm">
+                  <Plus className="h-4 w-4 mr-2" /> New Lead
+                </Button>
+              </DialogTrigger>
           <DialogContent className="max-w-2xl p-0 gap-0 overflow-hidden">
             <DialogHeader className="px-6 py-5 border-b border-gray-100 bg-gray-50/50">
               <DialogTitle className="text-xl font-bold tracking-tight">New Lead</DialogTitle>
@@ -356,6 +360,7 @@ export function LeadsList() {
             </div>
           </DialogContent>
           </Dialog>
+          </CanCreate>
         </div>
       </div>
 

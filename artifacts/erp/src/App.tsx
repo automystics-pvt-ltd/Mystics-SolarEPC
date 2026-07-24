@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
+import queryClient from '@/lib/queryClient';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ThemeProvider } from '@/lib/theme';
@@ -90,27 +91,6 @@ const RBACManager = lazy(() => import('@/pages/admin/RBACManager'));
 // Approvals — lazy loaded
 const ApprovalWorkbench = lazy(() => import('@/pages/approvals/ApprovalWorkbench'));
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: (failureCount, error: any) => {
-        if (error?.status === 401 || error?.status === 403) return false;
-        return failureCount < 2;
-      },
-      // Lists & dashboards: 2-min stale window — enough to avoid refetch storms
-      // on fast navigation but fresh enough for operational data.
-      staleTime: 2 * 60_000,
-      // Keep data in cache for 15 min after component unmounts so back-navigation
-      // shows instant results while a background refetch runs.
-      gcTime: 15 * 60_000,
-      refetchOnWindowFocus: false,
-      // Show stale data immediately while revalidating in the background
-      // (equivalent to SWR's stale-while-revalidate).
-      placeholderData: (prev: unknown) => prev,
-    },
-    mutations: { retry: false },
-  },
-});
 
 /** Route-transition skeleton — matches the PageHeader + two SectionCard blocks */
 function PageLoader() {
@@ -209,8 +189,12 @@ function ProtectedRoute({ component: Component, module: moduleName, ...rest }: a
   return (
     <Shell>
       <ErrorBoundary fallbackTitle="Page failed to load">
-        {/* If a module is specified, wait for permission then gate */}
-        {moduleName && !perms.isLoading && !perms.canView ? (
+        {/* If a module is specified, show loader while permissions resolve (fail-closed),
+            then gate — this prevents temporarily rendering restricted content during
+            the permission fetch after a role switch or fresh login. */}
+        {moduleName && perms.isLoading ? (
+          <PageLoader />
+        ) : moduleName && !perms.canView ? (
           <ForbiddenPage module={moduleName} />
         ) : (
           <Suspense fallback={<PageLoader />}>

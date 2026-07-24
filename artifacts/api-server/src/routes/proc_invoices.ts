@@ -354,7 +354,7 @@ router.post("/proc-invoices", requirePermission("procurement", "create"), async 
 });
 
 // ── SUBMIT FOR APPROVAL ────────────────────────────────────────────────────────
-router.post("/proc-invoices/:id/submit", requireAuth(), async (req, res): Promise<void> => {
+router.post("/proc-invoices/:id/submit", requirePermission("procurement", "edit"), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const { userName = "System", userId, remarks } = req.body;
   const [existing] = await db.select().from(procInvoicesTable).where(eq(procInvoicesTable.id, id));
@@ -647,7 +647,7 @@ router.get("/proc-invoices/:id/comments", async (req, res): Promise<void> => {
   res.json(comments.map(c => ({ id: c.id, invoiceId: c.invoiceId, parentId: c.parentId, userId: c.userId, userName: c.userName, userRole: c.userRole, body: c.body, createdAt: c.createdAt.toISOString() })));
 });
 
-router.post("/proc-invoices/:id/comments", requireAuth(), async (req, res): Promise<void> => {
+router.post("/proc-invoices/:id/comments", requirePermission("procurement", "view"), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const { userId, userName, userRole, body, parentId } = req.body;
   if (!body?.trim()) { res.status(400).json({ error: "Comment body is required" }); return; }
@@ -662,7 +662,7 @@ router.post("/proc-invoices/:id/comments", requireAuth(), async (req, res): Prom
   res.status(201).json({ id: comment.id, invoiceId: comment.invoiceId, parentId: comment.parentId, userId: comment.userId, userName: comment.userName, userRole: comment.userRole, body: comment.body, createdAt: comment.createdAt.toISOString() });
 });
 
-router.delete("/proc-invoices/:id/comments/:commentId", requireAuth(), async (req, res): Promise<void> => {
+router.delete("/proc-invoices/:id/comments/:commentId", requirePermission("procurement", "delete"), async (req, res): Promise<void> => {
   const invoiceId = Number(req.params.id);
   const commentId = Number(req.params.commentId);
   const [comment] = await db.select().from(invoiceCommentsTable).where(and(eq(invoiceCommentsTable.id, commentId), eq(invoiceCommentsTable.invoiceId, invoiceId)));

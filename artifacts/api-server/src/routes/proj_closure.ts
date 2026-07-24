@@ -3,9 +3,11 @@
  * All queries use pg.Client (new tables not in Drizzle schema)
  */
 import { Router, type IRouter } from "express";
+import { requireAuth, requirePermission } from "../lib/rbac";
 import pg from "pg";
 
 const router: IRouter = Router();
+router.use(requireAuth());
 
 async function withClient<T>(fn: (c: pg.Client) => Promise<T>): Promise<T> {
   const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
@@ -91,8 +93,8 @@ router.get("/projects/:id/handover", async (req, res): Promise<void> => {
   });
 });
 
-router.post("/projects/:id/handover", async (req, res): Promise<void> => {
-  const projectId = parseInt(req.params.id, 10);
+router.post("/projects/:id/handover", requirePermission("projects", "create"), async (req, res): Promise<void> => {
+  const projectId = parseInt(req.params.id as string, 10);
   const b = req.body;
   await withClient(async (c) => {
     const { rows } = await c.query(
@@ -119,8 +121,8 @@ router.post("/projects/:id/handover", async (req, res): Promise<void> => {
   });
 });
 
-router.patch("/handover/:id", async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id, 10);
+router.patch("/handover/:id", requirePermission("projects", "edit"), async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id as string, 10);
   const b = req.body;
   await withClient(async (c) => {
     const fields: string[] = [];
@@ -152,8 +154,8 @@ router.patch("/handover/:id", async (req, res): Promise<void> => {
   });
 });
 
-router.post("/handover/:id/sign", async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id, 10);
+router.post("/handover/:id/sign", requirePermission("projects", "approve"), async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id as string, 10);
   const { signedBy, type = "client" } = req.body; // type: client | internal
   await withClient(async (c) => {
     // Load the current handover record first
@@ -236,8 +238,8 @@ router.get("/projects/:id/warranty/expiring", async (req, res): Promise<void> =>
   });
 });
 
-router.post("/projects/:id/warranty", async (req, res): Promise<void> => {
-  const projectId = parseInt(req.params.id, 10);
+router.post("/projects/:id/warranty", requirePermission("projects", "create"), async (req, res): Promise<void> => {
+  const projectId = parseInt(req.params.id as string, 10);
   const b = req.body;
   await withClient(async (c) => {
     const { rows } = await c.query(
@@ -259,8 +261,8 @@ router.post("/projects/:id/warranty", async (req, res): Promise<void> => {
   });
 });
 
-router.patch("/warranty/:id", async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id, 10);
+router.patch("/warranty/:id", requirePermission("projects", "edit"), async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id as string, 10);
   const b = req.body;
   await withClient(async (c) => {
     const fields: string[] = [];
@@ -345,8 +347,8 @@ router.get("/projects/:id/closure", async (req, res): Promise<void> => {
   });
 });
 
-router.post("/projects/:id/closure", async (req, res): Promise<void> => {
-  const projectId = parseInt(req.params.id, 10);
+router.post("/projects/:id/closure", requirePermission("projects", "create"), async (req, res): Promise<void> => {
+  const projectId = parseInt(req.params.id as string, 10);
   const b = req.body;
   await withClient(async (c) => {
     const { rows } = await c.query(
@@ -371,8 +373,8 @@ router.post("/projects/:id/closure", async (req, res): Promise<void> => {
   });
 });
 
-router.patch("/closure/:id", async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id, 10);
+router.patch("/closure/:id", requirePermission("projects", "edit"), async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id as string, 10);
   const b = req.body;
   await withClient(async (c) => {
     const fields: string[] = [];
@@ -400,8 +402,8 @@ router.patch("/closure/:id", async (req, res): Promise<void> => {
   });
 });
 
-router.post("/closure/:id/approve", async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id, 10);
+router.post("/closure/:id/approve", requirePermission("projects", "approve"), async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id as string, 10);
   const { approvedBy } = req.body;
   await withClient(async (c) => {
     // ── 1. Load closure record ────────────────────────────────────────────────
@@ -544,8 +546,8 @@ router.get("/projects/:id/documents", async (req, res): Promise<void> => {
   });
 });
 
-router.post("/projects/:id/documents", async (req, res): Promise<void> => {
-  const projectId = parseInt(req.params.id, 10);
+router.post("/projects/:id/documents", requirePermission("projects", "create"), async (req, res): Promise<void> => {
+  const projectId = parseInt(req.params.id as string, 10);
   const b = req.body;
   await withClient(async (c) => {
     // Mark previous version of same title as not current
@@ -580,8 +582,8 @@ router.post("/projects/:id/documents", async (req, res): Promise<void> => {
   });
 });
 
-router.patch("/documents/:id", async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id, 10);
+router.patch("/documents/:id", requirePermission("projects", "edit"), async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id as string, 10);
   const b = req.body;
   await withClient(async (c) => {
     const fields: string[] = [];
@@ -605,8 +607,8 @@ router.patch("/documents/:id", async (req, res): Promise<void> => {
   });
 });
 
-router.delete("/documents/:id", async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id, 10);
+router.delete("/documents/:id", requirePermission("projects", "delete"), async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id as string, 10);
   await withClient(async (c) => {
     const { rows } = await c.query(`DELETE FROM project_documents WHERE id = $1 RETURNING id`, [id]);
     if (!rows.length) { res.status(404).json({ error: "Document not found" }); return; }

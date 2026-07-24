@@ -4,9 +4,11 @@
  * Testing & Commissioning — all on new tables not in Drizzle schema.
  */
 import { Router, type IRouter } from "express";
+import { requireAuth, requirePermission } from "../lib/rbac";
 import pg from "pg";
 
 const router: IRouter = Router();
+router.use(requireAuth());
 
 async function withClient<T>(fn: (c: pg.Client) => Promise<T>): Promise<T> {
   const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
@@ -43,8 +45,8 @@ router.get("/projects/:id/milestones", async (req, res): Promise<void> => {
   });
 });
 
-router.post("/projects/:id/milestones", async (req, res): Promise<void> => {
-  const projectId = parseInt(req.params.id, 10);
+router.post("/projects/:id/milestones", requirePermission("projects", "create"), async (req, res): Promise<void> => {
+  const projectId = parseInt(req.params.id as string, 10);
   await withClient(async (c) => {
     const b = req.body;
     const { rows } = await c.query(
@@ -63,8 +65,8 @@ router.post("/projects/:id/milestones", async (req, res): Promise<void> => {
   });
 });
 
-router.patch("/project-milestones/:id", async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id, 10);
+router.patch("/project-milestones/:id", requirePermission("projects", "edit"), async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id as string, 10);
   await withClient(async (c) => {
     const map: Record<string, string> = {
       phase: "phase", name: "name", description: "description",
@@ -143,8 +145,8 @@ router.get("/projects/:id/resources", async (req, res): Promise<void> => {
   });
 });
 
-router.post("/projects/:id/resources", async (req, res): Promise<void> => {
-  const projectId = parseInt(req.params.id, 10);
+router.post("/projects/:id/resources", requirePermission("projects", "create"), async (req, res): Promise<void> => {
+  const projectId = parseInt(req.params.id as string, 10);
   await withClient(async (c) => {
     const b = req.body;
     const { rows } = await c.query(
@@ -161,8 +163,8 @@ router.post("/projects/:id/resources", async (req, res): Promise<void> => {
   });
 });
 
-router.patch("/resource-allocations/:id", async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id, 10);
+router.patch("/resource-allocations/:id", requirePermission("projects", "edit"), async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id as string, 10);
   await withClient(async (c) => {
     const map: Record<string, string> = {
       activityId: "activity_id", resourceType: "resource_type", resourceId: "resource_id",
@@ -186,8 +188,8 @@ router.patch("/resource-allocations/:id", async (req, res): Promise<void> => {
   });
 });
 
-router.delete("/resource-allocations/:id", async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id, 10);
+router.delete("/resource-allocations/:id", requirePermission("projects", "delete"), async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id as string, 10);
   await withClient(async (c) => {
     const { rowCount } = await c.query(`DELETE FROM resource_allocations WHERE id = $1`, [id]);
     if (!rowCount) { res.status(404).json({ error: "Not found" }); return; }
@@ -241,8 +243,8 @@ router.get("/projects/:id/inspections", async (req, res): Promise<void> => {
   });
 });
 
-router.post("/projects/:id/inspections", async (req, res): Promise<void> => {
-  const projectId = parseInt(req.params.id, 10);
+router.post("/projects/:id/inspections", requirePermission("projects", "create"), async (req, res): Promise<void> => {
+  const projectId = parseInt(req.params.id as string, 10);
   await withClient(async (c) => {
     const b = req.body;
     // Determine inspectionType from checklist if not provided
@@ -272,8 +274,8 @@ router.post("/projects/:id/inspections", async (req, res): Promise<void> => {
   });
 });
 
-router.patch("/project-inspections/:id", async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id, 10);
+router.patch("/project-inspections/:id", requirePermission("projects", "edit"), async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id as string, 10);
   await withClient(async (c) => {
     const b = req.body;
     // Auto-determine overallResult and status from results if submitting
@@ -418,8 +420,8 @@ router.get("/projects/:id/testing-commissioning", async (req, res): Promise<void
   });
 });
 
-router.post("/projects/:id/testing-commissioning", async (req, res): Promise<void> => {
-  const projectId = parseInt(req.params.id, 10);
+router.post("/projects/:id/testing-commissioning", requirePermission("projects", "create"), async (req, res): Promise<void> => {
+  const projectId = parseInt(req.params.id as string, 10);
   await withClient(async (c) => {
     // Auto-generate tc_number
     const { rows: cnt } = await c.query(
@@ -458,8 +460,8 @@ router.post("/projects/:id/testing-commissioning", async (req, res): Promise<voi
   });
 });
 
-router.patch("/testing-commissioning/:id", async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id, 10);
+router.patch("/testing-commissioning/:id", requirePermission("projects", "edit"), async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id as string, 10);
   await withClient(async (c) => {
     const map: Record<string, string> = {
       testDate: "test_date", conductedBy: "conducted_by", witnessedBy: "witnessed_by",

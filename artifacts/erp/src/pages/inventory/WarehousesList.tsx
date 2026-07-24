@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Warehouse } from "lucide-react";
+import { CanCreate } from "@/lib/permissions";
 import { useLocation } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
@@ -107,7 +108,8 @@ export function WarehousesList() {
   ];
 
   const addDialog = (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <CanCreate module="inventory">
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button className="bg-[#EA580C] hover:bg-[#C2410C] text-white font-bold tracking-wide rounded-[8px] h-10 px-5 shadow-sm">
           <Plus className="h-4 w-4 mr-2" /> Add Warehouse
@@ -150,6 +152,7 @@ export function WarehousesList() {
         </Form>
       </DialogContent>
     </Dialog>
+    </CanCreate>
   );
 
   return (

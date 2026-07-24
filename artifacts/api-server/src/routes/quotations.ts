@@ -1,10 +1,12 @@
 import { Router, type IRouter } from "express";
+import { requireAuth, requirePermission } from "../lib/rbac";
 import { db, quotationsTable, clientPOsTable, projectsTable, leadsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import pg from "pg";
 import { CreateQuotationBody, GetQuotationParams, UpdateQuotationParams, UpdateQuotationBody, ApproveQuotationParams, ApproveQuotationBody, LogClientPOParams, LogClientPOBody } from "@workspace/api-zod";
 
 const router: IRouter = Router();
+router.use(requireAuth());
 
 function fmt(q: typeof quotationsTable.$inferSelect) {
   return { id: q.id, leadId: q.leadId, boqItems: q.boqItems ?? [], version: q.version, markupPct: q.markupPct ? Number(q.markupPct) : 0, totalAmount: q.totalAmount ? Number(q.totalAmount) : null, approvalStatus: q.approvalStatus, validTill: q.validTill, notes: q.notes, createdAt: q.createdAt.toISOString() };
@@ -21,7 +23,7 @@ router.get("/quotations", async (req, res): Promise<void> => {
   res.json(rows.map(fmt));
 });
 
-router.post("/quotations", async (req, res): Promise<void> => {
+router.post("/quotations", requirePermission("crm", "create"), async (req, res): Promise<void> => {
   const parsed = CreateQuotationBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const items = parsed.data.boqItems ?? [];
@@ -45,7 +47,7 @@ router.get("/quotations/:id", async (req, res): Promise<void> => {
   res.json(fmt(row));
 });
 
-router.patch("/quotations/:id", async (req, res): Promise<void> => {
+router.patch("/quotations/:id", requirePermission("crm", "edit"), async (req, res): Promise<void> => {
   const params = UpdateQuotationParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const parsed = UpdateQuotationBody.safeParse(req.body);
@@ -60,7 +62,7 @@ router.patch("/quotations/:id", async (req, res): Promise<void> => {
   res.json(fmt(row));
 });
 
-router.post("/quotations/:id/approve", async (req, res): Promise<void> => {
+router.post("/quotations/:id/approve", requirePermission("crm", "approve"), async (req, res): Promise<void> => {
   const params = ApproveQuotationParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const body = ApproveQuotationBody.safeParse(req.body);
@@ -71,7 +73,7 @@ router.post("/quotations/:id/approve", async (req, res): Promise<void> => {
   res.json(fmt(row));
 });
 
-router.post("/quotations/:id/log-client-po", async (req, res): Promise<void> => {
+router.post("/quotations/:id/log-client-po", requirePermission("crm", "create"), async (req, res): Promise<void> => {
   const params = LogClientPOParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const body = LogClientPOBody.safeParse(req.body);
@@ -106,7 +108,7 @@ router.post("/quotations/:id/log-client-po", async (req, res): Promise<void> => 
 });
 
 /** Create a Solar Project directly from an approved CRM quotation */
-router.post("/quotations/:id/create-project", async (req, res): Promise<void> => {
+router.post("/quotations/:id/create-project", requirePermission("crm", "create"), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const [quotation] = await db.select().from(quotationsTable).where(eq(quotationsTable.id, id));
   if (!quotation) { res.status(404).json({ error: "Quotation not found" }); return; }

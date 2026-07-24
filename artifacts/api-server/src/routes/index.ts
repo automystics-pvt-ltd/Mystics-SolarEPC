@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import { requireAuth } from "../lib/rbac";
 import healthRouter from "./health";
 import storageRouter from "./storage";
 import procQuotationAttachmentsRouter from "./proc_quotation_attachments";
@@ -40,6 +41,8 @@ router.use(healthRouter);
 router.use(storageRouter);
 router.use(procQuotationAttachmentsRouter);
 router.use(authRouter);
+// Catch-all auth guard — any future router that omits requireAuth is still protected
+router.use(requireAuth());
 router.use(dashboardRouter);
 router.use(leadsRouter);
 router.use(quotationsRouter);

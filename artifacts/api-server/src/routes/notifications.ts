@@ -1,8 +1,10 @@
 import { Router, type IRouter } from "express";
+import { requireAuth, requirePermission } from "../lib/rbac";
 import { db, notificationsTable } from "@workspace/db";
 import { eq, and, desc, sql } from "drizzle-orm";
 
 const router: IRouter = Router();
+router.use(requireAuth());
 
 // GET /notifications — current user's notifications
 router.get("/notifications", async (req, res): Promise<void> => {
@@ -31,7 +33,7 @@ router.get("/notifications/unread-count", async (req, res): Promise<void> => {
 });
 
 // PATCH /notifications/:id/read
-router.patch("/notifications/:id/read", async (req, res): Promise<void> => {
+router.patch("/notifications/:id/read", requirePermission("dashboard", "view"), async (req, res): Promise<void> => {
   try {
     const id = Number(req.params.id);
     await db.update(notificationsTable).set({ isRead: true }).where(eq(notificationsTable.id, id));
@@ -40,18 +42,19 @@ router.patch("/notifications/:id/read", async (req, res): Promise<void> => {
 });
 
 // POST /notifications/read-all
-router.post("/notifications/read-all", async (req, res): Promise<void> => {
+router.post("/notifications/read-all", requirePermission("dashboard", "view"), async (req, res): Promise<void> => {
   try {
-    const { userId } = req.body;
-    if (!userId) { res.status(400).json({ error: "userId required" }); return; }
+    // Use JWT actor identity — do not trust user-supplied userId from body
+    const actor = (req as any).actor as { userId: number } | undefined;
+    if (!actor?.userId) { res.status(401).json({ error: "Unauthorized" }); return; }
     await db.update(notificationsTable).set({ isRead: true })
-      .where(and(eq(notificationsTable.userId, Number(userId)), eq(notificationsTable.isRead, false)));
+      .where(and(eq(notificationsTable.userId, actor.userId), eq(notificationsTable.isRead, false)));
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
-// POST /notifications — create (internal use)
-router.post("/notifications", async (req, res): Promise<void> => {
+// POST /notifications — create (admin/system use only)
+router.post("/notifications", requirePermission("admin", "admin"), async (req, res): Promise<void> => {
   try {
     const { userId, type = "info", title, message, entityType, entityId, entityRef, actionUrl } = req.body;
     if (!userId || !title || !message) { res.status(400).json({ error: "userId, title, message required" }); return; }

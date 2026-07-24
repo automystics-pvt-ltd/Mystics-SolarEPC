@@ -1,4 +1,5 @@
 import { Router, type IRouter, type Request } from "express";
+import { requireAuth, requirePermission } from "../lib/rbac";
 import pg from "pg";
 import {
   db, procurementQuotationsTable, procQuotationItemsTable,
@@ -15,6 +16,7 @@ import { ObjectStorageService } from "../lib/objectStorage";
 import { approveQuotationAndGeneratePO } from "../lib/quotationApprovalService";
 
 const router: IRouter = Router();
+router.use(requireAuth());
 const JWT_SECRET = process.env.SESSION_SECRET ?? "mystics-erp-secret";
 
 const storage = new ObjectStorageService();
@@ -338,7 +340,7 @@ router.get("/procurement-quotations", async (req, res): Promise<void> => {
 });
 
 // ── CREATE ────────────────────────────────────────────────────────────────────
-router.post("/procurement-quotations", async (req, res): Promise<void> => {
+router.post("/procurement-quotations", requirePermission("procurement", "create"), async (req, res): Promise<void> => {
   const { items: itemsBody = [], userName = "System", userId, userRole, ...body } = req.body;
   const year = new Date().getFullYear();
   const referenceId = `VQ-${year}-${String(vqCounter++).padStart(4, "0")}`;
@@ -413,7 +415,7 @@ router.get("/procurement-quotations/:id", async (req, res): Promise<void> => {
 });
 
 // ── UPDATE (Draft/RevisionRequested only — Approved is LOCKED 423) ────────────
-router.patch("/procurement-quotations/:id", async (req, res): Promise<void> => {
+router.patch("/procurement-quotations/:id", requirePermission("procurement", "edit"), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const [existing] = await db.select().from(procurementQuotationsTable).where(eq(procurementQuotationsTable.id, id));
   if (!existing) { res.status(404).json({ error: "Quotation not found" }); return; }
@@ -480,7 +482,7 @@ router.patch("/procurement-quotations/:id", async (req, res): Promise<void> => {
 });
 
 // ── DELETE (Draft only) ───────────────────────────────────────────────────────
-router.delete("/procurement-quotations/:id", async (req, res): Promise<void> => {
+router.delete("/procurement-quotations/:id", requirePermission("procurement", "delete"), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const [q] = await db.select().from(procurementQuotationsTable).where(eq(procurementQuotationsTable.id, id));
   if (!q) { res.status(404).json({ error: "Not found" }); return; }
@@ -494,7 +496,7 @@ router.delete("/procurement-quotations/:id", async (req, res): Promise<void> => 
 
 
 // ── SUBMIT ────────────────────────────────────────────────────────────────────
-router.post("/procurement-quotations/:id/submit", async (req, res): Promise<void> => {
+router.post("/procurement-quotations/:id/submit", requirePermission("procurement", "edit"), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const actor = getActor(req);
   const { userName = actor?.name ?? "System", userId = actor?.userId, userRole = actor?.role } = req.body;
@@ -552,7 +554,7 @@ router.post("/procurement-quotations/:id/submit", async (req, res): Promise<void
 });
 
 // ── START REVIEW ──────────────────────────────────────────────────────────────
-router.post("/procurement-quotations/:id/start-review", async (req, res): Promise<void> => {
+router.post("/procurement-quotations/:id/start-review", requirePermission("procurement", "edit"), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const actor = getActor(req);
   const { userName = actor?.name ?? "System", userId = actor?.userId, userRole = actor?.role, remarks } = req.body;
@@ -579,7 +581,7 @@ router.post("/procurement-quotations/:id/start-review", async (req, res): Promis
 });
 
 // ── REQUEST REVISION ──────────────────────────────────────────────────────────
-router.post("/procurement-quotations/:id/request-revision", async (req, res): Promise<void> => {
+router.post("/procurement-quotations/:id/request-revision", requirePermission("procurement", "edit"), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const actor = getActor(req);
   const { userName = actor?.name ?? "System", userId = actor?.userId, userRole = actor?.role, remarks } = req.body;
@@ -615,7 +617,7 @@ router.post("/procurement-quotations/:id/request-revision", async (req, res): Pr
 });
 
 // ── APPROVE — delegates to shared service (also used by Approval Workbench) ───
-router.post("/procurement-quotations/:id/approve", async (req, res): Promise<void> => {
+router.post("/procurement-quotations/:id/approve", requirePermission("procurement", "approve"), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const actor = getActor(req);
   const { userName = actor?.name ?? "System", userId = actor?.userId, userRole = actor?.role, remarks } = req.body;
@@ -635,7 +637,7 @@ router.post("/procurement-quotations/:id/approve", async (req, res): Promise<voi
 });
 
 // ── REJECT ────────────────────────────────────────────────────────────────────
-router.post("/procurement-quotations/:id/reject", async (req, res): Promise<void> => {
+router.post("/procurement-quotations/:id/reject", requirePermission("procurement", "approve"), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const actor = getActor(req);
   const { userName = actor?.name ?? "System", userId = actor?.userId, userRole = actor?.role, remarks } = req.body;
@@ -667,7 +669,7 @@ router.post("/procurement-quotations/:id/reject", async (req, res): Promise<void
 });
 
 // ── CANCEL ────────────────────────────────────────────────────────────────────
-router.post("/procurement-quotations/:id/cancel", async (req, res): Promise<void> => {
+router.post("/procurement-quotations/:id/cancel", requirePermission("procurement", "delete"), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const actor = getActor(req);
   const { userName = actor?.name ?? "System", userId = actor?.userId, userRole = actor?.role, remarks } = req.body;
@@ -689,7 +691,7 @@ router.post("/procurement-quotations/:id/cancel", async (req, res): Promise<void
 });
 
 // ── REOPEN (admin/director only) ──────────────────────────────────────────────
-router.post("/procurement-quotations/:id/reopen", async (req, res): Promise<void> => {
+router.post("/procurement-quotations/:id/reopen", requirePermission("procurement", "approve"), async (req, res): Promise<void> => {
   const actor = getActor(req);
   if (!actor) { res.status(401).json({ error: "Unauthorized" }); return; }
   if (!["admin", "director"].includes(actor.role)) {
@@ -745,7 +747,7 @@ router.post("/procurement-quotations/:id/reopen", async (req, res): Promise<void
 });
 
 // ── ADD COMMENT ───────────────────────────────────────────────────────────────
-router.post("/procurement-quotations/:id/comment", async (req, res): Promise<void> => {
+router.post("/procurement-quotations/:id/comment", requirePermission("procurement", "view"), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const actor = getActor(req);
   const { userName = actor?.name ?? "System", userId = actor?.userId, userRole = actor?.role, remarks } = req.body;
@@ -756,7 +758,7 @@ router.post("/procurement-quotations/:id/comment", async (req, res): Promise<voi
 });
 
 // ── ATTACHMENT: Request upload URL ────────────────────────────────────────────
-router.post("/procurement-quotations/:id/attachments/request-url", async (req, res): Promise<void> => {
+router.post("/procurement-quotations/:id/attachments/request-url", requirePermission("procurement", "edit"), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const [existing] = await db.select({ id: procurementQuotationsTable.id, status: procurementQuotationsTable.status })
     .from(procurementQuotationsTable).where(eq(procurementQuotationsTable.id, id));

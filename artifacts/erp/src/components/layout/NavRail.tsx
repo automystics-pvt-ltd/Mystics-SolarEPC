@@ -45,12 +45,13 @@ export type NavChild = {
   name: string;
   href: string;
   icon: React.ElementType;
-  roles?: string[];
+  /** sub-module permission key; omit to show to all who can view the parent group */
+  module?: string;
 };
 
 type RailEntry =
   | { type: "link";      key: string; icon: React.ElementType; label: string; href: string }
-  | { type: "group";     key: string; icon: React.ElementType; label: string; roles?: string[]; hasBadge?: boolean; items: NavChild[] }
+  | { type: "group";     key: string; icon: React.ElementType; label: string; hasBadge?: boolean; items: NavChild[] }
   | { type: "separator"; key: string };
 
 type HistoryEntry = { href: string; name: string; section: string; ts: number };
@@ -64,7 +65,6 @@ const RAIL: RailEntry[] = [
   { type: "separator", key: "s1" },
   {
     type: "group", key: "crm", icon: Users2, label: "Sales & CRM",
-    roles: ["admin","director","sales","pm"],
     items: [
       { name: "Leads",        href: "/crm/leads",       icon: Users },
       { name: "Quotations",   href: "/crm/quotations",  icon: FileText },
@@ -77,21 +77,19 @@ const RAIL: RailEntry[] = [
   {
     type: "group", key: "procurement", icon: ShoppingCart, label: "Procurement",
     hasBadge: true,
-    roles: ["admin","director","pm","warehouse","finance"],
     items: [
       { name: "Dashboard",          href: "/procurement/dashboard",   icon: BarChart2 },
-      { name: "Vendors",            href: "/procurement/vendors",     icon: Building2,    roles: ["admin","director","pm"] },
-      { name: "Materials",          href: "/procurement/materials",   icon: Package,      roles: ["admin","director","pm"] },
-      { name: "Vendor Quotations",  href: "/procurement/quotations",  icon: ClipboardList,roles: ["admin","director","pm"] },
+      { name: "Vendors",            href: "/procurement/vendors",     icon: Building2 },
+      { name: "Materials",          href: "/procurement/materials",   icon: Package },
+      { name: "Vendor Quotations",  href: "/procurement/quotations",  icon: ClipboardList },
       { name: "Purchase Orders",    href: "/procurement/pos",         icon: ShoppingCart },
       { name: "GRNs",               href: "/procurement/grns",        icon: Boxes },
-      { name: "GRN Returns",        href: "/procurement/grn-returns", icon: RotateCcw,    roles: ["admin","director","pm","warehouse"] },
-      { name: "Invoices",           href: "/procurement/invoices",    icon: FilePlus,     roles: ["admin","director","pm","finance"] },
+      { name: "GRN Returns",        href: "/procurement/grn-returns", icon: RotateCcw },
+      { name: "Invoices",           href: "/procurement/invoices",    icon: FilePlus },
     ],
   },
   {
     type: "group", key: "projects", icon: FolderKanban, label: "Projects",
-    roles: ["admin","director","pm","sales"],
     items: [
       { name: "Projects Hub", href: "/projects",             icon: FolderKanban },
       { name: "Contractors",  href: "/projects/contractors", icon: HardHat },
@@ -99,7 +97,6 @@ const RAIL: RailEntry[] = [
   },
   {
     type: "group", key: "inventory", icon: Warehouse, label: "Inventory",
-    roles: ["admin","director","warehouse","pm"],
     items: [
       { name: "Dashboard",         href: "/inventory/dashboard",         icon: LayoutDashboard },
       { name: "Stock Summary",     href: "/inventory/stock-levels",      icon: Boxes },
@@ -116,21 +113,18 @@ const RAIL: RailEntry[] = [
   },
   {
     type: "group", key: "engineering", icon: FileCode, label: "Engineering",
-    roles: ["admin","director","pm"],
     items: [
       { name: "Design Documents", href: "/engineering/docs", icon: Layers },
     ],
   },
   {
     type: "group", key: "commissioning", icon: CheckCircle2, label: "Commissioning",
-    roles: ["admin","director","pm"],
     items: [
       { name: "Checklists", href: "/commissioning", icon: CheckCircle2 },
     ],
   },
   {
     type: "group", key: "oam", icon: Wrench, label: "O&M & AMC",
-    roles: ["admin","director","pm"],
     items: [
       { name: "AMC Contracts",   href: "/oam/amc",        icon: FileText },
       { name: "Maintenance",     href: "/oam/maintenance", icon: Calendar },
@@ -140,7 +134,6 @@ const RAIL: RailEntry[] = [
   { type: "separator", key: "s2" },
   {
     type: "group", key: "finance", icon: DollarSign, label: "Finance & Reports",
-    roles: ["admin","director","finance"],
     items: [
       { name: "Finance Dashboard",  href: "/finance/dashboard", icon: DollarSign },
       { name: "Reports",            href: "/reports",           icon: BarChart3 },
@@ -149,11 +142,10 @@ const RAIL: RailEntry[] = [
   },
   {
     type: "group", key: "admin", icon: Settings2, label: "Administration",
-    roles: ["admin","director"],
     items: [
       { name: "User Management", href: "/admin/users",      icon: UserCog  },
       { name: "Audit Logs",      href: "/admin/audit-logs", icon: ScrollText },
-      { name: "Access Control",  href: "/admin/rbac",       icon: Shield,  roles: ["admin"] },
+      { name: "Access Control",  href: "/admin/rbac",       icon: Shield,  module: "admin" },
     ],
   },
 ];
@@ -545,6 +537,7 @@ function ModuleFlyout({
   favorites,
   onNav,
   onFavToggle,
+  permMap,
 }: {
   section: Extract<RailEntry, { type: "group" }>;
   role: string;
@@ -553,8 +546,14 @@ function ModuleFlyout({
   favorites: Set<string>;
   onNav: () => void;
   onFavToggle: (href: string) => void;
+  permMap?: Record<string, Record<string, boolean>>;
 }) {
-  const visibleItems = section.items.filter((item) => !item.roles || item.roles.includes(role));
+  const visibleItems = section.items.filter((item) => {
+    if (role === "admin") return true;
+    if (!item.module) return true; // no sub-module restriction
+    if (!permMap) return true; // still loading
+    return permMap[item.module]?.view === true;
+  });
 
   // Pinned items in this module
   const pinned = visibleItems.filter((item) => favorites.has(item.href));
@@ -672,18 +671,15 @@ export function NavRail() {
     refetchOnWindowFocus: false,
   });
 
-  // Filter by role first (fast), then by RBAC view permission (cached)
+  // Filter by RBAC permission map — DB-backed, no hardcoded role arrays
   const visible = RAIL.filter((e) => {
     if (e.type === "separator") return true;
     if (e.type === "group") {
-      if (e.roles && !e.roles.includes(role)) return false;
-      if (role !== "admin" && permMap) return permMap[e.key]?.view !== false;
-      return true;
+      if (role === "admin") return true;
+      if (!permMap) return true; // still loading — show all (server auth enforced)
+      return permMap[e.key]?.view !== false;
     }
-    if (e.type === "link") {
-      if (role !== "admin" && permMap) return permMap[e.key]?.view !== false;
-      return true;
-    }
+    if (e.type === "link") return true; // Dashboard + Approvals visible to all authenticated users
     return true;
   }) as RailEntry[];
 
@@ -889,6 +885,7 @@ export function NavRail() {
                   favorites={favorites}
                   onNav={closeFlyout}
                   onFavToggle={toggleFavorite}
+                  permMap={permMap}
                 />
               )}
             </motion.div>

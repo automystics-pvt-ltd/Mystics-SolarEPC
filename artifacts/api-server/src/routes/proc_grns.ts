@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import { requireAuth, requirePermission } from "../lib/rbac";
 import {
   db, procGRNsTable, procGRNItemsTable, procGRNAuditLogsTable,
   procurementPOsTable, procPOItemsTable, procPOAuditLogsTable,
@@ -8,6 +9,7 @@ import { eq, desc, and, sql } from "drizzle-orm";
 import pg from "pg";
 
 const router: IRouter = Router();
+router.use(requireAuth());
 
 let grnCounter = 1;
 (async () => {
@@ -163,7 +165,7 @@ router.get("/proc-grns/:id", async (req, res): Promise<void> => {
 });
 
 // ── CREATE ────────────────────────────────────────────────────────────────────
-router.post("/proc-grns", async (req, res): Promise<void> => {
+router.post("/proc-grns", requirePermission("procurement", "create"), async (req, res): Promise<void> => {
   const { poId, items: itemsBody = [], userName = "System", userId, userRole,
     warehouseId, warehouseName, storageLocation, ...body } = req.body;
 
@@ -276,7 +278,7 @@ router.post("/proc-grns", async (req, res): Promise<void> => {
 });
 
 // ── SUBMIT FOR INSPECTION ─────────────────────────────────────────────────────
-router.post("/proc-grns/:id/submit", async (req, res): Promise<void> => {
+router.post("/proc-grns/:id/submit", requirePermission("procurement", "edit"), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const { userName = "System", userId, remarks } = req.body;
   const [existing] = await db.select().from(procGRNsTable).where(eq(procGRNsTable.id, id));
@@ -296,7 +298,7 @@ router.post("/proc-grns/:id/submit", async (req, res): Promise<void> => {
 });
 
 // ── APPROVE ───────────────────────────────────────────────────────────────────
-router.post("/proc-grns/:id/approve", async (req, res): Promise<void> => {
+router.post("/proc-grns/:id/approve", requirePermission("procurement", "approve"), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const { userName = "System", userId, remarks } = req.body;
   if (!remarks) { res.status(400).json({ error: "Remarks are required for GRN approval" }); return; }
@@ -390,7 +392,7 @@ router.post("/proc-grns/:id/approve", async (req, res): Promise<void> => {
 });
 
 // ── REJECT ────────────────────────────────────────────────────────────────────
-router.post("/proc-grns/:id/reject", async (req, res): Promise<void> => {
+router.post("/proc-grns/:id/reject", requirePermission("procurement", "approve"), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const { userName = "System", userId, remarks } = req.body;
   if (!remarks) { res.status(400).json({ error: "Remarks are required for GRN rejection" }); return; }
@@ -419,7 +421,7 @@ router.post("/proc-grns/:id/reject", async (req, res): Promise<void> => {
 });
 
 // ── CANCEL ────────────────────────────────────────────────────────────────────
-router.post("/proc-grns/:id/cancel", async (req, res): Promise<void> => {
+router.post("/proc-grns/:id/cancel", requirePermission("procurement", "edit"), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const { userName = "System", userId, reason } = req.body;
   if (!reason) { res.status(400).json({ error: "Cancellation reason is required" }); return; }
@@ -451,7 +453,7 @@ router.post("/proc-grns/:id/cancel", async (req, res): Promise<void> => {
 // ── REVERSE ───────────────────────────────────────────────────────────────────
 // Reverses an Accepted/PartiallyAccepted GRN: undoes PO delivery quantities
 // and writes Outward stock ledger entries.
-router.post("/proc-grns/:id/reverse", async (req, res): Promise<void> => {
+router.post("/proc-grns/:id/reverse", requirePermission("procurement", "approve"), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const { userName = "System", userId, reason } = req.body;
   if (!reason) { res.status(400).json({ error: "Reversal reason is required" }); return; }
@@ -528,7 +530,7 @@ router.get("/proc-grns/:id/comments", async (req, res): Promise<void> => {
   })));
 });
 
-router.post("/proc-grns/:id/comments", async (req, res): Promise<void> => {
+router.post("/proc-grns/:id/comments", requirePermission("procurement", "view"), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const { userId, userName, userRole, body, parentId } = req.body;
   if (!body?.trim()) { res.status(400).json({ error: "Comment body is required" }); return; }
@@ -554,7 +556,7 @@ router.post("/proc-grns/:id/comments", async (req, res): Promise<void> => {
   });
 });
 
-router.delete("/proc-grns/:id/comments/:commentId", async (req, res): Promise<void> => {
+router.delete("/proc-grns/:id/comments/:commentId", requirePermission("procurement", "delete"), async (req, res): Promise<void> => {
   const grnId = Number(req.params.id);
   const commentId = Number(req.params.commentId);
   const [comment] = await db.select().from(grnCommentsTable).where(

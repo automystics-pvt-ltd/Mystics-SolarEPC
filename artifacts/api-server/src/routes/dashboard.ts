@@ -1,8 +1,10 @@
 import { Router, type IRouter } from "express";
+import { requireAuth } from "../lib/rbac";
 import { db, leadsTable, projectsTable, escalationsTable, tasksTable, crmInvoicesTable, paymentMilestonesTable, dprsTable } from "@workspace/db";
 import { eq, and, gt, lt, sql, desc, or } from "drizzle-orm";
 
 const router: IRouter = Router();
+router.use(requireAuth());
 
 router.get("/dashboard", async (req, res): Promise<void> => {
   const [leadsCount] = await db.select({ count: sql<number>`count(*)` }).from(leadsTable);

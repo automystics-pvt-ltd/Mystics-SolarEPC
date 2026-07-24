@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import { requireAuth, requirePermission } from "../lib/rbac";
 import { db, projectsTable, activitiesTable, budgetsTable, dprsTable, paymentMilestonesTable, expensesTable, crmInvoicesTable, clientPOsTable, escalationsTable, materialRequestsTable, purchaseOrdersTable, snagLogsTable } from "@workspace/db";
 import { z } from "zod";
 import { eq, desc, sql, and } from "drizzle-orm";
@@ -11,6 +12,7 @@ import {
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
+router.use(requireAuth());
 
 function fmtProject(p: typeof projectsTable.$inferSelect) {
   return { id: p.id, clientPoId: p.clientPoId, name: p.name, siteLocation: p.siteLocation, pmOwnerId: p.pmOwnerId, pmOwnerName: null, startDate: p.startDate, plannedEnd: p.plannedEnd, status: p.status, parentProjectId: p.parentProjectId, contractValue: p.contractValue ? Number(p.contractValue) : null, percentComplete: p.percentComplete, createdAt: p.createdAt.toISOString() };
@@ -57,7 +59,7 @@ router.get("/projects", async (req, res): Promise<void> => {
   res.json(rows.map(fmtProject));
 });
 
-router.post("/projects", async (req, res): Promise<void> => {
+router.post("/projects", requirePermission("projects", "create"), async (req, res): Promise<void> => {
   const parsed = CreateProjectBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const [row] = await db.insert(projectsTable).values({ ...parsed.data, contractValue: parsed.data.contractValue?.toString() }).returning();
@@ -72,7 +74,7 @@ router.get("/projects/:id", async (req, res): Promise<void> => {
   res.json(fmtProject(row));
 });
 
-router.patch("/projects/:id", async (req, res): Promise<void> => {
+router.patch("/projects/:id", requirePermission("projects", "edit"), async (req, res): Promise<void> => {
   const params = UpdateProjectParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const parsed = UpdateProjectBody.safeParse(req.body);
@@ -134,7 +136,7 @@ router.get("/projects/:id/activities", async (req, res): Promise<void> => {
   res.json(rows.map(fmtActivity));
 });
 
-router.post("/projects/:id/activities", async (req, res): Promise<void> => {
+router.post("/projects/:id/activities", requirePermission("projects", "create"), async (req, res): Promise<void> => {
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const projectId = parseInt(raw, 10);
   const parsed = CreateActivityBody.safeParse(req.body);
@@ -143,7 +145,7 @@ router.post("/projects/:id/activities", async (req, res): Promise<void> => {
   res.status(201).json(fmtActivity(row));
 });
 
-router.patch("/activities/:id", async (req, res): Promise<void> => {
+router.patch("/activities/:id", requirePermission("projects", "edit"), async (req, res): Promise<void> => {
   const params = UpdateActivityParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const parsed = UpdateActivityBody.safeParse(req.body);
@@ -160,7 +162,7 @@ router.get("/dprs", async (req, res): Promise<void> => {
   res.json(rows.map(fmtDPR));
 });
 
-router.post("/dprs", async (req, res): Promise<void> => {
+router.post("/dprs", requirePermission("projects", "create"), async (req, res): Promise<void> => {
   const parsed = CreateDPRBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const [row] = await db.insert(dprsTable).values({ ...parsed.data, photos: parsed.data.photos ?? [] }).returning();
@@ -175,7 +177,7 @@ router.get("/projects/:id/payment-milestones", async (req, res): Promise<void> =
   res.json(rows.map(fmtMilestone));
 });
 
-router.post("/projects/:id/payment-milestones", async (req, res): Promise<void> => {
+router.post("/projects/:id/payment-milestones", requirePermission("projects", "create"), async (req, res): Promise<void> => {
   const params = CreatePaymentMilestoneParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const parsed = CreatePaymentMilestoneBody.safeParse(req.body);
@@ -184,7 +186,7 @@ router.post("/projects/:id/payment-milestones", async (req, res): Promise<void> 
   res.status(201).json(fmtMilestone(row));
 });
 
-router.post("/payment-milestones/:id/trigger", async (req, res): Promise<void> => {
+router.post("/payment-milestones/:id/trigger", requirePermission("projects", "approve"), async (req, res): Promise<void> => {
   const params = TriggerPaymentMilestoneParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const [milestone] = await db.select().from(paymentMilestonesTable).where(eq(paymentMilestonesTable.id, params.data.id));
@@ -204,14 +206,14 @@ router.get("/expenses", async (req, res): Promise<void> => {
   res.json(rows.map(fmtExpense));
 });
 
-router.post("/expenses", async (req, res): Promise<void> => {
+router.post("/expenses", requirePermission("projects", "create"), async (req, res): Promise<void> => {
   const parsed = CreateExpenseBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const [row] = await db.insert(expensesTable).values({ ...parsed.data, amount: parsed.data.amount.toString() }).returning();
   res.status(201).json(fmtExpense(row));
 });
 
-router.post("/expenses/:id/approve", async (req, res): Promise<void> => {
+router.post("/expenses/:id/approve", requirePermission("projects", "approve"), async (req, res): Promise<void> => {
   const params = ApproveExpenseParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const body = ApproveExpenseBody.safeParse(req.body);
@@ -229,7 +231,7 @@ router.get("/budgets", async (req, res): Promise<void> => {
   res.json(rows.map(fmtBudget));
 });
 
-router.post("/budgets", async (req, res): Promise<void> => {
+router.post("/budgets", requirePermission("projects", "create"), async (req, res): Promise<void> => {
   const parsed = CreateBudgetBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const [row] = await db.insert(budgetsTable).values({ ...parsed.data, budgetedAmount: parsed.data.budgetedAmount.toString() }).returning();
@@ -261,7 +263,7 @@ router.get("/projects/:id/snags", async (req, res): Promise<void> => {
   res.json(rows.map(fmtSnag));
 });
 
-router.post("/projects/:id/snags", async (req, res): Promise<void> => {
+router.post("/projects/:id/snags", requirePermission("projects", "create"), async (req, res): Promise<void> => {
   const projectId = Number(req.params.id);
   const parsed = CreateSnagBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
@@ -269,7 +271,7 @@ router.post("/projects/:id/snags", async (req, res): Promise<void> => {
   res.status(201).json(fmtSnag(row));
 });
 
-router.patch("/snags/:id/resolve", async (req, res): Promise<void> => {
+router.patch("/snags/:id/resolve", requirePermission("projects", "edit"), async (req, res): Promise<void> => {
   const parsed = ResolveSnagBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const [updated] = await db.update(snagLogsTable).set({ status: "Resolved", resolvedAt: new Date(), resolution: parsed.data.resolution }).where(eq(snagLogsTable.id, Number(req.params.id))).returning();
@@ -277,7 +279,7 @@ router.patch("/snags/:id/resolve", async (req, res): Promise<void> => {
   res.json(fmtSnag(updated));
 });
 
-router.patch("/snags/:id", async (req, res): Promise<void> => {
+router.patch("/snags/:id", requirePermission("projects", "edit"), async (req, res): Promise<void> => {
   const [updated] = await db.update(snagLogsTable).set(req.body).where(eq(snagLogsTable.id, Number(req.params.id))).returning();
   if (!updated) { res.status(404).json({ error: "Snag not found" }); return; }
   res.json(fmtSnag(updated));

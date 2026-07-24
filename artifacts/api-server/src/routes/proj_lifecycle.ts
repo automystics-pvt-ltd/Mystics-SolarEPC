@@ -3,9 +3,11 @@
  * All queries use pg.Client (new tables not in Drizzle schema)
  */
 import { Router, type IRouter } from "express";
+import { requireAuth, requirePermission } from "../lib/rbac";
 import pg from "pg";
 
 const router: IRouter = Router();
+router.use(requireAuth());
 
 async function withClient<T>(fn: (c: pg.Client) => Promise<T>): Promise<T> {
   const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
@@ -49,9 +51,9 @@ router.get("/projects/:id/phases", async (req, res): Promise<void> => {
   });
 });
 
-router.patch("/projects/:id/phases/:phase", async (req, res): Promise<void> => {
-  const projectId = parseInt(req.params.id, 10);
-  const { phase } = req.params;
+router.patch("/projects/:id/phases/:phase", requirePermission("projects", "edit"), async (req, res): Promise<void> => {
+  const projectId = parseInt(req.params.id as string, 10);
+  const phase = req.params.phase as string;
   if (!PHASE_ORDER.includes(phase)) { res.status(400).json({ error: "Invalid phase" }); return; }
   const { status, notes } = req.body;
   await withClient(async (c) => {
@@ -82,8 +84,8 @@ router.get("/projects/:id/site-surveys", async (req, res): Promise<void> => {
   });
 });
 
-router.post("/projects/:id/site-surveys", async (req, res): Promise<void> => {
-  const projectId = parseInt(req.params.id, 10);
+router.post("/projects/:id/site-surveys", requirePermission("projects", "create"), async (req, res): Promise<void> => {
+  const projectId = parseInt(req.params.id as string, 10);
   const b = req.body;
   await withClient(async (c) => {
     const { rows } = await c.query(
@@ -106,8 +108,8 @@ router.post("/projects/:id/site-surveys", async (req, res): Promise<void> => {
   });
 });
 
-router.patch("/project-site-surveys/:id", async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id, 10);
+router.patch("/project-site-surveys/:id", requirePermission("projects", "edit"), async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id as string, 10);
   const b = req.body;
   await withClient(async (c) => {
     const fields: string[] = [];
@@ -168,8 +170,8 @@ router.get("/projects/:id/boq", async (req, res): Promise<void> => {
   });
 });
 
-router.post("/projects/:id/boq", async (req, res): Promise<void> => {
-  const projectId = parseInt(req.params.id, 10);
+router.post("/projects/:id/boq", requirePermission("projects", "create"), async (req, res): Promise<void> => {
+  const projectId = parseInt(req.params.id as string, 10);
   const b = req.body;
   await withClient(async (c) => {
     const { rows } = await c.query(
@@ -185,8 +187,8 @@ router.post("/projects/:id/boq", async (req, res): Promise<void> => {
   });
 });
 
-router.patch("/boq-items/:id", async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id, 10);
+router.patch("/boq-items/:id", requirePermission("projects", "edit"), async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id as string, 10);
   const b = req.body;
   await withClient(async (c) => {
     const fields: string[] = [];
@@ -214,8 +216,8 @@ router.patch("/boq-items/:id", async (req, res): Promise<void> => {
   });
 });
 
-router.delete("/boq-items/:id", async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id, 10);
+router.delete("/boq-items/:id", requirePermission("projects", "delete"), async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id as string, 10);
   await withClient(async (c) => {
     const { rowCount } = await c.query(`DELETE FROM project_boq_items WHERE id = $1`, [id]);
     if (!rowCount) { res.status(404).json({ error: "BOQ item not found" }); return; }
@@ -223,8 +225,8 @@ router.delete("/boq-items/:id", async (req, res): Promise<void> => {
   });
 });
 
-router.post("/projects/:id/boq/import-from-quotation", async (req, res): Promise<void> => {
-  const projectId = parseInt(req.params.id, 10);
+router.post("/projects/:id/boq/import-from-quotation", requirePermission("projects", "create"), async (req, res): Promise<void> => {
+  const projectId = parseInt(req.params.id as string, 10);
   await withClient(async (c) => {
     // Get project's clientPoId → find quotation line items
     const { rows: proj } = await c.query(`SELECT client_po_id FROM projects WHERE id = $1`, [projectId]);
@@ -294,8 +296,8 @@ router.get("/projects/:id/change-requests", async (req, res): Promise<void> => {
   });
 });
 
-router.post("/projects/:id/change-requests", async (req, res): Promise<void> => {
-  const projectId = parseInt(req.params.id, 10);
+router.post("/projects/:id/change-requests", requirePermission("projects", "create"), async (req, res): Promise<void> => {
+  const projectId = parseInt(req.params.id as string, 10);
   const b = req.body;
   await withClient(async (c) => {
     // Generate CR number: CR-{projectId}-{seq}
@@ -315,8 +317,8 @@ router.post("/projects/:id/change-requests", async (req, res): Promise<void> => 
   });
 });
 
-router.patch("/change-requests/:id", async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id, 10);
+router.patch("/change-requests/:id", requirePermission("projects", "edit"), async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id as string, 10);
   const b = req.body;
   await withClient(async (c) => {
     const fields: string[] = [];
@@ -375,8 +377,8 @@ router.get("/projects/:id/risks", async (req, res): Promise<void> => {
   });
 });
 
-router.post("/projects/:id/risks", async (req, res): Promise<void> => {
-  const projectId = parseInt(req.params.id, 10);
+router.post("/projects/:id/risks", requirePermission("projects", "create"), async (req, res): Promise<void> => {
+  const projectId = parseInt(req.params.id as string, 10);
   const b = req.body;
   const riskScore = (PROB_SCORE[b.probability] ?? 1) * (IMPACT_SCORE[b.impact] ?? 1);
   await withClient(async (c) => {
@@ -391,8 +393,8 @@ router.post("/projects/:id/risks", async (req, res): Promise<void> => {
   });
 });
 
-router.patch("/risks/:id", async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id, 10);
+router.patch("/risks/:id", requirePermission("projects", "edit"), async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id as string, 10);
   const b = req.body;
   await withClient(async (c) => {
     const fields: string[] = [];
@@ -515,8 +517,8 @@ router.get("/projects/:id/boq/material-status", async (req, res): Promise<void> 
 });
 
 /** Create material requests for all Procurement-sourced BOQ lines not yet fully allocated */
-router.post("/projects/:id/boq/create-material-requests", async (req, res): Promise<void> => {
-  const projectId = parseInt(req.params.id, 10);
+router.post("/projects/:id/boq/create-material-requests", requirePermission("projects", "create"), async (req, res): Promise<void> => {
+  const projectId = parseInt(req.params.id as string, 10);
   const { requestedBy } = req.body;
 
   await withClient(async (c) => {
@@ -560,8 +562,8 @@ router.post("/projects/:id/boq/create-material-requests", async (req, res): Prom
 });
 
 /** Reserve inventory for all Inventory-sourced BOQ lines with stock availability validation */
-router.post("/projects/:id/boq/reserve-inventory", async (req, res): Promise<void> => {
-  const projectId = parseInt(req.params.id, 10);
+router.post("/projects/:id/boq/reserve-inventory", requirePermission("projects", "edit"), async (req, res): Promise<void> => {
+  const projectId = parseInt(req.params.id as string, 10);
 
   await withClient(async (c) => {
     const { rows: items } = await c.query(

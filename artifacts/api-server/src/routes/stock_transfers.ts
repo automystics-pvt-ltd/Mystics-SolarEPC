@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import { requireAuth, requirePermission } from "../lib/rbac";
 import {
   db, stockTransfersTable, stockTransferItemsTable,
   warehousesTable, stockLedgerTable,
@@ -6,6 +7,7 @@ import {
 import { eq, desc } from "drizzle-orm";
 
 const router: IRouter = Router();
+router.use(requireAuth());
 
 let txCounter = 1;
 (async () => {
@@ -59,7 +61,7 @@ router.get("/stock-transfers/:id", async (req, res): Promise<void> => {
 });
 
 // POST /stock-transfers — create
-router.post("/stock-transfers", async (req, res): Promise<void> => {
+router.post("/stock-transfers", requirePermission("inventory", "create"), async (req, res): Promise<void> => {
   try {
     const { fromWarehouseId, toWarehouseId, reason, transferDate, remarks, items = [],
       userName = "System", userId } = req.body;
@@ -95,7 +97,7 @@ router.post("/stock-transfers", async (req, res): Promise<void> => {
 });
 
 // PATCH /stock-transfers/:id/approve
-router.patch("/stock-transfers/:id/approve", async (req, res): Promise<void> => {
+router.patch("/stock-transfers/:id/approve", requirePermission("inventory", "approve"), async (req, res): Promise<void> => {
   try {
     const id = Number(req.params.id);
     const { userName = "System", userId } = req.body;
@@ -107,7 +109,7 @@ router.patch("/stock-transfers/:id/approve", async (req, res): Promise<void> => 
 });
 
 // PATCH /stock-transfers/:id/complete — mark InTransit then Completed, update stock ledger
-router.patch("/stock-transfers/:id/complete", async (req, res): Promise<void> => {
+router.patch("/stock-transfers/:id/complete", requirePermission("inventory", "edit"), async (req, res): Promise<void> => {
   try {
     const id = Number(req.params.id);
     const { userName = "System", userId, completedDate } = req.body;
@@ -145,7 +147,7 @@ router.patch("/stock-transfers/:id/complete", async (req, res): Promise<void> =>
 });
 
 // PATCH /stock-transfers/:id/cancel
-router.patch("/stock-transfers/:id/cancel", async (req, res): Promise<void> => {
+router.patch("/stock-transfers/:id/cancel", requirePermission("inventory", "delete"), async (req, res): Promise<void> => {
   try {
     const id = Number(req.params.id);
     const { userName = "System", userId } = req.body;

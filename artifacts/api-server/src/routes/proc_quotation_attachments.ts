@@ -5,6 +5,7 @@
  * Attachments are included in GET /procurement-quotations/:id via fmtQ helper
  */
 import { Router, type IRouter, type Request } from "express";
+import { requireAuth, requirePermission } from "../lib/rbac";
 import { db, quotationAttachmentsTable, quotationAuditLogsTable, procurementQuotationsTable } from "@workspace/db";
 import { and, eq } from "drizzle-orm";
 import { ObjectStorageService } from "../lib/objectStorage";
@@ -24,7 +25,7 @@ function getActor(req: Request): { userId: number; role: string; name?: string }
 // POST /procurement-quotations/:id/attachments
 // Body: { fileName, fileSize, mimeType }   — actor identity derived from JWT
 // Returns: { uploadURL, attachment }
-router.post("/procurement-quotations/:id/attachments", async (req, res): Promise<void> => {
+router.post("/procurement-quotations/:id/attachments", requirePermission("procurement", "edit"), async (req, res): Promise<void> => {
   const actor = getActor(req);
   if (!actor) { res.status(401).json({ error: "Unauthorized" }); return; }
 
@@ -79,7 +80,7 @@ router.post("/procurement-quotations/:id/attachments", async (req, res): Promise
 
 // DELETE /procurement-quotations/:id/attachments/:attachmentId
 // Actor identity derived from JWT — role checked server-side.
-router.delete("/procurement-quotations/:id/attachments/:attachmentId", async (req, res): Promise<void> => {
+router.delete("/procurement-quotations/:id/attachments/:attachmentId", requirePermission("procurement", "delete"), async (req, res): Promise<void> => {
   const actor = getActor(req);
   if (!actor) { res.status(401).json({ error: "Unauthorized" }); return; }
 

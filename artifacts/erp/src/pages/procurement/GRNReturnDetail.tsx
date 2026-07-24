@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { CheckCircle2, Truck, Lock, Send, Loader2, PackageX, Clock, Printer } from "lucide-react";
 import { apiGet, apiPatch } from "@/lib/fetch";
 import { useAuth } from "@/lib/auth";
+import { usePermissions } from "@/lib/permissions";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { PageHeader, SectionCard, StatusBadge, DetailGrid, DetailRow } from "@/components/shared";
@@ -79,7 +80,7 @@ export default function GRNReturnDetail({ id }: { id: string }) {
     </div>
   );
 
-  const isAdmin = user?.role === "admin" || user?.role === "director";
+  const { canApprove: isAdmin } = usePermissions("procurement");
   const currentIdx = STEPS.indexOf(rtv.status);
 
   const workflowActions = (

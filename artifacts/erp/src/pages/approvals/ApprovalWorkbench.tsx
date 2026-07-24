@@ -6,6 +6,7 @@ import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
+import { CanApprove } from "@/lib/permissions";
 import { useToast } from "@/components/ui/use-toast";
 import { apiGet, apiPost, apiPatch, apiDelete } from "@/lib/fetch";
 import { ExternalLink } from "lucide-react";
@@ -1094,14 +1095,18 @@ function RequestList({ items, loading, tab, user, onOpen, onApprove, onReject, o
             <div className="flex items-center gap-3 px-4 py-2.5 bg-primary/5 border-b border-primary/20">
               <span className="text-[12px] font-semibold text-primary">{selected.size} selected</span>
               <div className="flex gap-2 ml-auto">
-                <Button size="sm" className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5"
-                  onClick={() => { onBulkApprove([...selected]); setSelected(new Set()); }}>
-                  <Check className="h-3 w-3" />Approve All
-                </Button>
-                <Button size="sm" variant="outline" className="h-7 text-xs border-red-300 text-red-600 hover:bg-red-50 gap-1.5"
-                  onClick={() => { onBulkReject([...selected]); setSelected(new Set()); }}>
-                  <X className="h-3 w-3" />Reject All
-                </Button>
+                <CanApprove module="approvals">
+                  <Button size="sm" className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5"
+                    onClick={() => { onBulkApprove([...selected]); setSelected(new Set()); }}>
+                    <Check className="h-3 w-3" />Approve All
+                  </Button>
+                </CanApprove>
+                <CanApprove module="approvals">
+                  <Button size="sm" variant="outline" className="h-7 text-xs border-red-300 text-red-600 hover:bg-red-50 gap-1.5"
+                    onClick={() => { onBulkReject([...selected]); setSelected(new Set()); }}>
+                    <X className="h-3 w-3" />Reject All
+                  </Button>
+                </CanApprove>
                 <Button size="sm" variant="ghost" className="h-7 text-xs text-muted-foreground"
                   onClick={() => setSelected(new Set())}>Clear</Button>
               </div>

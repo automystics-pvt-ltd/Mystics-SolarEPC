@@ -1,9 +1,11 @@
 import { Router, type IRouter } from "express";
+import { requireAuth, requirePermission } from "../lib/rbac";
 import { db, commissioningChecklistsTable, commissioningItemsTable, complianceDocumentsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
 
 const router: IRouter = Router();
+router.use(requireAuth());
 
 const CreateChecklistBody = z.object({
   projectId: z.number(),
@@ -82,7 +84,7 @@ router.get("/commissioning-checklists", async (req, res): Promise<void> => {
 });
 
 // Create checklist (auto-populates default items)
-router.post("/commissioning-checklists", async (req, res): Promise<void> => {
+router.post("/commissioning-checklists", requirePermission("commissioning", "create"), async (req, res): Promise<void> => {
   const parsed = CreateChecklistBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error }); return; }
   const [cl] = await db.insert(commissioningChecklistsTable).values({ ...parsed.data, status: "InProgress" }).returning();
@@ -101,7 +103,7 @@ router.get("/commissioning-checklists/:id", async (req, res): Promise<void> => {
 });
 
 // Add checklist item
-router.post("/commissioning-checklists/:id/items", async (req, res): Promise<void> => {
+router.post("/commissioning-checklists/:id/items", requirePermission("commissioning", "create"), async (req, res): Promise<void> => {
   const checklistId = Number(req.params.id);
   const parsed = CreateItemBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error }); return; }
@@ -110,7 +112,7 @@ router.post("/commissioning-checklists/:id/items", async (req, res): Promise<voi
 });
 
 // Toggle checklist item done/undone
-router.patch("/commissioning-items/:itemId", async (req, res): Promise<void> => {
+router.patch("/commissioning-items/:itemId", requirePermission("commissioning", "edit"), async (req, res): Promise<void> => {
   const itemId = Number(req.params.itemId);
   const parsed = ToggleItemBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error }); return; }
@@ -129,7 +131,7 @@ router.patch("/commissioning-items/:itemId", async (req, res): Promise<void> => 
 });
 
 // Client sign-off
-router.post("/commissioning-checklists/:id/signoff", async (req, res): Promise<void> => {
+router.post("/commissioning-checklists/:id/signoff", requirePermission("commissioning", "approve"), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const parsed = ClientSignoffBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error }); return; }
@@ -150,14 +152,14 @@ router.get("/compliance-documents", async (req, res): Promise<void> => {
   res.json((await query).map(fmtDoc));
 });
 
-router.post("/compliance-documents", async (req, res): Promise<void> => {
+router.post("/compliance-documents", requirePermission("commissioning", "create"), async (req, res): Promise<void> => {
   const parsed = CreateComplianceDocBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error }); return; }
   const [row] = await db.insert(complianceDocumentsTable).values(parsed.data).returning();
   res.status(201).json(fmtDoc(row));
 });
 
-router.patch("/compliance-documents/:id", async (req, res): Promise<void> => {
+router.patch("/compliance-documents/:id", requirePermission("commissioning", "edit"), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const [updated] = await db.update(complianceDocumentsTable).set(req.body).where(eq(complianceDocumentsTable.id, id)).returning();
   if (!updated) { res.status(404).json({ error: "Not found" }); return; }

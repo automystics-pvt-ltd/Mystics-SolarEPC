@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, FolderKanban, MapPin, UserCircle } from "lucide-react";
+import { CanCreate } from "@/lib/permissions";
 import { SkeletonList, EmptyState } from "@/components/shared";
 import { Link } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -76,7 +77,8 @@ export function ProjectsList() {
           <p className="text-sm font-medium text-gray-500 mt-1">Manage execution, budgets, and site milestones.</p>
         </div>
         
-        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <CanCreate module="projects">
+          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
             <Button className="bg-[#0C1445] hover:bg-[#0A0F2C] text-white font-bold tracking-wide rounded-[8px] h-10 px-5 shadow-sm">
               <Plus className="h-4 w-4 mr-2" /> New Project
@@ -132,6 +134,7 @@ export function ProjectsList() {
             </Form>
           </DialogContent>
         </Dialog>
+          </CanCreate>
       </div>
 
       {/* KPI Cards */}

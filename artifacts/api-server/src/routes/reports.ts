@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import { requireAuth, requirePermission } from "../lib/rbac";
 import {
   db, procurementPOsTable, procGRNsTable, procGRNItemsTable,
   procInvoicesTable, stockLedgerTable, stockValuationTable,
@@ -9,6 +10,7 @@ import { desc, sql, gte, lte, and, eq } from "drizzle-orm";
 import { deriveCategory } from "../lib/category-rules";
 
 const router: IRouter = Router();
+router.use(requirePermission("reports", "view"));
 
 function n(v: unknown) { return v !== null && v !== undefined ? Number(v) : 0; }
 

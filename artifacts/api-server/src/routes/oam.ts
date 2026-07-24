@@ -1,9 +1,11 @@
 import { Router, type IRouter } from "express";
+import { requireAuth, requirePermission } from "../lib/rbac";
 import { db, amcContractsTable, maintenanceSchedulesTable, serviceTicketsTable } from "@workspace/db";
 import { eq, desc, and } from "drizzle-orm";
 import { z } from "zod";
 
 const router: IRouter = Router();
+router.use(requireAuth());
 
 let ticketCounter = 1;
 let amcCounter = 1;
@@ -69,7 +71,7 @@ router.get("/amc-contracts", async (req, res): Promise<void> => {
   res.json((await query).map(fmtAmc));
 });
 
-router.post("/amc-contracts", async (req, res): Promise<void> => {
+router.post("/amc-contracts", requirePermission("oam", "create"), async (req, res): Promise<void> => {
   const parsed = CreateAmcBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error }); return; }
   const contractNumber = `AMC-${String(amcCounter++).padStart(4, "0")}`;
@@ -83,7 +85,7 @@ router.get("/amc-contracts/:id", async (req, res): Promise<void> => {
   res.json(fmtAmc(row));
 });
 
-router.patch("/amc-contracts/:id", async (req, res): Promise<void> => {
+router.patch("/amc-contracts/:id", requirePermission("oam", "edit"), async (req, res): Promise<void> => {
   const [updated] = await db.update(amcContractsTable).set(req.body).where(eq(amcContractsTable.id, Number(req.params.id))).returning();
   if (!updated) { res.status(404).json({ error: "Not found" }); return; }
   res.json(fmtAmc(updated));
@@ -97,14 +99,14 @@ router.get("/maintenance-schedules", async (req, res): Promise<void> => {
   res.json((await query).map(fmtMs));
 });
 
-router.post("/maintenance-schedules", async (req, res): Promise<void> => {
+router.post("/maintenance-schedules", requirePermission("oam", "create"), async (req, res): Promise<void> => {
   const parsed = CreateMaintenanceBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error }); return; }
   const [row] = await db.insert(maintenanceSchedulesTable).values(parsed.data).returning();
   res.status(201).json(fmtMs(row));
 });
 
-router.patch("/maintenance-schedules/:id/complete", async (req, res): Promise<void> => {
+router.patch("/maintenance-schedules/:id/complete", requirePermission("oam", "edit"), async (req, res): Promise<void> => {
   const parsed = CompleteMaintenanceBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error }); return; }
   const [updated] = await db.update(maintenanceSchedulesTable).set({ ...parsed.data, status: "Completed" }).where(eq(maintenanceSchedulesTable.id, Number(req.params.id))).returning();
@@ -120,7 +122,7 @@ router.get("/service-tickets", async (req, res): Promise<void> => {
   res.json((await query).map(fmtTicket));
 });
 
-router.post("/service-tickets", async (req, res): Promise<void> => {
+router.post("/service-tickets", requirePermission("oam", "create"), async (req, res): Promise<void> => {
   const parsed = CreateTicketBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error }); return; }
   const ticketNumber = `TKT-${String(ticketCounter++).padStart(4, "0")}`;
@@ -128,7 +130,7 @@ router.post("/service-tickets", async (req, res): Promise<void> => {
   res.status(201).json(fmtTicket(row));
 });
 
-router.patch("/service-tickets/:id/resolve", async (req, res): Promise<void> => {
+router.patch("/service-tickets/:id/resolve", requirePermission("oam", "edit"), async (req, res): Promise<void> => {
   const parsed = ResolveTicketBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error }); return; }
   const [updated] = await db.update(serviceTicketsTable).set({ status: "Resolved", resolvedAt: new Date(), resolution: parsed.data.resolution }).where(eq(serviceTicketsTable.id, Number(req.params.id))).returning();
@@ -136,7 +138,7 @@ router.patch("/service-tickets/:id/resolve", async (req, res): Promise<void> => 
   res.json(fmtTicket(updated));
 });
 
-router.patch("/service-tickets/:id", async (req, res): Promise<void> => {
+router.patch("/service-tickets/:id", requirePermission("oam", "edit"), async (req, res): Promise<void> => {
   const [updated] = await db.update(serviceTicketsTable).set(req.body).where(eq(serviceTicketsTable.id, Number(req.params.id))).returning();
   if (!updated) { res.status(404).json({ error: "Not found" }); return; }
   res.json(fmtTicket(updated));

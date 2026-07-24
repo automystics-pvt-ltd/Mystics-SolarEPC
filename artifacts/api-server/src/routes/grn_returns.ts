@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import { requireAuth, requirePermission } from "../lib/rbac";
 import {
   db, grnReturnsTable, grnReturnItemsTable, grnReturnAuditLogsTable,
   procGRNsTable, procGRNItemsTable, notificationsTable, usersTable,
@@ -93,7 +94,7 @@ router.get("/grn-returns/:id", async (req, res): Promise<void> => {
 });
 
 // POST /grn-returns — create
-router.post("/grn-returns", async (req, res): Promise<void> => {
+router.post("/grn-returns", requirePermission("procurement", "create"), async (req, res): Promise<void> => {
   try {
     const { grnId, returnReason, returnType = "Rejection", returnDate, remarks, items = [],
       userName = "System", userId } = req.body;
@@ -135,7 +136,7 @@ router.post("/grn-returns", async (req, res): Promise<void> => {
 });
 
 // PATCH /grn-returns/:id/submit
-router.patch("/grn-returns/:id/submit", async (req, res): Promise<void> => {
+router.patch("/grn-returns/:id/submit", requirePermission("procurement", "edit"), async (req, res): Promise<void> => {
   try {
     const id = Number(req.params.id);
     const { userName = "System", userId, remarks } = req.body;
@@ -149,7 +150,7 @@ router.patch("/grn-returns/:id/submit", async (req, res): Promise<void> => {
 });
 
 // PATCH /grn-returns/:id/approve
-router.patch("/grn-returns/:id/approve", async (req, res): Promise<void> => {
+router.patch("/grn-returns/:id/approve", requirePermission("procurement", "approve"), async (req, res): Promise<void> => {
   try {
     const id = Number(req.params.id);
     const { userName = "System", userId, remarks } = req.body;
@@ -162,7 +163,7 @@ router.patch("/grn-returns/:id/approve", async (req, res): Promise<void> => {
 });
 
 // PATCH /grn-returns/:id/dispatch
-router.patch("/grn-returns/:id/dispatch", async (req, res): Promise<void> => {
+router.patch("/grn-returns/:id/dispatch", requirePermission("procurement", "edit"), async (req, res): Promise<void> => {
   try {
     const id = Number(req.params.id);
     const { userName = "System", userId, dispatchDate, remarks } = req.body;
@@ -175,7 +176,7 @@ router.patch("/grn-returns/:id/dispatch", async (req, res): Promise<void> => {
 });
 
 // PATCH /grn-returns/:id/close
-router.patch("/grn-returns/:id/close", async (req, res): Promise<void> => {
+router.patch("/grn-returns/:id/close", requirePermission("procurement", "edit"), async (req, res): Promise<void> => {
   try {
     const id = Number(req.params.id);
     const { userName = "System", userId, creditNoteNumber, creditNoteDate, creditNoteAmount, remarks } = req.body;
@@ -192,7 +193,7 @@ router.patch("/grn-returns/:id/close", async (req, res): Promise<void> => {
 });
 
 // PATCH /grn-returns/:id/cancel
-router.patch("/grn-returns/:id/cancel", async (req, res): Promise<void> => {
+router.patch("/grn-returns/:id/cancel", requirePermission("procurement", "delete"), async (req, res): Promise<void> => {
   try {
     const id = Number(req.params.id);
     const { userName = "System", userId, remarks } = req.body;

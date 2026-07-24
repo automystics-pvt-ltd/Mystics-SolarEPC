@@ -1,9 +1,11 @@
 import { Router, type IRouter } from "express";
+import { requireAuth, requirePermission } from "../lib/rbac";
 import { db, designDocumentsTable, designRevisionsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
 
 const router: IRouter = Router();
+router.use(requireAuth());
 
 const CreateDesignDocBody = z.object({
   projectId: z.number(),
@@ -57,7 +59,7 @@ router.get("/design-documents", async (req, res): Promise<void> => {
 });
 
 // Create design document
-router.post("/design-documents", async (req, res): Promise<void> => {
+router.post("/design-documents", requirePermission("engineering", "create"), async (req, res): Promise<void> => {
   const parsed = CreateDesignDocBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error }); return; }
   const [row] = await db.insert(designDocumentsTable).values(parsed.data).returning();
@@ -74,7 +76,7 @@ router.get("/design-documents/:id", async (req, res): Promise<void> => {
 });
 
 // Approve / reject design document
-router.post("/design-documents/:id/approve", async (req, res): Promise<void> => {
+router.post("/design-documents/:id/approve", requirePermission("engineering", "approve"), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const parsed = ApproveDesignDocBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error }); return; }
@@ -90,7 +92,7 @@ router.post("/design-documents/:id/approve", async (req, res): Promise<void> => 
 });
 
 // Add revision
-router.post("/design-documents/:id/revisions", async (req, res): Promise<void> => {
+router.post("/design-documents/:id/revisions", requirePermission("engineering", "edit"), async (req, res): Promise<void> => {
   const docId = Number(req.params.id);
   const parsed = CreateRevisionBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error }); return; }

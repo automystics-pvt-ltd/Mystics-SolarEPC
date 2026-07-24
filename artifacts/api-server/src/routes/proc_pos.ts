@@ -772,7 +772,7 @@ router.get("/procurement-pos/:id/comments", async (req, res): Promise<void> => {
   })));
 });
 
-router.post("/procurement-pos/:id/comments", requireAuth(), async (req, res): Promise<void> => {
+router.post("/procurement-pos/:id/comments", requirePermission("procurement", "view"), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const actor = getActor(req);
   if (!actor) { res.status(401).json({ error: "Unauthorized" }); return; }
@@ -793,7 +793,7 @@ router.post("/procurement-pos/:id/comments", requireAuth(), async (req, res): Pr
   res.status(201).json({ ...comment, createdAt: comment.createdAt.toISOString(), updatedAt: comment.updatedAt.toISOString() });
 });
 
-router.delete("/procurement-pos/:id/comments/:cid", requireAuth(), async (req, res): Promise<void> => {
+router.delete("/procurement-pos/:id/comments/:cid", requirePermission("procurement", "delete"), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const cid = Number(req.params.cid);
   const actor = getActor(req);

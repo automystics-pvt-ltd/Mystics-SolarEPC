@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { StatusBadge, DetailRow, DetailGrid, SectionCard, PageHeader } from "@/components/shared";
 import { addRecentEntry } from "@/lib/recentHistory";
 import { useAuth } from "@/lib/auth";
+import { usePermissions } from "@/lib/permissions";
 
 function formatDate(d?: string | null) {
   if (!d) return "—";
@@ -177,7 +178,7 @@ export default function GRNDetail({ id }: { id: string }) {
   const grnId = Number(id);
   const { user: authUser } = useAuth();
   const user = (() => { try { return JSON.parse(localStorage.getItem("mystics_user") ?? "{}"); } catch { return {}; } })();
-  const isApprover = ["admin", "approver"].includes(user.role);
+  const { canApprove: isApprover } = usePermissions("procurement");
 
   const { data: grn, isLoading } = useGetProcGrn(grnId, { query: { enabled: !!grnId, queryKey: getGetProcGrnQueryKey(grnId) } });
 

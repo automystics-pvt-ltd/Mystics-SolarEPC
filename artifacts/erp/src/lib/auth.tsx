@@ -4,6 +4,7 @@ import { setAuthTokenGetter, getGetMeQueryKey } from "@workspace/api-client-reac
 import { useGetMe, User } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 import { clearRecentEntries } from "@/lib/recentHistory";
+import queryClient from "@/lib/queryClient";
 
 interface AuthContextType {
   user: User | null;
@@ -34,7 +35,7 @@ function readUserCache(): User | null {
 }
 
 function writeUserCache(user: User) {
-  try { localStorage.setItem(USER_CACHE_KEY, JSON.stringify({ user, ts: Date.now() })); } catch {}
+  try { localStorage.setItem(USER_CACHE_KEY, JSON.stringify({ user, ts: Date.now() })); } catch { /* Storage quota or security error — ignore */ }
 }
 
 function clearUserCache() {
@@ -106,6 +107,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearUserCache();
     setToken(null);
     setUser(null);
+    // Flush the React Query cache so a subsequent login as a different (lower-
+    // privilege) role never briefly sees cached data from the prior session.
+    queryClient.clear();
     setLocation("/login");
   };
 

@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import { requireAuth, requirePermission } from "../lib/rbac";
 import { db, materialRequestsTable, vendorQuotationsTable, purchaseOrdersTable, vendorInvoicesTable, contractorsTable, grnsTable } from "@workspace/db";
 import { eq, desc, and, sql } from "drizzle-orm";
 import {
@@ -10,6 +11,7 @@ import {
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
+router.use(requireAuth());
 
 let mrCounter = 1;
 let poCounter = 1;
@@ -43,7 +45,7 @@ router.get("/material-requests", async (req, res): Promise<void> => {
   res.json(rows.map(r => fmtMR(r)));
 });
 
-router.post("/material-requests", async (req, res): Promise<void> => {
+router.post("/material-requests", requirePermission("procurement", "create"), async (req, res): Promise<void> => {
   const parsed = CreateMaterialRequestBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const mrNumber = `MR-${String(++mrCounter).padStart(4, "0")}`;
@@ -60,7 +62,7 @@ router.get("/material-requests/:id", async (req, res): Promise<void> => {
   res.json(fmtMR(row, vqs));
 });
 
-router.post("/material-requests/:id/vendor-quotations", async (req, res): Promise<void> => {
+router.post("/material-requests/:id/vendor-quotations", requirePermission("procurement", "create"), async (req, res): Promise<void> => {
   const params = AddVendorQuotationParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const body = AddVendorQuotationBody.safeParse(req.body);
@@ -78,7 +80,7 @@ router.get("/vendor-quotations", async (req, res): Promise<void> => {
   res.json(rows.map(fmtVQ));
 });
 
-router.post("/vendor-quotations/:id/review", async (req, res): Promise<void> => {
+router.post("/vendor-quotations/:id/review", requirePermission("procurement", "edit"), async (req, res): Promise<void> => {
   const params = ReviewVendorQuotationParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const body = ReviewVendorQuotationBody.safeParse(req.body);
@@ -93,7 +95,7 @@ router.post("/vendor-quotations/:id/review", async (req, res): Promise<void> => 
   res.json(fmtVQ(row));
 });
 
-router.post("/vendor-quotations/:id/approve-l1", async (req, res): Promise<void> => {
+router.post("/vendor-quotations/:id/approve-l1", requirePermission("procurement", "approve"), async (req, res): Promise<void> => {
   const params = ApproveVendorQuotationL1Params.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const body = ApproveVendorQuotationL1Body.safeParse(req.body);
@@ -108,7 +110,7 @@ router.post("/vendor-quotations/:id/approve-l1", async (req, res): Promise<void>
   res.json(fmtVQ(row));
 });
 
-router.post("/vendor-quotations/:id/generate-po", async (req, res): Promise<void> => {
+router.post("/vendor-quotations/:id/generate-po", requirePermission("procurement", "create"), async (req, res): Promise<void> => {
   const params = GeneratePOFromQuotationParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const body = GeneratePOFromQuotationBody.safeParse(req.body);
@@ -160,7 +162,7 @@ router.get("/purchase-orders/:id/delivery-status", async (req, res): Promise<voi
   res.json({ poId: params.data.id, lines, totalGRNs: grns.length, isFullyReceived: lines.every((l: { pendingQty: number }) => l.pendingQty === 0) });
 });
 
-router.post("/purchase-orders/:id/vendor-invoice", async (req, res): Promise<void> => {
+router.post("/purchase-orders/:id/vendor-invoice", requirePermission("procurement", "create"), async (req, res): Promise<void> => {
   const params = AttachVendorInvoiceParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const body = AttachVendorInvoiceBody.safeParse(req.body);
@@ -175,7 +177,7 @@ router.get("/contractors", async (req, res): Promise<void> => {
   res.json(rows.map(fmtContractor));
 });
 
-router.post("/contractors", async (req, res): Promise<void> => {
+router.post("/contractors", requirePermission("procurement", "create"), async (req, res): Promise<void> => {
   const parsed = CreateContractorBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const [row] = await db.insert(contractorsTable).values({ ...parsed.data, contractValue: parsed.data.contractValue?.toString() }).returning();

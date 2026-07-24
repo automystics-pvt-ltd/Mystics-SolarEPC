@@ -1,9 +1,11 @@
 import { Router, type IRouter } from "express";
+import { requireAuth, requirePermission } from "../lib/rbac";
 import { db, escalationsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { CreateEscalationBody, ResolveEscalationParams, ResolveEscalationBody } from "@workspace/api-zod";
 
 const router: IRouter = Router();
+router.use(requireAuth());
 
 function fmt(e: typeof escalationsTable.$inferSelect) {
   return { id: e.id, sourceEntityType: e.sourceEntityType, sourceEntityId: e.sourceEntityId, projectId: e.projectId, module: e.module, raisedBy: e.raisedBy, raisedByName: null, reason: e.reason, severity: e.severity, assignedTo: e.assignedTo, assignedToName: null, status: e.status, resolvedAt: e.resolvedAt?.toISOString() ?? null, createdAt: e.createdAt.toISOString() };
@@ -18,14 +20,14 @@ router.get("/escalations", async (req, res): Promise<void> => {
   res.json(rows.map(fmt));
 });
 
-router.post("/escalations", async (req, res): Promise<void> => {
+router.post("/escalations", requirePermission("crm", "create"), async (req, res): Promise<void> => {
   const parsed = CreateEscalationBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const [row] = await db.insert(escalationsTable).values(parsed.data).returning();
   res.status(201).json(fmt(row));
 });
 
-router.post("/escalations/:id/resolve", async (req, res): Promise<void> => {
+router.post("/escalations/:id/resolve", requirePermission("crm", "edit"), async (req, res): Promise<void> => {
   const params = ResolveEscalationParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const body = ResolveEscalationBody.safeParse(req.body);

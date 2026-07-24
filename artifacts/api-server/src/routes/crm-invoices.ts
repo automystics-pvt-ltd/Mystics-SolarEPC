@@ -1,9 +1,11 @@
 import { Router, type IRouter } from "express";
+import { requireAuth, requirePermission } from "../lib/rbac";
 import { db, crmInvoicesTable } from "@workspace/db";
 import { eq, desc, lt, or, sql } from "drizzle-orm";
 import { CreateCrmInvoiceBody, MarkCrmInvoicePaidParams, MarkCrmInvoicePaidBody } from "@workspace/api-zod";
 
 const router: IRouter = Router();
+router.use(requireAuth());
 
 function fmt(i: typeof crmInvoicesTable.$inferSelect) {
   return { id: i.id, clientPoId: i.clientPoId, projectId: i.projectId, type: i.type, amount: Number(i.amount), taxDetails: i.taxDetails, dueDate: i.dueDate, paymentStatus: i.paymentStatus, createdAt: i.createdAt.toISOString() };
@@ -16,14 +18,14 @@ router.get("/crm-invoices", async (req, res): Promise<void> => {
   res.json(rows.map(fmt));
 });
 
-router.post("/crm-invoices", async (req, res): Promise<void> => {
+router.post("/crm-invoices", requirePermission("crm", "create"), async (req, res): Promise<void> => {
   const parsed = CreateCrmInvoiceBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const [row] = await db.insert(crmInvoicesTable).values({ ...parsed.data, amount: parsed.data.amount.toString() }).returning();
   res.status(201).json(fmt(row));
 });
 
-router.post("/crm-invoices/:id/mark-paid", async (req, res): Promise<void> => {
+router.post("/crm-invoices/:id/mark-paid", requirePermission("crm", "edit"), async (req, res): Promise<void> => {
   const params = MarkCrmInvoicePaidParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const body = MarkCrmInvoicePaidBody.safeParse(req.body);

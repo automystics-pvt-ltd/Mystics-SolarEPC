@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Plus, HardHat, Star, Phone } from "lucide-react";
+import { CanCreate } from "@/lib/permissions";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
@@ -100,7 +101,8 @@ export function ContractorsList() {
   ];
 
   const addContractorDialog = (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <CanCreate module="projects">
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button className="bg-[#EA580C] hover:bg-[#C2410C] text-white font-bold tracking-wide rounded-[8px] h-9 px-4 shadow-sm">
           <Plus className="h-4 w-4 mr-2" /> Add Contractor
@@ -145,6 +147,7 @@ export function ContractorsList() {
         </Form>
       </DialogContent>
     </Dialog>
+    </CanCreate>
   );
 
   return (

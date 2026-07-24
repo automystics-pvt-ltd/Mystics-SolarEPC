@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import { requireAuth, requirePermission } from "../lib/rbac";
 import { db, warehousesTable, stockLedgerTable, inventoryAuditsTable } from "@workspace/db";
 import { eq, desc, and, sql, lt, lte, gte, like, or, inArray } from "drizzle-orm";
 import pg from "pg";
@@ -6,6 +7,7 @@ import pg from "pg";
 const { Client } = pg;
 
 const router: IRouter = Router();
+router.use(requireAuth());
 
 // ── DB helpers ──────────────────────────────────────────────────────────────
 async function getClient() {
@@ -187,7 +189,7 @@ router.get("/inventory/stock-levels", async (req, res): Promise<void> => {
   }
 });
 
-router.post("/inventory/stock-levels", async (req, res): Promise<void> => {
+router.post("/inventory/stock-levels", requirePermission("inventory", "create"), async (req, res): Promise<void> => {
   try {
     const { warehouseId, materialName, materialCode, categoryCode, categoryName, uom, currentQty, unitCost, minStockLevel, maxStockLevel, reorderQty, locationBin } = req.body;
     if (!warehouseId || !materialName) { res.status(400).json({ error: "warehouseId and materialName required" }); return; }
@@ -230,9 +232,9 @@ router.post("/inventory/stock-levels", async (req, res): Promise<void> => {
   }
 });
 
-router.patch("/inventory/stock-levels/:id", async (req, res): Promise<void> => {
+router.patch("/inventory/stock-levels/:id", requirePermission("inventory", "edit"), async (req, res): Promise<void> => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     const { minStockLevel, maxStockLevel, reorderQty, unitCost, locationBin } = req.body;
 
     await query(`
@@ -303,9 +305,9 @@ router.get("/inventory/reorder-analysis", async (req, res): Promise<void> => {
   }
 });
 
-router.post("/inventory/reorder-alerts/:id/acknowledge", async (req, res): Promise<void> => {
+router.post("/inventory/reorder-alerts/:id/acknowledge", requirePermission("inventory", "edit"), async (req, res): Promise<void> => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     const user = (req as any).user;
     await query(`
       UPDATE reorder_alerts SET status = 'Acknowledged', acknowledged_by = $1, acknowledged_by_name = $2, acknowledged_at = NOW()
@@ -345,7 +347,7 @@ router.get("/inventory/allocations/:id", async (req, res): Promise<void> => {
   }
 });
 
-router.post("/inventory/allocations", async (req, res): Promise<void> => {
+router.post("/inventory/allocations", requirePermission("inventory", "create"), async (req, res): Promise<void> => {
   try {
     const user = (req as any).user;
     const {
@@ -371,9 +373,9 @@ router.post("/inventory/allocations", async (req, res): Promise<void> => {
   }
 });
 
-router.post("/inventory/allocations/:id/approve", async (req, res): Promise<void> => {
+router.post("/inventory/allocations/:id/approve", requirePermission("inventory", "approve"), async (req, res): Promise<void> => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     const user = (req as any).user;
     const { allocatedQty } = req.body;
 
@@ -413,9 +415,9 @@ router.post("/inventory/allocations/:id/approve", async (req, res): Promise<void
   }
 });
 
-router.post("/inventory/allocations/:id/issue", async (req, res): Promise<void> => {
+router.post("/inventory/allocations/:id/issue", requirePermission("inventory", "edit"), async (req, res): Promise<void> => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     const user = (req as any).user;
     const { issuedQty } = req.body;
 
@@ -455,9 +457,9 @@ router.post("/inventory/allocations/:id/issue", async (req, res): Promise<void> 
   }
 });
 
-router.post("/inventory/allocations/:id/cancel", async (req, res): Promise<void> => {
+router.post("/inventory/allocations/:id/cancel", requirePermission("inventory", "delete"), async (req, res): Promise<void> => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     const check = await query(`SELECT * FROM project_material_allocations WHERE id = $1`, [id]);
     if (!check.rows[0]) { res.status(404).json({ error: "Not found" }); return; }
     if (["Issued", "Closed", "Cancelled"].includes(check.rows[0].status)) {
@@ -544,7 +546,7 @@ router.get("/inventory/returns/:id", async (req, res): Promise<void> => {
   }
 });
 
-router.post("/inventory/returns", async (req, res): Promise<void> => {
+router.post("/inventory/returns", requirePermission("inventory", "create"), async (req, res): Promise<void> => {
   try {
     const user = (req as any).user;
     const { projectId, projectName, fromSite, toWarehouseId, toWarehouseName, allocationId, returnDate, reason, condition, remarks, items } = req.body;
@@ -565,9 +567,9 @@ router.post("/inventory/returns", async (req, res): Promise<void> => {
   }
 });
 
-router.post("/inventory/returns/:id/receive", async (req, res): Promise<void> => {
+router.post("/inventory/returns/:id/receive", requirePermission("inventory", "edit"), async (req, res): Promise<void> => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     const user = (req as any).user;
     const check = await query(`SELECT * FROM material_returns WHERE id = $1`, [id]);
     if (!check.rows[0]) { res.status(404).json({ error: "Not found" }); return; }
@@ -613,9 +615,9 @@ router.post("/inventory/returns/:id/receive", async (req, res): Promise<void> =>
   }
 });
 
-router.post("/inventory/returns/:id/close", async (req, res): Promise<void> => {
+router.post("/inventory/returns/:id/close", requirePermission("inventory", "edit"), async (req, res): Promise<void> => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     await query(`UPDATE material_returns SET status = 'Closed', updated_at = NOW() WHERE id = $1`, [id]);
     res.json({ ok: true });
   } catch (e: any) {
@@ -679,9 +681,9 @@ router.get("/inventory/audits/:auditId/items", async (req, res): Promise<void> =
   }
 });
 
-router.post("/inventory/audits/:auditId/items", async (req, res): Promise<void> => {
+router.post("/inventory/audits/:auditId/items", requirePermission("inventory", "create"), async (req, res): Promise<void> => {
   try {
-    const auditId = parseInt(req.params.auditId);
+    const auditId = parseInt(req.params.auditId as string);
     const user = (req as any).user;
     const { materialName, materialCode, uom, systemQty, physicalQty, unitCost, locationBin, notes } = req.body;
 
@@ -703,9 +705,9 @@ router.post("/inventory/audits/:auditId/items", async (req, res): Promise<void> 
   }
 });
 
-router.patch("/inventory/audits/:auditId/items/:itemId", async (req, res): Promise<void> => {
+router.patch("/inventory/audits/:auditId/items/:itemId", requirePermission("inventory", "edit"), async (req, res): Promise<void> => {
   try {
-    const itemId = parseInt(req.params.itemId);
+    const itemId = parseInt(req.params.itemId as string);
     const user = (req as any).user;
     const { physicalQty, notes } = req.body;
 
@@ -768,9 +770,9 @@ router.get("/inventory/warehouses-enhanced", async (req, res): Promise<void> => 
   }
 });
 
-router.patch("/inventory/warehouses-enhanced/:id", async (req, res): Promise<void> => {
+router.patch("/inventory/warehouses-enhanced/:id", requirePermission("inventory", "edit"), async (req, res): Promise<void> => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     const { warehouseCode, contactPerson, phone, email, address, gstNumber, managerName, description, isActive } = req.body;
     await query(`
       UPDATE warehouses SET
