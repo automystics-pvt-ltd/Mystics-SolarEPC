@@ -22,7 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Edit3, Save, X, Plus, Trash2, Building2, Shield, Phone, Mail, CreditCard, Users, Banknote, Star, AlertCircle, User, TrendingUp, ShoppingCart, CalendarDays, BarChart3, ChevronRight, XCircle } from "lucide-react";
+import { Edit3, Save, X, Plus, Trash2, Building2, Shield, Phone, Mail, CreditCard, Users, Banknote, Star, AlertCircle, User, TrendingUp, ShoppingCart, CalendarDays, BarChart3, ChevronRight, XCircle, Search } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { PageHeader, SectionCard, StatusBadge } from "@/components/shared";
 import { addRecentEntry } from "@/lib/recentHistory";
@@ -144,11 +144,43 @@ const PO_STATUS_CONFIG: Record<string, { color: string; label: string }> = {
   Cancelled:         { color: "bg-red-50 text-red-700 border-red-200",              label: "Cancelled" },
 };
 
+/* ── PO status tabs for VendorPOsTab ─────────────────────────────────────── */
+const VENDOR_PO_STATUS_TABS = [
+  "All", "Draft", "Submitted", "Approved", "Issued",
+  "Acknowledged", "PartiallyReceived", "FullyReceived", "Closed", "Cancelled",
+];
+const VENDOR_PO_STATUS_LABELS: Record<string, string> = {
+  PartiallyReceived: "Partial",
+  FullyReceived: "Received",
+};
+
 /* ── Vendor Purchase Orders inline panel ─────────────────────────────────── */
 function VendorPOsTab({ vendorId, onNavigate }: { vendorId: number; onNavigate: (path: string) => void }) {
   const { data: pos = [], isLoading, isError, refetch } = useGetProcurementPOs({ vendorId });
 
+  const [poStatus,  setPoStatus]  = useState("All");
+  const [poSearch,  setPoSearch]  = useState("");
+  const [poDateFrom, setPoDateFrom] = useState("");
+  const [poDateTo,   setPoDateTo]   = useState("");
+
+  const filtered = useMemo(() => {
+    return pos.filter(po => {
+      if (poStatus !== "All" && po.status !== poStatus) return false;
+      if (poSearch) {
+        const q = poSearch.toLowerCase();
+        if (
+          !po.poNumber?.toLowerCase().includes(q) &&
+          !po.vendorName?.toLowerCase().includes(q)
+        ) return false;
+      }
+      if (poDateFrom && po.poDate && po.poDate < poDateFrom) return false;
+      if (poDateTo   && po.poDate && po.poDate > poDateTo)   return false;
+      return true;
+    });
+  }, [pos, poStatus, poSearch, poDateFrom, poDateTo]);
+
   const totalValue = pos.reduce((s, p) => s + Number(p.totalAmount ?? 0), 0);
+  const hasActiveFilters = poStatus !== "All" || poSearch || poDateFrom || poDateTo;
 
   if (isLoading) {
     return (
@@ -185,12 +217,77 @@ function VendorPOsTab({ vendorId, onNavigate }: { vendorId: number; onNavigate: 
       actions={
         pos.length > 0 ? (
           <span className="text-xs text-muted-foreground tabular-nums">
-            {pos.length} order{pos.length !== 1 ? "s" : ""} ·{" "}
+            {filtered.length !== pos.length
+              ? `${filtered.length} of ${pos.length}`
+              : pos.length}{" "}
+            order{pos.length !== 1 ? "s" : ""} ·{" "}
             ₹{totalValue.toLocaleString("en-IN", { maximumFractionDigits: 0 })} total
           </span>
         ) : undefined
       }
     >
+      {pos.length > 0 && (
+        <div className="space-y-3 mb-4">
+          {/* Status tabs */}
+          <div className="flex gap-1 flex-wrap">
+            {VENDOR_PO_STATUS_TABS.map(tab => (
+              <button
+                key={tab}
+                onClick={() => setPoStatus(tab)}
+                className={cn(
+                  "px-2.5 py-1 rounded-md text-xs font-semibold transition-all",
+                  poStatus === tab
+                    ? "bg-slate-900 text-white"
+                    : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300"
+                )}
+              >
+                {VENDOR_PO_STATUS_LABELS[tab] ?? tab}
+              </button>
+            ))}
+          </div>
+
+          {/* Search + date range */}
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+              <Input
+                value={poSearch}
+                onChange={e => setPoSearch(e.target.value)}
+                placeholder="Search by PO number…"
+                className="pl-8 h-8 text-xs"
+              />
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <CalendarDays className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <input
+                type="date"
+                value={poDateFrom}
+                onChange={e => setPoDateFrom(e.target.value)}
+                className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                title="From date"
+              />
+              <span className="text-xs text-slate-400">–</span>
+              <input
+                type="date"
+                value={poDateTo}
+                onChange={e => setPoDateTo(e.target.value)}
+                className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                title="To date"
+              />
+              {hasActiveFilters && (
+                <button
+                  onClick={() => { setPoStatus("All"); setPoSearch(""); setPoDateFrom(""); setPoDateTo(""); }}
+                  className="ml-0.5 p-1 rounded hover:bg-muted transition-colors text-slate-400 hover:text-slate-700"
+                  title="Clear all filters"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {pos.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-14 border-2 border-dashed border-slate-200 rounded-xl gap-3">
           <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center">
@@ -199,9 +296,20 @@ function VendorPOsTab({ vendorId, onNavigate }: { vendorId: number; onNavigate: 
           <p className="font-semibold text-slate-600">No purchase orders yet</p>
           <p className="text-xs text-slate-400">POs raised for this vendor will appear here</p>
         </div>
+      ) : filtered.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-10 border-2 border-dashed border-slate-200 rounded-xl gap-2">
+          <ShoppingCart className="w-6 h-6 text-slate-300" />
+          <p className="text-sm font-semibold text-slate-500">No matching orders</p>
+          <button
+            onClick={() => { setPoStatus("All"); setPoSearch(""); setPoDateFrom(""); setPoDateTo(""); }}
+            className="text-xs text-primary hover:underline mt-0.5"
+          >
+            Clear filters
+          </button>
+        </div>
       ) : (
         <div className="space-y-2">
-          {pos.map((po) => {
+          {filtered.map((po) => {
             const cfg = PO_STATUS_CONFIG[po.status ?? "Draft"] ?? PO_STATUS_CONFIG["Draft"]!;
             const today = new Date().toISOString().split("T")[0];
             const deadline = (po as any).deliveryDeadline ?? (po as any).expectedDeliveryDate;
