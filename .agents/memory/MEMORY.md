@@ -9,3 +9,4 @@
 - [Mystics ERP Drizzle pool pitfall](mystics-erp-drizzle-pool-pitfall.md) — approval_requests insert must use dedicated pg.Client; Drizzle leaks pool connections on FK errors; users table IDs start at 5
 - [Mystics ERP GRN module](mystics-erp-grn-module.md) — comprehensive GRN schema with Cancelled/Reversed statuses, batch/serial/barcode tracking, grn_comments table, stock ledger write-through on approval, cancel/reverse endpoints
 - [Solar Inventory module](solar-inventory-module.md) — full lifecycle: stock levels, allocations, returns, reorder planning; raw SQL migrations (drizzle push needs TTY); all new tables use pg.Client not Drizzle
+- [ERP Performance Optimizations](erp-performance-optimizations.md) — 32 DB indexes, approvals N+1 fixed with fmtRequestsBatch, quotations list DB-side filtering, React Query SWR pattern, keyboard shortcuts, NavRail prefetch-on-hover

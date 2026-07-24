@@ -21,7 +21,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/lib/auth";
 import { addRecentEntry, clearRecentEntries } from "@/lib/recentHistory";
 import { useNavState } from "@/lib/nav-state";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiGet } from "@/lib/fetch";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -278,6 +278,7 @@ function RailBtn({
   badge,
   onClick,
   href,
+  onPrefetch,
 }: {
   icon: React.ElementType;
   label: string;
@@ -286,6 +287,7 @@ function RailBtn({
   badge?: boolean;
   onClick?: () => void;
   href?: string;
+  onPrefetch?: () => void;
 }) {
   const cls = cn(
     "relative flex items-center justify-center h-10 w-10 rounded-[10px] transition-all duration-150",
@@ -317,10 +319,10 @@ function RailBtn({
       <TooltipTrigger asChild>
         {href ? (
           <Link href={href}>
-            <div aria-current={isActive ? "page" : undefined} className={cls}>{inner}</div>
+            <div aria-current={isActive ? "page" : undefined} className={cls} onMouseEnter={onPrefetch}>{inner}</div>
           </Link>
         ) : (
-          <button onClick={onClick} className={cls} aria-label={label} aria-expanded={isOpen}>{inner}</button>
+          <button onClick={onClick} onMouseEnter={onPrefetch} className={cls} aria-label={label} aria-expanded={isOpen}>{inner}</button>
         )}
       </TooltipTrigger>
       <TooltipContent side="right" sideOffset={12} className="text-xs font-semibold">{label}</TooltipContent>
@@ -633,6 +635,16 @@ function ModuleFlyout({
 ════════════════════════════════════════════════════════════════ */
 type SpecialKey = "recents" | "favorites";
 
+/* ── Prefetch map: hover a nav group → warm the most-used endpoint ── */
+const PREFETCH_MAP: Record<string, { key: string[]; fn: () => Promise<unknown> }[]> = {
+  crm:         [{ key: ["leads"],       fn: () => apiGet("/leads?limit=30") }],
+  projects:    [{ key: ["projects"],    fn: () => apiGet("/projects?limit=30") }],
+  procurement: [{ key: ["proc-dash"],   fn: () => apiGet("/procurement-dashboard") }],
+  inventory:   [{ key: ["warehouses"],  fn: () => apiGet("/warehouses") }],
+  approvals:   [{ key: ["approvals-pending"], fn: () => apiGet("/approvals/my-pending") }],
+  finance:     [{ key: ["finance-dash"], fn: () => apiGet("/finance/dashboard") }],
+};
+
 export function NavRail() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
@@ -640,6 +652,7 @@ export function NavRail() {
   const procBadge = useProcBadge();
   const history = useNavHistory(location, user?.id);
   const [favorites, toggleFavorite] = useFavorites();
+  const queryClient = useQueryClient();
 
   const role = user?.role ?? "";
   const initials = user?.name
@@ -745,6 +758,7 @@ export function NavRail() {
             }
             // group
             const showBadge = entry.hasBadge && procBadge > 0;
+            const prefetches = PREFETCH_MAP[entry.key];
             return (
               <RailBtn
                 key={entry.key}
@@ -754,6 +768,11 @@ export function NavRail() {
                 isOpen={openKey === entry.key}
                 badge={showBadge}
                 onClick={() => toggle(entry.key)}
+                onPrefetch={prefetches ? () => {
+                  prefetches.forEach(({ key, fn }) =>
+                    queryClient.prefetchQuery({ queryKey: key, queryFn: fn, staleTime: 60_000 })
+                  );
+                } : undefined}
               />
             );
           })}

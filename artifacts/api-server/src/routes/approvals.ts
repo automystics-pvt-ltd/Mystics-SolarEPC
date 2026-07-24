@@ -38,18 +38,70 @@ async function userNames(ids: number[]): Promise<Map<number, string>> {
   return new Map(rows.map(r => [r.id, r.name]));
 }
 
+/** Single-request formatter — used for detail endpoints only */
 async function fmtRequest(req: typeof approvalRequestsTable.$inferSelect, names: Map<number, string>) {
-  const steps = await db.select().from(approvalRequestStepsTable)
-    .where(eq(approvalRequestStepsTable.requestId, req.id))
-    .orderBy(approvalRequestStepsTable.stepOrder);
-  const actions = await db.select().from(approvalActionsTable)
-    .where(eq(approvalActionsTable.requestId, req.id))
-    .orderBy(desc(approvalActionsTable.createdAt));
+  const [steps, actions] = await Promise.all([
+    db.select().from(approvalRequestStepsTable)
+      .where(eq(approvalRequestStepsTable.requestId, req.id))
+      .orderBy(approvalRequestStepsTable.stepOrder),
+    db.select().from(approvalActionsTable)
+      .where(eq(approvalActionsTable.requestId, req.id))
+      .orderBy(desc(approvalActionsTable.createdAt)),
+  ]);
   const actorIds = [...new Set([
     ...steps.map(s => s.actedById).filter(Boolean) as number[],
     ...actions.map(a => a.actorId).filter(Boolean) as number[],
+    ...steps.map(s => s.delegatedToId).filter(Boolean) as number[],
   ])];
-  const ns = await userNames([...actorIds]);
+  const ns = await userNames(actorIds);
+  return fmtRequestWithData(req, names, steps, actions, ns);
+}
+
+/** Batch formatter — O(1) queries for a list of requests (no N+1) */
+async function fmtRequestsBatch(
+  reqs: (typeof approvalRequestsTable.$inferSelect)[],
+  requesterNames: Map<number, string>,
+) {
+  if (!reqs.length) return [];
+  const ids = reqs.map(r => r.id);
+  const [allSteps, allActions] = await Promise.all([
+    db.select().from(approvalRequestStepsTable)
+      .where(inArray(approvalRequestStepsTable.requestId, ids))
+      .orderBy(approvalRequestStepsTable.requestId, approvalRequestStepsTable.stepOrder),
+    db.select().from(approvalActionsTable)
+      .where(inArray(approvalActionsTable.requestId, ids))
+      .orderBy(approvalActionsTable.requestId, desc(approvalActionsTable.createdAt)),
+  ]);
+  const stepsByReq  = new Map<number, typeof allSteps>();
+  const actionsByReq = new Map<number, typeof allActions>();
+  for (const s of allSteps) {
+    const arr = stepsByReq.get(s.requestId) ?? [];
+    arr.push(s); stepsByReq.set(s.requestId, arr);
+  }
+  for (const a of allActions) {
+    const arr = actionsByReq.get(a.requestId) ?? [];
+    arr.push(a); actionsByReq.set(a.requestId, arr);
+  }
+  // Single batch user-name lookup for all actor/delegatee IDs across all requests
+  const actorIds = [...new Set([
+    ...allSteps.map(s => s.actedById).filter(Boolean) as number[],
+    ...allSteps.map(s => s.delegatedToId).filter(Boolean) as number[],
+    ...allActions.map(a => a.actorId).filter(Boolean) as number[],
+  ])];
+  const ns = await userNames(actorIds);
+  return reqs.map(req =>
+    fmtRequestWithData(req, requesterNames, stepsByReq.get(req.id) ?? [], actionsByReq.get(req.id) ?? [], ns)
+  );
+}
+
+/** Pure formatter — no DB access */
+function fmtRequestWithData(
+  req: typeof approvalRequestsTable.$inferSelect,
+  names: Map<number, string>,
+  steps: (typeof approvalRequestStepsTable.$inferSelect)[],
+  actions: (typeof approvalActionsTable.$inferSelect)[],
+  ns: Map<number, string>,
+) {
   return {
     ...req,
     slaDeadline: req.slaDeadline?.toISOString() ?? null,
@@ -154,30 +206,30 @@ router.get("/approvals/my-pending", async (req, res): Promise<void> => {
   const actor = getActor(req);
   if (!actor) { res.status(401).json({ error: "Unauthorized" }); return; }
 
-  // Find requests that are pending AND the current step targets this user's role/id
-  const pending = await db.select().from(approvalRequestsTable)
+  // Single query: all pending requests whose current step targets this actor
+  // Uses a JOIN so we never loop — O(1) round trips regardless of volume.
+  const rows = await db
+    .selectDistinct({ req: approvalRequestsTable })
+    .from(approvalRequestsTable)
+    .innerJoin(
+      approvalRequestStepsTable,
+      and(
+        eq(approvalRequestStepsTable.requestId, approvalRequestsTable.id),
+        eq(approvalRequestStepsTable.stepOrder,  approvalRequestsTable.currentStep),
+        eq(approvalRequestStepsTable.status,     "pending"),
+        or(
+          eq(approvalRequestStepsTable.approverRole,   actor.role),
+          eq(approvalRequestStepsTable.approverUserId, actor.userId),
+          eq(approvalRequestStepsTable.delegatedToId,  actor.userId),
+        ),
+      )
+    )
     .where(eq(approvalRequestsTable.status, "pending"))
     .orderBy(approvalRequestsTable.slaDeadline, approvalRequestsTable.createdAt);
 
-  const myReqs: typeof pending = [];
-  for (const r of pending) {
-    const steps = await db.select().from(approvalRequestStepsTable)
-      .where(and(
-        eq(approvalRequestStepsTable.requestId, r.id),
-        eq(approvalRequestStepsTable.stepOrder, r.currentStep),
-        eq(approvalRequestStepsTable.status, "pending"),
-      ));
-    const mine = steps.some(s =>
-      (s.approverRole && s.approverRole === actor.role) ||
-      (s.approverUserId && s.approverUserId === actor.userId) ||
-      (s.delegatedToId && s.delegatedToId === actor.userId)
-    );
-    if (mine) myReqs.push(r);
-  }
-
-  const names = await userNames([...new Set(myReqs.map(r => r.requesterId))]);
-  const result = await Promise.all(myReqs.map(r => fmtRequest(r, names)));
-  res.json(result);
+  const myReqs = rows.map(r => r.req);
+  const names  = await userNames([...new Set(myReqs.map(r => r.requesterId))]);
+  res.json(await fmtRequestsBatch(myReqs, names));
 });
 
 router.get("/approvals/my-requests", async (req, res): Promise<void> => {
@@ -187,41 +239,45 @@ router.get("/approvals/my-requests", async (req, res): Promise<void> => {
     .where(eq(approvalRequestsTable.requesterId, actor.userId))
     .orderBy(desc(approvalRequestsTable.createdAt));
   const names = await userNames([actor.userId]);
-  const result = await Promise.all(reqs.map(r => fmtRequest(r, names)));
-  res.json(result);
+  res.json(await fmtRequestsBatch(reqs, names));
 });
 
 router.get("/approvals/queue", async (req, res): Promise<void> => {
   const actor = getActor(req);
   if (!actor) { res.status(401).json({ error: "Unauthorized" }); return; }
   const { status, module: mod, priority } = req.query as Record<string, string>;
-  let rows = await db.select().from(approvalRequestsTable)
-    .orderBy(desc(approvalRequestsTable.createdAt));
-  if (status)   rows = rows.filter(r => r.status === status);
-  if (mod)      rows = rows.filter(r => r.module === mod);
-  if (priority) rows = rows.filter(r => r.priority === priority);
+  // Push all filters into the DB — no JS-side filtering
+  let q = db.select().from(approvalRequestsTable)
+    .orderBy(desc(approvalRequestsTable.createdAt)).$dynamic();
+  if (status)   q = q.where(eq(approvalRequestsTable.status,   status as any));
+  if (mod)      q = q.where(eq(approvalRequestsTable.module,   mod));
+  if (priority) q = q.where(eq(approvalRequestsTable.priority, priority as any));
+  const rows  = await q;
   const names = await userNames([...new Set(rows.map(r => r.requesterId))]);
-  const result = await Promise.all(rows.map(r => fmtRequest(r, names)));
-  res.json(result);
+  res.json(await fmtRequestsBatch(rows, names));
 });
 
 router.get("/approvals/history", async (req, res): Promise<void> => {
   const actor = getActor(req);
   if (!actor) { res.status(401).json({ error: "Unauthorized" }); return; }
   const terminal = ["approved", "rejected", "recalled", "cancelled"];
-  let rows = await db.select().from(approvalRequestsTable)
+  // Non-admins: filter to own requests + ones they acted on — done in DB
+  let q = db.select().from(approvalRequestsTable)
     .where(inArray(approvalRequestsTable.status, terminal))
-    .orderBy(desc(approvalRequestsTable.updatedAt));
-  // Non-admins only see their own requests or ones they acted on
+    .orderBy(desc(approvalRequestsTable.updatedAt)).$dynamic();
   if (!["admin", "director"].includes(actor.role)) {
+    // Fetch their action IDs first (small set per user), then use inArray
     const myActions = await db.select({ requestId: approvalActionsTable.requestId })
       .from(approvalActionsTable).where(eq(approvalActionsTable.actorId, actor.userId));
-    const myActionIds = new Set(myActions.map(a => a.requestId));
-    rows = rows.filter(r => r.requesterId === actor.userId || myActionIds.has(r.id));
+    const myActionIds = myActions.map(a => a.requestId);
+    const filterIds = [...new Set(myActionIds)];
+    q = filterIds.length
+      ? q.where(or(eq(approvalRequestsTable.requesterId, actor.userId), inArray(approvalRequestsTable.id, filterIds)))
+      : q.where(eq(approvalRequestsTable.requesterId, actor.userId));
   }
+  const rows  = await q;
   const names = await userNames([...new Set(rows.map(r => r.requesterId))]);
-  const result = await Promise.all(rows.map(r => fmtRequest(r, names)));
-  res.json(result);
+  res.json(await fmtRequestsBatch(rows, names));
 });
 
 router.get("/approvals/delegated", async (req, res): Promise<void> => {

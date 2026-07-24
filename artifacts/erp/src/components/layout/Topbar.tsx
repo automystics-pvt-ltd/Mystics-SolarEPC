@@ -638,6 +638,19 @@ export function Topbar() {
           <kbd className="hidden md:flex h-5 px-1 rounded-[4px] bg-white dark:bg-card border border-gray-200 dark:border-border text-gray-500 dark:text-muted-foreground text-[10px] font-mono font-bold shadow-sm">⌘K</kbd>
         </button>
 
+        {/* Keyboard shortcuts hint */}
+        <button
+          onClick={() => {
+            // Dispatch a synthetic '?' keydown so the global handler catches it
+            window.dispatchEvent(new KeyboardEvent("keydown", { key: "?", bubbles: true }));
+          }}
+          aria-label="Keyboard shortcuts (?)"
+          className="hidden lg:flex items-center justify-center h-9 w-9 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-muted transition-colors shrink-0"
+          title="Keyboard shortcuts (?)"
+        >
+          <kbd className="text-[11px] font-mono font-bold">?</kbd>
+        </button>
+
         {/* Right actions */}
         <div className="flex items-center gap-1.5">
           <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-50 dark:bg-orange-500/10 border border-orange-100/60 dark:border-orange-500/20">

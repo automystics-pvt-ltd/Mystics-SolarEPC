@@ -327,10 +327,13 @@ async function loadFullQuotation(id: number) {
 // ── LIST ──────────────────────────────────────────────────────────────────────
 router.get("/procurement-quotations", async (req, res): Promise<void> => {
   const { mrId, vendorId, status } = req.query as Record<string, string>;
-  let rows = await db.select().from(procurementQuotationsTable).orderBy(desc(procurementQuotationsTable.createdAt));
-  if (mrId)     rows = rows.filter(r => r.mrId === Number(mrId));
-  if (vendorId) rows = rows.filter(r => r.vendorId === Number(vendorId));
-  if (status)   rows = rows.filter(r => r.status === status);
+  // Push all filters into the DB — no JS-side filtering on full table scans
+  let q = db.select().from(procurementQuotationsTable)
+    .orderBy(desc(procurementQuotationsTable.createdAt)).$dynamic();
+  if (mrId)     q = q.where(eq(procurementQuotationsTable.mrId,      Number(mrId)));
+  if (vendorId) q = q.where(eq(procurementQuotationsTable.vendorId,  Number(vendorId)));
+  if (status)   q = q.where(eq(procurementQuotationsTable.status,    status as any));
+  const rows = await q;
   res.json(rows.map(q => fmtQ(q)));
 });
 

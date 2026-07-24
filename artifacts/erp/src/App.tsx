@@ -10,11 +10,13 @@ import { Shell } from '@/components/layout/Shell';
 import { Login } from '@/pages/auth/Login';
 import { Dashboard } from '@/pages/dashboard/Dashboard';
 import { Loader2, ShieldX, ArrowLeft } from 'lucide-react';
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { env } from '@/lib/env';
 import { usePermissions } from '@/lib/permissions';
 import { Button } from '@/components/ui/button';
+import { useGlobalShortcuts } from '@/lib/useGlobalShortcuts';
+import { KeyboardShortcutsModal } from '@/components/layout/KeyboardShortcutsModal';
 
 // CRM — lazy loaded
 const LeadsList = lazy(() => import('@/pages/crm/LeadsList').then(m => ({ default: m.LeadsList })));
@@ -95,18 +97,69 @@ const queryClient = new QueryClient({
         if (error?.status === 401 || error?.status === 403) return false;
         return failureCount < 2;
       },
-      staleTime: 30_000,
-      gcTime: 5 * 60_000,
+      // Lists & dashboards: 2-min stale window — enough to avoid refetch storms
+      // on fast navigation but fresh enough for operational data.
+      staleTime: 2 * 60_000,
+      // Keep data in cache for 15 min after component unmounts so back-navigation
+      // shows instant results while a background refetch runs.
+      gcTime: 15 * 60_000,
       refetchOnWindowFocus: false,
+      // Show stale data immediately while revalidating in the background
+      // (equivalent to SWR's stale-while-revalidate).
+      placeholderData: (prev: unknown) => prev,
     },
     mutations: { retry: false },
   },
 });
 
+/** Route-transition skeleton — matches the PageHeader + two SectionCard blocks */
 function PageLoader() {
   return (
-    <div className="flex items-center justify-center h-64">
-      <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+    <div className="space-y-5 animate-in fade-in duration-200">
+      {/* Page header skeleton */}
+      <div className="flex items-start justify-between gap-4 mb-6">
+        <div className="space-y-2 flex-1">
+          <div className="h-6 w-44 bg-muted rounded-lg animate-pulse" />
+          <div className="h-3.5 w-72 bg-muted rounded-full animate-pulse opacity-60" />
+        </div>
+        <div className="flex gap-2 shrink-0">
+          <div className="h-9 w-24 bg-muted rounded-lg animate-pulse" />
+          <div className="h-9 w-28 bg-muted rounded-lg animate-pulse opacity-60" />
+        </div>
+      </div>
+      {/* KPI row skeleton */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="bg-card border border-border rounded-xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="h-3 w-20 bg-muted rounded-full animate-pulse" />
+              <div className="h-9 w-9 bg-muted rounded-xl animate-pulse" />
+            </div>
+            <div className="h-7 w-16 bg-muted rounded-full animate-pulse" />
+          </div>
+        ))}
+      </div>
+      {/* Main content skeleton */}
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
+        <div className="h-12 border-b border-border/60 px-4 flex items-center gap-3">
+          <div className="h-3.5 w-28 bg-muted rounded-full animate-pulse" />
+          <div className="ml-auto flex gap-2">
+            <div className="h-7 w-20 bg-muted rounded-lg animate-pulse" />
+            <div className="h-7 w-24 bg-muted rounded-lg animate-pulse opacity-60" />
+          </div>
+        </div>
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-4 px-4 py-3.5 border-b border-border/60 last:border-0">
+            <div className="h-9 w-9 bg-muted rounded-lg animate-pulse shrink-0" />
+            <div className="flex-1 space-y-2 min-w-0">
+              <div className="h-3.5 bg-muted rounded-full animate-pulse w-1/3" />
+              <div className="h-3 bg-muted rounded-full animate-pulse w-2/3 opacity-60" />
+            </div>
+            <div className="h-5 w-16 bg-muted rounded-full animate-pulse shrink-0" />
+            <div className="h-5 w-20 bg-muted rounded-full animate-pulse shrink-0 hidden sm:block opacity-60" />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -169,6 +222,13 @@ function ProtectedRoute({ component: Component, module: moduleName, ...rest }: a
   );
 }
 
+/** Mounts global keyboard shortcuts — must be inside WouterRouter so useLocation works */
+function GlobalShortcutsProvider() {
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  useGlobalShortcuts({ onToggleCheatsheet: () => setShortcutsOpen(v => !v) });
+  return <KeyboardShortcutsModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />;
+}
+
 function Router() {
   const { user, isLoading } = useAuth();
   const [location] = useLocation();
@@ -186,6 +246,8 @@ function Router() {
   if (!user && location !== '/login') return <Redirect to="/login" />;
 
   return (
+    <>
+    <GlobalShortcutsProvider />
     <Switch>
       <Route path="/login" component={Login} />
 
@@ -269,6 +331,7 @@ function Router() {
 
       <Route component={NotFound} />
     </Switch>
+    </>
   );
 }
 
