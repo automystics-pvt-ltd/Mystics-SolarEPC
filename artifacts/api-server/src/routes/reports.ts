@@ -276,6 +276,7 @@ router.get("/reports/vendor-performance", async (req, res): Promise<void> => {
       const totalRejected  = vItems.reduce((s, i) => s + n(i.rejectedQty),  0);
       const acceptanceRate = totalReceived > 0 ? ((totalReceived - totalRejected) / totalReceived) * 100 : 100;
       const totalSpend     = vPos.reduce((s, p) => s + n(p.totalAmount), 0);
+      const totalInvoiceSpend = vInvoices.reduce((s, i) => s + n(i.netPayable), 0);
 
       const onTimeGrns = vGrns.filter(g => {
         const po = vPos.find(p => p.id === g.poId);
@@ -288,7 +289,7 @@ router.get("/reports/vendor-performance", async (req, res): Promise<void> => {
         id: v.id, name: v.name, linked: true,
         category: topCategoryForPOs(vPos),
         totalPOs: vPos.length, totalGRNs: vGrns.length, totalInvoices: vInvoices.length,
-        totalSpend,
+        totalSpend, totalInvoiceSpend,
         acceptanceRate: acceptanceRate.toFixed(1),
         onTimeRate:     onTimeRate.toFixed(1),
         rejectionRate:  totalReceived > 0 ? ((totalRejected / totalReceived) * 100).toFixed(1) : "0.0",
@@ -305,11 +306,14 @@ router.get("/reports/vendor-performance", async (req, res): Promise<void> => {
       const vPos  = pos.filter(p => p.vendorId === null && p.vendorName === vName);
       const vGrns = grns.filter(g => g.vendorId === null && g.vendorName === vName);
       const vItems = grnItems.filter(i => vGrns.some(g => g.id === i.grnId));
+      // Match invoices by name when vendorId is null (unlinked invoices)
+      const vInvoices = invoices.filter(i => i.vendorId === null && i.vendorName === vName);
 
       const totalReceived  = vItems.reduce((s, i) => s + n(i.receivedQty), 0);
       const totalRejected  = vItems.reduce((s, i) => s + n(i.rejectedQty), 0);
       const acceptanceRate = totalReceived > 0 ? ((totalReceived - totalRejected) / totalReceived) * 100 : 100;
       const totalSpend     = vPos.reduce((s, p) => s + n(p.totalAmount), 0);
+      const totalInvoiceSpend = vInvoices.reduce((s, i) => s + n(i.netPayable), 0);
 
       const onTimeGrns = vGrns.filter(g => {
         const po = vPos.find(p => p.id === g.poId);
@@ -321,8 +325,8 @@ router.get("/reports/vendor-performance", async (req, res): Promise<void> => {
       return {
         id: null, name: vName, linked: false,
         category: topCategoryForPOs(vPos),
-        totalPOs: vPos.length, totalGRNs: vGrns.length, totalInvoices: 0,
-        totalSpend,
+        totalPOs: vPos.length, totalGRNs: vGrns.length, totalInvoices: vInvoices.length,
+        totalSpend, totalInvoiceSpend,
         acceptanceRate: acceptanceRate.toFixed(1),
         onTimeRate:     onTimeRate.toFixed(1),
         rejectionRate:  totalReceived > 0 ? ((totalRejected / totalReceived) * 100).toFixed(1) : "0.0",
