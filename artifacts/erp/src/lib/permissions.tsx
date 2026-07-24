@@ -1,4 +1,3 @@
-// @refresh reset
 /**
  * RBAC — Frontend permission hook + PermissionGate component.
  *
@@ -133,40 +132,3 @@ export function CanAdmin({ children, fallback }: { children: React.ReactNode; fa
   return <PermissionGate module="admin" action="admin" children={children} fallback={fallback} />;
 }
 
-/* ── Module constants ───────────────────────────────────────────────────── */
-export const MODULES = [
-  { key: "dashboard",     label: "Dashboard",          emoji: "📊" },
-  { key: "crm",           label: "Sales & CRM",        emoji: "👥" },
-  { key: "procurement",   label: "Procurement",        emoji: "🛒" },
-  { key: "materials",     label: "Materials Catalogue",emoji: "📦" },
-  { key: "vendors",       label: "Vendors",            emoji: "🏭" },
-  { key: "projects",      label: "Projects",           emoji: "📁" },
-  { key: "inventory",     label: "Inventory",          emoji: "🏗️" },
-  { key: "engineering",   label: "Engineering",        emoji: "⚙️" },
-  { key: "commissioning", label: "Commissioning",      emoji: "✅" },
-  { key: "oam",           label: "O&M & AMC",          emoji: "🔧" },
-  { key: "finance",       label: "Finance & Reports",  emoji: "💰" },
-  { key: "reports",       label: "Reports",            emoji: "📈" },
-  { key: "admin",         label: "Administration",     emoji: "⚙️" },
-  { key: "approvals",     label: "Approval Workbench", emoji: "✔️" },
-] as const;
-
-export const PERM_ACTIONS: { key: PermAction; label: string }[] = [
-  { key: "view",    label: "View"   },
-  { key: "create",  label: "Create" },
-  { key: "edit",    label: "Edit"   },
-  { key: "delete",  label: "Delete" },
-  { key: "approve", label: "Approve"},
-  { key: "export",  label: "Export" },
-  { key: "import",  label: "Import" },
-  { key: "admin",   label: "Admin"  },
-];
-
-export const ROLE_LABELS: Record<string, string> = {
-  admin:     "Administrator",
-  director:  "Director",
-  pm:        "Project Manager",
-  finance:   "Finance",
-  warehouse: "Warehouse",
-  sales:     "Sales",
-};

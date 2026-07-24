@@ -643,7 +643,7 @@ const PREFETCH_MAP: Record<string, { key: string[]; fn: () => Promise<unknown> }
   procurement: [{ key: ["proc-dash"],   fn: () => apiGet("/procurement-dashboard") }],
   inventory:   [{ key: ["warehouses"],  fn: () => apiGet("/warehouses") }],
   approvals:   [{ key: ["approvals-pending"], fn: () => apiGet("/approvals/my-pending") }],
-  finance:     [{ key: ["finance-dash"], fn: () => apiGet("/finance/dashboard") }],
+  finance:     [{ key: ["finance-dashboard"], fn: () => apiGet("/reports/invoices") }],
 };
 
 export function NavRail() {
