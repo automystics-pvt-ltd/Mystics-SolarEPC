@@ -478,7 +478,7 @@ export default function ProcurementDashboard() {
   const [dateRange, setDateRange] = useState<DateRange>(defaultRange);
 
   /* ── Single query, cached for 2 minutes ────────────────────────────────── */
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["procurement-dashboard", dateRange.from, dateRange.to],
     queryFn:  () => apiGet<any>("/procurement-dashboard", {
       from: dateRange.from,
@@ -592,6 +592,27 @@ export default function ProcurementDashboard() {
   const navGRNs     = useCallback(() => setLocation("/procurement/grns"),     [setLocation]);
   const navInvoices = useCallback(() => setLocation("/procurement/invoices"), [setLocation]);
   const navVendors  = useCallback(() => setLocation("/procurement/vendors"),  [setLocation]);
+
+  /* ── Error state — visible instead of blank on API failure ───────────────── */
+  if (isError && !data) return (
+    <div className="flex flex-col items-center justify-center min-h-[400px] gap-4 text-center p-8">
+      <div className="h-12 w-12 rounded-full bg-red-50 flex items-center justify-center">
+        <span className="text-red-500 text-xl">!</span>
+      </div>
+      <div>
+        <p className="text-[15px] font-semibold text-foreground">Dashboard failed to load</p>
+        <p className="text-[13px] text-muted-foreground mt-1 max-w-sm">
+          {(error as Error)?.message ?? "An unexpected error occurred. Please try again."}
+        </p>
+      </div>
+      <button
+        onClick={() => refetch()}
+        className="text-[13px] px-4 py-1.5 rounded-md border border-border hover:bg-muted transition-colors"
+      >
+        Retry
+      </button>
+    </div>
+  );
 
   /* ── Skeleton while loading for the first time (after all hooks) ─────────── */
   if (isLoading && !data) return (
