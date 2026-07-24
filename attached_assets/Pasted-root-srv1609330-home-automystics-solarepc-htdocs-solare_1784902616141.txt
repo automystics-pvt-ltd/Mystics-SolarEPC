@@ -1,0 +1,25 @@
+root@srv1609330:/home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server# pm2 list
+┌────┬───────────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name                  │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼───────────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 28 │ automystics-api       │ default     │ 0.0.0   │ fork    │ 1524446  │ 13D    │ 2    │ online    │ 0%       │ 227.9mb  │ root     │ disabled │
+│ 29 │ automystics-api       │ default     │ N/A     │ fork    │ 333429   │ 0s     │ 176… │ online    │ 100%     │ 31.3mb   │ root     │ disabled │
+│ 32 │ docscan-api           │ default     │ 0.0.0   │ fork    │ 542910   │ 25h    │ 8    │ online    │ 0%       │ 146.1mb  │ root     │ disabled │
+│ 11 │ erp-automystics       │ default     │ N/A     │ fork    │ 2085506  │ 13D    │ 10   │ online    │ 0%       │ 119.6mb  │ root     │ disabled │
+│ 1  │ fitro360              │ default     │ 1.0.0   │ fork    │ 1524182  │ 13D    │ 4    │ online    │ 0%       │ 110.1mb  │ root     │ disabled │
+│ 2  │ kalvicore-api         │ default     │ 0.0.0   │ fork    │ 198081   │ 26h    │ 8    │ online    │ 0%       │ 118.9mb  │ root     │ disabled │
+│ 13 │ mmwear-erp            │ default     │ 0.0.0   │ fork    │ 3396013  │ 3D     │ 137  │ online    │ 0%       │ 602.8mb  │ root     │ disabled │
+│ 14 │ mystics-audit         │ default     │ 0.0.0   │ fork    │ 1035800  │ 9D     │ 586  │ online    │ 0%       │ 214.0mb  │ root     │ disabled │
+│ 5  │ mysticscivil-api      │ default     │ N/A     │ fork    │ 1524242  │ 13D    │ 4    │ online    │ 0%       │ 229.6mb  │ root     │ disabled │
+│ 26 │ mysticshr-api         │ default     │ 0.0.0   │ fork    │ 852146   │ 8D     │ 14   │ online    │ 0%       │ 408.6mb  │ root     │ disabled │
+│ 12 │ mysticsinventory      │ default     │ N/A     │ fork    │ 333377   │ 0s     │ 240… │ online    │ 100%     │ 0b       │ root     │ disabled │
+│ 3  │ people-connect-api    │ default     │ 0.0.0   │ fork    │ 1524209  │ 13D    │ 4    │ online    │ 0%       │ 202.4mb  │ root     │ disabled │
+│ 6  │ solarnexus-api        │ default     │ 0.0.0   │ fork    │ 1524251  │ 13D    │ 4    │ online    │ 0%       │ 129.9mb  │ root     │ disabled │
+│ 4  │ tkprabhu-api          │ default     │ 0.0.0   │ fork    │ 1524217  │ 13D    │ 4    │ online    │ 0%       │ 199.5mb  │ root     │ disabled │
+│ 8  │ ungalrajeev-api       │ default     │ N/A     │ fork    │ 333327   │ 1s     │ 955… │ online    │ 50%      │ 114.3mb  │ root     │ disabled │
+│ 7  │ ungaludan-sarath      │ default     │ 0.0.0   │ fork    │ 1524287  │ 13D    │ 4    │ online    │ 0%       │ 210.8mb  │ root     │ disabled │
+│ 9  │ ungalvignesh-api      │ default     │ N/A     │ fork    │ 333370   │ 0s     │ 253… │ online    │ 50%      │ 98.9mb   │ root     │ disabled │
+│ 10 │ ungalvignesh-api      │ default     │ N/A     │ fork    │ 1524307  │ 13D    │ 199… │ online    │ 0%       │ 109.1mb  │ root     │ disabled │
+└────┴───────────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+host metrics | cpu: 99.6% | ram usage: 39.5% | lo: ⇓ 0.027mb/s ⇑ 0.027mb/s | eth0: ⇓ 0.001mb/s ⇑ 0.001mb/s | disk: ⇓ 0mb/s ⇑ 0.132mb/s |
+root@srv1609330:/home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server# 
