@@ -63,7 +63,9 @@ function fmtPO(po: typeof procurementPOsTable.$inferSelect, items: any[] = [], a
   const slaStatus = computeSlaStatus((po as any).slaDeadline);
   const paymentStatus = computePaymentStatus(po.totalAmount, invoices);
   return {
-    id: po.id, poNumber: po.poNumber, quotationId: po.quotationId, vendorId: po.vendorId,
+    id: po.id, poNumber: po.poNumber, quotationId: po.quotationId,
+    projectId: po.projectId ?? null,
+    vendorId: po.vendorId,
     vendorName: po.vendorName, vendorGstin: po.vendorGstin, vendorAddress: po.vendorAddress, vendorContact: po.vendorContact,
     status: po.status, poDate: po.poDate, deliveryDeadline: po.deliveryDeadline, deliveryAddress: po.deliveryAddress,
     paymentTerms: po.paymentTerms, warrantyMonths: po.warrantyMonths,
@@ -320,6 +322,7 @@ router.get("/procurement-pos", async (req, res): Promise<void> => {
   let query = db.select().from(procurementPOsTable).orderBy(desc(procurementPOsTable.createdAt)).$dynamic();
   if (req.query.status) query = query.where(eq(procurementPOsTable.status, req.query.status as any));
   if (req.query.vendorId) query = query.where(eq(procurementPOsTable.vendorId, Number(req.query.vendorId)));
+  if (req.query.projectId) query = query.where(eq(procurementPOsTable.projectId, Number(req.query.projectId)));
   if (req.query.vendor) {
     const vendorName = `%${String(req.query.vendor).toLowerCase()}%`;
     query = query.where(sql`lower(${procurementPOsTable.vendorName}) LIKE ${vendorName}`);
@@ -403,7 +406,7 @@ router.patch("/procurement-pos/:id", requirePermission("procurement", "edit"), a
   // Whitelist of safe metadata-only fields — lifecycle status is explicitly excluded
   // internalRef is NOT a column in procurement_pos — excluded from update payload
   const { deliveryAddress, specialTerms, internalNotes, paymentTerms, warrantyMonths,
-          freightCharges, otherCharges, remarks } = req.body;
+          freightCharges, otherCharges, remarks, projectId } = req.body;
 
   const updateData: Record<string, any> = { updatedAt: new Date() };
   if (deliveryAddress  !== undefined) updateData.deliveryAddress  = deliveryAddress;
@@ -413,6 +416,7 @@ router.patch("/procurement-pos/:id", requirePermission("procurement", "edit"), a
   if (warrantyMonths   !== undefined) updateData.warrantyMonths   = warrantyMonths;
   if (freightCharges   !== undefined) updateData.freightCharges   = freightCharges;
   if (otherCharges     !== undefined) updateData.otherCharges     = otherCharges;
+  if (projectId        !== undefined) updateData.projectId        = projectId ?? null;
 
   await db.update(procurementPOsTable).set(updateData).where(eq(procurementPOsTable.id, id));
   if (remarks) await logAudit(id, "MetadataUpdated", actor.name ?? "Unknown", actor.userId, remarks);

@@ -1,12 +1,12 @@
 import { useGetLead, useUpdateLead, useGetQuotations } from "@workspace/api-client-react";
 import { getGetLeadQueryKey, getGetQuotationsQueryKey } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LeadSurvey } from "./tabs/LeadSurvey";
-import { Loader2, ArrowLeft, Mail, Phone, UserSquare2, Edit2, Save, Plus, FileText, StickyNote, Clock, TrendingUp } from "lucide-react";
+import { Loader2, ArrowLeft, Mail, Phone, UserSquare2, Edit2, Save, Plus, FileText, StickyNote, Clock, TrendingUp, FolderOpen, Layers } from "lucide-react";
 import { useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
@@ -15,6 +15,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { StatusBadge, DetailRow, DetailGrid, SectionCard, PageHeader } from "@/components/shared";
+import { apiGet } from "@/lib/fetch";
 
 function formatDate(d?: string | null) {
   if (!d) return "—";
@@ -48,6 +49,12 @@ export function LeadDetail({ id }: { id: string }) {
         toast({ title: "Lead updated successfully" });
       }
     }
+  });
+
+  const { data: linkedProjects = [] } = useQuery<any[]>({
+    queryKey: ["lead-projects", leadId],
+    queryFn: () => apiGet<any[]>(`/leads/${leadId}/projects`),
+    enabled: !!leadId,
   });
 
   const { user } = useAuth();
@@ -277,6 +284,17 @@ export function LeadDetail({ id }: { id: string }) {
                   >
                     <StickyNote className="h-3.5 w-3.5 mr-1.5" /> Site Survey
                   </TabsTrigger>
+                  <TabsTrigger
+                    value="projects"
+                    className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 h-11 text-[13px] font-bold text-muted-foreground data-[state=active]:text-foreground transition-colors"
+                  >
+                    <Layers className="h-3.5 w-3.5 mr-1.5" /> Projects
+                    {linkedProjects.length > 0 && (
+                      <span className="ml-1.5 inline-flex items-center justify-center h-4 min-w-[16px] px-1 rounded-full bg-primary/10 text-primary text-[10px] font-bold">
+                        {linkedProjects.length}
+                      </span>
+                    )}
+                  </TabsTrigger>
                 </TabsList>
               </div>
 
@@ -329,6 +347,50 @@ export function LeadDetail({ id }: { id: string }) {
 
               <TabsContent value="survey" className="p-5 m-0 outline-none">
                 <LeadSurvey leadId={lead.id} />
+              </TabsContent>
+
+              <TabsContent value="projects" className="p-5 m-0 outline-none">
+                {linkedProjects.length === 0 ? (
+                  <div className="border-2 border-dashed border-border rounded-xl h-44 flex flex-col items-center justify-center text-center p-6">
+                    <Layers className="h-7 w-7 text-muted-foreground/40 mb-2.5" />
+                    <p className="text-sm font-semibold text-muted-foreground">No linked projects yet</p>
+                    <p className="text-[12px] text-muted-foreground mt-1">Projects appear here once a quotation is approved and converted.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {linkedProjects.map((proj: any) => (
+                      <div
+                        key={proj.id}
+                        onClick={() => setLocation(`/projects/${proj.id}`)}
+                        className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg border border-border hover:border-primary/40 bg-card hover:bg-primary/5 transition-all cursor-pointer"
+                      >
+                        <div className="mb-2 sm:mb-0">
+                          <div className="flex items-center gap-2.5 mb-1">
+                            <FolderOpen className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary shrink-0" />
+                            <span className="font-mono font-bold text-foreground text-sm group-hover:text-primary transition-colors">
+                              PRJ-{String(proj.id).padStart(4, "0")}
+                            </span>
+                            <StatusBadge status={proj.status} />
+                          </div>
+                          <p className="text-[13px] font-medium text-foreground ml-6">{proj.name}</p>
+                        </div>
+                        <div className="sm:text-right flex sm:block items-end justify-between w-full sm:w-auto pt-2 border-t border-border sm:border-0 sm:pt-0">
+                          {proj.contractValue && (
+                            <p className="text-base font-bold text-foreground font-mono">
+                              ₹{Number(proj.contractValue).toLocaleString("en-IN")}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-1.5 mt-0.5 sm:justify-end">
+                            <div className="h-1.5 w-16 bg-muted rounded-full overflow-hidden">
+                              <div className="h-full bg-primary rounded-full" style={{ width: `${proj.percentComplete ?? 0}%` }} />
+                            </div>
+                            <span className="text-[11px] text-muted-foreground">{proj.percentComplete ?? 0}%</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </SectionCard>

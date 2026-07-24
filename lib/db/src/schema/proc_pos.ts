@@ -3,6 +3,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { vendorsTable } from "./vendors";
 import { procurementQuotationsTable } from "./proc_quotations";
+import { projectsTable } from "./projects";
 
 export const procPOStatusEnum = pgEnum("proc_po_status", [
   "Draft",
@@ -27,6 +28,7 @@ export const procurementPOsTable = pgTable("procurement_pos", {
   id: serial("id").primaryKey(),
   poNumber: varchar("po_number", { length: 30 }).unique().notNull(),
   quotationId: integer("quotation_id").references(() => procurementQuotationsTable.id),
+  projectId: integer("project_id").references(() => projectsTable.id),
   vendorId: integer("vendor_id").references(() => vendorsTable.id),
 
   vendorName: text("vendor_name").notNull(),
@@ -87,6 +89,7 @@ export const procurementPOsTable = pgTable("procurement_pos", {
   index("po_vendor_id_idx").on(table.vendorId),
   index("po_vendor_name_idx").on(table.vendorName),
   index("po_status_created_at_idx").on(table.status, table.createdAt),
+  index("idx_proc_pos_project_id_drizzle").on(table.projectId),
 ]);
 
 export const procPOItemsTable = pgTable("proc_po_items", {

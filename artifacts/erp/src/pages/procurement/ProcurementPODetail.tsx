@@ -22,7 +22,7 @@ import {
   AlertTriangle, Truck, Clock, CheckCircle2, Printer, ChevronRight,
   ClipboardCheck, XCircle, Send, Eye, Lock, Unlock, PauseCircle,
   PlayCircle, RotateCcw, MessageSquare, History, CreditCard,
-  ThumbsUp, ThumbsDown, AlertCircle, User, Paperclip,
+  ThumbsUp, ThumbsDown, AlertCircle, User, Paperclip, FolderOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
@@ -252,6 +252,24 @@ export default function ProcurementPODetail({ id }: { id: string }) {
           <button className="font-semibold text-blue-800 underline underline-offset-2 hover:text-blue-900"
             onClick={() => setLocation(`/procurement/quotations/${p.quotationId}`)}>
             Vendor Quotation #{p.quotationId}
+          </button>
+        </div>
+      )}
+
+      {p.projectId && (
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs print:hidden">
+          <FolderOpen className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+          <span className="text-emerald-700">Linked to Project</span>
+          <button
+            className="font-mono font-semibold text-emerald-800 underline underline-offset-2 hover:text-emerald-900"
+            onClick={() => setLocation(`/projects/${p.projectId}`)}>
+            PRJ-{String(p.projectId).padStart(4, "0")}
+          </button>
+          <ChevronRight className="h-3 w-3 text-emerald-500/60" />
+          <button
+            onClick={() => setLocation(`/projects/${p.projectId}`)}
+            className="text-emerald-700 hover:text-emerald-900 font-medium">
+            Open Project →
           </button>
         </div>
       )}

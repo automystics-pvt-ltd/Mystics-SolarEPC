@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CheckCircle2, XCircle, Send, AlertTriangle, CreditCard, Printer, Clock, PauseCircle } from "lucide-react";
+import { CheckCircle2, XCircle, Send, AlertTriangle, CreditCard, Printer, Clock, PauseCircle, FolderOpen } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
 import { PageHeader, SectionCard, StatusBadge, DetailGrid, DetailRow } from "@/components/shared";
@@ -137,7 +137,13 @@ export default function InvoiceDetail({ id }: { id: string }) {
         )}
         {inv.grnId && <>
           <span className="text-muted-foreground/40">·</span>
-          <span className="text-[12px] text-muted-foreground">GRN <span className="font-mono font-semibold text-foreground">#{inv.grnId}</span></span>
+          <span className="text-[12px] text-muted-foreground">GRN <button className="font-mono font-semibold text-primary hover:underline" onClick={() => setLocation(`/procurement/grns/${inv.grnId}`)}>#{inv.grnId}</button></span>
+        </>}
+        {inv.projectId && <>
+          <span className="text-muted-foreground/40">·</span>
+          <button className="flex items-center gap-1 text-[12px] text-emerald-700 font-semibold hover:underline" onClick={() => setLocation(`/projects/${inv.projectId}`)}>
+            <FolderOpen className="w-3 h-3" />PRJ-{String(inv.projectId).padStart(4, "0")}
+          </button>
         </>}
         <span className="text-muted-foreground/40">·</span>
         <span className="text-[12px] text-muted-foreground">{new Date(inv.createdAt).toLocaleDateString("en-IN")}</span>
@@ -191,6 +197,7 @@ export default function InvoiceDetail({ id }: { id: string }) {
           <DetailRow label="Vendor" value={inv.vendorName} />
           <DetailRow label="PO Reference" value={`#${inv.poId}`} mono />
           <DetailRow label="GRN Reference" value={inv.grnId ? `#${inv.grnId}` : undefined} mono />
+          {inv.projectId && <DetailRow label="Project" value={`PRJ-${String(inv.projectId).padStart(4, "0")}`} mono />}
           <DetailRow label="Vendor Invoice No." value={inv.vendorInvoiceNumber} mono />
           <DetailRow label="Vendor Invoice Date" value={inv.vendorInvoiceDate} />
           <DetailRow label="Payment Terms" value={inv.paymentTerms} />

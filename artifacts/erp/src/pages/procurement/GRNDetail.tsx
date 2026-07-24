@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   ArrowLeft, CheckCircle2, XCircle, Send, Clock, Printer,
-  Camera, X,
+  Camera, X, FileText, FolderOpen,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
@@ -225,10 +225,12 @@ export default function GRNDetail({ id }: { id: string }) {
   );
 
   const g = grn as any;
-  const canSubmit  = g.status === "Draft";
-  const canApprove = isApprover && g.status === "Submitted";
-  const canReject  = isApprover && g.status === "Submitted";
-  const hasActions = canSubmit || canApprove || canReject;
+  const canSubmit        = g.status === "Draft";
+  const canApprove       = isApprover && g.status === "Submitted";
+  const canReject        = isApprover && g.status === "Submitted";
+  const canCreateInvoice = ["Accepted", "PartiallyAccepted"].includes(g.status);
+  const invUrl           = `/procurement/invoices/new?poId=${g.poId}`;
+  const hasActions       = canSubmit || canApprove || canReject;
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25 }}
@@ -249,6 +251,11 @@ export default function GRNDetail({ id }: { id: string }) {
             </Button>
             {/* Desktop action buttons (hidden on mobile — shown in sticky bar) */}
             <div className="hidden lg:flex items-center gap-2">
+              {canCreateInvoice && (
+                <Button size="sm" variant="outline" className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 gap-1.5" onClick={() => setLocation(invUrl)}>
+                  <FileText className="w-3.5 h-3.5" /> Create Invoice
+                </Button>
+              )}
               {canSubmit && (
                 <Button size="sm" className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white" onClick={() => setActionDialog("submit")}>
                   <Send className="w-3.5 h-3.5" /> Submit for Inspection
@@ -291,6 +298,16 @@ export default function GRNDetail({ id }: { id: string }) {
             >{g.quotationRef ?? `#${g.quotationId}`}</button>
           </>
         )}
+        {g.projectId && (
+          <>
+            <div className="h-4 w-px bg-border/60" />
+            <FolderOpen className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+            <button
+              className="font-mono text-[12px] font-semibold text-emerald-700 hover:underline"
+              onClick={() => setLocation(`/projects/${g.projectId}`)}
+            >PRJ-{String(g.projectId).padStart(4, "0")}</button>
+          </>
+        )}
         {g.deliveryDate && (
           <>
             <div className="h-4 w-px bg-border/60" />
@@ -306,6 +323,21 @@ export default function GRNDetail({ id }: { id: string }) {
           </>
         )}
       </div>
+
+      {/* ── Post-approval: Create Invoice Banner ────────────────────────────── */}
+      {canCreateInvoice && (
+        <div className="flex items-center justify-between gap-3 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <FileText className="w-4 h-4 text-emerald-600 shrink-0" />
+            <p className="text-sm text-emerald-800 font-medium">
+              GRN accepted — ready to raise a vendor invoice against PO #{g.poId}.
+            </p>
+          </div>
+          <Button size="sm" className="shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5" onClick={() => setLocation(invUrl)}>
+            <FileText className="w-3.5 h-3.5" /> Create Invoice
+          </Button>
+        </div>
+      )}
 
       {/* ── Quantity Summary Cards ───────────────────────────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

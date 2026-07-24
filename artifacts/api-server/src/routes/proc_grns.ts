@@ -147,8 +147,9 @@ router.get("/proc-grns/:id", async (req, res): Promise<void> => {
   // Back-link: resolve quotation from the linked PO
   let quotationId: number | null = null;
   let quotationRef: string | null = null;
+  let projectId: number | null = null;
   if (grn.poId) {
-    const [po] = await db.select({ qId: procurementPOsTable.quotationId })
+    const [po] = await db.select({ qId: procurementPOsTable.quotationId, projId: procurementPOsTable.projectId })
       .from(procurementPOsTable).where(eq(procurementPOsTable.id, grn.poId));
     if (po?.qId) {
       quotationId = po.qId;
@@ -156,8 +157,9 @@ router.get("/proc-grns/:id", async (req, res): Promise<void> => {
         .from(procurementQuotationsTable).where(eq(procurementQuotationsTable.id, po.qId));
       quotationRef = quot?.referenceId ?? null;
     }
+    if (po?.projId) projectId = po.projId;
   }
-  res.json({ ...fmtGRN(grn, items, auditLogs, comments), quotationId, quotationRef });
+  res.json({ ...fmtGRN(grn, items, auditLogs, comments), quotationId, quotationRef, projectId });
 });
 
 // ── CREATE ────────────────────────────────────────────────────────────────────

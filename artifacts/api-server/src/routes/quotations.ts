@@ -195,4 +195,29 @@ router.get("/client-pos/:id", async (req, res): Promise<void> => {
   res.json(fmtPO(row));
 });
 
+// ── PROJECTS LINKED TO A LEAD ─────────────────────────────────────────────────
+// Traverses: lead → quotation → clientPO → project (SSOT: no data duplication)
+router.get("/leads/:id/projects", async (req, res): Promise<void> => {
+  const leadId = Number(req.params.id);
+  const rows = await db
+    .select({
+      id: projectsTable.id,
+      name: projectsTable.name,
+      status: projectsTable.status,
+      percentComplete: projectsTable.percentComplete,
+      contractValue: projectsTable.contractValue,
+    })
+    .from(projectsTable)
+    .innerJoin(clientPOsTable, eq(clientPOsTable.id, projectsTable.clientPoId))
+    .innerJoin(quotationsTable, eq(quotationsTable.id, clientPOsTable.quotationId))
+    .where(eq(quotationsTable.leadId, leadId));
+  res.json(rows.map(r => ({
+    id: r.id,
+    name: r.name,
+    status: r.status,
+    percentComplete: Number(r.percentComplete ?? 0),
+    contractValue: r.contractValue ? Number(r.contractValue) : null,
+  })));
+});
+
 export default router;
