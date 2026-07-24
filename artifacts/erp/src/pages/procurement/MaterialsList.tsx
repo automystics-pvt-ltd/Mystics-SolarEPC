@@ -845,8 +845,8 @@ export default function MaterialsList() {
   });
 
   const toggleSort = (key: string) => setSort(s => s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" });
-  const SortIcon = ({ key }: { key: string }) => {
-    if (sort.key !== key) return <ArrowUpDown className="w-3 h-3 text-muted-foreground/50" />;
+  const SortIcon = ({ column }: { column: string }) => {
+    if (sort.key !== column) return <ArrowUpDown className="w-3 h-3 text-muted-foreground/50" />;
     return sort.dir === "asc" ? <ArrowUp className="w-3 h-3 text-primary" /> : <ArrowDown className="w-3 h-3 text-primary" />;
   };
 
@@ -1055,7 +1055,7 @@ export default function MaterialsList() {
                           { key: "isActive", label: "Status" },
                         ].map(col => (
                           <th key={col.key} className="text-left px-3 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors select-none" onClick={() => toggleSort(col.key)}>
-                            <span className="flex items-center gap-1.5">{col.label} <SortIcon key={col.key} /></span>
+                            <span className="flex items-center gap-1.5">{col.label} <SortIcon column={col.key} /></span>
                           </th>
                         ))}
                         <th className="w-16 px-3 py-3" />

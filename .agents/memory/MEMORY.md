@@ -11,3 +11,4 @@
 - [Solar Inventory module](solar-inventory-module.md) — full lifecycle: stock levels, allocations, returns, reorder planning; raw SQL migrations (drizzle push needs TTY); all new tables use pg.Client not Drizzle
 - [ERP Performance Optimizations](erp-performance-optimizations.md) — 32 DB indexes, approvals N+1 fixed with fmtRequestsBatch, quotations list DB-side filtering, React Query SWR pattern, keyboard shortcuts, NavRail prefetch-on-hover
 - [Procurement PO DB schema gaps](proc-pos-db-schema.md) — po_comments, po_versions tables and is_locked/approval columns must be created manually; project_id added to procurement_pos
+- [QA Audit Findings (July 2026)](qa-audit-findings.md) — all 26 endpoints green; key fixes: quotations missing DB column, SLA enum cast, vendor perf unlinked POs, report status filter, SortIcon key prop

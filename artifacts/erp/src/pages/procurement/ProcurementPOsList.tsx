@@ -133,7 +133,7 @@ export default function ProcurementPOsList() {
                 {isNumericVendorFilter
                   ? (pos.find(p => p.vendorId === vendorIdNum)?.vendorName ?? `Vendor #${vendorFilter}`)
                   : vendorFilter}
-                <button onClick={() => setVendorFilter("")} className="hover:opacity-70"><X className="h-3 w-3" /></button>
+                <button onClick={() => setVendorFilter("")} aria-label="Clear vendor filter" className="hover:opacity-70"><X className="h-3 w-3" /></button>
               </span>
             </>
           )}
@@ -142,7 +142,7 @@ export default function ProcurementPOsList() {
               <span className="text-xs text-slate-500">Category:</span>
               <span className="flex items-center gap-1.5 bg-violet-100 text-violet-700 text-xs font-semibold px-2.5 py-1 rounded-full border border-violet-200">
                 {categoryFilter}
-                <button onClick={() => setCategoryFilter("")} className="hover:opacity-70"><X className="h-3 w-3" /></button>
+                <button onClick={() => setCategoryFilter("")} aria-label="Clear category filter" className="hover:opacity-70"><X className="h-3 w-3" /></button>
               </span>
             </>
           )}
@@ -151,7 +151,7 @@ export default function ProcurementPOsList() {
               <span className="text-xs text-slate-500">Project:</span>
               <span className="flex items-center gap-1.5 bg-emerald-100 text-emerald-700 text-xs font-semibold px-2.5 py-1 rounded-full border border-emerald-200">
                 Project #{projectIdFilter}
-                <button onClick={() => setProjectIdFilter("")} className="hover:opacity-70"><X className="h-3 w-3" /></button>
+                <button onClick={() => setProjectIdFilter("")} aria-label="Clear project filter" className="hover:opacity-70"><X className="h-3 w-3" /></button>
               </span>
             </>
           )}
@@ -220,7 +220,11 @@ export default function ProcurementPOsList() {
 
             return (
               <motion.div key={po.id} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
-                <div onClick={() => setLocation(`/procurement/pos/${po.id}`)}
+                <div
+                  onClick={() => setLocation(`/procurement/pos/${po.id}`)}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setLocation(`/procurement/pos/${po.id}`); }}
+                  role="button"
+                  tabIndex={0}
                   className={cn(
                     "bg-white border rounded-xl p-4 flex items-center gap-4 cursor-pointer hover:shadow-sm transition-all group",
                     overdue    ? "border-red-200 hover:border-red-300" :

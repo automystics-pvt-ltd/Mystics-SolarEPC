@@ -68,38 +68,43 @@ export async function slaEscalationJob(): Promise<void> {
 
     // ── PO SLA breach monitoring ─────────────────────────────────────────────
     try {
-      const breachedPOs = await (db as any).execute(
-        sql`SELECT id, po_number, submitted_by FROM procurement_pos
-            WHERE status IN ('Submitted', 'PendingApproval')
-              AND sla_deadline IS NOT NULL
-              AND sla_deadline < now()
-            LIMIT 50`
-      );
-      const rows = breachedPOs?.rows ?? [];
+      const rows = await db
+        .select({
+          id:          procurementPOsTable.id,
+          poNumber:    procurementPOsTable.poNumber,
+          submittedBy: procurementPOsTable.submittedBy,
+        })
+        .from(procurementPOsTable)
+        .where(
+          sql`${procurementPOsTable.status}::text IN ('Submitted','PendingApproval')
+            AND ${procurementPOsTable.slaDeadline} IS NOT NULL
+            AND ${procurementPOsTable.slaDeadline} < now()`,
+        )
+        .limit(50);
       for (const po of rows) {
         const notifications = [];
-        if (po.submitted_by) {
+        if (po.submittedBy) {
           notifications.push({
-            userId:     po.submitted_by,
+            userId:     po.submittedBy,
             type:       "error",
             title:      "⚠ PO Approval SLA Breached",
-            message:    `Purchase Order ${po.po_number} has exceeded its approval SLA deadline. Please escalate.`,
+            message:    `Purchase Order ${po.poNumber} has exceeded its approval SLA deadline. Please escalate.`,
             entityType: "purchase_order",
             entityId:   po.id,
-            entityRef:  po.po_number,
+            entityRef:  po.poNumber,
             actionUrl:  `/procurement/pos/${po.id}`,
           });
         }
         for (const uid of adminIds) {
-          if (uid === po.submitted_by) continue;
+          if (uid === po.submittedBy) continue;
           notifications.push({
             userId:     uid,
             type:       "warning",
             title:      "PO SLA Breach: Action Needed",
-            message:    `Purchase Order ${po.po_number} has exceeded its approval SLA. Approval is overdue.`,
+            message:    `Purchase Order ${po.poNumber} has exceeded its approval SLA. Approval is overdue.`,
             entityType: "purchase_order",
             entityId:   po.id,
-            entityRef:  po.po_number,
+            entityRef:  po.poNumber,
             actionUrl:  `/procurement/pos/${po.id}`,
           });
         }

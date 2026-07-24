@@ -225,9 +225,14 @@ export default function VendorPerformance() {
               </thead>
               <tbody>
                 {filtered.map((v, i) => (
-                  <tr key={v.id} className="border-b border-border/40 hover:bg-muted/20">
+                  <tr key={v.id ?? v.name} className="border-b border-border/40 hover:bg-muted/20">
                     <td className="px-4 py-3 text-center text-muted-foreground font-mono text-xs">{i + 1}</td>
-                    <td className="px-4 py-3 font-semibold text-foreground">{v.name}</td>
+                    <td className="px-4 py-3 font-semibold text-foreground">
+                      <span>{v.name}</span>
+                      {v.linked === false && (
+                        <Badge variant="outline" className="ml-2 text-xs text-amber-600 border-amber-200 bg-amber-50">Unlinked</Badge>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-muted-foreground text-xs">{v.category || "—"}</td>
                     <td className="px-4 py-3 text-center text-muted-foreground">{v.totalPOs}</td>
                     <td className="px-4 py-3 text-right font-semibold text-foreground">{formatINR(v.totalSpend)}</td>

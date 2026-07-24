@@ -6,6 +6,7 @@ import {
   vendorsTable, procPOItemsTable,
 } from "@workspace/db";
 import { desc, sql, gte, lte, and, eq } from "drizzle-orm";
+import { deriveCategory } from "../lib/category-rules";
 
 const router: IRouter = Router();
 
@@ -44,12 +45,13 @@ router.get("/reports/procurement", async (req, res): Promise<void> => {
     });
     const monthly = Object.values(monthlyMap).sort((a, b) => a.month.localeCompare(b.month)).slice(-12);
 
+    const ACTIVE_STATUSES = ["Draft", "Submitted", "PendingApproval", "Approved", "Revised", "OnHold", "Issued", "Acknowledged", "PartiallyReceived"];
     res.json({
       summary: {
         total: pos.length,
         totalValue: pos.reduce((s, p) => s + n(p.totalAmount), 0),
-        openValue: pos.filter(p => (p.status as string) === "Open").reduce((s, p) => s + n(p.totalAmount), 0),
-        closedValue: pos.filter(p => p.status === "Closed").reduce((s, p) => s + n(p.totalAmount), 0),
+        openValue: pos.filter(p => ACTIVE_STATUSES.includes(p.status as string)).reduce((s, p) => s + n(p.totalAmount), 0),
+        closedValue: pos.filter(p => ["FullyReceived", "Closed", "Paid"].includes(p.status as string)).reduce((s, p) => s + n(p.totalAmount), 0),
       },
       byStatus: Object.entries(byStatus).map(([status, d]) => ({ status, ...d })),
       byVendor,
@@ -200,24 +202,57 @@ router.get("/reports/inventory", async (req, res): Promise<void> => {
 // GET /reports/vendor-performance — vendor scorecard
 router.get("/reports/vendor-performance", async (req, res): Promise<void> => {
   try {
-    const vendors = await db.select().from(vendorsTable);
-    const pos = await db.select().from(procurementPOsTable);
-    const grns = await db.select().from(procGRNsTable);
-    const grnItems = await db.select().from(procGRNItemsTable);
-    const invoices = await db.select().from(procInvoicesTable);
+    const [vendors, pos, poItems, grns, grnItems, invoices] = await Promise.all([
+      db.select().from(vendorsTable),
+      db.select().from(procurementPOsTable),
+      db.select({ poId: procPOItemsTable.poId, materialName: procPOItemsTable.materialName }).from(procPOItemsTable),
+      db.select().from(procGRNsTable),
+      db.select().from(procGRNItemsTable),
+      db.select().from(procInvoicesTable),
+    ]);
 
-    const performance = vendors.map(v => {
-      const vPos = pos.filter(p => p.vendorId === v.id);
-      const vGrns = grns.filter(g => g.vendorId === v.id);
-      const vItems = grnItems.filter(i => vGrns.some(g => g.id === i.grnId));
-      const vInvoices = invoices.filter(i => i.vendorId === v.id);
+    // Derive the dominant procurement category for a set of POs
+    function topCategoryForPOs(vPos: typeof pos): string {
+      const cats: Record<string, number> = {};
+      for (const po of vPos) {
+        const items = poItems.filter(i => i.poId === po.id);
+        for (const item of items) {
+          const cat = deriveCategory(item.materialName);
+          cats[cat] = (cats[cat] ?? 0) + 1;
+        }
+      }
+      const entries = Object.entries(cats);
+      if (!entries.length) return "";
+      return entries.sort((a, b) => b[1] - a[1])[0][0];
+    }
 
-      const totalReceived = vItems.reduce((s, i) => s + n(i.receivedQty), 0);
-      const totalRejected = vItems.reduce((s, i) => s + n(i.rejectedQty), 0);
+    // Helper: match POs to a vendor by ID or by name snapshot (when PO was
+    // created without linking to a vendor record).
+    function posForVendor(vendorId: number, vendorName: string) {
+      return pos.filter(p =>
+        (p.vendorId !== null && p.vendorId === vendorId) ||
+        (p.vendorId === null && p.vendorName === vendorName),
+      );
+    }
+    function grnsForVendor(vendorId: number, vendorName: string) {
+      return grns.filter(g =>
+        (g.vendorId !== null && g.vendorId === vendorId) ||
+        (g.vendorId === null && g.vendorName === vendorName),
+      );
+    }
+
+    // Build entries for registered vendors
+    const registeredPerf = vendors.map(v => {
+      const vPos     = posForVendor(v.id, v.name);
+      const vGrns    = grnsForVendor(v.id, v.name);
+      const vItems   = grnItems.filter(i => vGrns.some(g => g.id === i.grnId));
+      const vInvoices = invoices.filter(i => i.vendorId === v.id || (i.vendorId === null && (i as any).vendorName === v.name));
+
+      const totalReceived  = vItems.reduce((s, i) => s + n(i.receivedQty),  0);
+      const totalRejected  = vItems.reduce((s, i) => s + n(i.rejectedQty),  0);
       const acceptanceRate = totalReceived > 0 ? ((totalReceived - totalRejected) / totalReceived) * 100 : 100;
-      const totalSpend = vPos.reduce((s, p) => s + n(p.totalAmount), 0);
+      const totalSpend     = vPos.reduce((s, p) => s + n(p.totalAmount), 0);
 
-      // On-time delivery: GRNs where deliveryDate <= PO deliveryDeadline
       const onTimeGrns = vGrns.filter(g => {
         const po = vPos.find(p => p.id === g.poId);
         if (!po?.deliveryDeadline || !g.deliveryDate) return true;
@@ -226,14 +261,52 @@ router.get("/reports/vendor-performance", async (req, res): Promise<void> => {
       const onTimeRate = vGrns.length > 0 ? (onTimeGrns.length / vGrns.length) * 100 : 100;
 
       return {
-        id: v.id, name: v.name,
+        id: v.id, name: v.name, linked: true,
+        category: topCategoryForPOs(vPos),
         totalPOs: vPos.length, totalGRNs: vGrns.length, totalInvoices: vInvoices.length,
-        totalSpend, acceptanceRate: acceptanceRate.toFixed(1), onTimeRate: onTimeRate.toFixed(1),
-        rejectionRate: totalReceived > 0 ? ((totalRejected / totalReceived) * 100).toFixed(1) : "0.0",
+        totalSpend,
+        acceptanceRate: acceptanceRate.toFixed(1),
+        onTimeRate:     onTimeRate.toFixed(1),
+        rejectionRate:  totalReceived > 0 ? ((totalRejected / totalReceived) * 100).toFixed(1) : "0.0",
         score: Math.round((acceptanceRate * 0.5) + (onTimeRate * 0.5)),
       };
-    }).filter(v => v.totalPOs > 0).sort((a, b) => b.score - a.score);
+    }).filter(v => v.totalPOs > 0);
 
+    // Also surface unlinked POs (vendorId = null, name not in registered vendors)
+    const registeredNames = new Set(vendors.map(v => v.name));
+    const unlinkedNames = [...new Set(
+      pos.filter(p => p.vendorId === null && !registeredNames.has(p.vendorName)).map(p => p.vendorName)
+    )];
+    const unlinkedPerf = unlinkedNames.map(vName => {
+      const vPos  = pos.filter(p => p.vendorId === null && p.vendorName === vName);
+      const vGrns = grns.filter(g => g.vendorId === null && g.vendorName === vName);
+      const vItems = grnItems.filter(i => vGrns.some(g => g.id === i.grnId));
+
+      const totalReceived  = vItems.reduce((s, i) => s + n(i.receivedQty), 0);
+      const totalRejected  = vItems.reduce((s, i) => s + n(i.rejectedQty), 0);
+      const acceptanceRate = totalReceived > 0 ? ((totalReceived - totalRejected) / totalReceived) * 100 : 100;
+      const totalSpend     = vPos.reduce((s, p) => s + n(p.totalAmount), 0);
+
+      const onTimeGrns = vGrns.filter(g => {
+        const po = vPos.find(p => p.id === g.poId);
+        if (!po?.deliveryDeadline || !g.deliveryDate) return true;
+        return g.deliveryDate <= po.deliveryDeadline;
+      });
+      const onTimeRate = vGrns.length > 0 ? (onTimeGrns.length / vGrns.length) * 100 : 100;
+
+      return {
+        id: null, name: vName, linked: false,
+        category: topCategoryForPOs(vPos),
+        totalPOs: vPos.length, totalGRNs: vGrns.length, totalInvoices: 0,
+        totalSpend,
+        acceptanceRate: acceptanceRate.toFixed(1),
+        onTimeRate:     onTimeRate.toFixed(1),
+        rejectionRate:  totalReceived > 0 ? ((totalRejected / totalReceived) * 100).toFixed(1) : "0.0",
+        score: Math.round((acceptanceRate * 0.5) + (onTimeRate * 0.5)),
+      };
+    });
+
+    const performance = [...registeredPerf, ...unlinkedPerf].sort((a, b) => b.score - a.score);
     res.json({ vendors: performance });
   } catch (e) { res.status(500).json({ error: String(e) }); }
 });
