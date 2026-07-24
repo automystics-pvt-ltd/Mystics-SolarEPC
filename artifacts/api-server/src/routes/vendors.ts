@@ -185,7 +185,7 @@ router.post("/vendors", requirePermission("vendors", "create"), async (req, res)
   const code = `VND-${String(nextNum).padStart(4, "0")}`;
 
   try {
-    const [row] = await db.insert(vendorsTable).values({ ...body, code }).returning();
+    const [row] = await db.insert(vendorsTable).values({ ...body, code } as typeof vendorsTable.$inferInsert).returning();
     let contacts: typeof vendorContactsTable.$inferSelect[] = [];
     if (contactsBody?.length) {
       contacts = await db.insert(vendorContactsTable)

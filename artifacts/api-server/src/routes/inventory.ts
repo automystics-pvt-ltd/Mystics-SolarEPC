@@ -83,7 +83,7 @@ router.post("/grns", async (req, res): Promise<void> => {
   const parsed = CreateGRNBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const grnNumber = `GRN-${String(++grnCounter).padStart(4, "0")}`;
-  const [row] = await db.insert(grnsTable).values({ ...parsed.data, grnNumber, lineItems: parsed.data.lineItems ?? [] }).returning();
+  const [row] = await db.insert(grnsTable).values({ ...parsed.data, grnNumber, lineItems: (parsed.data.lineItems ?? []).map(li => ({ ...li, unit: li.unit ?? "" })) }).returning();
   // Post stock ledger entries
   for (const li of parsed.data.lineItems ?? []) {
     const [last] = await db.select().from(stockLedgerTable).where(and(eq(stockLedgerTable.warehouseId, parsed.data.warehouseId), eq(stockLedgerTable.itemName, li.itemName))).orderBy(desc(stockLedgerTable.createdAt)).limit(1);

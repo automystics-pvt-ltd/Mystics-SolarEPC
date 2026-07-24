@@ -47,7 +47,7 @@ router.post("/material-requests", async (req, res): Promise<void> => {
   const parsed = CreateMaterialRequestBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const mrNumber = `MR-${String(++mrCounter).padStart(4, "0")}`;
-  const [row] = await db.insert(materialRequestsTable).values({ ...parsed.data, mrNumber, items: parsed.data.items ?? [] }).returning();
+  const [row] = await db.insert(materialRequestsTable).values({ ...parsed.data, mrNumber, items: (parsed.data.items ?? []).map(item => ({ ...item, itemCode: item.itemCode ?? undefined, specifications: item.specifications ?? undefined })) }).returning();
   res.status(201).json(fmtMR(row));
 });
 

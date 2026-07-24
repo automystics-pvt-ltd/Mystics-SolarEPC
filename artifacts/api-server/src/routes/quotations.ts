@@ -28,7 +28,7 @@ router.post("/quotations", async (req, res): Promise<void> => {
   const total = items.reduce((s, i) => s + (i.amount ?? i.qty * i.unitPrice), 0);
   const [row] = await db.insert(quotationsTable).values({
     leadId: parsed.data.leadId,
-    boqItems: items,
+    boqItems: items.map(i => ({ ...i, amount: i.amount ?? i.qty * i.unitPrice })),
     markupPct: parsed.data.markupPct?.toString(),
     totalAmount: (total * (1 + (parsed.data.markupPct ?? 0) / 100)).toString(),
     validTill: parsed.data.validTill,
@@ -122,7 +122,7 @@ router.post("/quotations/:id/create-project", async (req, res): Promise<void> =>
 
   const { projectName, siteLocation } = req.body;
   const name = projectName || (lead ? `${lead.companyName} — Solar Project` : `Solar Project QTN-${String(id).padStart(4, "0")}`);
-  const site = siteLocation || lead?.siteLocation || null;
+  const site = siteLocation || null;
 
   // Use a single pg.Client transaction for the whole operation (atomic)
   const client = new pg.Client({ connectionString: process.env.DATABASE_URL });

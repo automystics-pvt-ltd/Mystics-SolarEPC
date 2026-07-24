@@ -48,7 +48,7 @@ router.get("/reports/procurement", async (req, res): Promise<void> => {
       summary: {
         total: pos.length,
         totalValue: pos.reduce((s, p) => s + n(p.totalAmount), 0),
-        openValue: pos.filter(p => p.status === "Open").reduce((s, p) => s + n(p.totalAmount), 0),
+        openValue: pos.filter(p => (p.status as string) === "Open").reduce((s, p) => s + n(p.totalAmount), 0),
         closedValue: pos.filter(p => p.status === "Closed").reduce((s, p) => s + n(p.totalAmount), 0),
       },
       byStatus: Object.entries(byStatus).map(([status, d]) => ({ status, ...d })),
@@ -226,7 +226,7 @@ router.get("/reports/vendor-performance", async (req, res): Promise<void> => {
       const onTimeRate = vGrns.length > 0 ? (onTimeGrns.length / vGrns.length) * 100 : 100;
 
       return {
-        id: v.id, name: v.name, category: v.category,
+        id: v.id, name: v.name,
         totalPOs: vPos.length, totalGRNs: vGrns.length, totalInvoices: vInvoices.length,
         totalSpend, acceptanceRate: acceptanceRate.toFixed(1), onTimeRate: onTimeRate.toFixed(1),
         rejectionRate: totalReceived > 0 ? ((totalRejected / totalReceived) * 100).toFixed(1) : "0.0",
@@ -247,12 +247,12 @@ router.get("/reports/projects", async (req, res): Promise<void> => {
     const pos = await db.select().from(procurementPOsTable);
 
     const summary = projects.map(p => {
-      const pBudget = budgets.filter(b => b.projectId === p.id).reduce((s, b) => s + n(b.amount), 0);
-      const pExpenses = expenses.filter(e => e.projectId === p.id && e.status === "Approved").reduce((s, e) => s + n(e.amount), 0);
+      const pBudget = budgets.filter(b => b.projectId === p.id).reduce((s, b) => s + n(b.budgetedAmount), 0);
+      const pExpenses = expenses.filter(e => e.projectId === p.id && e.approvalStatus === "Approved").reduce((s, e) => s + n(e.amount), 0);
       const pPOValue = pos.filter(po => po.projectId === p.id).reduce((s, po) => s + n(po.totalAmount), 0);
       const utilization = pBudget > 0 ? ((pExpenses / pBudget) * 100).toFixed(1) : "0.0";
       return {
-        id: p.id, name: p.name, status: p.status, clientName: p.clientName,
+        id: p.id, name: p.name, status: p.status,
         budget: pBudget, expenses: pExpenses, poValue: pPOValue,
         remaining: pBudget - pExpenses,
         utilization,

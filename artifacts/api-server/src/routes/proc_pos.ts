@@ -203,13 +203,13 @@ async function emitNotifications(
   await db.insert(notificationsTable).values(
     ids.map(uid => ({
       userId: uid,
-      type: opts.type ?? "info",
+      type: (opts.type ?? "info") as "error" | "info" | "warning" | "success" | "approval",
       title: opts.title,
       message: opts.message,
       entityType: opts.entityType ?? "po",
-      entityId: opts.entityId,
-      entityRef: opts.entityRef,
-      actionUrl: opts.actionUrl,
+      entityId: opts.entityId ?? null,
+      entityRef: opts.entityRef ?? null,
+      actionUrl: opts.actionUrl ?? null,
     })),
   );
 }
