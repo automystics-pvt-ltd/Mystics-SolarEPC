@@ -16,7 +16,6 @@ import { useGetDashboard, useGetCombinedDashboard } from "@workspace/api-client-
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { useLocation } from "wouter";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   RefreshCw, Settings2, CheckCircle2, ShoppingCart,
   CircleDollarSign, TrendingUp, Ticket, X, Eye, EyeOff,
@@ -579,8 +578,9 @@ export function Dashboard() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col gap-5 p-5 pb-8 min-h-0">
-      {/* Welcome Bar */}
+    <div className="flex flex-col gap-3 px-4 py-3 pb-8 min-h-0">
+
+      {/* ① Welcome Bar */}
       <WelcomeBar
         name={firstName}
         isRefreshing={isRefreshing}
@@ -590,64 +590,61 @@ export function Dashboard() {
         activeLeads={(combined?.pipeline as any)?.totalLeads ?? dashboard?.recentLeads?.length ?? 0}
       />
 
-      {/* KPI Row */}
-      <AnimatePresence initial={false}>
-        {show("kpis") && (
-          <motion.div key="kpis" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
-            {isLoading
-              ? <SkeletonStats count={5} />
-              : <KPIRow cards={kpiCards} />
-            }
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* ② Quick Actions — prominent horizontal strip at top for immediate access */}
+      {show("quick_actions") && <QuickActionsGrid />}
 
-      {/* Main 2-column grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Left column — main workspace */}
-        <div className="lg:col-span-2 flex flex-col gap-5">
+      {/* ③ Alerts — full-width banner (only when alerts exist) */}
+      {show("alerts") && alerts.length > 0 && (
+        <AlertsPanel alerts={alerts} />
+      )}
+
+      {/* ④ KPI Row */}
+      {show("kpis") && (
+        isLoading
+          ? <SkeletonStats count={5} />
+          : <KPIRow cards={kpiCards} />
+      )}
+
+      {/* ⑤ Main content — 12-column enterprise grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-3 items-start">
+
+        {/* Left: Work items — Action Required + Upcoming Milestones */}
+        <div className="md:col-span-1 xl:col-span-5 flex flex-col gap-3">
           {show("action_required") && (
             <ActionRequiredPanel items={actionItems} isLoading={d1 || d3} />
           )}
-
           {show("my_tasks") && (
             <UpcomingTasksPanel items={upcomingItems} isLoading={d2} />
           )}
-
-          {show("quick_actions") && (
-            <QuickActionsGrid />
-          )}
         </div>
 
-        {/* Right column — contextual panel */}
-        <div className="flex flex-col gap-5">
-          {show("alerts") && alerts.length > 0 && (
-            <AlertsPanel alerts={alerts} />
-          )}
+        {/* Center: Activity Feed */}
+        {show("activity") && (
+          <div className="md:col-span-1 xl:col-span-4">
+            <ActivityFeed items={activityItems} isLoading={d1 || d2 || d3} />
+          </div>
+        )}
 
+        {/* Right: Recently Accessed + Favorites */}
+        <div className="md:col-span-2 xl:col-span-3 flex flex-col gap-3">
           {show("recently_accessed") && (
-            <RecentlyAccessed maxItems={5} />
+            <RecentlyAccessed maxItems={6} />
           )}
-
           {show("favorites") && (
             <FavoriteModules />
-          )}
-
-          {show("activity") && (
-            <ActivityFeed items={activityItems} isLoading={d1 || d2 || d3} />
           )}
         </div>
       </div>
 
-      {/* Analytics Row */}
+      {/* ⑥ Analytics Row */}
       {show("analytics") && (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
           <PipelineChart stages={combined?.pipeline?.stages ?? []} isLoading={d2} />
           <FinancialTrendChart />
         </div>
       )}
 
-      {/* System Health */}
+      {/* ⑦ System Health */}
       {show("system_health") && (
         <SystemStatusBar lastRefresh={lastRefresh} isRefreshing={isRefreshing} />
       )}
