@@ -51,7 +51,7 @@ router.get("/reports/procurement", async (req, res): Promise<void> => {
         total: pos.length,
         totalValue: pos.reduce((s, p) => s + n(p.totalAmount), 0),
         openValue: pos.filter(p => ACTIVE_STATUSES.includes(p.status as string)).reduce((s, p) => s + n(p.totalAmount), 0),
-        closedValue: pos.filter(p => ["FullyReceived", "Closed", "Paid"].includes(p.status as string)).reduce((s, p) => s + n(p.totalAmount), 0),
+        closedValue: pos.filter(p => ["FullyReceived", "InvoiceMatched", "PaymentPending", "Paid", "Closed"].includes(p.status as string)).reduce((s, p) => s + n(p.totalAmount), 0),
       },
       byStatus: Object.entries(byStatus).map(([status, d]) => ({ status, ...d })),
       byVendor,
