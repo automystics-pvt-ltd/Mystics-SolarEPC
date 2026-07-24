@@ -402,6 +402,14 @@ export default function VendorDetail({ id }: { id: string }) {
   const vendorId = Number(id);
   const { user: authUser } = useAuth();
 
+  // Read the ?tab= query param to support deep-linking to a specific tab
+  const [activeTab, setActiveTab] = useState(() => {
+    const p = new URLSearchParams(window.location.search).get("tab");
+    return ["details", "contacts", "bank", "billing", "pos"].includes(p ?? "")
+      ? (p as string)
+      : "details";
+  });
+
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<Record<string, any>>({});
   const [editErrors, setEditErrors] = useState<VendorErrors>({});
@@ -1054,7 +1062,7 @@ export default function VendorDetail({ id }: { id: string }) {
         );
       })()}
 
-      <Tabs defaultValue="details">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="details"><Shield className="w-3.5 h-3.5 mr-1.5" /> GST &amp; Details</TabsTrigger>
           <TabsTrigger value="contacts"><Users className="w-3.5 h-3.5 mr-1.5" /> Contacts ({(vendor as any).contacts?.length ?? 0})</TabsTrigger>

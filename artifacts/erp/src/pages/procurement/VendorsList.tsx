@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Plus, Building2, AlertCircle } from "lucide-react";
+import { Plus, Building2, AlertCircle, ShoppingCart } from "lucide-react";
 import { PageHeader, DataTable, StatusBadge } from "@/components/shared";
 import { usePermissions } from "@/lib/permissions";
 import { useToast } from "@/components/ui/use-toast";
@@ -176,6 +176,30 @@ export default function VendorsList() {
           )}
         </div>
       ),
+    },
+    {
+      accessorKey: "poCount",
+      header: "POs",
+      cell: ({ row }) => {
+        const cnt: number = row.original.poCount ?? 0;
+        if (cnt === 0) {
+          return (
+            <span className="text-xs text-muted-foreground italic">No orders</span>
+          );
+        }
+        return (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setLocation(`/procurement/vendors/${row.original.id}?tab=pos`);
+            }}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+          >
+            <ShoppingCart className="h-3.5 w-3.5" />
+            {cnt} {cnt === 1 ? "PO" : "POs"}
+          </button>
+        );
+      },
     },
   ];
 

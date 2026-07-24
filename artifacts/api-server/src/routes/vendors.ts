@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, vendorsTable, vendorContactsTable, procurementPOsTable } from "@workspace/db";
-import { eq, desc, ilike, or, and, ne, inArray, gte } from "drizzle-orm";
+import { eq, desc, ilike, or, and, ne, inArray, gte, count, sql } from "drizzle-orm";
 import { requirePermission, requireAuth } from "../lib/rbac";
 
 const router: IRouter = Router();
@@ -105,7 +105,8 @@ function normaliseBody(body: Record<string, any>) {
 
 function fmtVendor(
   v: typeof vendorsTable.$inferSelect,
-  contacts: typeof vendorContactsTable.$inferSelect[] = []
+  contacts: typeof vendorContactsTable.$inferSelect[] = [],
+  poCount = 0
 ) {
   const primaryContact = contacts.find(c => c.isPrimary) ?? contacts[0] ?? null;
   return {
@@ -123,6 +124,7 @@ function fmtVendor(
     primaryContactPhone: primaryContact?.phone ?? null,
     primaryContactEmail: primaryContact?.email ?? null,
     contacts,
+    poCount,
     createdBy: v.createdBy, updatedBy: v.updatedBy,
     createdAt: v.createdAt.toISOString(), updatedAt: v.updatedAt.toISOString(),
   };
@@ -141,11 +143,21 @@ router.get("/vendors", async (req, res): Promise<void> => {
     rows = rows.filter(r => r.status === req.query.status);
   }
 
-  // Batch-fetch contacts for all returned vendors in one query
+  // Batch-fetch contacts and PO counts for all returned vendors in one query each
   const ids = rows.map(r => r.id);
-  const allContacts = ids.length
-    ? await db.select().from(vendorContactsTable).where(inArray(vendorContactsTable.vendorId, ids))
-    : [];
+
+  const [allContacts, poCounts] = await Promise.all([
+    ids.length
+      ? db.select().from(vendorContactsTable).where(inArray(vendorContactsTable.vendorId, ids))
+      : Promise.resolve([]),
+    ids.length
+      ? db.select({ vendorId: procurementPOsTable.vendorId, cnt: count() })
+          .from(procurementPOsTable)
+          .where(inArray(procurementPOsTable.vendorId, ids))
+          .groupBy(procurementPOsTable.vendorId)
+      : Promise.resolve([]),
+  ]);
+
   const contactsByVendor = new Map<number, typeof allContacts>();
   for (const c of allContacts) {
     const arr = contactsByVendor.get(c.vendorId) ?? [];
@@ -153,7 +165,12 @@ router.get("/vendors", async (req, res): Promise<void> => {
     contactsByVendor.set(c.vendorId, arr);
   }
 
-  res.json(rows.map(r => fmtVendor(r, contactsByVendor.get(r.id) ?? [])));
+  const poCountByVendor = new Map<number, number>();
+  for (const row of poCounts) {
+    if (row.vendorId !== null) poCountByVendor.set(row.vendorId, Number(row.cnt));
+  }
+
+  res.json(rows.map(r => fmtVendor(r, contactsByVendor.get(r.id) ?? [], poCountByVendor.get(r.id) ?? 0)));
 });
 
 // ── CREATE vendor ─────────────────────────────────────────────────────────────
