@@ -8,3 +8,4 @@
 - [Mystics ERP RBAC system](mystics-erp-rbac.md) — DB-backed RBAC with API middleware, frontend usePermissions hook, PermissionGate, ProtectedRoute module guard, NavRail permission filter, and RBAC admin UI
 - [Mystics ERP Drizzle pool pitfall](mystics-erp-drizzle-pool-pitfall.md) — approval_requests insert must use dedicated pg.Client; Drizzle leaks pool connections on FK errors; users table IDs start at 5
 - [Mystics ERP GRN module](mystics-erp-grn-module.md) — comprehensive GRN schema with Cancelled/Reversed statuses, batch/serial/barcode tracking, grn_comments table, stock ledger write-through on approval, cancel/reverse endpoints
+- [Solar Inventory module](solar-inventory-module.md) — full lifecycle: stock levels, allocations, returns, reorder planning; raw SQL migrations (drizzle push needs TTY); all new tables use pg.Client not Drizzle

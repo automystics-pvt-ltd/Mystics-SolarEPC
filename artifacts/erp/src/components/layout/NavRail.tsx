@@ -99,7 +99,12 @@ export const RAIL: RailEntry[] = [
     type: "group", key: "inventory", icon: Warehouse, label: "Inventory",
     roles: ["admin","director","warehouse","pm"],
     items: [
+      { name: "Dashboard",         href: "/inventory/dashboard",         icon: LayoutDashboard },
+      { name: "Stock Summary",     href: "/inventory/stock-levels",      icon: Boxes },
       { name: "Warehouses",        href: "/inventory/warehouses",        icon: Warehouse },
+      { name: "Allocations",       href: "/inventory/allocations",       icon: ClipboardList },
+      { name: "Material Returns",  href: "/inventory/returns",           icon: RotateCcw },
+      { name: "Reorder Planning",  href: "/inventory/reorder-planning",  icon: AlertTriangle },
       { name: "Stock Transfers",   href: "/inventory/stock-transfers",   icon: ArrowRightLeft },
       { name: "Delivery Challans", href: "/inventory/delivery-challans", icon: Truck },
       { name: "Stock Ledger",      href: "/inventory/stock-ledger",      icon: BookOpen },

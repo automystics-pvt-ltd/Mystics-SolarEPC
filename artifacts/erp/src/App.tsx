@@ -32,6 +32,11 @@ const ProjectWorkspace = lazy(() => import('@/pages/projects/ProjectWorkspace').
 const ContractorsList = lazy(() => import('@/pages/projects/ContractorsList').then(m => ({ default: m.ContractorsList })));
 
 // Inventory — lazy loaded
+const InventoryDashboard = lazy(() => import('@/pages/inventory/InventoryDashboard').then(m => ({ default: m.InventoryDashboard })));
+const StockSummaryPage = lazy(() => import('@/pages/inventory/StockSummaryPage').then(m => ({ default: m.StockSummaryPage })));
+const ProjectAllocations = lazy(() => import('@/pages/inventory/ProjectAllocations').then(m => ({ default: m.ProjectAllocations })));
+const MaterialReturns = lazy(() => import('@/pages/inventory/MaterialReturns').then(m => ({ default: m.MaterialReturns })));
+const ReorderPlanning = lazy(() => import('@/pages/inventory/ReorderPlanning').then(m => ({ default: m.ReorderPlanning })));
 const WarehousesList = lazy(() => import('@/pages/inventory/WarehousesList').then(m => ({ default: m.WarehousesList })));
 const WarehouseDetail = lazy(() => import('@/pages/inventory/WarehouseDetail').then(m => ({ default: m.WarehouseDetail })));
 const DeliveryChallansList = lazy(() => import('@/pages/inventory/InventoryPages').then(m => ({ default: m.DeliveryChallansList })));
@@ -204,6 +209,11 @@ function Router() {
       <Route path="/projects/:id">{(p) => <ProtectedRoute component={ProjectWorkspace} module="projects" id={p.id} />}</Route>
 
       {/* Inventory */}
+      <Route path="/inventory/dashboard">{() => <ProtectedRoute component={InventoryDashboard} module="inventory" />}</Route>
+      <Route path="/inventory/stock-levels">{() => <ProtectedRoute component={StockSummaryPage} module="inventory" />}</Route>
+      <Route path="/inventory/allocations">{() => <ProtectedRoute component={ProjectAllocations} module="inventory" />}</Route>
+      <Route path="/inventory/returns">{() => <ProtectedRoute component={MaterialReturns} module="inventory" />}</Route>
+      <Route path="/inventory/reorder-planning">{() => <ProtectedRoute component={ReorderPlanning} module="inventory" />}</Route>
       <Route path="/inventory/warehouses">{() => <ProtectedRoute component={WarehousesList} module="inventory" />}</Route>
       <Route path="/inventory/warehouses/:id">{(p) => <ProtectedRoute component={WarehouseDetail} module="inventory" id={p.id} />}</Route>
       <Route path="/inventory/stock-transfers">{() => <ProtectedRoute component={StockTransfers} module="inventory" />}</Route>

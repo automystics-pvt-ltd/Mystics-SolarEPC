@@ -30,6 +30,7 @@ import usersRouter from "./users";
 import approvalsRouter from "./approvals";
 import rbacRouter from "./rbac";
 import storageRouter from "./storage";
+import solarInventoryRouter from "./solar_inventory";
 
 const router: IRouter = Router();
 
@@ -64,5 +65,6 @@ router.use(usersRouter);
 router.use(approvalsRouter);
 router.use(rbacRouter);
 router.use(storageRouter);
+router.use(solarInventoryRouter);
 
 export default router;
