@@ -46,7 +46,7 @@ export default function VendorsList() {
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const qc = useQueryClient();
 
-  const { data: vendors = [], isLoading } = useGetVendors({});
+  const { data: vendors = [], isLoading, isError, error, refetch } = useGetVendors({});
   const createMut = useCreateVendor();
   const perms = usePermissions("vendors");
 
@@ -344,7 +344,27 @@ export default function VendorsList() {
         }
       />
 
-      <DataTable
+      {isError && (
+        <div className="flex flex-col items-center justify-center min-h-[300px] gap-4 text-center p-8 border-2 border-dashed border-red-200 rounded-xl">
+          <div className="h-12 w-12 rounded-full bg-red-50 flex items-center justify-center">
+            <AlertCircle className="w-6 h-6 text-red-500" />
+          </div>
+          <div>
+            <p className="text-[15px] font-semibold text-foreground">Failed to load vendors</p>
+            <p className="text-[13px] text-muted-foreground mt-1 max-w-sm">
+              {(error as Error)?.message ?? "An unexpected error occurred. Please try again."}
+            </p>
+          </div>
+          <button
+            onClick={() => refetch()}
+            className="text-[13px] px-4 py-1.5 rounded-md border border-border hover:bg-muted transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {!isError && <DataTable
         data={vendors as any[]}
         columns={columns}
         loading={isLoading}
@@ -355,7 +375,7 @@ export default function VendorsList() {
         emptyIcon={Building2}
         emptyTitle="No vendors found"
         emptyDescription="Add vendors to start raising purchase orders"
-      />
+      />}
     </motion.div>
   );
 }

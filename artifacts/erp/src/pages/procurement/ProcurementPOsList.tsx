@@ -66,7 +66,7 @@ export default function ProcurementPOsList() {
     setCategoryFilter(c);
   }, [searchStr]);
 
-  const { data: pos = [], isLoading } = useGetProcurementPOs({
+  const { data: pos = [], isLoading, isError, error, refetch } = useGetProcurementPOs({
     status: activeTab !== "All" ? activeTab : undefined,
     vendorId: vendorFilter ? Number(vendorFilter) || undefined : undefined,
   });
@@ -156,7 +156,25 @@ export default function ProcurementPOsList() {
         ))}
       </div>
 
-      {isLoading ? (
+      {isError ? (
+        <div className="flex flex-col items-center justify-center min-h-[300px] gap-4 text-center p-8 border-2 border-dashed border-red-200 rounded-xl">
+          <div className="h-12 w-12 rounded-full bg-red-50 flex items-center justify-center">
+            <AlertCircle className="w-6 h-6 text-red-500" />
+          </div>
+          <div>
+            <p className="text-[15px] font-semibold text-foreground">Failed to load purchase orders</p>
+            <p className="text-[13px] text-muted-foreground mt-1 max-w-sm">
+              {(error as Error)?.message ?? "An unexpected error occurred. Please try again."}
+            </p>
+          </div>
+          <button
+            onClick={() => refetch()}
+            className="text-[13px] px-4 py-1.5 rounded-md border border-border hover:bg-muted transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      ) : isLoading ? (
         <div className="space-y-3">{Array.from({length: 4}).map((_, i) => <div key={i} className="h-20 rounded-xl shimmer" />)}</div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed border-slate-200 rounded-xl">

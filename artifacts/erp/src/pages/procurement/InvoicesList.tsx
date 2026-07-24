@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Plus, FileText, AlertTriangle, Clock, TrendingUp,
-  CheckCircle2, DollarSign, BarChart3,
+  CheckCircle2, DollarSign, BarChart3, AlertCircle,
 } from "lucide-react";
 import { exportToCsv } from "@/lib/export";
 import { PageHeader, DataTable, StatusBadge } from "@/components/shared";
@@ -63,7 +63,7 @@ export default function InvoicesList() {
   const params: any = {};
   if (activeStatus) params.status = activeStatus;
 
-  const { data: invoices = [], isLoading } = useGetProcInvoices(params, {
+  const { data: invoices = [], isLoading, isError, error, refetch } = useGetProcInvoices(params, {
     query: { queryKey: getGetProcInvoicesQueryKey(params) }
   });
 
@@ -246,7 +246,27 @@ export default function InvoicesList() {
         ))}
       </div>
 
-      <DataTable
+      {isError && (
+        <div className="flex flex-col items-center justify-center min-h-[300px] gap-4 text-center p-8 border-2 border-dashed border-red-200 rounded-xl">
+          <div className="h-12 w-12 rounded-full bg-red-50 flex items-center justify-center">
+            <AlertCircle className="w-6 h-6 text-red-500" />
+          </div>
+          <div>
+            <p className="text-[15px] font-semibold text-foreground">Failed to load invoices</p>
+            <p className="text-[13px] text-muted-foreground mt-1 max-w-sm">
+              {(error as Error)?.message ?? "An unexpected error occurred. Please try again."}
+            </p>
+          </div>
+          <button
+            onClick={() => refetch()}
+            className="text-[13px] px-4 py-1.5 rounded-md border border-border hover:bg-muted transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {!isError && <DataTable
         data={invoices as any[]}
         columns={columns}
         loading={isLoading}
@@ -257,7 +277,7 @@ export default function InvoicesList() {
         emptyIcon={FileText}
         emptyTitle="No invoices found"
         emptyDescription="Invoices are 3-way matched against GRNs and purchase orders"
-      />
+      />}
     </motion.div>
   );
 }
