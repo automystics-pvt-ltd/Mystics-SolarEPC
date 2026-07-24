@@ -66,9 +66,13 @@ export default function ProcurementPOsList() {
     setCategoryFilter(c);
   }, [searchStr]);
 
+  const vendorIdNum = vendorFilter ? Number(vendorFilter) : NaN;
+  const isNumericVendorFilter = vendorFilter !== "" && !isNaN(vendorIdNum);
+
   const { data: pos = [], isLoading, isError, error, refetch } = useGetProcurementPOs({
     status: activeTab !== "All" ? activeTab : undefined,
-    vendorId: vendorFilter ? Number(vendorFilter) || undefined : undefined,
+    vendorId: isNumericVendorFilter ? vendorIdNum : undefined,
+    vendor: !isNumericVendorFilter && vendorFilter ? vendorFilter : undefined,
   });
 
   const filtered = pos.filter(p =>
@@ -118,7 +122,9 @@ export default function ProcurementPOsList() {
             <>
               <span className="text-xs text-slate-500">Vendor:</span>
               <span className="flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-semibold px-2.5 py-1 rounded-full border border-primary/20">
-                {vendorFilter}
+                {isNumericVendorFilter
+                  ? (pos.find(p => p.vendorId === vendorIdNum)?.vendorName ?? `Vendor #${vendorFilter}`)
+                  : vendorFilter}
                 <button onClick={() => setVendorFilter("")} className="hover:opacity-70"><X className="h-3 w-3" /></button>
               </span>
             </>

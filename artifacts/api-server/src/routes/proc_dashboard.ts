@@ -312,7 +312,12 @@ router.get("/procurement-dashboard", async (req, res): Promise<void> => {
     spend:      n(v.spend),
     poCount:    v.poCount,
   }));
-  const topVendors = topVendorBuckets.map(({ vendorName, spend, poCount }) => ({ vendorName, spend, poCount }));
+  const topVendors = topVendorBuckets.map(({ groupKey, vendorName, spend, poCount }) => ({
+    vendorId: /^\d+$/.test(groupKey ?? "") ? Number(groupKey) : null,
+    vendorName,
+    spend,
+    poCount,
+  }));
 
   /* ── Vendor monthly spend — SQL-pre-aggregated, O(rows) mapping ─────── */
   // vendorMonthlyRaw already has one row per (groupKey, month) — no further grouping needed.

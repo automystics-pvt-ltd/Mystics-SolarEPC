@@ -917,7 +917,11 @@ export default function ProcurementDashboard() {
                   <div className="p-4 space-y-3">
                     {topVendors.map((v: any, i: number) => (
                       <div key={v.vendorName}
-                        onClick={() => setLocation(`/procurement/pos?vendor=${encodeURIComponent(v.vendorName)}`)}
+                        onClick={() => setLocation(
+                          v.vendorId != null
+                            ? `/procurement/pos?vendor=${v.vendorId}`
+                            : `/procurement/pos?vendor=${encodeURIComponent(v.vendorName)}`
+                        )}
                         className="cursor-pointer rounded-lg hover:bg-muted/40 transition-colors p-1.5 -mx-1.5">
                         <div className="flex items-center gap-2 mb-1.5">
                           <span className="text-[10px] font-bold text-muted-foreground/40 tabular-nums w-4 shrink-0">#{i+1}</span>
