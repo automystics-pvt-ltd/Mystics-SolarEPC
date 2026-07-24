@@ -189,12 +189,20 @@ function ProtectedRoute({ component: Component, module: moduleName, ...rest }: a
   return (
     <Shell>
       <ErrorBoundary fallbackTitle="Page failed to load">
-        {/* If a module is specified, show loader while permissions resolve (fail-closed),
-            then gate — this prevents temporarily rendering restricted content during
-            the permission fetch after a role switch or fresh login. */}
-        {moduleName && perms.isLoading ? (
-          <PageLoader />
-        ) : moduleName && !perms.canView ? (
+        {/*
+          Always render <Suspense><Component /></Suspense> unless we know for
+          certain the user is denied. This means the lazy JS chunk download
+          starts immediately in parallel with the /api/rbac/my-permissions call
+          instead of waiting for it to finish first.
+
+          During permission loading, LOADING_PERMS.canView = true, so the
+          component renders (showing its own skeleton) — there is never a flash
+          of real restricted data because the component's own data queries are
+          still in-flight. Once permissions resolve:
+            • canView = true  → component already loaded and ready
+            • canView = false → swap immediately to ForbiddenPage
+        */}
+        {moduleName && !perms.isLoading && !perms.canView ? (
           <ForbiddenPage module={moduleName} />
         ) : (
           <Suspense fallback={<PageLoader />}>
