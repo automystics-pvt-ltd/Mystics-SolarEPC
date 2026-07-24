@@ -202,13 +202,37 @@ router.get("/reports/inventory", async (req, res): Promise<void> => {
 // GET /reports/vendor-performance — vendor scorecard
 router.get("/reports/vendor-performance", async (req, res): Promise<void> => {
   try {
+    const { from, to } = req.query as { from?: string; to?: string };
+    const fromDate = from ? new Date(from) : null;
+    const toDate = to ? new Date(to + "T23:59:59.999Z") : null;
+
+    // Build date conditions for each table
+    const poDateCond = and(
+      fromDate ? gte(procurementPOsTable.createdAt, fromDate) : undefined,
+      toDate   ? lte(procurementPOsTable.createdAt, toDate)   : undefined,
+    );
+    const grnDateCond = and(
+      fromDate ? gte(procGRNsTable.createdAt, fromDate) : undefined,
+      toDate   ? lte(procGRNsTable.createdAt, toDate)   : undefined,
+    );
+    const invoiceDateCond = and(
+      fromDate ? gte(procInvoicesTable.createdAt, fromDate) : undefined,
+      toDate   ? lte(procInvoicesTable.createdAt, toDate)   : undefined,
+    );
+
     const [vendors, pos, poItems, grns, grnItems, invoices] = await Promise.all([
       db.select().from(vendorsTable),
-      db.select().from(procurementPOsTable),
+      poDateCond
+        ? db.select().from(procurementPOsTable).where(poDateCond)
+        : db.select().from(procurementPOsTable),
       db.select({ poId: procPOItemsTable.poId, materialName: procPOItemsTable.materialName }).from(procPOItemsTable),
-      db.select().from(procGRNsTable),
+      grnDateCond
+        ? db.select().from(procGRNsTable).where(grnDateCond)
+        : db.select().from(procGRNsTable),
       db.select().from(procGRNItemsTable),
-      db.select().from(procInvoicesTable),
+      invoiceDateCond
+        ? db.select().from(procInvoicesTable).where(invoiceDateCond)
+        : db.select().from(procInvoicesTable),
     ]);
 
     // Derive the dominant procurement category for a set of POs

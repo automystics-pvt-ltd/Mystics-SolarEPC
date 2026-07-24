@@ -4,8 +4,9 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Download, Search, Star, TrendingUp, Building2, Package } from "lucide-react";
+import { Loader2, Download, Search, Star, TrendingUp, Building2, Package, CalendarRange, X } from "lucide-react";
 import { apiGet } from "@/lib/fetch";
 import { exportToCsv } from "@/lib/export";
 import { cn } from "@/lib/utils";
@@ -46,11 +47,21 @@ function RateBadge({ rate }: { rate: string }) {
 export default function VendorPerformance() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+
+  const params = new URLSearchParams();
+  if (fromDate) params.set("from", fromDate);
+  if (toDate) params.set("to", toDate);
+  const queryString = params.toString();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["vendor-performance"],
-    queryFn: () => apiGet<any>("/reports/vendor-performance"),
+    queryKey: ["vendor-performance", fromDate, toDate],
+    queryFn: () => apiGet<any>(`/reports/vendor-performance${queryString ? `?${queryString}` : ""}`),
   });
+
+  const hasDateFilter = Boolean(fromDate || toDate);
+  function clearDates() { setFromDate(""); setToDate(""); }
 
   const vendors: any[] = data?.vendors ?? [];
   const categories = ["All", ...Array.from(new Set(vendors.map((v) => v.category).filter(Boolean)))] as string[];
@@ -117,6 +128,39 @@ export default function VendorPerformance() {
           </Button>
         }
       />
+
+      {/* Date Range Filter */}
+      <div className="flex items-end gap-3 flex-wrap p-4 bg-muted/30 border border-border/60 rounded-xl">
+        <CalendarRange className="h-4 w-4 text-muted-foreground mt-5 shrink-0" />
+        <div className="flex flex-col gap-1">
+          <Label className="text-xs text-muted-foreground">From</Label>
+          <Input
+            type="date"
+            value={fromDate}
+            onChange={(e) => setFromDate(e.target.value)}
+            className="h-8 text-sm w-36"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <Label className="text-xs text-muted-foreground">To</Label>
+          <Input
+            type="date"
+            value={toDate}
+            onChange={(e) => setToDate(e.target.value)}
+            className="h-8 text-sm w-36"
+          />
+        </div>
+        {hasDateFilter && (
+          <Button variant="ghost" size="sm" className="h-8 text-xs gap-1 text-muted-foreground" onClick={clearDates}>
+            <X className="h-3.5 w-3.5" /> Clear
+          </Button>
+        )}
+        {hasDateFilter && (
+          <span className="text-xs text-muted-foreground mt-5">
+            Showing data for selected period only
+          </span>
+        )}
+      </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
