@@ -1,3 +1,4 @@
+// @refresh reset
 /**
  * RBAC — Frontend permission hook + PermissionGate component.
  *

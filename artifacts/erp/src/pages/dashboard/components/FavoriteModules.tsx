@@ -6,7 +6,7 @@
 import { useMemo } from "react";
 import { Link } from "wouter";
 import { Star, LayoutDashboard } from "lucide-react";
-import { HREF_META } from "@/components/layout/NavRail";
+import { HREF_META } from "@/components/layout/nav-meta";
 import { SectionCard, EmptyState } from "@/components/shared";
 import { cn } from "@/lib/utils";
 

@@ -7,7 +7,7 @@ import { useMemo } from "react";
 import { Link } from "wouter";
 import { Clock, LayoutDashboard } from "lucide-react";
 import { getRecentEntries } from "@/lib/recentHistory";
-import { HREF_META } from "@/components/layout/NavRail";
+import { HREF_META } from "@/components/layout/nav-meta";
 import { SectionCard, EmptyState } from "@/components/shared";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";

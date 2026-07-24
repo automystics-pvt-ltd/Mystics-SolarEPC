@@ -18,6 +18,15 @@ export class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, info: ErrorInfo) {
     // In production you'd send this to Sentry / LogRocket
     console.error('[ErrorBoundary]', error.message, info.componentStack);
+    // Hook/context errors (e.g. after HMR module swap) are unrecoverable without
+    // a full page reload — do it automatically so users don't see a dead app.
+    if (
+      error.message.includes('Invalid hook call') ||
+      error.message.includes('must be used within') ||
+      error.message.includes('AuthProvider')
+    ) {
+      window.location.reload();
+    }
   }
 
   handleReset = () => this.setState({ hasError: false, error: null });

@@ -1,3 +1,4 @@
+// @refresh reset
 /**
  * NavRail — Enterprise navigation rail for Mystics ERP
  *
@@ -15,6 +16,7 @@
  *  • Mobile: hidden (Shell's bottom-tab bar + MobileNavSheet handle mobile)
  */
 
+import { HREF_META } from "./nav-meta";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -56,7 +58,7 @@ type HistoryEntry = { href: string; name: string; section: string; ts: number };
 /* ════════════════════════════════════════════════════════════════
    Module definitions  (single source of truth for the whole app)
 ════════════════════════════════════════════════════════════════ */
-export const RAIL: RailEntry[] = [
+const RAIL: RailEntry[] = [
   { type: "link",      key: "dashboard", icon: LayoutDashboard, label: "Dashboard",           href: "/dashboard" },
   { type: "link",      key: "approvals", icon: ListChecks,     label: "Approval Workbench",  href: "/approvals"  },
   { type: "separator", key: "s1" },
@@ -159,7 +161,6 @@ export const RAIL: RailEntry[] = [
 /* ════════════════════════════════════════════════════════════════
    Flat lookup: href → {name, section}  (for history display)
 ════════════════════════════════════════════════════════════════ */
-export const HREF_META: Record<string, { name: string; section: string; icon: React.ElementType }> = {};
 RAIL.forEach((e) => {
   if (e.type === "link")  HREF_META[e.href] = { name: e.label, section: "Core", icon: e.icon };
   if (e.type === "group") e.items.forEach((item) => { HREF_META[item.href] = { name: item.name, section: e.label, icon: item.icon }; });
