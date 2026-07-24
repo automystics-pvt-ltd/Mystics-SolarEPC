@@ -1,11 +1,26 @@
 import {
-  pgTable, serial, text, varchar, integer, numeric, timestamp, pgEnum, index,
+  pgTable, serial, text, varchar, integer, numeric, timestamp, boolean, pgEnum, index, jsonb,
 } from "drizzle-orm/pg-core";
 import { vendorsTable } from "./vendors";
 import { procurementQuotationsTable } from "./proc_quotations";
 
 export const procPOStatusEnum = pgEnum("proc_po_status", [
-  "Draft", "Issued", "Acknowledged", "PartiallyReceived", "FullyReceived", "Closed", "Cancelled",
+  "Draft",
+  "Submitted",
+  "PendingApproval",
+  "Approved",
+  "Rejected",
+  "OnHold",
+  "Revised",
+  "Issued",
+  "Acknowledged",
+  "PartiallyReceived",
+  "FullyReceived",
+  "InvoiceMatched",
+  "PaymentPending",
+  "Paid",
+  "Closed",
+  "Cancelled",
 ]);
 
 export const procurementPOsTable = pgTable("procurement_pos", {
@@ -34,6 +49,22 @@ export const procurementPOsTable = pgTable("procurement_pos", {
   specialTerms: text("special_terms"),
   internalNotes: text("internal_notes"),
 
+  // Approval workflow
+  isLocked: boolean("is_locked").default(false).notNull(),
+  approvalRequestId: integer("approval_request_id"),
+  slaDeadline: timestamp("sla_deadline"),
+  revisionNumber: integer("revision_number").default(1).notNull(),
+  submittedAt: timestamp("submitted_at"),
+  submittedBy: integer("submitted_by"),
+  submittedByName: text("submitted_by_name"),
+  rejectedAt: timestamp("rejected_at"),
+  rejectedBy: integer("rejected_by"),
+  rejectedByName: text("rejected_by_name"),
+  rejectionReason: text("rejection_reason"),
+  onHoldAt: timestamp("on_hold_at"),
+  onHoldBy: integer("on_hold_by"),
+  onHoldReason: text("on_hold_reason"),
+
   approvedBy: integer("approved_by"),
   approvedByName: text("approved_by_name"),
   approvedAt: timestamp("approved_at"),
@@ -51,14 +82,10 @@ export const procurementPOsTable = pgTable("procurement_pos", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => [
-  // Dashboard: status aggregation + pipeline counts
   index("po_status_idx").on(table.status),
-  // Dashboard: date-range spend queries
   index("po_created_at_idx").on(table.createdAt),
-  // Vendor drill-down
   index("po_vendor_id_idx").on(table.vendorId),
   index("po_vendor_name_idx").on(table.vendorName),
-  // Composite: the most common dashboard query (received POs in date range)
   index("po_status_created_at_idx").on(table.status, table.createdAt),
 ]);
 
@@ -84,6 +111,33 @@ export const procPOItemsTable = pgTable("proc_po_items", {
   deliveredQty: numeric("delivered_qty", { precision: 12, scale: 3 }).default("0"),
   remarks: text("remarks"),
 }, (table) => [
-  // Category join in dashboard: items → POs by po_id
   index("po_item_po_id_idx").on(table.poId),
+]);
+
+export const poCommentsTable = pgTable("po_comments", {
+  id: serial("id").primaryKey(),
+  poId: integer("po_id").notNull().references(() => procurementPOsTable.id, { onDelete: "cascade" }),
+  userId: integer("user_id"),
+  userName: text("user_name"),
+  body: text("body").notNull(),
+  parentId: integer("parent_id"), // for threading
+  attachmentUrl: text("attachment_url"),
+  attachmentName: text("attachment_name"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("po_comment_po_id_idx").on(table.poId),
+]);
+
+export const poVersionsTable = pgTable("po_versions", {
+  id: serial("id").primaryKey(),
+  poId: integer("po_id").notNull().references(() => procurementPOsTable.id, { onDelete: "cascade" }),
+  revisionNumber: integer("revision_number").notNull(),
+  snapshot: jsonb("snapshot").notNull(),
+  changedBy: integer("changed_by"),
+  changedByName: text("changed_by_name"),
+  changedAt: timestamp("changed_at").defaultNow().notNull(),
+  changeSummary: text("change_summary"),
+}, (table) => [
+  index("po_version_po_id_idx").on(table.poId),
 ]);

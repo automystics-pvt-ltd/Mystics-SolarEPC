@@ -4,7 +4,8 @@ import {
   approvalWorkflowsTable, approvalWorkflowStepsTable,
   approvalRequestsTable, approvalRequestStepsTable,
   approvalActionsTable, approvalDelegatesTable,
-  procurementQuotationsTable, notificationsTable,
+  procurementQuotationsTable, procurementPOsTable, notificationsTable,
+  procPOAuditLogsTable,
 } from "@workspace/db";
 import { approveQuotationAndGeneratePO, rejectQuotation } from "../lib/quotationApprovalService";
 import { eq, and, or, inArray, desc, sql, ne, gte, lte } from "drizzle-orm";
@@ -442,9 +443,6 @@ router.patch("/approvals/:id/approve", async (req, res): Promise<void> => {
   }
 
   // ── Bidirectional sync for quotation entities — run BEFORE updating approval request ──
-  // If this is the terminal approval step for a quotation, the quotation approval (which
-  // generates the PO) must succeed before we commit the approval request to "approved".
-  // This prevents the approved request / missing PO inconsistency.
   if (newStatus === "approved" && r.entityType === "quotation") {
     const [quot] = await db.select().from(procurementQuotationsTable)
       .where(eq(procurementQuotationsTable.approvalRequestId, id));
@@ -455,10 +453,7 @@ router.patch("/approvals/:id/approve", async (req, res): Promise<void> => {
           comment ?? "Approved via Approval Workbench",
           { userId: actor.userId, role: actor.role, name: (actor as any).name ?? "Approver" },
         );
-        // approveQuotationAndGeneratePO also syncs the approval request to approved,
-        // so the db.update below will be a no-op for that field — that's fine.
       } catch (syncErr: any) {
-        // PO/quotation sync failed — roll back the step so the request stays actionable
         await db.update(approvalRequestStepsTable)
           .set({ status: "pending", actedById: null, actedAt: null, comment: null })
           .where(eq(approvalRequestStepsTable.id, myStep.id));
@@ -466,6 +461,38 @@ router.patch("/approvals/:id/approve", async (req, res): Promise<void> => {
         res.status(500).json({ error: `Approval processing failed: ${syncErr?.message}. Please retry.` });
         return;
       }
+    }
+  }
+
+  // ── Bidirectional sync for purchase_order entities ─────────────────────────
+  if (newStatus === "approved" && r.entityType === "purchase_order") {
+    const [po] = await db.select().from(procurementPOsTable)
+      .where(eq((procurementPOsTable as any).approvalRequestId, id));
+    if (po) {
+      const now = new Date();
+      await db.update(procurementPOsTable).set({
+        status: "Approved",
+        approvedAt: now, approvedBy: actor.userId, approvedByName: (actor as any).name ?? "Approver",
+        isLocked: true, updatedAt: now,
+      } as any).where(eq(procurementPOsTable.id, po.id));
+      // Insert audit log
+      try {
+        await db.insert(procPOAuditLogsTable).values({
+          poId: po.id, action: "Approved",
+          performedBy: actor.userId, performedByName: (actor as any).name ?? "Approver",
+          remarks: comment ?? "Approved via Approval Workbench",
+        });
+        // Notify submitter
+        if ((po as any).submittedBy) {
+          await db.insert(notificationsTable).values({
+            userId: (po as any).submittedBy, type: "success",
+            title: "Purchase Order Approved",
+            message: `${po.poNumber} approved via Approval Workbench by ${(actor as any).name ?? "Approver"}.`,
+            entityType: "purchase_order", entityId: po.id, entityRef: po.poNumber,
+            actionUrl: `/procurement/pos/${po.id}`,
+          });
+        }
+      } catch (e) { console.error("PO approval side-effects:", e); }
     }
   }
 
@@ -505,10 +532,7 @@ router.patch("/approvals/:id/reject", async (req, res): Promise<void> => {
     actionType: "rejected", comment,
   });
 
-  // ── Bidirectional sync: propagate full rejection to quotation ───────────
-  // Uses the shared rejectQuotation service so all rejection metadata fields
-  // (rejectedAt, rejectedBy, rejectedByName, approvalRemarks) are set identically
-  // to the detail-page reject route.
+  // ── Bidirectional sync: propagate full rejection to quotation ─────────────
   if (rFull?.entityType === "quotation") {
     const [quot] = await db.select().from(procurementQuotationsTable)
       .where(eq(procurementQuotationsTable.approvalRequestId, id));
@@ -520,9 +544,49 @@ router.patch("/approvals/:id/reject", async (req, res): Promise<void> => {
           { userId: actor.userId, role: actor.role, name: (actor as any).name ?? "Approver" },
         );
       } catch (syncErr: any) {
-        // Only log — approval request is already rejected; quotation may already be terminal
         console.error("Workbench quotation reject sync:", syncErr?.message);
       }
+    }
+  }
+
+  // ── Bidirectional sync: propagate full rejection to purchase_order ─────────
+  if (rFull?.entityType === "purchase_order") {
+    const [po] = await db.select().from(procurementPOsTable)
+      .where(eq((procurementPOsTable as any).approvalRequestId, id));
+    if (po) {
+      const now = new Date();
+      try {
+        await db.update(procurementPOsTable).set({
+          status: "Rejected",
+          rejectedAt: now,
+          rejectedBy: actor.userId,
+          rejectedByName: (actor as any).name ?? "Approver",
+          rejectionReason: comment,
+          updatedAt: now,
+        } as any).where(eq(procurementPOsTable.id, po.id));
+        // Audit log
+        await db.insert(procPOAuditLogsTable as any).values({
+          poId: po.id, action: "Rejected",
+          performedBy: actor.userId,
+          performedByName: (actor as any).name ?? "Approver",
+          remarks: comment,
+          oldValues: { status: po.status },
+          newValues: { status: "Rejected", rejectionReason: comment },
+        });
+        // Notify submitter
+        if ((po as any).submittedBy) {
+          await db.insert(notificationsTable).values({
+            userId: (po as any).submittedBy,
+            type: "error",
+            title: "Purchase Order Rejected",
+            message: `${po.poNumber} was rejected by ${(actor as any).name ?? "Approver"} via Approval Workbench. Reason: "${comment}". Please revise and resubmit.`,
+            entityType: "purchase_order",
+            entityId: po.id,
+            entityRef: po.poNumber,
+            actionUrl: `/procurement/pos/${po.id}`,
+          });
+        }
+      } catch (e) { console.error("PO rejection side-effects:", e); }
     }
   }
 
