@@ -250,11 +250,13 @@ router.get("/procurement-dashboard", async (req, res): Promise<void> => {
     /* 14: Category spend — SQL-aggregated by (material_name, month).
        Returns at most unique_materials × months rows instead of every line item.
        Category derivation runs on unique material names in Node, not on raw rows.
-       All non-cancelled POs included so categories populate on active pipelines. */
+       All non-cancelled POs included so categories populate on active pipelines.
+       poCount = count(distinct PO id) within each (material_name, month) bucket. */
     db.select({
       materialName: procPOItemsTable.materialName,
       month:        sql<string>`to_char(${procurementPOsTable.createdAt}, 'YYYY-MM')`,
       totalAmount:  sql<string>`sum(${procPOItemsTable.lineTotal}::numeric)`,
+      poCount:      sql<number>`count(distinct ${procurementPOsTable.id})::int`,
     }).from(procPOItemsTable)
       .innerJoin(
         procurementPOsTable,
@@ -353,14 +355,14 @@ router.get("/procurement-dashboard", async (req, res): Promise<void> => {
   // categoryMonthlyRaw has one row per unique material+month.
   // deriveCategory() runs on unique material names, not raw line items.
   const categorySpend  = new Map<string, number>();
-  const categoryPOsSet = new Map<string, Set<string>>();
+  const categoryPOsMap = new Map<string, number>(); // category → sum of distinct PO counts per (material,month) bucket
   const catMonthMap    = new Map<string, Map<string, number>>();
   for (const row of categoryMonthlyRaw) {
     const cat = deriveCategory(row.materialName);
     const lt  = n(row.totalAmount);
     categorySpend.set(cat, (categorySpend.get(cat) ?? 0) + lt);
-    const ps = categoryPOsSet.get(cat) ?? new Set<string>();
-    ps.add(row.month); categoryPOsSet.set(cat, ps);
+    // row.poCount = count(distinct po_id) within this (materialName, month) bucket
+    categoryPOsMap.set(cat, (categoryPOsMap.get(cat) ?? 0) + (row.poCount ?? 0));
     const cm = catMonthMap.get(cat) ?? new Map<string, number>();
     cm.set(row.month, (cm.get(row.month) ?? 0) + lt);
     catMonthMap.set(cat, cm);
@@ -370,7 +372,7 @@ router.get("/procurement-dashboard", async (req, res): Promise<void> => {
     .map(([category, spend]) => ({
       category,
       spend,
-      poCount: categoryPOsSet.get(category)?.size ?? 0,
+      poCount: categoryPOsMap.get(category) ?? 0,
     }));
   const categoryMonthlySpend: Record<string, { month: string; amount: number }[]> = {};
   for (const { category } of topCategories) {

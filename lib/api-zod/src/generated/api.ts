@@ -5097,7 +5097,8 @@ export const GetProcurementPOsQueryParams = zod.object({
   "status": zod.coerce.string().optional(),
   "vendorId": zod.coerce.number().optional(),
   "vendor": zod.coerce.string().optional().describe('Filter by vendor name (partial match)'),
-  "category": zod.coerce.string().optional().describe('Filter by derived material category (e.g. Inverters, Solar Modules)')
+  "category": zod.coerce.string().optional().describe('Filter by derived material category (e.g. Inverters, Solar Modules)'),
+  "projectId": zod.coerce.number().optional().describe('Filter POs linked to a specific project')
 })
 
 export const GetProcurementPOsResponseItem = zod.object({

@@ -3023,6 +3023,10 @@ paths:
           in: query
           schema: { type: string }
           description: Filter by derived material category (e.g. Inverters, Solar Modules)
+        - name: projectId
+          in: query
+          schema: { type: integer }
+          description: Filter POs linked to a specific project
       responses:
         "200":
           description: POs

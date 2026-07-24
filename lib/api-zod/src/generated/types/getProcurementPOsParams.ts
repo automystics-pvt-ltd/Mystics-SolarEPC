@@ -17,4 +17,8 @@ vendor?: string;
  * Filter by derived material category (e.g. Inverters, Solar Modules)
  */
 category?: string;
+/**
+ * Filter POs linked to a specific project
+ */
+projectId?: number;
 };

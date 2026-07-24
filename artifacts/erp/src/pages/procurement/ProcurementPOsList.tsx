@@ -44,9 +44,10 @@ export default function ProcurementPOsList() {
   const [, setLocation] = useLocation();
   const searchStr = useSearch();
   const params = new URLSearchParams(searchStr);
-  const urlStatus   = params.get("status") ?? "";
-  const urlVendor   = params.get("vendor") ?? "";
-  const urlCategory = params.get("category") ?? "";
+  const urlStatus    = params.get("status")    ?? "";
+  const urlVendor    = params.get("vendor")    ?? "";
+  const urlCategory  = params.get("category")  ?? "";
+  const urlProjectId = params.get("projectId") ?? "";
 
   const validStatuses = ["All", ...Object.keys(STATUS_CONFIG)];
   const initialTab = validStatuses.includes(urlStatus) ? urlStatus : "All";
@@ -55,24 +56,31 @@ export default function ProcurementPOsList() {
   const [search, setSearch]                 = useState("");
   const [vendorFilter, setVendorFilter]     = useState(urlVendor);
   const [categoryFilter, setCategoryFilter] = useState(urlCategory);
+  const [projectIdFilter, setProjectIdFilter] = useState(urlProjectId);
 
   useEffect(() => {
     const p = new URLSearchParams(searchStr);
-    const s = p.get("status") ?? "";
-    const v = p.get("vendor") ?? "";
-    const c = p.get("category") ?? "";
+    const s  = p.get("status")    ?? "";
+    const v  = p.get("vendor")    ?? "";
+    const c  = p.get("category")  ?? "";
+    const pi = p.get("projectId") ?? "";
     if (s && validStatuses.includes(s)) setActiveTab(s);
     setVendorFilter(v);
     setCategoryFilter(c);
+    setProjectIdFilter(pi);
   }, [searchStr]);
 
   const vendorIdNum = vendorFilter ? Number(vendorFilter) : NaN;
   const isNumericVendorFilter = vendorFilter !== "" && !isNaN(vendorIdNum);
+  const projectIdNum = projectIdFilter ? Number(projectIdFilter) : NaN;
+  const hasProjectFilter = projectIdFilter !== "" && !isNaN(projectIdNum);
 
   const { data: pos = [], isLoading, isError, error, refetch } = useGetProcurementPOs({
-    status: activeTab !== "All" ? activeTab : undefined,
-    vendorId: isNumericVendorFilter ? vendorIdNum : undefined,
-    vendor: !isNumericVendorFilter && vendorFilter ? vendorFilter : undefined,
+    status:    activeTab !== "All" ? activeTab : undefined,
+    vendorId:  isNumericVendorFilter ? vendorIdNum : undefined,
+    vendor:    !isNumericVendorFilter && vendorFilter ? vendorFilter : undefined,
+    category:  categoryFilter || undefined,
+    projectId: hasProjectFilter ? projectIdNum : undefined,
   });
 
   const filtered = pos.filter(p =>
@@ -116,7 +124,7 @@ export default function ProcurementPOsList() {
       </div>
 
       {/* Active Filters */}
-      {(vendorFilter || categoryFilter) && (
+      {(vendorFilter || categoryFilter || projectIdFilter) && (
         <div className="flex items-center gap-2 flex-wrap">
           {vendorFilter && (
             <>
@@ -135,6 +143,15 @@ export default function ProcurementPOsList() {
               <span className="flex items-center gap-1.5 bg-violet-100 text-violet-700 text-xs font-semibold px-2.5 py-1 rounded-full border border-violet-200">
                 {categoryFilter}
                 <button onClick={() => setCategoryFilter("")} className="hover:opacity-70"><X className="h-3 w-3" /></button>
+              </span>
+            </>
+          )}
+          {projectIdFilter && (
+            <>
+              <span className="text-xs text-slate-500">Project:</span>
+              <span className="flex items-center gap-1.5 bg-emerald-100 text-emerald-700 text-xs font-semibold px-2.5 py-1 rounded-full border border-emerald-200">
+                Project #{projectIdFilter}
+                <button onClick={() => setProjectIdFilter("")} className="hover:opacity-70"><X className="h-3 w-3" /></button>
               </span>
             </>
           )}
