@@ -8,11 +8,11 @@ import { useLocation } from "wouter";
 
 export function ProjectBudget({ projectId }: { projectId: number }) {
   const [, navigate] = useLocation();
-  const { data: budget, isLoading } = useGetProjectBudgetVsActual(projectId, {
+  const { data: budget, isPending, isLoading } = useGetProjectBudgetVsActual(projectId, {
     query: { enabled: !!projectId, queryKey: getGetProjectBudgetVsActualQueryKey(projectId) }
   });
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <div className="space-y-6">
         <SkeletonStats count={4} />

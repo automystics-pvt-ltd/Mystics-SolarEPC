@@ -156,7 +156,7 @@ const VENDOR_PO_STATUS_LABELS: Record<string, string> = {
 
 /* ── Vendor Purchase Orders inline panel ─────────────────────────────────── */
 function VendorPOsTab({ vendorId, onNavigate }: { vendorId: number; onNavigate: (path: string) => void }) {
-  const { data: pos = [], isLoading, isError, refetch } = useGetProcurementPOs({ vendorId });
+  const { data: pos = [], isPending, isLoading, isError, refetch } = useGetProcurementPOs({ vendorId });
 
   const [poStatus,  setPoStatus]  = useState("All");
   const [poSearch,  setPoSearch]  = useState("");
@@ -182,7 +182,7 @@ function VendorPOsTab({ vendorId, onNavigate }: { vendorId: number; onNavigate: 
   const totalValue = pos.reduce((s, p) => s + Number(p.totalAmount ?? 0), 0);
   const hasActiveFilters = poStatus !== "All" || poSearch || poDateFrom || poDateTo;
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <SectionCard title="Purchase Orders">
         <div className="space-y-3">

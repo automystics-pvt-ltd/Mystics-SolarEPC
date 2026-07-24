@@ -478,7 +478,7 @@ export default function ProcurementDashboard() {
   const [dateRange, setDateRange] = useState<DateRange>(defaultRange);
 
   /* ── Single query, cached for 2 minutes ────────────────────────────────── */
-  const { data, isLoading, isError, isFetching, error, refetch, dataUpdatedAt } = useQuery({
+  const { data, isPending, isLoading, isError, isFetching, error, refetch, dataUpdatedAt } = useQuery({
     queryKey: ["procurement-dashboard", dateRange.from, dateRange.to],
     queryFn:  () => apiGet<any>("/procurement-dashboard", {
       from: dateRange.from,
@@ -618,7 +618,7 @@ export default function ProcurementDashboard() {
   );
 
   /* ── Skeleton while loading for the first time (after all hooks) ─────────── */
-  if (isLoading && !data) return (
+  if (isPending) return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="space-y-2">

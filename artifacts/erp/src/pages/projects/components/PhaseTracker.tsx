@@ -151,7 +151,7 @@ export function PhaseTracker({ projectId }: { projectId: number }) {
   const isAdmin = ["admin", "director", "pm"].includes(role);
   const qc = useQueryClient();
 
-  const { data: phases = [], isLoading } = useQuery<Phase[]>({
+  const { data: phases = [], isPending, isLoading } = useQuery<Phase[]>({
     queryKey: ["project-phases", projectId],
     queryFn: () => apiGet(`/projects/${projectId}/phases`),
     enabled: !!projectId,
@@ -162,7 +162,7 @@ export function PhaseTracker({ projectId }: { projectId: number }) {
   const completed = phases.filter(p => p.status === "Completed").length;
   const pct = phases.length ? Math.round((completed / phases.length) * 100) : 0;
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <div className="bg-card border border-border rounded-xl px-4 py-3 flex items-center gap-2">
         <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />

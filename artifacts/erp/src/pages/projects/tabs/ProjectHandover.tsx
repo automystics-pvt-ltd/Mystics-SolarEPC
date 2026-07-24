@@ -55,7 +55,7 @@ export function ProjectHandover({ projectId }: { projectId: number }) {
   });
   const [newPunch, setNewPunch] = useState({ description: "", severity: "Medium", responsible: "" });
 
-  const { data: handover, isLoading } = useQuery<HandoverRecord | null>({
+  const { data: handover, isPending, isLoading } = useQuery<HandoverRecord | null>({
     queryKey: ["project-handover", projectId],
     queryFn: () => apiGet(`/projects/${projectId}/handover`),
     enabled: !!projectId,
@@ -124,7 +124,7 @@ export function ProjectHandover({ projectId }: { projectId: number }) {
     setForm(f => ({ ...f, pendingPunchItems: f.pendingPunchItems?.filter((_, idx) => idx !== i) }));
   };
 
-  if (isLoading) return <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;
+  if (isPending) return <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5">

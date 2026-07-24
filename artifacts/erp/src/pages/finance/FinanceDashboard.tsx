@@ -34,13 +34,13 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export default function FinanceDashboard() {
-  const { data, isLoading } = useQuery({
+  const { data, isPending, isLoading } = useQuery({
     queryKey: ["finance-dashboard"],
     queryFn: () => apiGet<any>("/reports/invoices"),
     staleTime: 60000,
   });
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-10">
         <PageHeader

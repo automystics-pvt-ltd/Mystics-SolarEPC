@@ -28,7 +28,7 @@ export function LeadSurvey({ leadId }: Props) {
   const [editing, setEditing] = useState(false);
   const qc = useQueryClient();
 
-  const { data: survey, isLoading, isError } = useGetLeadSurvey(leadId, {
+  const { data: survey, isPending, isLoading, isError } = useGetLeadSurvey(leadId, {
     query: { queryKey: getGetLeadSurveyQueryKey(leadId), enabled: !!leadId, retry: false }
   });
 
@@ -58,7 +58,7 @@ export function LeadSurvey({ leadId }: Props) {
     setEditing(true);
   };
 
-  if (isLoading) return <div className="space-y-3 pt-4">{[...Array(4)].map((_, i) => <div key={i} className="h-14 bg-slate-100 rounded-xl animate-pulse" />)}</div>;
+  if (isPending) return <div className="space-y-3 pt-4">{[...Array(4)].map((_, i) => <div key={i} className="h-14 bg-slate-100 rounded-xl animate-pulse" />)}</div>;
 
   if (!survey || isError) {
     return (

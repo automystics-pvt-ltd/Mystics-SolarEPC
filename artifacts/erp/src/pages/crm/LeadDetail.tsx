@@ -32,7 +32,7 @@ export function LeadDetail({ id }: { id: string }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { data: lead, isLoading } = useGetLead(leadId, {
+  const { data: lead, isPending, isLoading } = useGetLead(leadId, {
     query: { enabled: !!leadId, queryKey: getGetLeadQueryKey(leadId) }
   });
 
@@ -77,7 +77,7 @@ export function LeadDetail({ id }: { id: string }) {
     }
   }, [lead, isEditing]);
 
-  if (isLoading) {
+  if (isPending) {
     return <div className="flex h-[60vh] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
   }
 

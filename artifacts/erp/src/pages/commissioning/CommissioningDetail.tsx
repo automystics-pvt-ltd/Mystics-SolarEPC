@@ -40,7 +40,7 @@ export default function CommissioningDetail() {
   const [addItemOpen, setAddItemOpen] = useState(false);
   const [addDocOpen, setAddDocOpen] = useState(false);
 
-  const { data, isLoading } = useGetCommissioningChecklist(id, { query: { queryKey: getGetCommissioningChecklistQueryKey(id), enabled: !!id } });
+  const { data, isPending, isLoading } = useGetCommissioningChecklist(id, { query: { queryKey: getGetCommissioningChecklistQueryKey(id), enabled: !!id } });
   const cl = data as any;
 
   const toggleMut = useUpdateCommissioningItem();
@@ -76,7 +76,7 @@ export default function CommissioningDetail() {
     createDocMut.mutate({ data: { ...d, projectId: cl.projectId } }, { onSuccess: () => { invalidateDocs(); setAddDocOpen(false); adReset(); } });
   };
 
-  if (isLoading) return <div className="space-y-4">{[...Array(4)].map((_, i) => <div key={i} className="h-20 bg-slate-100 rounded-xl animate-pulse" />)}</div>;
+  if (isPending) return <div className="space-y-4">{[...Array(4)].map((_, i) => <div key={i} className="h-20 bg-slate-100 rounded-xl animate-pulse" />)}</div>;
   if (!cl) return <p className="text-slate-500">Checklist not found.</p>;
 
   const items: any[] = cl.items ?? [];

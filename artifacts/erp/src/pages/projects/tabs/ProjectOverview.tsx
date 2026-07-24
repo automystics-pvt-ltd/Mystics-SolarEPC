@@ -162,7 +162,7 @@ function PhaseStrip({ projectId }: { projectId: number }) {
 export function ProjectOverview({ projectId, onTabChange }: ProjectOverviewProps) {
   const [, navigate] = useLocation();
 
-  const { data: dashboard, isLoading } = useGetProjectDashboard(projectId, {
+  const { data: dashboard, isPending, isLoading } = useGetProjectDashboard(projectId, {
     query: {
       enabled: !!projectId,
       queryKey: getGetProjectDashboardQueryKey(projectId),
@@ -191,7 +191,7 @@ export function ProjectOverview({ projectId, onTabChange }: ProjectOverviewProps
   const warrantyActive   = allWarranty.filter(w => w.status === "Active").length;
   const warrantyExpiring = expiringWarranty.length;
 
-  if (isLoading) return <div className="space-y-6"><SkeletonStats count={4} /></div>;
+  if (isPending) return <div className="space-y-6"><SkeletonStats count={4} /></div>;
 
   const bg          = (dashboard as any)?.budgetSummary;
   const isOverBudget = bg ? bg.totalVariance < 0 : false;

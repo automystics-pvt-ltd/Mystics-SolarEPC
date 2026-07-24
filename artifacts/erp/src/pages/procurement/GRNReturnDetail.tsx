@@ -33,7 +33,7 @@ export default function GRNReturnDetail({ id }: { id: string }) {
   const [creditNoteDate, setCreditNoteDate] = useState(new Date().toISOString().slice(0, 10));
   const [creditNoteAmount, setCreditNoteAmount] = useState("");
 
-  const { data: rtv, isLoading } = useQuery({
+  const { data: rtv, isPending, isLoading } = useQuery({
     queryKey: ["grn-return", id],
     queryFn: () => apiGet<any>(`/grn-returns/${id}`),
   });
@@ -66,7 +66,7 @@ export default function GRNReturnDetail({ id }: { id: string }) {
     onError: (e: any) => toast({ variant: "destructive", title: "Error", description: e.message }),
   });
 
-  if (isLoading) return (
+  if (isPending) return (
     <div className="flex items-center justify-center h-64">
       <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
     </div>

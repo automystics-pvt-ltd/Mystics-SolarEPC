@@ -167,7 +167,7 @@ function SuppliersTab({ materialId }: { materialId: number }) {
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState<any>({ vendorName: "", currency: "INR", isPreferred: false });
 
-  const { data: suppliers = [], isLoading } = useQuery<Supplier[]>({
+  const { data: suppliers = [], isPending, isLoading } = useQuery<Supplier[]>({
     queryKey: ["material-suppliers", materialId],
     queryFn: () => apiGet(`/materials/${materialId}/suppliers`),
   });
@@ -185,7 +185,7 @@ function SuppliersTab({ materialId }: { materialId: number }) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["material-suppliers", materialId] }),
   });
 
-  if (isLoading) return <div className="py-8 text-center text-muted-foreground text-sm">Loading suppliers…</div>;
+  if (isPending) return <div className="py-8 text-center text-muted-foreground text-sm">Loading suppliers…</div>;
 
   return (
     <div className="space-y-4">
@@ -257,12 +257,12 @@ function SuppliersTab({ materialId }: { materialId: number }) {
 
 /* ── Audit Trail Tab ─────────────────────────────────────────────────────── */
 function AuditTab({ materialId }: { materialId: number }) {
-  const { data: logs = [], isLoading } = useQuery<AuditEntry[]>({
+  const { data: logs = [], isPending, isLoading } = useQuery<AuditEntry[]>({
     queryKey: ["material-audit", materialId],
     queryFn: () => apiGet(`/materials/${materialId}/audit`),
   });
 
-  if (isLoading) return <div className="py-8 text-center text-muted-foreground text-sm">Loading history…</div>;
+  if (isPending) return <div className="py-8 text-center text-muted-foreground text-sm">Loading history…</div>;
   if (!logs.length) return <div className="py-8 text-center text-muted-foreground text-sm">No history yet.</div>;
 
   const actionColor: Record<string, string> = {

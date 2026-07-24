@@ -26,7 +26,7 @@ export function ProjectActivities({ projectId }: { projectId: number }) {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: activities, isLoading } = useGetProjectActivities(projectId, {
+  const { data: activities, isPending, isLoading } = useGetProjectActivities(projectId, {
     query: { enabled: !!projectId, queryKey: getGetProjectActivitiesQueryKey(projectId) }
   });
 
@@ -45,7 +45,7 @@ export function ProjectActivities({ projectId }: { projectId: number }) {
     }
   });
 
-  if (isLoading) {
+  if (isPending) {
     return <SkeletonList rows={5} cols={4} showHeader />;
   }
 

@@ -184,7 +184,7 @@ export function ProjectSiteSurvey({ projectId }: { projectId: number }) {
   const [creating, setCreating] = useState(false);
   const qc = useQueryClient();
 
-  const { data: surveys = [], isLoading } = useQuery<Survey[]>({
+  const { data: surveys = [], isPending, isLoading } = useQuery<Survey[]>({
     queryKey: ["project-site-surveys", projectId],
     queryFn: () => apiGet(`/projects/${projectId}/site-surveys`),
     enabled: !!projectId,
@@ -207,7 +207,7 @@ export function ProjectSiteSurvey({ projectId }: { projectId: number }) {
 
   const survey = surveys[0]; // Latest survey
 
-  if (isLoading) return <div className="p-8 text-center text-muted-foreground text-sm">Loading…</div>;
+  if (isPending) return <div className="p-8 text-center text-muted-foreground text-sm">Loading…</div>;
 
   if (!survey && !creating) {
     return (

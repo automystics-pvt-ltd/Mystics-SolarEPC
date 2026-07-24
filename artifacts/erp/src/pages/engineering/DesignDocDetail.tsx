@@ -32,7 +32,7 @@ export default function DesignDocDetail() {
   const [revOpen, setRevOpen] = useState(false);
   const [approveOpen, setApproveOpen] = useState(false);
 
-  const { data: doc, isLoading } = useGetDesignDocument(id, { query: { queryKey: getGetDesignDocumentQueryKey(id), enabled: !!id } });
+  const { data: doc, isPending, isLoading } = useGetDesignDocument(id, { query: { queryKey: getGetDesignDocumentQueryKey(id), enabled: !!id } });
   const approveMut = useApproveDesignDocument();
   const revMut = useAddDesignRevision();
   const { register: revReg, handleSubmit: revSubmit, reset: revReset } = useForm<any>();
@@ -48,7 +48,7 @@ export default function DesignDocDetail() {
     revMut.mutate({ id, data: d }, { onSuccess: () => { invalidate(); setRevOpen(false); revReset(); } });
   };
 
-  if (isLoading) return <div className="space-y-4">{[...Array(4)].map((_, i) => <div key={i} className="h-20 bg-slate-100 rounded-xl animate-pulse" />)}</div>;
+  if (isPending) return <div className="space-y-4">{[...Array(4)].map((_, i) => <div key={i} className="h-20 bg-slate-100 rounded-xl animate-pulse" />)}</div>;
   if (!doc) return <p className="text-slate-500">Document not found.</p>;
 
   const s = statusConfig[doc.internalStatus] ?? statusConfig["Draft"];

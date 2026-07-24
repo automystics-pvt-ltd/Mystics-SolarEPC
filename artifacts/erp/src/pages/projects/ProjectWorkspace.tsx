@@ -102,7 +102,7 @@ export function ProjectWorkspace({ id }: { id: string }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);    // desktop sidebar
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false); // mobile sheet
 
-  const { data: project, isLoading } = useGetProject(projectId, {
+  const { data: project, isPending, isLoading } = useGetProject(projectId, {
     query: { enabled: !!projectId, queryKey: getGetProjectQueryKey(projectId) },
   });
 
@@ -115,7 +115,7 @@ export function ProjectWorkspace({ id }: { id: string }) {
     return () => mq.removeEventListener("change", handler);
   }, []);
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <div className="h-full flex flex-col overflow-hidden">
         <div className="shrink-0 h-12 bg-muted/40 border-b border-border/60 animate-pulse" />

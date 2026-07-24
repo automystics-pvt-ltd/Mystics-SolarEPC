@@ -15,12 +15,12 @@ import { cn } from "@/lib/utils";
 export function ProjectMRs({ projectId }: { projectId: number }) {
   const [, navigate] = useLocation();
 
-  const { data: mrs, isLoading } = useGetMaterialRequests(
+  const { data: mrs, isPending, isLoading } = useGetMaterialRequests(
     { projectId },
     { query: { enabled: !!projectId, queryKey: getGetMaterialRequestsQueryKey({ projectId }) } }
   );
 
-  if (isLoading) return <SkeletonList rows={4} cols={3} showHeader />;
+  if (isPending) return <SkeletonList rows={4} cols={3} showHeader />;
 
   const openMRs   = mrs?.filter(m => m.status === "Open" || m.status === "Pending").length ?? 0;
   const totalMRs  = mrs?.length ?? 0;

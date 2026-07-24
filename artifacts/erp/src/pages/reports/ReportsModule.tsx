@@ -59,8 +59,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 // ─── Procurement Tab ──────────────────────────────────────────────────────────
 function ProcurementReport() {
-  const { data, isLoading } = useQuery({ queryKey: ["reports-procurement"], queryFn: () => apiGet<any>("/reports/procurement") });
-  if (isLoading) return <SkeletonList rows={5} />;
+  const { data, isPending, isLoading } = useQuery({ queryKey: ["reports-procurement"], queryFn: () => apiGet<any>("/reports/procurement") });
+  if (isPending) return <SkeletonList rows={5} />;
   if (!data) return null;
   const { summary, byStatus = [], byVendor = [], monthly = [] } = data;
   return (
@@ -130,8 +130,8 @@ function ProcurementReport() {
 
 // ─── GRN Tab ──────────────────────────────────────────────────────────────────
 function GRNReport() {
-  const { data, isLoading } = useQuery({ queryKey: ["reports-grn"], queryFn: () => apiGet<any>("/reports/grn") });
-  if (isLoading) return <SkeletonList rows={5} />;
+  const { data, isPending, isLoading } = useQuery({ queryKey: ["reports-grn"], queryFn: () => apiGet<any>("/reports/grn") });
+  if (isPending) return <SkeletonList rows={5} />;
   if (!data) return null;
   const { summary, byStatus = [], vendorRejections = [] } = data;
   return (
@@ -206,8 +206,8 @@ function GRNReport() {
 
 // ─── Invoice Tab ──────────────────────────────────────────────────────────────
 function InvoiceReport() {
-  const { data, isLoading } = useQuery({ queryKey: ["reports-invoices"], queryFn: () => apiGet<any>("/reports/invoices") });
-  if (isLoading) return <SkeletonList rows={5} />;
+  const { data, isPending, isLoading } = useQuery({ queryKey: ["reports-invoices"], queryFn: () => apiGet<any>("/reports/invoices") });
+  if (isPending) return <SkeletonList rows={5} />;
   if (!data) return null;
   const { summary, aging, byVendor = [] } = data;
   const agingData = [
@@ -281,8 +281,8 @@ function InvoiceReport() {
 
 // ─── Inventory Tab ─────────────────────────────────────────────────────────────
 function InventoryReport() {
-  const { data, isLoading } = useQuery({ queryKey: ["reports-inventory"], queryFn: () => apiGet<any>("/reports/inventory") });
-  if (isLoading) return <SkeletonList rows={5} />;
+  const { data, isPending, isLoading } = useQuery({ queryKey: ["reports-inventory"], queryFn: () => apiGet<any>("/reports/inventory") });
+  if (isPending) return <SkeletonList rows={5} />;
   if (!data) return null;
   const { summary, lowStock = [], txnByType = [] } = data;
   return (
@@ -326,8 +326,8 @@ function InventoryReport() {
 
 // ─── Projects Tab ─────────────────────────────────────────────────────────────
 function ProjectsReport() {
-  const { data, isLoading } = useQuery({ queryKey: ["reports-projects"], queryFn: () => apiGet<any>("/reports/projects") });
-  if (isLoading) return <SkeletonList rows={5} />;
+  const { data, isPending, isLoading } = useQuery({ queryKey: ["reports-projects"], queryFn: () => apiGet<any>("/reports/projects") });
+  if (isPending) return <SkeletonList rows={5} />;
   if (!data) return null;
   const { summary, projects = [] } = data;
   return (

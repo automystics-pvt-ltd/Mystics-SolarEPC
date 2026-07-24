@@ -5,12 +5,12 @@ import { SectionCard, EmptyState, SkeletonList } from "@/components/shared";
 import { motion } from "framer-motion";
 
 export function ProjectDPRs({ projectId }: { projectId: number }) {
-  const { data: dprs, isLoading } = useGetDPRs(
+  const { data: dprs, isPending, isLoading } = useGetDPRs(
     { projectId },
     { query: { enabled: !!projectId, queryKey: getGetDPRsQueryKey({ projectId }) } }
   );
 
-  if (isLoading) {
+  if (isPending) {
     return <SkeletonList rows={4} cols={3} showHeader />;
   }
 
