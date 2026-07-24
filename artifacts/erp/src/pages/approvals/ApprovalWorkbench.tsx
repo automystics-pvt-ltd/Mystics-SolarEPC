@@ -7,7 +7,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/components/ui/use-toast";
-import { apiGet, apiPost, apiPatch } from "@/lib/fetch";
+import { apiGet, apiPost, apiPatch, apiDelete } from "@/lib/fetch";
 import { ExternalLink } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -780,6 +780,218 @@ function AnalyticsPanel({ analytics }: { analytics: any }) {
   );
 }
 
+/* ─── My Delegates Panel ─────────────────────────────────────────────────── */
+interface DelegateRule {
+  id: number; fromUserId: number; toUserId: number; toUserName: string;
+  module: string | null; startDate: string; endDate: string | null;
+  isActive: boolean; createdAt: string;
+}
+interface UserOption { id: number; name: string; role: string; }
+
+function DelegatesPanel({ currentUserId }: { currentUserId: number }) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+
+  const delegatesQ = useQuery<DelegateRule[]>({
+    queryKey: ["approvals", "my-delegates"],
+    queryFn: () => apiGet<DelegateRule[]>("/approvals/my-delegates"),
+  });
+  const usersQ = useQuery<UserOption[]>({
+    queryKey: ["approvals", "users-for-delegate"],
+    queryFn: () => apiGet<UserOption[]>("/approvals/users-for-delegate"),
+  });
+
+  const [form, setForm] = useState({
+    toUserId: "",
+    module: "__all__",
+    startDate: new Date().toISOString().split("T")[0]!,
+    endDate: "",
+  });
+  const setF = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+
+  const addMut = useMutation({
+    mutationFn: () => apiPost("/approvals/delegate", {
+      toUserId:  Number(form.toUserId),
+      module:    form.module === "__all__" ? null : form.module,
+      startDate: form.startDate || new Date().toISOString(),
+      endDate:   form.endDate   || null,
+    }),
+    onSuccess: () => {
+      toast({ title: "Delegation rule added ✓" });
+      qc.invalidateQueries({ queryKey: ["approvals", "my-delegates"] });
+      setForm({ toUserId: "", module: "__all__", startDate: new Date().toISOString().split("T")[0]!, endDate: "" });
+    },
+    onError: () => toast({ title: "Failed to add delegation rule", variant: "destructive" }),
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: (id: number) => apiDelete(`/approvals/delegate/${id}`),
+    onSuccess: () => {
+      toast({ title: "Delegation rule removed" });
+      qc.invalidateQueries({ queryKey: ["approvals", "my-delegates"] });
+    },
+    onError: () => toast({ title: "Failed to remove delegation rule", variant: "destructive" }),
+  });
+
+  const otherUsers = (usersQ.data ?? []).filter(u => u.id !== currentUserId);
+  const rules = delegatesQ.data ?? [];
+
+  const fmtDate = (iso: string | null) => {
+    if (!iso) return "—";
+    return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+  };
+
+  return (
+    <div className="max-w-2xl space-y-6">
+
+      {/* Info banner */}
+      <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
+        <Info className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
+        <div>
+          <p className="text-[12px] font-semibold text-blue-800">About approval delegation</p>
+          <p className="text-[11px] text-blue-700 mt-0.5 leading-relaxed">
+            Delegation rules automatically forward approval tasks to another person for a specified period.
+            Useful when you're on leave or unavailable. Rules apply to new approval requests; existing steps
+            must be manually re-delegated.
+          </p>
+        </div>
+      </div>
+
+      {/* Add new rule form */}
+      <div className="bg-card border border-border rounded-xl p-5 space-y-4">
+        <p className="text-[13px] font-bold text-foreground flex items-center gap-2">
+          <Plus className="h-4 w-4 text-primary" />Add Delegation Rule
+        </p>
+
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs font-semibold">Delegate to <span className="text-red-500">*</span></Label>
+            <Select value={form.toUserId} onValueChange={v => setF("toUserId", v)}>
+              <SelectTrigger className="mt-1 h-9 text-sm">
+                <SelectValue placeholder={usersQ.isLoading ? "Loading users…" : "Select a person"} />
+              </SelectTrigger>
+              <SelectContent>
+                {otherUsers.map(u => (
+                  <SelectItem key={u.id} value={String(u.id)}>
+                    {u.name} <span className="text-muted-foreground capitalize ml-1">({u.role})</span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label className="text-xs font-semibold">Module scope</Label>
+            <Select value={form.module} onValueChange={v => setF("module", v)}>
+              <SelectTrigger className="mt-1 h-9 text-sm"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All modules</SelectItem>
+                {MODULES.map(m => (
+                  <SelectItem key={m} value={m}>{MODULE_META[m]?.label ?? m}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-[10px] text-muted-foreground mt-1">Leave as "All modules" to delegate everything</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs font-semibold">Start date <span className="text-red-500">*</span></Label>
+              <Input type="date" value={form.startDate} onChange={e => setF("startDate", e.target.value)}
+                className="mt-1 h-9 text-sm" />
+            </div>
+            <div>
+              <Label className="text-xs font-semibold">End date <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Input type="date" value={form.endDate} onChange={e => setF("endDate", e.target.value)}
+                min={form.startDate} className="mt-1 h-9 text-sm" />
+            </div>
+          </div>
+        </div>
+
+        <Button
+          onClick={() => addMut.mutate()}
+          disabled={!form.toUserId || !form.startDate || addMut.isPending}
+          className="gap-2 h-9"
+        >
+          <UserCheck className="h-3.5 w-3.5" />
+          {addMut.isPending ? "Adding…" : "Add Delegation Rule"}
+        </Button>
+      </div>
+
+      {/* Existing rules list */}
+      <div>
+        <p className="text-[12px] font-bold text-foreground mb-3 flex items-center gap-2">
+          <ArrowRightLeft className="h-3.5 w-3.5 text-muted-foreground" />
+          Active Delegation Rules
+          {rules.length > 0 && (
+            <span className="text-[10px] font-bold bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">{rules.length}</span>
+          )}
+        </p>
+
+        {delegatesQ.isLoading ? (
+          <div className="space-y-2">
+            {[1, 2].map(i => <div key={i} className="h-16 bg-muted/50 rounded-xl animate-pulse" />)}
+          </div>
+        ) : rules.length === 0 ? (
+          <div className="py-12 text-center border-2 border-dashed border-border rounded-xl">
+            <UserCheck className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+            <p className="text-sm font-semibold text-muted-foreground">No delegation rules yet</p>
+            <p className="text-xs text-muted-foreground/60 mt-1">Add a rule above to automatically forward approvals</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {rules.map(rule => {
+              const now = new Date();
+              const start = new Date(rule.startDate);
+              const end = rule.endDate ? new Date(rule.endDate) : null;
+              const isExpired = end && end < now;
+              const isUpcoming = start > now;
+              const isActive = rule.isActive && !isExpired && !isUpcoming;
+
+              return (
+                <div key={rule.id} className={cn(
+                  "flex items-start justify-between gap-3 border rounded-xl px-4 py-3",
+                  isExpired  ? "bg-muted/30 border-border/50 opacity-60" :
+                  isUpcoming ? "bg-amber-50/60 border-amber-200" :
+                               "bg-card border-border"
+                )}>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[13px] font-semibold text-foreground">{rule.toUserName}</span>
+                      {rule.module
+                        ? <ModuleBadge module={rule.module} />
+                        : <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border bg-gray-100 text-gray-600 border-gray-200">All Modules</span>
+                      }
+                      {isExpired  && <span className="text-[10px] font-bold text-muted-foreground bg-muted border border-border/60 px-1.5 py-0.5 rounded uppercase">Expired</span>}
+                      {isUpcoming && <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded uppercase">Upcoming</span>}
+                      {isActive   && <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded uppercase">Active</span>}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      <span className="font-semibold">From:</span> {fmtDate(rule.startDate)}
+                      {rule.endDate
+                        ? <> · <span className="font-semibold">Until:</span> {fmtDate(rule.endDate)}</>
+                        : " · No end date (indefinite)"
+                      }
+                    </p>
+                  </div>
+                  <Button
+                    size="sm" variant="ghost"
+                    className="h-7 w-7 p-0 text-muted-foreground hover:text-red-600 hover:bg-red-50 shrink-0"
+                    onClick={() => deleteMut.mutate(rule.id)}
+                    disabled={deleteMut.isPending}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ─── Tabs & list panel ──────────────────────────────────────────────────── */
 const TABS = [
   { key: "pending",   label: "My Inbox",      icon: Inbox      },
@@ -789,6 +1001,7 @@ const TABS = [
   { key: "history",   label: "History",       icon: History    },
   { key: "analytics", label: "Analytics",     icon: BarChart3  },
   { key: "workflows", label: "Workflows",     icon: GitBranch  },
+  { key: "delegates", label: "My Delegates",  icon: UserCheck  },
 ] as const;
 type Tab = typeof TABS[number]["key"];
 
@@ -970,12 +1183,13 @@ export default function ApprovalWorkbench() {
     history:   (historyQ.data   ?? []) as ApprovalRequest[],
     analytics: [],
     workflows: [],
+    delegates: [],
   };
   const tabLoading: Record<Tab, boolean> = {
     pending:   pendingQ.isLoading,   requests:  requestsQ.isLoading,
     queue:     queueQ.isLoading,     delegated: delegatedQ.isLoading,
     history:   historyQ.isLoading,   analytics: analyticsQ.isLoading,
-    workflows: workflowsQ.isLoading,
+    workflows: workflowsQ.isLoading, delegates: false,
   };
 
   const invalidateAll = () => qc.invalidateQueries({ queryKey: ["approvals"] });
@@ -1112,6 +1326,8 @@ export default function ApprovalWorkbench() {
             workflows={workflowsQ.data ?? []}
             onRefresh={() => qc.invalidateQueries({ queryKey: ["approval-workflows"] })}
           />
+        ) : activeTab === "delegates" ? (
+          <DelegatesPanel currentUserId={(user as any)?.id ?? 0} />
         ) : (
           <div className="bg-card border border-border rounded-xl overflow-hidden">
             <RequestList

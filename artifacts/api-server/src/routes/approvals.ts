@@ -360,6 +360,41 @@ router.get("/approvals/analytics", async (req, res): Promise<void> => {
   });
 });
 
+/* ══════════════════════════════════════════════════════════════════════════
+   DELEGATION RULES — GET endpoints (must be above /:id to avoid shadowing)
+══════════════════════════════════════════════════════════════════════════ */
+
+// List all users for the delegate picker (any authenticated user)
+router.get("/approvals/users-for-delegate", async (req, res): Promise<void> => {
+  const actor = getActor(req);
+  if (!actor) { res.status(401).json({ error: "Unauthorized" }); return; }
+  const rows = await db.select({
+    id:   usersTable.id,
+    name: usersTable.name,
+    role: usersTable.role,
+  }).from(usersTable);
+  res.json(rows);
+});
+
+// List current user's delegation rules
+router.get("/approvals/my-delegates", async (req, res): Promise<void> => {
+  const actor = getActor(req);
+  if (!actor) { res.status(401).json({ error: "Unauthorized" }); return; }
+  const rows = await db.select().from(approvalDelegatesTable)
+    .where(eq(approvalDelegatesTable.fromUserId, actor.userId))
+    .orderBy(desc(approvalDelegatesTable.createdAt));
+  // Enrich with delegate user name
+  const toIds = [...new Set(rows.map(r => r.toUserId))];
+  const names = await userNames(toIds);
+  res.json(rows.map(r => ({
+    ...r,
+    startDate: r.startDate.toISOString(),
+    endDate:   r.endDate?.toISOString() ?? null,
+    createdAt: r.createdAt.toISOString(),
+    toUserName: names.get(r.toUserId) ?? "Unknown",
+  })));
+});
+
 /* ── Single request detail ───────────────────────────────────────────────── */
 router.get("/approvals/:id", async (req, res): Promise<void> => {
   const id = Number(req.params.id);
@@ -711,17 +746,8 @@ router.post("/approvals/:id/comment", async (req, res): Promise<void> => {
 });
 
 /* ══════════════════════════════════════════════════════════════════════════
-   DELEGATION RULES  (profile-level delegate rules, separate from per-step delegation)
+   DELEGATION RULES — write endpoints
 ══════════════════════════════════════════════════════════════════════════ */
-
-// List current user's delegation rules
-router.get("/approvals/my-delegates", async (req, res): Promise<void> => {
-  const actor = getActor(req);
-  if (!actor) { res.status(401).json({ error: "Unauthorized" }); return; }
-  const rows = await db.select().from(approvalDelegatesTable)
-    .where(eq(approvalDelegatesTable.fromUserId, actor.userId));
-  res.json(rows);
-});
 
 // Create a new profile-level delegation rule
 router.post("/approvals/delegate", async (req, res): Promise<void> => {
