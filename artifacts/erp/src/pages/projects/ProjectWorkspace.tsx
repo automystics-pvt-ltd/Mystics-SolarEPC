@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useGetProject, getGetProjectQueryKey } from "@workspace/api-client-react";
-import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard, Activity, Package, FileText, DollarSign, Milestone,
   AlertOctagon, ClipboardList, PackageSearch, GitBranch, ShieldAlert,
+  Users, ClipboardCheck, Zap,
 } from "lucide-react";
 import { ProjectOverview }        from "./tabs/ProjectOverview";
 import { ProjectActivities }      from "./tabs/ProjectActivities";
@@ -16,6 +16,9 @@ import { ProjectSiteSurvey }      from "./tabs/ProjectSiteSurvey";
 import { ProjectBOQ }             from "./tabs/ProjectBOQ";
 import { ProjectChangeRequests }  from "./tabs/ProjectChangeRequests";
 import { ProjectRisks }           from "./tabs/ProjectRisks";
+import { ProjectResources }       from "./tabs/ProjectResources";
+import { ProjectInspections }     from "./tabs/ProjectInspections";
+import { ProjectTC }              from "./tabs/ProjectTC";
 import { PhaseTracker }           from "./components/PhaseTracker";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -29,7 +32,10 @@ const TAB_CONFIG = [
   { value: "mrs",         label: "Material Requests",  Icon: Package },
   { value: "budget",      label: "Budget",             Icon: DollarSign },
   { value: "milestones",  label: "Milestones",         Icon: Milestone },
+  { value: "resources",   label: "Resources",          Icon: Users },
   { value: "dprs",        label: "Daily Reports",      Icon: FileText },
+  { value: "inspections", label: "Inspections",        Icon: ClipboardCheck },
+  { value: "tc",          label: "T&C",                Icon: Zap },
   { value: "changes",     label: "Change Requests",    Icon: GitBranch },
   { value: "risks",       label: "Risk Register",      Icon: ShieldAlert },
   { value: "snags",       label: "Snag Log",           Icon: AlertOctagon },
@@ -95,17 +101,20 @@ export function ProjectWorkspace({ id }: { id: string }) {
 
         {/* Tab content */}
         <div className="p-5 flex-1 overflow-y-auto scrollbar-thin">
-          {activeTab === "overview"   && <ProjectOverview       projectId={projectId} />}
-          {activeTab === "activities" && <ProjectActivities     projectId={projectId} />}
-          {activeTab === "survey"     && <ProjectSiteSurvey     projectId={projectId} />}
-          {activeTab === "boq"        && <ProjectBOQ            projectId={projectId} clientPoId={project.clientPoId} />}
-          {activeTab === "mrs"        && <ProjectMRs            projectId={projectId} />}
-          {activeTab === "budget"     && <ProjectBudget         projectId={projectId} />}
-          {activeTab === "milestones" && <ProjectMilestones     projectId={projectId} />}
-          {activeTab === "dprs"       && <ProjectDPRs           projectId={projectId} />}
-          {activeTab === "changes"    && <ProjectChangeRequests projectId={projectId} />}
-          {activeTab === "risks"      && <ProjectRisks          projectId={projectId} />}
-          {activeTab === "snags"      && <ProjectSnagLog        projectId={projectId} />}
+          {activeTab === "overview"    && <ProjectOverview       projectId={projectId} />}
+          {activeTab === "activities"  && <ProjectActivities     projectId={projectId} />}
+          {activeTab === "survey"      && <ProjectSiteSurvey     projectId={projectId} />}
+          {activeTab === "boq"         && <ProjectBOQ            projectId={projectId} clientPoId={project.clientPoId} />}
+          {activeTab === "mrs"         && <ProjectMRs            projectId={projectId} />}
+          {activeTab === "budget"      && <ProjectBudget         projectId={projectId} />}
+          {activeTab === "milestones"  && <ProjectMilestones     projectId={projectId} />}
+          {activeTab === "resources"   && <ProjectResources      projectId={projectId} />}
+          {activeTab === "dprs"        && <ProjectDPRs           projectId={projectId} />}
+          {activeTab === "inspections" && <ProjectInspections    projectId={projectId} />}
+          {activeTab === "tc"          && <ProjectTC             projectId={projectId} />}
+          {activeTab === "changes"     && <ProjectChangeRequests projectId={projectId} />}
+          {activeTab === "risks"       && <ProjectRisks          projectId={projectId} />}
+          {activeTab === "snags"       && <ProjectSnagLog        projectId={projectId} />}
         </div>
       </div>
     </motion.div>

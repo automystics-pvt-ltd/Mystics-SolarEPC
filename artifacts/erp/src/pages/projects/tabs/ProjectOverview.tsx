@@ -1,13 +1,23 @@
 import { useGetProjectDashboard, getGetProjectDashboardQueryKey } from "@workspace/api-client-react";
-import { TrendingUp, AlertTriangle, FileCheck, ClipboardCheck, Calendar, CheckCircle2, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { TrendingUp, AlertTriangle, FileCheck, ClipboardCheck, Calendar, CheckCircle2, Target } from "lucide-react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import { SectionCard, StatCard, EmptyState, SkeletonStats } from "@/components/shared";
+import { useQuery } from "@tanstack/react-query";
+import { apiGet } from "@/lib/fetch";
 
 export function ProjectOverview({ projectId }: { projectId: number }) {
   const { data: dashboard, isLoading } = useGetProjectDashboard(projectId, {
     query: { enabled: !!projectId, queryKey: getGetProjectDashboardQueryKey(projectId) }
   });
+
+  // Weighted milestone completion from execution milestones
+  const { data: milestoneData } = useQuery<{ overallCompletionPct: number }>({
+    queryKey: ["milestones-critical-path", projectId],
+    queryFn: () => apiGet(`/projects/${projectId}/milestones/critical-path`),
+    enabled: !!projectId,
+  });
+  const overallPct = milestoneData?.overallCompletionPct ?? 0;
 
   if (isLoading) {
     return (
@@ -26,6 +36,14 @@ export function ProjectOverview({ projectId }: { projectId: number }) {
       {/* KPI Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
+          label="Overall Completion"
+          value={`${overallPct}%`}
+          icon={Target}
+          iconColor={overallPct >= 80 ? "text-emerald-600" : overallPct >= 40 ? "text-blue-600" : "text-muted-foreground"}
+          iconBg={overallPct >= 80 ? "bg-emerald-100" : overallPct >= 40 ? "bg-blue-100" : "bg-muted"}
+          trendLabel="Weighted milestone progress"
+        />
+        <StatCard
           label="Budget Health"
           value={`₹${Number(bg?.totalActual || 0).toLocaleString("en-IN")}`}
           icon={TrendingUp}
@@ -34,14 +52,6 @@ export function ProjectOverview({ projectId }: { projectId: number }) {
           trend={isOverBudget ? "up" : "down"}
           trendLabel={`${health} (Var: ₹${Math.abs(bg?.totalVariance || 0).toLocaleString("en-IN")})`}
           className={isOverBudget ? "border-red-200 bg-red-50/40" : "border-emerald-200 bg-emerald-50/40"}
-        />
-        <StatCard
-          label="Activities"
-          value={dashboard?.activitiesCount || 0}
-          icon={ClipboardCheck}
-          iconColor="text-muted-foreground"
-          iconBg="bg-muted"
-          trendLabel="Total scheduled tasks"
         />
         <StatCard
           label="Open Issues"
