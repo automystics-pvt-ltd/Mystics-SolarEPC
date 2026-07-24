@@ -34,9 +34,12 @@ function monthsBetween(fromStr: string, toStr: string): string[] {
   return out;
 }
 
-/* ── Active PO statuses shared across the handler ──────────────────────── */
-const ACTIVE_STATUSES  = ["Draft", "Issued", "Acknowledged", "PartiallyReceived"] as const;
+/* ── PO status groups shared across the handler ─────────────────────────── */
+const ACTIVE_STATUSES   = ["Draft", "Issued", "Acknowledged", "PartiallyReceived"] as const;
 const RECEIVED_STATUSES = ["FullyReceived", "Closed"] as const;
+/** All non-Cancelled statuses — used for pipeline/spend/chart/vendor metrics
+ *  so the dashboard shows meaningful data even when no PO has been received yet. */
+const ALL_PO_STATUSES   = [...ACTIVE_STATUSES, ...RECEIVED_STATUSES] as const;
 
 /* ════════════════════════════════════════════════════════════════════════
    GET /procurement-dashboard
@@ -70,23 +73,24 @@ router.get("/procurement-dashboard", async (req, res): Promise<void> => {
   const lastMonthStart = new Date(`${lastMonthStr}-01T00:00:00.000Z`);
   const lastMonthEnd   = new Date(thisMonthStart.getTime() - 1);
 
-  /* ── All 15 queries run in parallel — zero sequential awaits ─────────── */
+  /* ── All 16 queries run in parallel — zero sequential awaits ─────────── */
   const [
-    /* 0 */ statusCountsRaw,
-    /* 1 */ [periodSpendRow],
-    /* 2 */ [thisMonthRow],
-    /* 3 */ [lastMonthRow],
-    /* 4 */ [committedRow],
-    /* 5 */ monthlySpendRaw,
-    /* 6 */ topVendorsRaw,
-    /* 7 */ activePOsRaw,
-    /* 8 */ pendingGRNsRaw,
-    /* 9 */ pendingInvoicesRaw,
+    /* 0  */ statusCountsRaw,
+    /* 1  */ [periodSpendRow],
+    /* 2  */ [thisMonthRow],
+    /* 3  */ [lastMonthRow],
+    /* 4  */ [committedRow],
+    /* 5  */ monthlySpendRaw,
+    /* 6  */ topVendorsRaw,
+    /* 7  */ activePOsRaw,
+    /* 8  */ pendingGRNsRaw,
+    /* 9  */ pendingInvoicesRaw,
     /* 10 */ activityGRNs,
     /* 11 */ activityInvoices,
     /* 12 */ activityPOs,
     /* 13 */ vendorMonthlyRaw,
     /* 14 */ categoryMonthlyRaw,
+    /* 15 */ [receivedSpendRow],
   ] = await Promise.all([
 
     /* 0: Pipeline — status distribution */
@@ -96,32 +100,32 @@ router.get("/procurement-dashboard", async (req, res): Promise<void> => {
     }).from(procurementPOsTable)
       .groupBy(procurementPOsTable.status),
 
-    /* 1: Period spend (YTD / range) */
+    /* 1: Period PO value (YTD / range) — all non-cancelled POs so pipeline is visible */
     db.select({
       total: sql<string>`coalesce(sum(${procurementPOsTable.totalAmount}::numeric), 0)`,
     }).from(procurementPOsTable)
       .where(and(
-        inArray(procurementPOsTable.status, [...RECEIVED_STATUSES]),
+        inArray(procurementPOsTable.status, [...ALL_PO_STATUSES]),
         gte(procurementPOsTable.createdAt, fromDate),
         lte(procurementPOsTable.createdAt, toDate),
       )),
 
-    /* 2: This-month spend (always calendar month — independent of date range) */
+    /* 2: This-month PO value (always calendar month — independent of date range) */
     db.select({
       total: sql<string>`coalesce(sum(${procurementPOsTable.totalAmount}::numeric), 0)`,
     }).from(procurementPOsTable)
       .where(and(
-        inArray(procurementPOsTable.status, [...RECEIVED_STATUSES]),
+        inArray(procurementPOsTable.status, [...ALL_PO_STATUSES]),
         gte(procurementPOsTable.createdAt, thisMonthStart),
         lte(procurementPOsTable.createdAt, toDate),
       )),
 
-    /* 3: Last-month spend */
+    /* 3: Last-month PO value */
     db.select({
       total: sql<string>`coalesce(sum(${procurementPOsTable.totalAmount}::numeric), 0)`,
     }).from(procurementPOsTable)
       .where(and(
-        inArray(procurementPOsTable.status, [...RECEIVED_STATUSES]),
+        inArray(procurementPOsTable.status, [...ALL_PO_STATUSES]),
         gte(procurementPOsTable.createdAt, lastMonthStart),
         lte(procurementPOsTable.createdAt, lastMonthEnd),
       )),
@@ -132,20 +136,20 @@ router.get("/procurement-dashboard", async (req, res): Promise<void> => {
     }).from(procurementPOsTable)
       .where(inArray(procurementPOsTable.status, [...ACTIVE_STATUSES])),
 
-    /* 5: Monthly spend chart — SQL GROUP BY month */
+    /* 5: Monthly PO value chart — SQL GROUP BY month (all non-cancelled) */
     db.select({
       month:  sql<string>`to_char(${procurementPOsTable.createdAt}, 'YYYY-MM')`,
       amount: sql<string>`coalesce(sum(${procurementPOsTable.totalAmount}::numeric), 0)`,
     }).from(procurementPOsTable)
       .where(and(
-        inArray(procurementPOsTable.status, [...RECEIVED_STATUSES]),
+        inArray(procurementPOsTable.status, [...ALL_PO_STATUSES]),
         gte(procurementPOsTable.createdAt, fromDate),
         lte(procurementPOsTable.createdAt, toDate),
       ))
       .groupBy(sql`to_char(${procurementPOsTable.createdAt}, 'YYYY-MM')`)
       .orderBy(sql`to_char(${procurementPOsTable.createdAt}, 'YYYY-MM')`),
 
-    /* 6: Top 5 vendors by spend (period-scoped).
+    /* 6: Top 5 vendors by PO value (period-scoped, all non-cancelled).
        Group by COALESCE(vendor_id::text, vendor_name) so the same physical vendor
        is merged into one row even when POs were created under slightly different
        name strings — as long as the PO is linked to a vendor record via vendorId. */
@@ -156,7 +160,7 @@ router.get("/procurement-dashboard", async (req, res): Promise<void> => {
       poCount:    sql<number>`count(*)::int`,
     }).from(procurementPOsTable)
       .where(and(
-        inArray(procurementPOsTable.status, [...RECEIVED_STATUSES]),
+        inArray(procurementPOsTable.status, [...ALL_PO_STATUSES]),
         gte(procurementPOsTable.createdAt, fromDate),
         lte(procurementPOsTable.createdAt, toDate),
       ))
@@ -223,10 +227,10 @@ router.get("/procurement-dashboard", async (req, res): Promise<void> => {
       .orderBy(desc(procurementPOsTable.createdAt))
       .limit(10),
 
-    /* 13: Vendor monthly spend — SQL-aggregated by (vendor_key, month).
+    /* 13: Vendor monthly PO value — SQL-aggregated by (vendor_key, month).
        Returns at most top-5-vendors × months rows instead of raw PO rows.
        Uses the same coalesce(vendorId::text, vendorName) key as the top-vendors
-       query so drill-down data aligns exactly. */
+       query so drill-down data aligns exactly. All non-cancelled POs included. */
     db.select({
       groupKey:   sql<string>`coalesce(${procurementPOsTable.vendorId}::text, ${procurementPOsTable.vendorName})`,
       vendorName: sql<string>`max(${procurementPOsTable.vendorName})`,
@@ -234,7 +238,7 @@ router.get("/procurement-dashboard", async (req, res): Promise<void> => {
       amount:     sql<string>`sum(${procurementPOsTable.totalAmount}::numeric)`,
     }).from(procurementPOsTable)
       .where(and(
-        inArray(procurementPOsTable.status, [...RECEIVED_STATUSES]),
+        inArray(procurementPOsTable.status, [...ALL_PO_STATUSES]),
         gte(procurementPOsTable.createdAt, fromDate),
         lte(procurementPOsTable.createdAt, toDate),
       ))
@@ -245,7 +249,8 @@ router.get("/procurement-dashboard", async (req, res): Promise<void> => {
 
     /* 14: Category spend — SQL-aggregated by (material_name, month).
        Returns at most unique_materials × months rows instead of every line item.
-       Category derivation runs on unique material names in Node, not on raw rows. */
+       Category derivation runs on unique material names in Node, not on raw rows.
+       All non-cancelled POs included so categories populate on active pipelines. */
     db.select({
       materialName: procPOItemsTable.materialName,
       month:        sql<string>`to_char(${procurementPOsTable.createdAt}, 'YYYY-MM')`,
@@ -256,7 +261,7 @@ router.get("/procurement-dashboard", async (req, res): Promise<void> => {
         eq(procPOItemsTable.poId, procurementPOsTable.id),
       )
       .where(and(
-        inArray(procurementPOsTable.status, [...RECEIVED_STATUSES]),
+        inArray(procurementPOsTable.status, [...ALL_PO_STATUSES]),
         gte(procurementPOsTable.createdAt, fromDate),
         lte(procurementPOsTable.createdAt, toDate),
       ))
@@ -264,6 +269,16 @@ router.get("/procurement-dashboard", async (req, res): Promise<void> => {
         procPOItemsTable.materialName,
         sql`to_char(${procurementPOsTable.createdAt}, 'YYYY-MM')`,
       ),
+
+    /* 15: Received spend only (FullyReceived + Closed) — separate "actual spend" KPI */
+    db.select({
+      total: sql<string>`coalesce(sum(${procurementPOsTable.totalAmount}::numeric), 0)`,
+    }).from(procurementPOsTable)
+      .where(and(
+        inArray(procurementPOsTable.status, [...RECEIVED_STATUSES]),
+        gte(procurementPOsTable.createdAt, fromDate),
+        lte(procurementPOsTable.createdAt, toDate),
+      )),
   ] as const);
 
   /* ── Derived counts from status map ────────────────────────────────── */
@@ -277,10 +292,11 @@ router.get("/procurement-dashboard", async (req, res): Promise<void> => {
     .reduce((s, st) => s + (poByStatus[st] ?? 0), 0);
 
   /* ── Spend KPIs ─────────────────────────────────────────────────────── */
-  const ytdSpend       = n(periodSpendRow?.total);
+  const ytdSpend       = n(periodSpendRow?.total);   // all non-cancelled POs in period
   const thisMonthSpend = n(thisMonthRow?.total);
   const lastMonthSpend = n(lastMonthRow?.total);
   const committedValue = n(committedRow?.total);
+  const receivedSpend  = n(receivedSpendRow?.total); // FullyReceived + Closed only
 
   /* ── Overdue / Approaching (from small active PO list) ──────────────── */
   const overduePOs     = activePOsRaw.filter(p => {
@@ -390,7 +406,7 @@ router.get("/procurement-dashboard", async (req, res): Promise<void> => {
       overduePOs: overduePOs.length,
       pendingGRNs: pendingGRNsRaw.length,
       pendingInvoices: pendingInvoicesRaw.length,
-      ytdSpend, thisMonthSpend, lastMonthSpend, committedValue,
+      ytdSpend, receivedSpend, thisMonthSpend, lastMonthSpend, committedValue,
       mismatchCount, approachingDeadlines: approachingDLs.length,
       pendingApprovalCount, poByStatus,
     },

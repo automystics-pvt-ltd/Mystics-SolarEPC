@@ -585,8 +585,9 @@ export default function ProcurementDashboard() {
     return chips;
   }, [spendDelta, s, pendingInvoices, topVendors]);
 
-  const isYTD      = dateRange.preset === "ytd";
-  const spendKPILabel = isYTD ? "YTD Spend" : "Period Spend";
+  const isYTD         = dateRange.preset === "ytd";
+  const spendKPILabel = isYTD ? "YTD PO Value" : "Period PO Value";
+  const receivedSpend = s.receivedSpend ?? 0;
   const now = new Date();
 
   /* ── Navigation callbacks (stable refs via useCallback) ─────────────────── */
@@ -693,7 +694,7 @@ export default function ProcurementDashboard() {
       {/* KPI Strip */}
       <motion.div variants={fade} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <KPICard label={spendKPILabel} value={fmt(s.ytdSpend)} icon={DollarSign} accent="amber"
-          sub={s.committedValue > 0 ? `+${fmt(s.committedValue)} committed` : "Received POs"}
+          sub={receivedSpend > 0 ? `${fmt(receivedSpend)} received · ${fmt(s.committedValue)} open` : s.committedValue > 0 ? `${fmt(s.committedValue)} open pipeline` : "All PO statuses"}
           trend={spendDelta != null ? (spendDelta >= 0 ? "up" : "down") : undefined}
           trendLabel={spendDelta != null ? `${spendDelta > 0 ? "+" : ""}${spendDelta.toFixed(1)}% vs last month` : undefined}
           onClick={navPOs} />
