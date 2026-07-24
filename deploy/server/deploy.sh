@@ -83,7 +83,7 @@ ok "Commit: $COMMIT"
 # ── [3] Install dependencies ──────────────────────────────────────────────────
 step "Installing dependencies (pnpm install)"
 cd "$REPO_DIR"
-pnpm install --frozen-lockfile 2>&1 | tail -3
+pnpm install --no-frozen-lockfile 2>&1 | tail -3
 ok "Dependencies installed"
 
 # ── [4] Build API server ──────────────────────────────────────────────────────
