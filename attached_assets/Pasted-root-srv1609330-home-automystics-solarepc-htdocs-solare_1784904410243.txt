@@ -1,0 +1,67 @@
+root@srv1609330:/home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server# pm2 logs erp-automystics --lines 30
+[TAILING] Tailing last 30 lines for [erp-automystics] process (change the value with --lines option)
+/root/.pm2/logs/erp-automystics-error.log last 30 lines:
+11|erp-aut | /usr/bin/bash: line 1: pnpm: command not found
+11|erp-aut | /usr/bin/bash: line 1: pnpm: command not found
+11|erp-aut | /usr/bin/bash: line 1: pnpm: command not found
+11|erp-aut | /usr/bin/bash: line 1: pnpm: command not found
+11|erp-aut | /usr/bin/bash: line 1: pnpm: command not found
+11|erp-aut | /usr/bin/bash: line 1: pnpm: command not found
+11|erp-aut | /usr/bin/bash: line 1: pnpm: command not found
+11|erp-aut | /usr/bin/bash: line 1: pnpm: command not found
+11|erp-aut | /usr/bin/bash: line 1: pnpm: command not found
+11|erp-aut | /usr/bin/bash: line 1: pnpm: command not found
+11|erp-aut | /usr/bin/bash: line 1: pnpm: command not found
+11|erp-aut | /usr/bin/bash: line 1: pnpm: command not found
+11|erp-aut | /usr/bin/bash: line 1: pnpm: command not found
+11|erp-aut | /usr/bin/bash: line 1: pnpm: command not found
+11|erp-aut | /usr/bin/bash: line 1: pnpm: command not found
+11|erp-aut | /usr/bin/bash: line 1: pnpm: command not found
+11|erp-aut | .env not found. Continuing without it.
+11|erp-aut | .env not found. Continuing without it.
+11|erp-aut | .env not found. Continuing without it.
+11|erp-aut | .env not found. Continuing without it.
+11|erp-aut | .env not found. Continuing without it.
+11|erp-aut | .env not found. Continuing without it.
+11|erp-aut | .env not found. Continuing without it.
+11|erp-aut | .env not found. Continuing without it.
+11|erp-aut | .env not found. Continuing without it.
+11|erp-aut | .env not found. Continuing without it.
+11|erp-aut | .env not found. Continuing without it.
+11|erp-aut | .env not found. Continuing without it.
+11|erp-aut | .env not found. Continuing without it.
+11|erp-aut | .env not found. Continuing without it.
+
+/root/.pm2/logs/erp-automystics-out.log last 30 lines:
+11|erp-aut | {"level":30,"time":1783767427759,"pid":1883097,"hostname":"srv1609330","initialDelayMs":300000,"intervalMs":86400000,"msg":"shiprocket: tracking sync scheduler armed"}
+11|erp-aut | {"level":30,"time":1783767727812,"pid":1883097,"hostname":"srv1609330","orgs":0,"updated":0,"failed":0,"authErrors":0,"durationMs":16,"msg":"shiprocket: scheduled tracking sync complete"}
+11|erp-aut | 
+11|erp-aut | > @workspace/api-server@0.0.0 start /home/automystics/htdocs/erp.automystics.tech/artifacts/api-server
+11|erp-aut | > node --enable-source-maps --env-file-if-exists=.env --env-file-if-exists=../../.env ./dist/index.mjs
+11|erp-aut | 
+11|erp-aut | {"level":30,"time":1783769303228,"pid":2085640,"hostname":"srv1609330","port":3051,"msg":"Server listening"}
+11|erp-aut | {"level":30,"time":1783769303233,"pid":2085640,"hostname":"srv1609330","initialDelayMs":300000,"intervalMs":86400000,"msg":"shiprocket: tracking sync scheduler armed"}
+11|erp-aut | {"level":30,"time":1783769603310,"pid":2085640,"hostname":"srv1609330","orgs":0,"updated":0,"failed":0,"authErrors":0,"durationMs":47,"msg":"shiprocket: scheduled tracking sync complete"}
+11|erp-aut | {"level":30,"time":1783856003612,"pid":2085640,"hostname":"srv1609330","orgs":0,"updated":0,"failed":0,"authErrors":0,"durationMs":291,"msg":"shiprocket: scheduled tracking sync complete"}
+11|erp-aut | {"level":30,"time":1783942403513,"pid":2085640,"hostname":"srv1609330","orgs":0,"updated":0,"failed":0,"authErrors":0,"durationMs":183,"msg":"shiprocket: scheduled tracking sync complete"}
+11|erp-aut | {"level":30,"time":1784028803464,"pid":2085640,"hostname":"srv1609330","orgs":0,"updated":0,"failed":0,"authErrors":0,"durationMs":113,"msg":"shiprocket: scheduled tracking sync complete"}
+11|erp-aut | {"level":30,"time":1784115203802,"pid":2085640,"hostname":"srv1609330","orgs":0,"updated":0,"failed":0,"authErrors":0,"durationMs":315,"msg":"shiprocket: scheduled tracking sync complete"}
+11|erp-aut | {"level":30,"time":1784201603695,"pid":2085640,"hostname":"srv1609330","orgs":0,"updated":0,"failed":0,"authErrors":0,"durationMs":232,"msg":"shiprocket: scheduled tracking sync complete"}
+11|erp-aut | {"level":30,"time":1784288003555,"pid":2085640,"hostname":"srv1609330","orgs":0,"updated":0,"failed":0,"authErrors":0,"durationMs":112,"msg":"shiprocket: scheduled tracking sync complete"}
+11|erp-aut | {"level":30,"time":1784374403500,"pid":2085640,"hostname":"srv1609330","orgs":0,"updated":0,"failed":0,"authErrors":0,"durationMs":80,"msg":"shiprocket: scheduled tracking sync complete"}
+11|erp-aut | {"level":30,"time":1784460804203,"pid":2085640,"hostname":"srv1609330","orgs":0,"updated":0,"failed":0,"authErrors":0,"durationMs":615,"msg":"shiprocket: scheduled tracking sync complete"}
+11|erp-aut | {"level":30,"time":1784547203729,"pid":2085640,"hostname":"srv1609330","orgs":0,"updated":0,"failed":0,"authErrors":0,"durationMs":182,"msg":"shiprocket: scheduled tracking sync complete"}
+11|erp-aut | {"level":30,"time":1784611408324,"pid":2085640,"hostname":"srv1609330","req":{"id":1,"method":"GET","url":"/api/auth/session"},"res":{"statusCode":200},"responseTime":456,"msg":"request completed"}
+11|erp-aut | {"level":30,"time":1784611529316,"pid":2085640,"hostname":"srv1609330","req":{"id":2,"method":"GET","url":"/api/auth/session"},"res":{"statusCode":304},"responseTime":14,"msg":"request completed"}
+11|erp-aut | {"level":30,"time":1784633603651,"pid":2085640,"hostname":"srv1609330","orgs":0,"updated":0,"failed":0,"authErrors":0,"durationMs":104,"msg":"shiprocket: scheduled tracking sync complete"}
+11|erp-aut | {"level":30,"time":1784720004001,"pid":2085640,"hostname":"srv1609330","orgs":0,"updated":0,"failed":0,"authErrors":0,"durationMs":277,"msg":"shiprocket: scheduled tracking sync complete"}
+11|erp-aut | {"level":30,"time":1784806403837,"pid":2085640,"hostname":"srv1609330","orgs":0,"updated":0,"failed":0,"authErrors":0,"durationMs":106,"msg":"shiprocket: scheduled tracking sync complete"}
+11|erp-aut | {"level":30,"time":1784892803839,"pid":2085640,"hostname":"srv1609330","orgs":0,"updated":0,"failed":0,"authErrors":0,"durationMs":93,"msg":"shiprocket: scheduled tracking sync complete"}
+11|erp-aut | 
+11|erp-aut | > @workspace/api-server@0.0.0 start /home/automystics/htdocs/erp.automystics.tech/artifacts/api-server
+11|erp-aut | > node --enable-source-maps --env-file-if-exists=.env --env-file-if-exists=../../.env ./dist/index.mjs
+11|erp-aut | 
+11|erp-aut | {"level":30,"time":1784902696144,"pid":342819,"hostname":"srv1609330","port":3051,"msg":"Server listening"}
+11|erp-aut | {"level":30,"time":1784902696154,"pid":342819,"hostname":"srv1609330","initialDelayMs":300000,"intervalMs":86400000,"msg":"shiprocket: tracking sync scheduler armed"}
+
+11|erp-automystics  | {"level":30,"time":1784902996213,"pid":342819,"hostname":"srv1609330","orgs":0,"updated":0,"failed":0,"authErrors":0,"durationMs":15,"msg":"shiprocket: scheduled tracking sync complete"}
