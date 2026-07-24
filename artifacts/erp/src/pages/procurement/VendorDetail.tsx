@@ -3,7 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   useGetVendor, getGetVendorQueryKey, useUpdateVendor,
   useAddVendorContact, useDeleteVendorContact, useDeleteVendor,
-  getGetVendorsQueryKey,
+  getGetVendorsQueryKey, useGetProcurementPOs,
 } from "@workspace/api-client-react";
 import { apiPatch } from "@/lib/fetch";
 import { useLocation } from "wouter";
@@ -22,7 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Edit3, Save, X, Plus, Trash2, Building2, Shield, Phone, Mail, CreditCard, Users, Banknote, Star, AlertCircle, User, TrendingUp, ShoppingCart, CalendarDays, BarChart3 } from "lucide-react";
+import { Edit3, Save, X, Plus, Trash2, Building2, Shield, Phone, Mail, CreditCard, Users, Banknote, Star, AlertCircle, User, TrendingUp, ShoppingCart, CalendarDays, BarChart3, ChevronRight, XCircle } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { PageHeader, SectionCard, StatusBadge } from "@/components/shared";
 import { addRecentEntry } from "@/lib/recentHistory";
@@ -123,6 +123,169 @@ const STATUS_OPTS = [
   { label: "Inactive",    value: "Inactive"    },
   { label: "Blacklisted", value: "Blacklisted" },
 ];
+
+/* ── PO status display config (shared with ProcurementPOsList) ─────────── */
+const PO_STATUS_CONFIG: Record<string, { color: string; label: string }> = {
+  Draft:             { color: "bg-slate-100 text-slate-600 border-slate-200",       label: "Draft" },
+  Submitted:         { color: "bg-purple-50 text-purple-700 border-purple-200",     label: "Submitted" },
+  PendingApproval:   { color: "bg-purple-50 text-purple-700 border-purple-200",     label: "Pending Approval" },
+  Approved:          { color: "bg-emerald-50 text-emerald-700 border-emerald-200",  label: "Approved" },
+  Rejected:          { color: "bg-red-50 text-red-700 border-red-200",              label: "Rejected" },
+  OnHold:            { color: "bg-amber-50 text-amber-700 border-amber-200",        label: "On Hold" },
+  Revised:           { color: "bg-slate-100 text-slate-600 border-slate-200",       label: "Revised" },
+  Issued:            { color: "bg-blue-50 text-blue-700 border-blue-200",           label: "Issued" },
+  Acknowledged:      { color: "bg-amber-50 text-amber-700 border-amber-200",        label: "Acknowledged" },
+  PartiallyReceived: { color: "bg-orange-50 text-orange-700 border-orange-200",     label: "Partially Received" },
+  FullyReceived:     { color: "bg-emerald-50 text-emerald-700 border-emerald-200",  label: "Fully Received" },
+  InvoiceMatched:    { color: "bg-teal-50 text-teal-700 border-teal-200",           label: "Invoice Matched" },
+  PaymentPending:    { color: "bg-yellow-50 text-yellow-700 border-yellow-200",     label: "Payment Pending" },
+  Paid:              { color: "bg-green-50 text-green-700 border-green-200",        label: "Paid" },
+  Closed:            { color: "bg-slate-100 text-slate-500 border-slate-200",       label: "Closed" },
+  Cancelled:         { color: "bg-red-50 text-red-700 border-red-200",              label: "Cancelled" },
+};
+
+/* ── Vendor Purchase Orders inline panel ─────────────────────────────────── */
+function VendorPOsTab({ vendorId, onNavigate }: { vendorId: number; onNavigate: (path: string) => void }) {
+  const { data: pos = [], isLoading, isError, refetch } = useGetProcurementPOs({ vendorId });
+
+  const totalValue = pos.reduce((s, p) => s + Number(p.totalAmount ?? 0), 0);
+
+  if (isLoading) {
+    return (
+      <SectionCard title="Purchase Orders">
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-[72px] rounded-xl shimmer" />
+          ))}
+        </div>
+      </SectionCard>
+    );
+  }
+
+  if (isError) {
+    return (
+      <SectionCard title="Purchase Orders">
+        <div className="flex flex-col items-center justify-center py-12 gap-3 text-center border-2 border-dashed border-red-200 rounded-xl">
+          <AlertCircle className="w-6 h-6 text-red-400" />
+          <p className="text-sm font-semibold text-foreground">Failed to load purchase orders</p>
+          <button
+            onClick={() => refetch()}
+            className="text-xs px-3 py-1.5 rounded-md border border-border hover:bg-muted transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </SectionCard>
+    );
+  }
+
+  return (
+    <SectionCard
+      title="Purchase Orders"
+      actions={
+        pos.length > 0 ? (
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {pos.length} order{pos.length !== 1 ? "s" : ""} ·{" "}
+            ₹{totalValue.toLocaleString("en-IN", { maximumFractionDigits: 0 })} total
+          </span>
+        ) : undefined
+      }
+    >
+      {pos.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-14 border-2 border-dashed border-slate-200 rounded-xl gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center">
+            <ShoppingCart className="w-6 h-6 text-slate-400" />
+          </div>
+          <p className="font-semibold text-slate-600">No purchase orders yet</p>
+          <p className="text-xs text-slate-400">POs raised for this vendor will appear here</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {pos.map((po) => {
+            const cfg = PO_STATUS_CONFIG[po.status ?? "Draft"] ?? PO_STATUS_CONFIG["Draft"]!;
+            const today = new Date().toISOString().split("T")[0];
+            const deadline = (po as any).deliveryDeadline ?? (po as any).expectedDeliveryDate;
+            const overdue = (po as any).isOverdue || (deadline && deadline < today! && !["Closed", "Cancelled", "FullyReceived"].includes(po.status ?? ""));
+            const isPendingApproval = ["Submitted", "PendingApproval"].includes(po.status ?? "");
+            const isRejected = po.status === "Rejected";
+
+            return (
+              <div
+                key={po.id}
+                onClick={() => onNavigate(`/procurement/pos/${po.id}`)}
+                className={cn(
+                  "bg-white border rounded-xl p-4 flex items-center gap-4 cursor-pointer hover:shadow-sm transition-all group",
+                  overdue
+                    ? "border-red-200 hover:border-red-300"
+                    : isRejected
+                    ? "border-red-100 hover:border-red-200"
+                    : isPendingApproval
+                    ? "border-purple-200 hover:border-purple-300"
+                    : "border-slate-200 hover:border-orange-200"
+                )}
+              >
+                {/* Icon */}
+                <div
+                  className={cn(
+                    "w-9 h-9 rounded-lg flex items-center justify-center shrink-0",
+                    overdue ? "bg-red-50" : isPendingApproval ? "bg-purple-50" : "bg-slate-100"
+                  )}
+                >
+                  <ShoppingCart
+                    className={cn(
+                      "w-4 h-4",
+                      overdue ? "text-red-400" : isPendingApproval ? "text-purple-400" : "text-slate-400"
+                    )}
+                  />
+                </div>
+
+                {/* Main info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <span className="font-mono font-bold text-slate-900 text-sm">{po.poNumber}</span>
+                    <Badge variant="outline" className={cn("text-xs", cfg.color)}>{cfg.label}</Badge>
+                    {overdue && (
+                      <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
+                        Overdue
+                      </Badge>
+                    )}
+                    {isRejected && (
+                      <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200 flex items-center gap-1">
+                        <XCircle className="w-3 h-3" /> Rejected
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-slate-500 flex-wrap">
+                    {po.poDate && <span>{new Date(po.poDate).toLocaleDateString("en-IN")}</span>}
+                    {po.approvedByName && <span>· Approved by {po.approvedByName}</span>}
+                    {(po as any).category && <span>· {(po as any).category}</span>}
+                  </div>
+                </div>
+
+                {/* Amount + deadline */}
+                <div className="text-right shrink-0">
+                  <p className="font-bold text-slate-900 font-mono text-sm">
+                    ₹{Number(po.totalAmount ?? 0).toLocaleString("en-IN")}
+                  </p>
+                  {isPendingApproval && (
+                    <p className="text-xs mt-0.5 text-purple-600 font-semibold">⏳ Awaiting approval</p>
+                  )}
+                  {!isPendingApproval && deadline && (
+                    <p className={cn("text-xs mt-0.5", overdue ? "text-red-600 font-semibold" : "text-slate-400")}>
+                      {overdue ? "⚠ " : ""}Deliver by {deadline}
+                    </p>
+                  )}
+                </div>
+
+                <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-orange-400 shrink-0" />
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </SectionCard>
+  );
+}
 
 export default function VendorDetail({ id }: { id: string }) {
   const [, setLocation] = useLocation();
@@ -789,6 +952,7 @@ export default function VendorDetail({ id }: { id: string }) {
           <TabsTrigger value="contacts"><Users className="w-3.5 h-3.5 mr-1.5" /> Contacts ({(vendor as any).contacts?.length ?? 0})</TabsTrigger>
           <TabsTrigger value="bank"><Banknote className="w-3.5 h-3.5 mr-1.5" /> Bank Details</TabsTrigger>
           <TabsTrigger value="billing"><CreditCard className="w-3.5 h-3.5 mr-1.5" /> Billing Address</TabsTrigger>
+          <TabsTrigger value="pos"><ShoppingCart className="w-3.5 h-3.5 mr-1.5" /> Purchase Orders</TabsTrigger>
         </TabsList>
 
         {/* ── GST & Details ── */}
@@ -1064,6 +1228,11 @@ export default function VendorDetail({ id }: { id: string }) {
               {renderField({ label: "UPI ID", field: "upiId", placeholder: "vendor@upi" })}
             </div>
           </SectionCard>
+        </TabsContent>
+
+        {/* ── Purchase Orders ── */}
+        <TabsContent value="pos" className="mt-4">
+          <VendorPOsTab vendorId={vendorId} onNavigate={setLocation} />
         </TabsContent>
 
         {/* ── Billing ── */}
