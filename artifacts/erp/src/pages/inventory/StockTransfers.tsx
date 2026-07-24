@@ -51,7 +51,7 @@ export default function StockTransfers() {
   const [reason, setReason] = useState("");
   const [items, setItems] = useState<TransferItem[]>([{ materialName: "", uom: "Nos", qty: "", fromBin: "", toBin: "" }]);
 
-  const { data: transfers = [], isLoading } = useQuery({
+  const { data: transfers = [], isPending } = useQuery({
     queryKey: ["stock-transfers", tab],
     queryFn: () => apiGet<any[]>("/stock-transfers", tab !== "All" ? { status: tab } : {}),
   });
@@ -176,7 +176,7 @@ export default function StockTransfers() {
               </tr>
             </thead>
             <tbody>
-              {isLoading ? (
+              {isPending ? (
                 [...Array(4)].map((_, i) => (
                   <tr key={i} className="border-b border-gray-50">
                     <td colSpan={9} className="px-4 py-3"><div className="h-4 bg-gray-100 rounded animate-pulse" /></td>

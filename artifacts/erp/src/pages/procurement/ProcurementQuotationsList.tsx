@@ -16,7 +16,7 @@ export default function ProcurementQuotationsList() {
   const [activeTab, setActiveTab] = useState("All");
   const [search, setSearch] = useState("");
 
-  const { data: quotations = [], isLoading } = useGetProcurementQuotations({
+  const { data: quotations = [], isPending } = useGetProcurementQuotations({
     status: activeTab !== "All" ? activeTab : undefined,
   });
 
@@ -84,7 +84,7 @@ export default function ProcurementQuotationsList() {
       </div>
 
       {/* List */}
-      {isLoading ? (
+      {isPending ? (
         <div className="space-y-3">{[...Array(4)].map((_, i) => <div key={i} className="h-24 bg-muted rounded-xl animate-pulse" />)}</div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-14 border-2 border-dashed border-border rounded-xl">

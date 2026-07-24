@@ -91,7 +91,7 @@ export function ProjectTC({ projectId }: { projectId: number }) {
   const qc = useQueryClient();
 
   const tcKey = ["testing-commissioning", projectId];
-  const { data: sessions = [], isLoading } = useQuery<TCSession[]>({
+  const { data: sessions = [], isPending } = useQuery<TCSession[]>({
     queryKey: tcKey,
     queryFn: () => apiGet(`/projects/${projectId}/testing-commissioning`),
     enabled: !!projectId,
@@ -123,7 +123,7 @@ export function ProjectTC({ projectId }: { projectId: number }) {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
       <SectionCard
         title="Testing & Commissioning"
-        isLoading={isLoading}
+        isLoading={isPending}
         actions={<Button size="sm" className="h-8 gap-1.5" onClick={() => setAddOpen(true)}><Plus className="h-3.5 w-3.5" /> New Session</Button>}
       >
         {sessions.length === 0 ? (

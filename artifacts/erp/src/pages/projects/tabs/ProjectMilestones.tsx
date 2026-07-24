@@ -115,14 +115,14 @@ export function ProjectMilestones({ projectId }: { projectId: number }) {
 
   // Execution milestones
   const execKey = ["exec-milestones", projectId];
-  const { data: execMs = [], isLoading: execLoading } = useQuery<ExecMilestone[]>({
+  const { data: execMs = [], isPending: execLoading } = useQuery<ExecMilestone[]>({
     queryKey: execKey,
     queryFn: () => apiGet(`/projects/${projectId}/milestones`),
     enabled: !!projectId,
   });
 
   // Payment milestones (existing)
-  const { data: payMs, isLoading: payLoading } = useGetPaymentMilestones(projectId, {
+  const { data: payMs, isPending: payLoading } = useGetPaymentMilestones(projectId, {
     query: { enabled: !!projectId, queryKey: getGetPaymentMilestonesQueryKey(projectId) }
   });
 

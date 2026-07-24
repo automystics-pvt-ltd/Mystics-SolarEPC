@@ -40,7 +40,7 @@ export default function CommissioningDetail() {
   const [addItemOpen, setAddItemOpen] = useState(false);
   const [addDocOpen, setAddDocOpen] = useState(false);
 
-  const { data, isPending, isLoading } = useGetCommissioningChecklist(id, { query: { queryKey: getGetCommissioningChecklistQueryKey(id), enabled: !!id } });
+  const { data, isPending } = useGetCommissioningChecklist(id, { query: { queryKey: getGetCommissioningChecklistQueryKey(id), enabled: !!id } });
   const cl = data as any;
 
   const toggleMut = useUpdateCommissioningItem();

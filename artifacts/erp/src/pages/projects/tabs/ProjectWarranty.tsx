@@ -119,7 +119,7 @@ export function ProjectWarranty({ projectId }: { projectId: number }) {
   });
   const [serialInput, setSerialInput] = useState("");
 
-  const { data: components = [], isLoading } = useQuery<WarrantyRecord[]>({
+  const { data: components = [], isPending } = useQuery<WarrantyRecord[]>({
     queryKey: ["project-warranty", projectId],
     queryFn: () => apiGet(`/projects/${projectId}/warranty`),
     enabled: !!projectId,
@@ -208,7 +208,7 @@ export function ProjectWarranty({ projectId }: { projectId: number }) {
 
       <SectionCard
         title="Warranty Components"
-        isLoading={isLoading}
+        isLoading={isPending}
         actions={
           <Button size="sm" onClick={openAdd} className="h-7 gap-1 text-xs">
             <Plus className="h-3 w-3" /> Add Component

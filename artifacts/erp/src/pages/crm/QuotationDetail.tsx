@@ -160,7 +160,7 @@ export function QuotationDetail({ id }: { id?: string }) {
   const [isEditing, setIsEditing] = useState(isNew);
 
   // ── queries ──
-  const { data: quote, isLoading } = useGetQuotation(quoteId, {
+  const { data: quote, isPending } = useGetQuotation(quoteId, {
     query: { enabled: !isNew, queryKey: getGetQuotationQueryKey(quoteId) },
   });
   const { data: leads = [] } = useGetLeads({});
@@ -168,7 +168,7 @@ export function QuotationDetail({ id }: { id?: string }) {
 
   // ── mutations ──
   const createMut = useCreateQuotation({
-    mutation: { onSuccess: (d) => { toast({ title: "Quotation created" }); navigate(`/crm/quotations/${d.id}`); } },
+    mutation: { onSuccess: (d) => { toast({ title: "Quotation created" }); navigate(`/QuotationDetail/quotations/${d.id}`); } },
   });
   const updateMut = useUpdateQuotation({
     mutation: {
@@ -183,7 +183,7 @@ export function QuotationDetail({ id }: { id?: string }) {
     mutation: { onSuccess: () => { queryClient.invalidateQueries({ queryKey: getGetQuotationQueryKey(quoteId) }); toast({ title: "Quotation approved" }); } },
   });
   const logPoMut = useLogClientPO({
-    mutation: { onSuccess: () => { toast({ title: "Client PO logged — Project created!" }); navigate("/crm/client-pos"); } },
+    mutation: { onSuccess: () => { toast({ title: "Client PO logged — Project created!" }); navigate("/QuotationDetail/client-pos"); } },
   });
   const createMatMut = useCreateMaterial({
     mutation: {
@@ -266,7 +266,7 @@ export function QuotationDetail({ id }: { id?: string }) {
     }
   };
 
-  if (!isNew && isLoading) {
+  if (!isNew && isPending) {
     return <div className="flex h-[60vh] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
   }
 
@@ -322,7 +322,7 @@ export function QuotationDetail({ id }: { id?: string }) {
       <PageHeader
         title={isNew ? "New Quotation" : `QTN-${quoteId.toString().padStart(4, "0")}`}
         subtitle={!isNew ? `Version ${quote?.version} · Lead: ${(leads as any[]).find(l => l.id === quote?.leadId)?.companyName || `LD-${String(quote?.leadId).padStart(4, "0")}`}` : undefined}
-        backHref="/crm/quotations"
+        backHref="/QuotationDetail/quotations"
         badge={!isNew && quote?.approvalStatus ? <StatusBadge status={quote.approvalStatus} /> : undefined}
         actions={headerActions}
       />

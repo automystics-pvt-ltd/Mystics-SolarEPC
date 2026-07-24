@@ -163,7 +163,7 @@ export function LeadsList() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: leads, isLoading } = useGetLeads(
+  const { data: leads, isPending } = useGetLeads(
     { stage: stageFilter !== "all" ? stageFilter : undefined },
     { query: { queryKey: getGetLeadsQueryKey({ stage: stageFilter !== "all" ? stageFilter : undefined }) } }
   );
@@ -411,7 +411,7 @@ export function LeadsList() {
         </div>
         
         <div className="overflow-x-auto">
-          {isLoading ? (
+          {isPending ? (
             <SkeletonList rows={6} />
           ) : (
             <Table>

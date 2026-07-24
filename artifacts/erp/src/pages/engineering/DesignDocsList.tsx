@@ -52,7 +52,7 @@ export default function DesignDocsList() {
   const qc = useQueryClient();
 
   const queryParams = projectIdFilter ? { projectId: Number(projectIdFilter) } : undefined;
-  const { data: docs = [], isLoading } = useGetDesignDocuments(queryParams);
+  const { data: docs = [], isPending } = useGetDesignDocuments(queryParams);
   const createMut = useCreateDesignDocument();
 
   const { register, handleSubmit, setValue, reset } = useForm<any>();
@@ -240,7 +240,7 @@ export default function DesignDocsList() {
       <DataTable
         data={docs as DesignDoc[]}
         columns={columns}
-        loading={isLoading}
+        loading={isPending}
         searchPlaceholder="Search documents..."
         onRowClick={(row) => setLocation(`/engineering/docs/${row.id}`)}
         exportFilename="design-documents"

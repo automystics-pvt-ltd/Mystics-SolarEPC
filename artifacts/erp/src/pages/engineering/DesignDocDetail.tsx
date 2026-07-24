@@ -32,7 +32,7 @@ export default function DesignDocDetail() {
   const [revOpen, setRevOpen] = useState(false);
   const [approveOpen, setApproveOpen] = useState(false);
 
-  const { data: doc, isPending, isLoading } = useGetDesignDocument(id, { query: { queryKey: getGetDesignDocumentQueryKey(id), enabled: !!id } });
+  const { data: doc, isPending } = useGetDesignDocument(id, { query: { queryKey: getGetDesignDocumentQueryKey(id), enabled: !!id } });
   const approveMut = useApproveDesignDocument();
   const revMut = useAddDesignRevision();
   const { register: revReg, handleSubmit: revSubmit, reset: revReset } = useForm<any>();

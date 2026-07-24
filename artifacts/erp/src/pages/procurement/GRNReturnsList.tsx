@@ -21,7 +21,7 @@ const STATUS_OPTIONS = [
 export default function GRNReturnsList() {
   const [, setLocation] = useLocation();
 
-  const { data: returns = [], isLoading } = useQuery({
+  const { data: returns = [], isPending } = useQuery({
     queryKey: ["grn-returns"],
     queryFn: () => apiGet<any[]>("/grn-returns", {}),
   });
@@ -114,7 +114,7 @@ export default function GRNReturnsList() {
       <DataTable
         data={returns as any[]}
         columns={columns}
-        loading={isLoading}
+        loading={isPending}
         searchPlaceholder="Search by return number or vendor..."
         onRowClick={(row) => setLocation(`/procurement/grn-returns/${row.id}`)}
         exportFilename="grn-returns"

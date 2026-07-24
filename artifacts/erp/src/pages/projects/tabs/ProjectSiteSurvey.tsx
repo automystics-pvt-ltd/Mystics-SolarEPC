@@ -184,7 +184,7 @@ export function ProjectSiteSurvey({ projectId }: { projectId: number }) {
   const [creating, setCreating] = useState(false);
   const qc = useQueryClient();
 
-  const { data: surveys = [], isPending, isLoading } = useQuery<Survey[]>({
+  const { data: surveys = [], isPending } = useQuery<Survey[]>({
     queryKey: ["project-site-surveys", projectId],
     queryFn: () => apiGet(`/projects/${projectId}/site-surveys`),
     enabled: !!projectId,

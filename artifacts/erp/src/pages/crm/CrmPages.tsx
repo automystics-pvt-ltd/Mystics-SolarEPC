@@ -10,7 +10,7 @@ import type { ColumnDef } from "@tanstack/react-table";
    ClientPOsList
 ───────────────────────────────────────────── */
 export function ClientPOsList() {
-  const { data, isLoading } = useGetClientPOs();
+  const { data, isPending } = useGetClientPOs();
 
   type ClientPO = NonNullable<typeof data>[number];
 
@@ -81,7 +81,7 @@ export function ClientPOsList() {
       <DataTable
         data={data ?? []}
         columns={columns}
-        loading={isLoading}
+        loading={isPending}
         searchPlaceholder="Search PO number..."
         exportFilename="client-pos"
         emptyIcon={FileCheck}
@@ -96,7 +96,7 @@ export function ClientPOsList() {
    CrmInvoicesList
 ───────────────────────────────────────────── */
 export function CrmInvoicesList() {
-  const { data, isLoading } = useGetCrmInvoices();
+  const { data, isPending } = useGetCrmInvoices();
 
   type CrmInvoice = NonNullable<typeof data>[number];
 
@@ -162,7 +162,7 @@ export function CrmInvoicesList() {
       <DataTable
         data={data ?? []}
         columns={columns}
-        loading={isLoading}
+        loading={isPending}
         searchPlaceholder="Search invoices..."
         exportFilename="crm-invoices"
         filterOptions={[
@@ -180,7 +180,7 @@ export function CrmInvoicesList() {
    TasksList
 ───────────────────────────────────────────── */
 export function TasksList() {
-  const { data, isLoading } = useGetTasks();
+  const { data, isPending } = useGetTasks();
 
   type Task = NonNullable<typeof data>[number];
 
@@ -249,7 +249,7 @@ export function TasksList() {
       <DataTable
         data={data ?? []}
         columns={columns}
-        loading={isLoading}
+        loading={isPending}
         searchPlaceholder="Search tasks..."
         exportFilename="tasks"
         filterOptions={[
@@ -268,7 +268,7 @@ export function TasksList() {
    EscalationsList
 ───────────────────────────────────────────── */
 export function EscalationsList() {
-  const { data, isLoading } = useGetEscalations();
+  const { data, isPending } = useGetEscalations();
 
   type Escalation = NonNullable<typeof data>[number];
 
@@ -341,7 +341,7 @@ export function EscalationsList() {
       <DataTable
         data={data ?? []}
         columns={columns}
-        loading={isLoading}
+        loading={isPending}
         searchPlaceholder="Search escalations..."
         exportFilename="escalations"
         filterOptions={[

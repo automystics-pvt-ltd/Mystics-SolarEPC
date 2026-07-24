@@ -33,7 +33,7 @@ export function LeadDetail({ id }: { id: string }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { data: lead, isPending, isLoading } = useGetLead(leadId, {
+  const { data: lead, isPending } = useGetLead(leadId, {
     query: { enabled: !!leadId, queryKey: getGetLeadQueryKey(leadId) }
   });
 

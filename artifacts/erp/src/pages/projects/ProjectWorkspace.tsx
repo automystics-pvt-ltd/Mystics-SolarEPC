@@ -102,7 +102,7 @@ export function ProjectWorkspace({ id }: { id: string }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);    // desktop sidebar
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false); // mobile sheet
 
-  const { data: project, isPending, isLoading } = useGetProject(projectId, {
+  const { data: project, isPending } = useGetProject(projectId, {
     query: { enabled: !!projectId, queryKey: getGetProjectQueryKey(projectId) },
   });
 

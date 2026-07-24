@@ -435,7 +435,7 @@ export default function VendorDetail({ id }: { id: string }) {
     [spendPreset, customFrom, customTo]
   );
 
-  const { data: vendor, isLoading } = useGetVendor(vendorId, {
+  const { data: vendor, isPending: vendorLoading, isError: vendorError } = useGetVendor(vendorId, {
     query: { enabled: !!vendorId, queryKey: getGetVendorQueryKey(vendorId) }
   });
 
@@ -509,9 +509,14 @@ export default function VendorDetail({ id }: { id: string }) {
     },
   });
 
-  if (isLoading || !vendor) return (
+  if (vendorLoading) return (
     <div className="flex h-60 items-center justify-center">
       <div className="animate-pulse text-muted-foreground">Loading vendor…</div>
+    </div>
+  );
+  if (vendorError || !vendor) return (
+    <div className="flex h-60 items-center justify-center text-sm text-muted-foreground">
+      Failed to load vendor. Please go back and try again.
     </div>
   );
 

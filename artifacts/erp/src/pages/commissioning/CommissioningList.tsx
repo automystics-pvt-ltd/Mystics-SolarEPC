@@ -39,7 +39,7 @@ export default function CommissioningList() {
   const [open, setOpen] = useState(false);
   const [, setLocation] = useLocation();
   const qc = useQueryClient();
-  const { data: lists = [], isLoading } = useGetCommissioningChecklists({}, { query: { queryKey: getGetCommissioningChecklistsQueryKey({}) } });
+  const { data: lists = [], isPending } = useGetCommissioningChecklists({}, { query: { queryKey: getGetCommissioningChecklistsQueryKey({}) } });
   const createMut = useCreateCommissioningChecklist();
   const { register, handleSubmit, reset } = useForm<any>();
 
@@ -182,7 +182,7 @@ export default function CommissioningList() {
       <DataTable
         data={lists as CommissioningChecklist[]}
         columns={columns}
-        loading={isLoading}
+        loading={isPending}
         searchPlaceholder="Search checklists..."
         onRowClick={(row) => setLocation(`/commissioning/${row.id}`)}
         exportFilename="commissioning-checklists"

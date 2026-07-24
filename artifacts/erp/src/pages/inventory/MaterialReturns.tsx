@@ -123,7 +123,7 @@ export function MaterialReturns() {
 
   const { data: warehouses = [] } = useQuery({ queryKey: ["warehouses-enhanced"], queryFn: () => apiGet<any[]>("/inventory/warehouses-enhanced") });
 
-  const { data: returns = [], isLoading } = useQuery({
+  const { data: returns = [], isPending } = useQuery({
     queryKey: ["inventory-returns", statusFilter],
     queryFn: () => {
       const params = new URLSearchParams();
@@ -227,7 +227,7 @@ export function MaterialReturns() {
       <DataTable
         data={returns}
         columns={columns}
-        loading={isLoading}
+        loading={isPending}
         searchPlaceholder="Search returns..."
         onRowClick={row => setSelectedRet(row)}
         emptyIcon={RotateCcw}

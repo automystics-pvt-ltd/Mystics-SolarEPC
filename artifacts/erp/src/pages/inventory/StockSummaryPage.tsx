@@ -73,7 +73,7 @@ export function StockSummaryPage() {
     queryFn: () => apiGet<any[]>("/inventory/warehouses-enhanced"),
   });
 
-  const { data: stock = [], isLoading } = useQuery({
+  const { data: stock = [], isPending } = useQuery({
     queryKey: ["stock-levels", categoryFilter, warehouseFilter, reorderFilter],
     queryFn: () => {
       const params = new URLSearchParams();
@@ -297,7 +297,7 @@ export function StockSummaryPage() {
       <DataTable
         data={stock}
         columns={columns}
-        loading={isLoading}
+        loading={isPending}
         searchPlaceholder="Search materials..."
         emptyIcon={Package}
         emptyTitle="No stock records found"

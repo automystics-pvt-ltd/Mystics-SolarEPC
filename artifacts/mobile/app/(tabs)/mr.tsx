@@ -24,7 +24,7 @@ export default function MRScreen() {
   const colors = useColors();
   const [search, setSearch] = useState('');
 
-  const { data: mrs, isLoading, refetch } = useGetMaterialRequests();
+  const { data: mrs, isPending, isFetching, refetch } = useGetMaterialRequests();
 
   const filtered = (mrs ?? []).filter(
     (m) =>
@@ -76,7 +76,7 @@ export default function MRScreen() {
         data={filtered}
         keyExtractor={(item) => String(item.id)}
         refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={colors.primary} />
+          <RefreshControl refreshing={isFetching} onRefresh={refetch} tintColor={colors.primary} />
         }
         contentContainerStyle={[
           styles.list,
@@ -87,10 +87,10 @@ export default function MRScreen() {
           <View style={styles.empty}>
             <Feather name="clipboard" size={36} color={colors.mutedForeground} />
             <Text style={[styles.emptyTitle, { color: colors.foreground }]}>
-              {isLoading ? 'Loading…' : 'No material requests'}
+              {isPending ? 'Loading…' : 'No material requests'}
             </Text>
             <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-              {isLoading ? '' : 'Tap + to raise a material request'}
+              {isPending ? '' : 'Tap + to raise a material request'}
             </Text>
           </View>
         }

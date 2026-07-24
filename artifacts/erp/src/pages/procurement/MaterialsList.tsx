@@ -167,7 +167,7 @@ function SuppliersTab({ materialId }: { materialId: number }) {
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState<any>({ vendorName: "", currency: "INR", isPreferred: false });
 
-  const { data: suppliers = [], isPending, isLoading } = useQuery<Supplier[]>({
+  const { data: suppliers = [], isPending } = useQuery<Supplier[]>({
     queryKey: ["material-suppliers", materialId],
     queryFn: () => apiGet(`/materials/${materialId}/suppliers`),
   });
@@ -257,7 +257,7 @@ function SuppliersTab({ materialId }: { materialId: number }) {
 
 /* ── Audit Trail Tab ─────────────────────────────────────────────────────── */
 function AuditTab({ materialId }: { materialId: number }) {
-  const { data: logs = [], isPending, isLoading } = useQuery<AuditEntry[]>({
+  const { data: logs = [], isPending } = useQuery<AuditEntry[]>({
     queryKey: ["material-audit", materialId],
     queryFn: () => apiGet(`/materials/${materialId}/audit`),
   });
@@ -307,7 +307,7 @@ function DetailPanel({ materialId, categories, onClose, onEdit }: {
   const { toast } = useToast();
   const [tab, setTab] = useState("overview");
 
-  const { data: material, isLoading } = useQuery<Material>({
+  const { data: material, isPending } = useQuery<Material>({
     queryKey: ["material", materialId],
     queryFn: () => apiGet(`/materials/${materialId}`),
     enabled: !!materialId,
@@ -322,7 +322,7 @@ function DetailPanel({ materialId, categories, onClose, onEdit }: {
     },
   });
 
-  if (isLoading || !material) return (
+  if (isPending || !material) return (
     <div className="fixed inset-0 z-50 flex">
       <div className="flex-1 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="w-full max-w-[700px] bg-background border-l border-border flex items-center justify-center shadow-2xl">
@@ -823,7 +823,7 @@ export default function MaterialsList() {
     staleTime: 5 * 60_000,
   });
 
-  const { data: materials = [], isLoading } = useQuery<Material[]>({
+  const { data: materials = [], isPending } = useQuery<Material[]>({
     queryKey: ["materials", dSearch, filters.categoryId, filters.uom, filters.status],
     queryFn: () => apiGet("/materials", {
       search: dSearch || undefined,
@@ -900,7 +900,7 @@ export default function MaterialsList() {
         subtitle={`Master material data · ${materials.length} items`}
         actions={
           <div className="flex items-center gap-2">
-            {materials.length === 0 && !isLoading && perms.canCreate && (
+            {materials.length === 0 && !isPending && perms.canCreate && (
               <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => seedMut.mutate()} disabled={seedMut.isPending}>
                 <RefreshCw className={cn("w-3.5 h-3.5", seedMut.isPending && "animate-spin")} />
                 {seedMut.isPending ? "Seeding…" : "Load Demo Data"}
@@ -1018,7 +1018,7 @@ export default function MaterialsList() {
           {/* Table view */}
           {viewMode === "table" ? (
             <SectionCard noPadding>
-              {isLoading ? (
+              {isPending ? (
                 <div className="divide-y divide-border/30">
                   {Array.from({ length: 8 }).map((_, i) => (
                     <div key={i} className="px-4 py-3.5 flex items-center gap-4">
@@ -1145,7 +1145,7 @@ export default function MaterialsList() {
                   </button>
                 </div>
               ))}
-              {!isLoading && sorted.length === 0 && (
+              {!isPending && sorted.length === 0 && (
                 <div className="col-span-full">
                   <EmptyState icon={Package} heading="No materials found" message="Try adjusting your search or filters." />
                 </div>

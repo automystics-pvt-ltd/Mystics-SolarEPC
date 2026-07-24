@@ -47,7 +47,7 @@ export default function ServiceTicketsList() {
   const qc = useQueryClient();
 
   const queryParams = statusFilter ? { status: statusFilter } : {};
-  const { data: tickets = [], isLoading } = useGetServiceTickets(queryParams, { query: { queryKey: getGetServiceTicketsQueryKey(queryParams) } });
+  const { data: tickets = [], isPending } = useGetServiceTickets(queryParams, { query: { queryKey: getGetServiceTicketsQueryKey(queryParams) } });
   const createMut = useCreateServiceTicket();
   const resolveMut = useResolveServiceTicket();
   const { register, handleSubmit, setValue, reset } = useForm<any>();
@@ -222,7 +222,7 @@ export default function ServiceTicketsList() {
       <DataTable
         data={tickets as ServiceTicket[]}
         columns={columns}
-        loading={isLoading}
+        loading={isPending}
         searchPlaceholder="Search service tickets..."
         exportFilename="service-tickets"
         filterOptions={[

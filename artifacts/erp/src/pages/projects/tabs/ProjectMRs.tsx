@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 export function ProjectMRs({ projectId }: { projectId: number }) {
   const [, navigate] = useLocation();
 
-  const { data: mrs, isPending, isLoading } = useGetMaterialRequests(
+  const { data: mrs, isPending } = useGetMaterialRequests(
     { projectId },
     { query: { enabled: !!projectId, queryKey: getGetMaterialRequestsQueryKey({ projectId }) } }
   );

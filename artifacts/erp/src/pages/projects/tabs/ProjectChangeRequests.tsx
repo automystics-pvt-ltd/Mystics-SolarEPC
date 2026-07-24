@@ -54,7 +54,7 @@ export function ProjectChangeRequests({ projectId }: { projectId: number }) {
     defaultValues: { type: "Scope", impact: "Low", budgetImpact: 0, timelineImpactDays: 0 },
   });
 
-  const { data: crs = [], isLoading } = useQuery<CR[]>({
+  const { data: crs = [], isPending } = useQuery<CR[]>({
     queryKey: ["project-crs", projectId],
     queryFn: () => apiGet(`/projects/${projectId}/change-requests`),
     enabled: !!projectId,
@@ -85,7 +85,7 @@ export function ProjectChangeRequests({ projectId }: { projectId: number }) {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
       <SectionCard
         title="Change Requests"
-        isLoading={isLoading}
+        isLoading={isPending}
         actions={
           <Button size="sm" className="h-7 gap-1 text-xs" onClick={() => setAddOpen(true)}>
             <Plus className="h-3 w-3" /> New CR

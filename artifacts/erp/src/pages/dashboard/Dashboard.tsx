@@ -371,9 +371,9 @@ export function Dashboard() {
   const { show, hidden, toggle, reset } = useDashboardPrefs();
 
   // ── Data fetching ──────────────────────────────────────────────────────────
-  const { data: dashboard, isPending, isLoading: d1 } = useGetDashboard();
-  const { data: combined, isLoading: d2 } = useGetCombinedDashboard();
-  const { data: procData, isLoading: d3 } = useQuery({
+  const { data: dashboard, isPending: d1 } = useGetDashboard();
+  const { data: combined, isPending: d2 } = useGetCombinedDashboard();
+  const { data: procData, isPending: d3 } = useQuery({
     queryKey: ["procurement-dashboard"],
     queryFn: () => apiGet<any>("/procurement-dashboard"),
   });

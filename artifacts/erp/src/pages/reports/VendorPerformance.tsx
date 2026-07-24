@@ -55,7 +55,7 @@ export default function VendorPerformance() {
   if (toDate) params.set("to", toDate);
   const queryString = params.toString();
 
-  const { data, isLoading } = useQuery({
+  const { data, isPending } = useQuery({
     queryKey: ["vendor-performance", fromDate, toDate],
     queryFn: () => apiGet<any>(`/reports/vendor-performance${queryString ? `?${queryString}` : ""}`),
   });
@@ -166,7 +166,7 @@ export default function VendorPerformance() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard
           label="Vendors Tracked"
-          value={isLoading ? "—" : filtered.length}
+          value={isPending ? "—" : filtered.length}
           icon={Building2}
           iconBg="bg-orange-50"
           iconColor="text-orange-600"
@@ -241,7 +241,7 @@ export default function VendorPerformance() {
         }
         noPadding
       >
-        {isLoading ? (
+        {isPending ? (
           <div className="flex justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
           </div>

@@ -98,7 +98,7 @@ export function ProjectResources({ projectId }: { projectId: number }) {
   const qc = useQueryClient();
 
   const resKey = ["resources", projectId];
-  const { data: resources = [], isLoading } = useQuery<ResourceAllocation[]>({
+  const { data: resources = [], isPending } = useQuery<ResourceAllocation[]>({
     queryKey: resKey,
     queryFn: () => apiGet(`/projects/${projectId}/resources`),
     enabled: !!projectId,
@@ -168,7 +168,7 @@ export function ProjectResources({ projectId }: { projectId: number }) {
       {/* Resource table */}
       <SectionCard
         title="Resource Allocations"
-        isLoading={isLoading}
+        isLoading={isPending}
         actions={canEditProject ? <Button size="sm" className="h-8 gap-1.5" onClick={() => setAddOpen(true)}><Plus className="h-3.5 w-3.5" /> Add Allocation</Button> : undefined}
         noPadding
       >

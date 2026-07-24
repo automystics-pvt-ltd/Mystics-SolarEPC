@@ -123,7 +123,7 @@ export default function ProcurementPODetail({ id }: { id: string }) {
   const [actionRemarks, setActionRemarks]         = useState("");
   const [commentBody, setCommentBody]             = useState("");
 
-  const { data: po, isLoading } = useGetProcurementPO(poId, {
+  const { data: po, isPending, isError } = useGetProcurementPO(poId, {
     query: { enabled: !!poId, queryKey: getGetProcurementPOQueryKey(poId), refetchInterval: 30_000 },
   });
 
@@ -188,9 +188,14 @@ export default function ProcurementPODetail({ id }: { id: string }) {
   // usePermissions MUST be called here, before any early return, to satisfy React's Rules of Hooks
   const { canApprove: rbacCanApprove, canEdit: rbacCanEdit } = usePermissions("procurement");
 
-  if (isLoading || !po) return (
+  if (isPending) return (
     <div className="flex h-60 items-center justify-center">
       <div className="animate-pulse text-muted-foreground">Loading PO…</div>
+    </div>
+  );
+  if (isError || !po) return (
+    <div className="flex h-60 items-center justify-center text-sm text-muted-foreground">
+      Failed to load purchase order. Please go back and try again.
     </div>
   );
 

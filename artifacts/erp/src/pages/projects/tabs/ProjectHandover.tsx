@@ -55,7 +55,7 @@ export function ProjectHandover({ projectId }: { projectId: number }) {
   });
   const [newPunch, setNewPunch] = useState({ description: "", severity: "Medium", responsible: "" });
 
-  const { data: handover, isPending, isLoading } = useQuery<HandoverRecord | null>({
+  const { data: handover, isPending } = useQuery<HandoverRecord | null>({
     queryKey: ["project-handover", projectId],
     queryFn: () => apiGet(`/projects/${projectId}/handover`),
     enabled: !!projectId,

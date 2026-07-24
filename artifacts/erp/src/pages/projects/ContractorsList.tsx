@@ -35,7 +35,7 @@ export function ContractorsList() {
   const [isOpen, setIsOpen] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useGetContractors();
+  const { data, isPending } = useGetContractors();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -161,7 +161,7 @@ export function ContractorsList() {
       <DataTable
         data={(data ?? []) as Contractor[]}
         columns={columns}
-        loading={isLoading}
+        loading={isPending}
         searchPlaceholder="Search by name or trade..."
         exportFilename="contractors"
         emptyIcon={HardHat}

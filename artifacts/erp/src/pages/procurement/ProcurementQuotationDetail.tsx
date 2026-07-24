@@ -143,7 +143,7 @@ export default function ProcurementQuotationDetail({ id }: { id: string }) {
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const { data: quotation, isLoading } = useGetProcurementQuotation(qId, {
+  const { data: quotation, isPending, isError } = useGetProcurementQuotation(qId, {
     query: { enabled: !!qId, queryKey: getGetProcurementQuotationQueryKey(qId) },
   });
 
@@ -247,9 +247,14 @@ export default function ProcurementQuotationDetail({ id }: { id: string }) {
     }
   };
 
-  if (isLoading || !quotation) return (
+  if (isPending) return (
     <div className="flex h-60 items-center justify-center">
       <div className="animate-pulse text-muted-foreground">Loading quotation…</div>
+    </div>
+  );
+  if (isError || !quotation) return (
+    <div className="flex h-60 items-center justify-center text-sm text-muted-foreground">
+      Failed to load quotation. Please go back and try again.
     </div>
   );
 

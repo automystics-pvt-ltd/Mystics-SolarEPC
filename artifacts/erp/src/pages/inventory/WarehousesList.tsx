@@ -28,7 +28,7 @@ export function WarehousesList() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useGetWarehouses({}, {
+  const { data, isPending } = useGetWarehouses({}, {
     query: { queryKey: getGetWarehousesQueryKey({}) }
   });
 
@@ -165,7 +165,7 @@ export function WarehousesList() {
       <DataTable
         data={data ?? []}
         columns={columns}
-        loading={isLoading}
+        loading={isPending}
         searchPlaceholder="Search warehouses..."
         onRowClick={(row) => setLocation(`/inventory/warehouses/${row.id}`)}
         exportFilename="warehouses"

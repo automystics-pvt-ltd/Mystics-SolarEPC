@@ -41,7 +41,7 @@ export function ProjectsList() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: projects, isLoading } = useGetProjects({}, {
+  const { data: projects, isPending } = useGetProjects({}, {
     query: { queryKey: getGetProjectsQueryKey({}) }
   });
 
@@ -172,7 +172,7 @@ export function ProjectsList() {
         </div>
         
         <div className="overflow-x-auto">
-          {isLoading ? (
+          {isPending ? (
             <SkeletonList rows={5} />
           ) : (
             <Table>

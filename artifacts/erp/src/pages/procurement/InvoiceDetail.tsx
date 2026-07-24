@@ -32,7 +32,7 @@ export default function InvoiceDetail({ id }: { id: string }) {
   const user = (() => { try { return JSON.parse(localStorage.getItem("mystics_user") ?? "{}"); } catch { return {}; } })();
   const { canApprove: isApprover, canEdit } = usePermissions("procurement");
 
-  const { data: invoice, isLoading } = useGetProcInvoice(invId, { query: { enabled: !!invId, queryKey: getGetProcInvoiceQueryKey(invId) } });
+  const { data: invoice, isPending, isError } = useGetProcInvoice(invId, { query: { enabled: !!invId, queryKey: getGetProcInvoiceQueryKey(invId) } });
 
   useEffect(() => {
     if (invoice?.invoiceNumber && authUser?.id) addRecentEntry(authUser.id, `/procurement/invoices/${invId}`, invoice.invoiceNumber, "Procurement Invoices");
@@ -70,8 +70,13 @@ export default function InvoiceDetail({ id }: { id: string }) {
     else if (action === "approve-mismatch") mismatchMut.mutate(payload, handlers);
   };
 
-  if (isLoading || !invoice) return (
+  if (isPending) return (
     <div className="flex h-60 items-center justify-center"><div className="animate-pulse text-muted-foreground">Loading invoice…</div></div>
+  );
+  if (isError || !invoice) return (
+    <div className="flex h-60 items-center justify-center text-sm text-muted-foreground">
+      Failed to load invoice. Please go back and try again.
+    </div>
   );
 
   const inv = invoice as any;

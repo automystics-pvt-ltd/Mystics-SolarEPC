@@ -71,7 +71,7 @@ export function ProjectRisks({ projectId }: { projectId: number }) {
     defaultValues: { category: "Technical", probability: "Low", impact: "Low" },
   });
 
-  const { data: risks = [], isLoading } = useQuery<Risk[]>({
+  const { data: risks = [], isPending } = useQuery<Risk[]>({
     queryKey: ["project-risks", projectId],
     queryFn: () => apiGet(`/projects/${projectId}/risks`),
     enabled: !!projectId,
@@ -117,7 +117,7 @@ export function ProjectRisks({ projectId }: { projectId: number }) {
       <SectionCard
         title="Risk Register"
         noPadding
-        isLoading={isLoading}
+        isLoading={isPending}
         actions={
           <div className="flex items-center gap-2">
             <Select value={sortKey} onValueChange={v => setSortKey(v as any)}>

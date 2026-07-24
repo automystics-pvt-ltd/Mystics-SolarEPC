@@ -26,7 +26,7 @@ export function ProjectActivities({ projectId }: { projectId: number }) {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: activities, isPending, isLoading } = useGetProjectActivities(projectId, {
+  const { data: activities, isPending } = useGetProjectActivities(projectId, {
     query: { enabled: !!projectId, queryKey: getGetProjectActivitiesQueryKey(projectId) }
   });
 

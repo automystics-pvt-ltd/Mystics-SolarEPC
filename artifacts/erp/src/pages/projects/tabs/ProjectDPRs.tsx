@@ -5,7 +5,7 @@ import { SectionCard, EmptyState, SkeletonList } from "@/components/shared";
 import { motion } from "framer-motion";
 
 export function ProjectDPRs({ projectId }: { projectId: number }) {
-  const { data: dprs, isPending, isLoading } = useGetDPRs(
+  const { data: dprs, isPending } = useGetDPRs(
     { projectId },
     { query: { enabled: !!projectId, queryKey: getGetDPRsQueryKey({ projectId }) } }
   );

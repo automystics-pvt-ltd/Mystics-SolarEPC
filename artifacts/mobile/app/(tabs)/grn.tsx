@@ -24,7 +24,7 @@ export default function GRNScreen() {
   const colors = useColors();
   const [search, setSearch] = useState('');
 
-  const { data: grns, isLoading, refetch } = useGetGRNs();
+  const { data: grns, isPending, isFetching, refetch } = useGetGRNs();
 
   const filtered = (grns ?? []).filter(
     (g) =>
@@ -79,7 +79,7 @@ export default function GRNScreen() {
         data={filtered}
         keyExtractor={(item) => String(item.id)}
         refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={colors.primary} />
+          <RefreshControl refreshing={isFetching} onRefresh={refetch} tintColor={colors.primary} />
         }
         contentContainerStyle={[
           styles.list,
@@ -90,10 +90,10 @@ export default function GRNScreen() {
           <View style={styles.empty}>
             <Feather name="package" size={36} color={colors.mutedForeground} />
             <Text style={[styles.emptyTitle, { color: colors.foreground }]}>
-              {isLoading ? 'Loading…' : 'No GRNs found'}
+              {isPending ? 'Loading…' : 'No GRNs found'}
             </Text>
             <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-              {isLoading ? '' : 'Tap + to record a goods receipt'}
+              {isPending ? '' : 'Tap + to record a goods receipt'}
             </Text>
           </View>
         }

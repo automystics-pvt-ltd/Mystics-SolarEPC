@@ -34,7 +34,7 @@ export default function GRNReturnDetail({ id }: { id: string }) {
   const [creditNoteDate, setCreditNoteDate] = useState(new Date().toISOString().slice(0, 10));
   const [creditNoteAmount, setCreditNoteAmount] = useState("");
 
-  const { data: rtv, isPending, isLoading } = useQuery({
+  const { data: rtv, isPending } = useQuery({
     queryKey: ["grn-return", id],
     queryFn: () => apiGet<any>(`/grn-returns/${id}`),
   });

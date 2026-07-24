@@ -122,7 +122,7 @@ export function ProjectAllocations() {
 
   const { data: warehouses = [] } = useQuery({ queryKey: ["warehouses-enhanced"], queryFn: () => apiGet<any[]>("/inventory/warehouses-enhanced") });
 
-  const { data: allocations = [], isLoading } = useQuery({
+  const { data: allocations = [], isPending } = useQuery({
     queryKey: ["inventory-allocations", statusFilter],
     queryFn: () => {
       const params = new URLSearchParams();
@@ -225,7 +225,7 @@ export function ProjectAllocations() {
       <DataTable
         data={allocations}
         columns={columns}
-        loading={isLoading}
+        loading={isPending}
         searchPlaceholder="Search allocations..."
         onRowClick={row => setSelectedAlloc(row)}
         emptyIcon={ClipboardList}

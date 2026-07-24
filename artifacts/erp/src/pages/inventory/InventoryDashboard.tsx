@@ -78,7 +78,7 @@ function AlertRow({ item, onAck }: { item: any; onAck?: (id: number) => void }) 
 export function InventoryDashboard() {
   const [, nav] = useLocation();
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isPending, refetch } = useQuery({
     queryKey: ["inventory-dashboard"],
     queryFn: () => apiGet<any>("/inventory/dashboard"),
     refetchInterval: 60_000,
@@ -116,7 +116,7 @@ export function InventoryDashboard() {
       </div>
 
       {/* KPI Row */}
-      {isLoading ? (
+      {isPending ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <Skeleton key={i} className="h-28 rounded-xl" />
@@ -146,7 +146,7 @@ export function InventoryDashboard() {
               View all <ArrowRight className="h-3 w-3 ml-1" />
             </Button>
           </div>
-          {isLoading ? (
+          {isPending ? (
             <Skeleton className="h-48 w-full rounded-lg" />
           ) : pieData.length === 0 ? (
             <div className="h-48 flex flex-col items-center justify-center text-muted-foreground">
@@ -173,7 +173,7 @@ export function InventoryDashboard() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-black uppercase tracking-wider text-foreground">Category Breakdown</h3>
           </div>
-          {isLoading ? (
+          {isPending ? (
             <div className="space-y-2">{Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-8 rounded" />)}</div>
           ) : categories.length === 0 ? (
             <div className="py-8 text-center text-muted-foreground text-sm">No inventory data yet</div>
@@ -212,7 +212,7 @@ export function InventoryDashboard() {
               Manage <ArrowRight className="h-3 w-3 ml-1" />
             </Button>
           </div>
-          {isLoading ? (
+          {isPending ? (
             <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-14 rounded-[10px]" />)}</div>
           ) : alerts.length === 0 ? (
             <div className="py-8 flex flex-col items-center justify-center text-muted-foreground">
@@ -244,7 +244,7 @@ export function InventoryDashboard() {
               Ledger <ArrowRight className="h-3 w-3 ml-1" />
             </Button>
           </div>
-          {isLoading ? (
+          {isPending ? (
             <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 rounded" />)}</div>
           ) : movements.length === 0 ? (
             <div className="py-8 text-center text-muted-foreground text-sm">No recent movements</div>

@@ -8,7 +8,7 @@ import { useLocation } from "wouter";
 
 export function ProjectBudget({ projectId }: { projectId: number }) {
   const [, navigate] = useLocation();
-  const { data: budget, isPending, isLoading } = useGetProjectBudgetVsActual(projectId, {
+  const { data: budget, isPending } = useGetProjectBudgetVsActual(projectId, {
     query: { enabled: !!projectId, queryKey: getGetProjectBudgetVsActualQueryKey(projectId) }
   });
 

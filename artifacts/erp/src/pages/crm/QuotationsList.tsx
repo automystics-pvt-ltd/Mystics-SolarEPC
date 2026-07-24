@@ -19,7 +19,7 @@ const STATUS_FILTER_OPTIONS = [
 export function QuotationsList() {
   const [, setLocation] = useLocation();
 
-  const { data: quotations, isLoading } = useGetQuotations({}, {
+  const { data: quotations, isPending } = useGetQuotations({}, {
     query: { queryKey: getGetQuotationsQueryKey({}) }
   });
 
@@ -109,7 +109,7 @@ export function QuotationsList() {
       <DataTable
         data={quotations ?? []}
         columns={columns}
-        loading={isLoading}
+        loading={isPending}
         searchPlaceholder="Search quotations..."
         onRowClick={(row) => setLocation(`/crm/quotations/${row.id}`)}
         exportFilename="crm-quotations"

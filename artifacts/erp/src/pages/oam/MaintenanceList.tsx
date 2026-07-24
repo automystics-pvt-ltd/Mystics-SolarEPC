@@ -37,7 +37,7 @@ export default function MaintenanceList() {
   const [completeId, setCompleteId] = useState<number | null>(null);
   const qc = useQueryClient();
 
-  const { data: schedules = [], isLoading } = useGetMaintenanceSchedules({}, { query: { queryKey: getGetMaintenanceSchedulesQueryKey({}) } });
+  const { data: schedules = [], isPending } = useGetMaintenanceSchedules({}, { query: { queryKey: getGetMaintenanceSchedulesQueryKey({}) } });
   const createMut = useCreateMaintenanceSchedule();
   const completeMut = useCompleteMaintenanceSchedule();
   const { register, handleSubmit, setValue, reset } = useForm<any>();
@@ -204,7 +204,7 @@ export default function MaintenanceList() {
       <DataTable
         data={schedules as MaintenanceSchedule[]}
         columns={columns}
-        loading={isLoading}
+        loading={isPending}
         searchPlaceholder="Search maintenance visits..."
         exportFilename="maintenance-schedules"
         filterOptions={[

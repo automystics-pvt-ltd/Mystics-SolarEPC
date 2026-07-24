@@ -134,7 +134,7 @@ export function ProjectDocuments({ projectId }: { projectId: number }) {
   const [tagInput, setTagInput] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const { data: allDocs = [], isLoading } = useQuery<ProjectDocument[]>({
+  const { data: allDocs = [], isPending } = useQuery<ProjectDocument[]>({
     queryKey: ["project-documents", projectId, phaseFilter, typeFilter],
     queryFn: () => {
       const params = new URLSearchParams();
@@ -186,7 +186,7 @@ export function ProjectDocuments({ projectId }: { projectId: number }) {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5">
       <SectionCard
         title="Project Documents"
-        isLoading={isLoading}
+        isLoading={isPending}
         actions={
           <div className="flex items-center gap-2 flex-wrap">
             <Select value={phaseFilter} onValueChange={setPhaseFilter}>

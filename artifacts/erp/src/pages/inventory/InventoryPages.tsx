@@ -9,7 +9,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 // ─── GRNsList ─────────────────────────────────────────────────────────────────
 
 export function GRNsList() {
-  const { data, isLoading } = useGetGRNs();
+  const { data, isPending } = useGetGRNs();
 
   const columns: ColumnDef<any, any>[] = [
     {
@@ -63,7 +63,7 @@ export function GRNsList() {
       <DataTable
         data={data ?? []}
         columns={columns}
-        loading={isLoading}
+        loading={isPending}
         searchPlaceholder="Search GRNs..."
         exportFilename="grns"
         filterOptions={[
@@ -88,7 +88,7 @@ export function GRNsList() {
 // ─── DeliveryChallansList ─────────────────────────────────────────────────────
 
 export function DeliveryChallansList() {
-  const { data, isLoading } = useGetDeliveryChallans();
+  const { data, isPending } = useGetDeliveryChallans();
 
   const columns: ColumnDef<any, any>[] = [
     {
@@ -157,7 +157,7 @@ export function DeliveryChallansList() {
       <DataTable
         data={data ?? []}
         columns={columns}
-        loading={isLoading}
+        loading={isPending}
         searchPlaceholder="Search delivery challans..."
         exportFilename="delivery-challans"
         emptyIcon={Truck}
@@ -171,7 +171,7 @@ export function DeliveryChallansList() {
 // ─── StockLedgerList ──────────────────────────────────────────────────────────
 
 export function StockLedgerList() {
-  const { data, isLoading } = useGetStockLedger();
+  const { data, isPending } = useGetStockLedger();
 
   const columns: ColumnDef<any, any>[] = [
     {
@@ -236,7 +236,7 @@ export function StockLedgerList() {
       <DataTable
         data={data ?? []}
         columns={columns}
-        loading={isLoading}
+        loading={isPending}
         searchPlaceholder="Search stock ledger..."
         exportFilename="stock-ledger"
         filterOptions={[
@@ -261,7 +261,7 @@ export function StockLedgerList() {
 
 
 export function StockValuationList() {
-  const { data, isLoading } = useGetStockValuation();
+  const { data, isPending } = useGetStockValuation();
 
   const columns: ColumnDef<any, any>[] = [
     {
@@ -320,7 +320,7 @@ export function StockValuationList() {
       <DataTable
         data={data ?? []}
         columns={columns}
-        loading={isLoading}
+        loading={isPending}
         searchPlaceholder="Search stock valuation..."
         exportFilename="stock-valuation"
         emptyIcon={Scale}
@@ -334,7 +334,7 @@ export function StockValuationList() {
 // ─── InventoryAuditsList ──────────────────────────────────────────────────────
 
 export function InventoryAuditsList() {
-  const { data, isLoading } = useGetInventoryAudits();
+  const { data, isPending } = useGetInventoryAudits();
 
   const columns: ColumnDef<any, any>[] = [
     {
@@ -385,7 +385,7 @@ export function InventoryAuditsList() {
       <DataTable
         data={data ?? []}
         columns={columns}
-        loading={isLoading}
+        loading={isPending}
         searchPlaceholder="Search audits..."
         exportFilename="inventory-audits"
         filterOptions={[

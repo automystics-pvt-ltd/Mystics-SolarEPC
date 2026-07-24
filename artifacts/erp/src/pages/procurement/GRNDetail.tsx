@@ -180,7 +180,7 @@ export default function GRNDetail({ id }: { id: string }) {
   const user = (() => { try { return JSON.parse(localStorage.getItem("mystics_user") ?? "{}"); } catch { return {}; } })();
   const { canApprove: isApprover, canEdit } = usePermissions("procurement");
 
-  const { data: grn, isLoading } = useGetProcGrn(grnId, { query: { enabled: !!grnId, queryKey: getGetProcGrnQueryKey(grnId) } });
+  const { data: grn, isPending, isError } = useGetProcGrn(grnId, { query: { enabled: !!grnId, queryKey: getGetProcGrnQueryKey(grnId) } });
 
   useEffect(() => {
     if (grn?.grnNumber && authUser?.id) addRecentEntry(authUser.id, `/procurement/grns/${grnId}`, grn.grnNumber, "GRNs");
@@ -219,9 +219,14 @@ export default function GRNDetail({ id }: { id: string }) {
     else if (action === "reject") rejectMut.mutate(payload, handlers);
   };
 
-  if (isLoading || !grn) return (
+  if (isPending) return (
     <div className="flex h-60 items-center justify-center">
       <div className="animate-pulse text-muted-foreground">Loading GRN…</div>
+    </div>
+  );
+  if (isError || !grn) return (
+    <div className="flex h-60 items-center justify-center text-sm text-muted-foreground">
+      Failed to load GRN. Please go back and try again.
     </div>
   );
 

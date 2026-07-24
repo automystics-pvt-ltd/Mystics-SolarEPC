@@ -151,7 +151,7 @@ export function PhaseTracker({ projectId }: { projectId: number }) {
   const isAdmin = ["admin", "director", "pm"].includes(role);
   const qc = useQueryClient();
 
-  const { data: phases = [], isPending, isLoading } = useQuery<Phase[]>({
+  const { data: phases = [], isPending } = useQuery<Phase[]>({
     queryKey: ["project-phases", projectId],
     queryFn: () => apiGet(`/projects/${projectId}/phases`),
     enabled: !!projectId,

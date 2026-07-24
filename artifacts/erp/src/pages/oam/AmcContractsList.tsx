@@ -38,7 +38,7 @@ type AmcContract = {
 export default function AmcContractsList() {
   const [open, setOpen] = useState(false);
   const qc = useQueryClient();
-  const { data: contracts = [], isLoading } = useGetAmcContracts({}, { query: { queryKey: getGetAmcContractsQueryKey({}) } });
+  const { data: contracts = [], isPending } = useGetAmcContracts({}, { query: { queryKey: getGetAmcContractsQueryKey({}) } });
   const createMut = useCreateAmcContract();
   const { register, handleSubmit, setValue, reset } = useForm<any>();
 
@@ -198,7 +198,7 @@ export default function AmcContractsList() {
       <DataTable
         data={contracts as AmcContract[]}
         columns={columns}
-        loading={isLoading}
+        loading={isPending}
         searchPlaceholder="Search contracts..."
         exportFilename="amc-contracts"
         filterOptions={[

@@ -40,7 +40,7 @@ export default function UserManagement() {
   // Reset password
   const [newPw, setNewPw] = useState("");
 
-  const { data: users = [], isLoading } = useQuery({
+  const { data: users = [], isPending } = useQuery({
     queryKey: ["users"],
     queryFn: () => apiGet<any[]>("/users"),
   });
@@ -187,7 +187,7 @@ export default function UserManagement() {
         <DataTable
           data={users as any[]}
           columns={columns}
-          loading={isLoading}
+          loading={isPending}
           searchPlaceholder="Search by name or email..."
           exportFilename="users"
           filterOptions={[

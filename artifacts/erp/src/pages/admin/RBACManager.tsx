@@ -82,7 +82,7 @@ export default function RBACManager() {
   const [selectedRole, setSelectedRole] = useState("director");
   const [pendingToggle, setPendingToggle] = useState<string | null>(null);
 
-  const { data: matrix, isLoading } = useQuery<PermMatrix>({
+  const { data: matrix, isPending } = useQuery<PermMatrix>({
     queryKey: ["rbac-all"],
     queryFn: () => apiGet<PermMatrix>("/rbac/all"),
     staleTime: 30_000,
@@ -240,7 +240,7 @@ export default function RBACManager() {
       </div>
 
       {/* ── Loading ─────────────────────────────────────────────────────── */}
-      {isLoading ? (
+      {isPending ? (
         <div className="flex items-center justify-center h-64">
           <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
         </div>

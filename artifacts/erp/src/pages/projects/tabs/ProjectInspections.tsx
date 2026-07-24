@@ -49,7 +49,7 @@ export function ProjectInspections({ projectId }: { projectId: number }) {
   const qc = useQueryClient();
 
   const inspKey = ["inspections", projectId];
-  const { data: inspections = [], isLoading } = useQuery<Inspection[]>({
+  const { data: inspections = [], isPending } = useQuery<Inspection[]>({
     queryKey: inspKey,
     queryFn: () => apiGet(`/projects/${projectId}/inspections`),
     enabled: !!projectId,
@@ -109,7 +109,7 @@ export function ProjectInspections({ projectId }: { projectId: number }) {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
       <SectionCard
         title="Quality Inspections"
-        isLoading={isLoading}
+        isLoading={isPending}
         actions={<Button size="sm" className="h-8 gap-1.5" onClick={() => setScheduleOpen(true)}><Plus className="h-3.5 w-3.5" /> Schedule</Button>}
       >
         {inspections.length === 0 ? (

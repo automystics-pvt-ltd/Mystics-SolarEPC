@@ -23,7 +23,7 @@ export function ProjectSnagLog({ projectId }: Props) {
   const [resolveId, setResolveId] = useState<number | null>(null);
   const qc = useQueryClient();
 
-  const { data: snags = [], isLoading } = useGetProjectSnags(projectId, {
+  const { data: snags = [], isPending } = useGetProjectSnags(projectId, {
     query: { queryKey: getGetProjectSnagsQueryKey(projectId), enabled: !!projectId }
   });
   const createMut = useCreateProjectSnag();
@@ -144,7 +144,7 @@ export function ProjectSnagLog({ projectId }: Props) {
       </div>
 
       {/* Snag list */}
-      <SectionCard title="Snag Log" actions={logSnagDialog} isLoading={isLoading}>
+      <SectionCard title="Snag Log" actions={logSnagDialog} isLoading={isPending}>
         {snags.length === 0 ? (
           <EmptyState
             icon={AlertTriangle}

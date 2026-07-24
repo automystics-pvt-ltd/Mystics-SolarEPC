@@ -91,14 +91,14 @@ export function ProjectClosure({ projectId }: { projectId: number }) {
     closureType: "Completed", customerSatisfaction: 0,
   });
 
-  const { data: readiness, isLoading: readinessLoading } = useQuery<ReadinessResult>({
+  const { data: readiness, isPending: readinessLoading } = useQuery<ReadinessResult>({
     queryKey: ["project-closure-readiness", projectId],
     queryFn: () => apiGet(`/projects/${projectId}/closure/readiness`),
     enabled: !!projectId,
     refetchInterval: 30_000,
   });
 
-  const { data: closure, isLoading } = useQuery<ClosureRecord | null>({
+  const { data: closure, isPending } = useQuery<ClosureRecord | null>({
     queryKey: ["project-closure", projectId],
     queryFn: () => apiGet(`/projects/${projectId}/closure`),
     enabled: !!projectId,
@@ -147,7 +147,7 @@ export function ProjectClosure({ projectId }: { projectId: number }) {
     setEditing(true);
   };
 
-  const isLoaded = !isLoading && !readinessLoading;
+  const isLoaded = !isPending && !readinessLoading;
   const allGreen = readiness?.allGreen ?? false;
 
   const summary = readiness?.summary;

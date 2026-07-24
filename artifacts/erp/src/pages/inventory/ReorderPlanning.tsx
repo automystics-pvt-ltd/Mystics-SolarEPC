@@ -30,7 +30,7 @@ export function ReorderPlanning() {
   const { toast } = useToast();
   const qc = useQueryClient();
 
-  const { data, isLoading } = useQuery({
+  const { data, isPending } = useQuery({
     queryKey: ["inventory-reorder"],
     queryFn: () => apiGet<any>("/inventory/reorder-analysis"),
   });
@@ -178,7 +178,7 @@ export function ReorderPlanning() {
       />
 
       {/* Summary Cards */}
-      {isLoading ? (
+      {isPending ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)}
         </div>
@@ -191,7 +191,7 @@ export function ReorderPlanning() {
         </div>
       )}
 
-      {items.length === 0 && !isLoading ? (
+      {items.length === 0 && !isPending ? (
         <div className="bg-card border border-border rounded-xl p-16 flex flex-col items-center justify-center text-center">
           <div className="h-16 w-16 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-4">
             <Package className="h-8 w-8 text-emerald-600" />
@@ -216,7 +216,7 @@ export function ReorderPlanning() {
             <DataTable
               data={items}
               columns={stockColumns}
-              loading={isLoading}
+              loading={isPending}
               searchPlaceholder="Search materials..."
               emptyIcon={Package}
               emptyTitle="No shortage items"
@@ -235,7 +235,7 @@ export function ReorderPlanning() {
               <DataTable
                 data={openAlerts}
                 columns={alertColumns}
-                loading={isLoading}
+                loading={isPending}
                 searchPlaceholder="Search alerts..."
                 emptyIcon={Bell}
                 emptyTitle="No open alerts"

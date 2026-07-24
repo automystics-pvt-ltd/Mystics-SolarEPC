@@ -94,7 +94,7 @@ export function ProjectBOQ({ projectId, clientPoId }: { projectId: number; clien
     defaultValues: { category: "Material", sourcedFrom: "Procurement", quantity: 1, unitRate: 0 },
   });
 
-  const { data: items = [], isLoading } = useQuery<BOQItem[]>({
+  const { data: items = [], isPending } = useQuery<BOQItem[]>({
     queryKey: ["project-boq", projectId],
     queryFn: () => apiGet(`/projects/${projectId}/boq`),
     enabled: !!projectId,
@@ -164,7 +164,7 @@ export function ProjectBOQ({ projectId, clientPoId }: { projectId: number; clien
       <SectionCard
         title="Bill of Quantities (BOQ)"
         noPadding
-        isLoading={isLoading}
+        isLoading={isPending}
         actions={
           <div className="flex items-center gap-2 flex-wrap">
             {/* Category filter */}

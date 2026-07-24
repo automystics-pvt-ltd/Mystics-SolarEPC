@@ -162,7 +162,7 @@ function PhaseStrip({ projectId }: { projectId: number }) {
 export function ProjectOverview({ projectId, onTabChange }: ProjectOverviewProps) {
   const [, navigate] = useLocation();
 
-  const { data: dashboard, isPending, isLoading } = useGetProjectDashboard(projectId, {
+  const { data: dashboard, isPending } = useGetProjectDashboard(projectId, {
     query: {
       enabled: !!projectId,
       queryKey: getGetProjectDashboardQueryKey(projectId),

@@ -27,7 +27,7 @@ export default function POScreen() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
 
-  const { data: pos, isLoading, refetch } = useGetPurchaseOrders(
+  const { data: pos, isPending, isFetching, refetch } = useGetPurchaseOrders(
     statusFilter !== 'All' ? { status: statusFilter } : {},
   );
 
@@ -107,7 +107,7 @@ export default function POScreen() {
         data={filtered}
         keyExtractor={(item) => String(item.id)}
         refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={colors.primary} />
+          <RefreshControl refreshing={isFetching} onRefresh={refetch} tintColor={colors.primary} />
         }
         contentContainerStyle={[
           styles.list,
@@ -118,10 +118,10 @@ export default function POScreen() {
           <View style={styles.empty}>
             <Feather name="file-text" size={36} color={colors.mutedForeground} />
             <Text style={[styles.emptyTitle, { color: colors.foreground }]}>
-              {isLoading ? 'Loading…' : 'No purchase orders'}
+              {isPending ? 'Loading…' : 'No purchase orders'}
             </Text>
             <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-              {isLoading ? '' : 'Purchase orders will appear here'}
+              {isPending ? '' : 'Purchase orders will appear here'}
             </Text>
           </View>
         }
