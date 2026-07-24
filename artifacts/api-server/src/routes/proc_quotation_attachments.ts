@@ -5,7 +5,7 @@
  * Attachments are included in GET /procurement-quotations/:id via fmtQ helper
  */
 import { Router, type IRouter, type Request } from "express";
-import { db, quotationAttachmentsTable, quotationAuditLogsTable } from "@workspace/db";
+import { db, quotationAttachmentsTable, quotationAuditLogsTable, procurementQuotationsTable } from "@workspace/db";
 import { and, eq } from "drizzle-orm";
 import { ObjectStorageService } from "../lib/objectStorage";
 import jwt from "jsonwebtoken";
@@ -32,6 +32,14 @@ router.post("/procurement-quotations/:id/attachments", async (req, res): Promise
   const { fileName, fileSize, mimeType } = req.body;
 
   if (!fileName) { res.status(400).json({ error: "fileName is required" }); return; }
+
+  // Reject uploads to a locked (Approved) quotation
+  const [existing] = await db.select({ status: procurementQuotationsTable.status })
+    .from(procurementQuotationsTable).where(eq(procurementQuotationsTable.id, quotationId));
+  if (!existing) { res.status(404).json({ error: "Quotation not found" }); return; }
+  if (existing.status === "Approved") {
+    res.status(423).json({ error: "Cannot add attachments to a locked quotation. Reopen it first." }); return;
+  }
 
   try {
     // Generate presigned upload URL (GCS signed PUT URL)

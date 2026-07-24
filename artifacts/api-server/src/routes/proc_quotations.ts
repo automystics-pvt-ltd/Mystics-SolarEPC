@@ -773,66 +773,27 @@ router.post("/procurement-quotations/:id/attachments/request-url", async (req, r
   }
 });
 
-// ── ATTACHMENT: Register after client upload ──────────────────────────────────
-router.post("/procurement-quotations/:id/attachments", async (req, res): Promise<void> => {
-  const id = Number(req.params.id);
-  const actor = getActor(req);
-  const { objectPath, fileName, fileSize, mimeType, userName = actor?.name ?? "System", userId = actor?.userId } = req.body;
-  if (!objectPath || !fileName) { res.status(400).json({ error: "objectPath and fileName required" }); return; }
-
-  const [existing] = await db.select({ status: procurementQuotationsTable.status, referenceId: procurementQuotationsTable.referenceId })
-    .from(procurementQuotationsTable).where(eq(procurementQuotationsTable.id, id));
-  if (!existing) { res.status(404).json({ error: "Not found" }); return; }
-
-  const normalizedPath = storage.normalizeObjectEntityPath(objectPath);
-  const [att] = await db.insert(quotationAttachmentsTable).values({
-    quotationId: id, fileName, objectPath: normalizedPath,
-    fileSize: fileSize ? Number(fileSize) : null,
-    mimeType: mimeType ?? null,
-    uploadedBy: userId ? Number(userId) : null,
-    uploadedByName: userName,
-  }).returning();
-
-  await logAudit(id, "AttachmentAdded", userName, userId ? Number(userId) : undefined, undefined, `Attached: ${fileName}`);
-  res.status(201).json({ ...att, uploadedAt: att.uploadedAt.toISOString() });
-});
-
-// ── ATTACHMENT: Delete ────────────────────────────────────────────────────────
-router.delete("/procurement-quotations/:id/attachments/:attachmentId", async (req, res): Promise<void> => {
-  const quotationId = Number(req.params.id);
-  const attachmentId = Number(req.params.attachmentId);
-  const actor = getActor(req);
-  const { userName = actor?.name ?? "System", userId = actor?.userId } = req.body;
-
-  const [att] = await db.select().from(quotationAttachmentsTable)
-    .where(and(eq(quotationAttachmentsTable.id, attachmentId), eq(quotationAttachmentsTable.quotationId, quotationId)));
-  if (!att) { res.status(404).json({ error: "Attachment not found" }); return; }
-
-  // Only uploader, admin or director can delete
-  if (att.uploadedBy !== (userId ? Number(userId) : -1) && !["admin", "director"].includes(actor?.role ?? "")) {
-    res.status(403).json({ error: "Only the uploader, Admin, or Director can delete attachments" }); return;
-  }
-
-  await db.delete(quotationAttachmentsTable).where(eq(quotationAttachmentsTable.id, attachmentId));
-  await logAudit(quotationId, "AttachmentRemoved", userName ?? "System", userId ? Number(userId) : undefined, undefined, `Removed: ${att.fileName}`);
-  res.json({ ok: true });
-});
 
 // ── SERVE ATTACHMENT ──────────────────────────────────────────────────────────
 router.get("/procurement-quotations/:id/attachments/:attachmentId/download", async (req, res): Promise<void> => {
   const quotationId = Number(req.params.id);
   const attachmentId = Number(req.params.attachmentId);
+  const actor = getActor(req);
+  if (!actor) { res.status(401).json({ error: "Unauthorized" }); return; }
   const [att] = await db.select().from(quotationAttachmentsTable)
     .where(and(eq(quotationAttachmentsTable.id, attachmentId), eq(quotationAttachmentsTable.quotationId, quotationId)));
   if (!att) { res.status(404).json({ error: "Not found" }); return; }
   try {
-    const file = await storage.getObjectEntityFile(att.objectPath);
+    const file = await storage.getObjectEntityFile(att.fileKey);
     const response = await storage.downloadObject(file);
-    res.setHeader("Content-Disposition", `attachment; filename="${att.fileName}"`);
+    res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(att.fileName)}"`);
     if (att.mimeType) res.setHeader("Content-Type", att.mimeType);
     const buf = await response.arrayBuffer();
     res.send(Buffer.from(buf));
   } catch (err: any) {
+    if (err?.name === "ObjectNotFoundError") {
+      res.status(404).json({ error: "File not found in storage" }); return;
+    }
     res.status(500).json({ error: `Download failed: ${err?.message}` });
   }
 });
