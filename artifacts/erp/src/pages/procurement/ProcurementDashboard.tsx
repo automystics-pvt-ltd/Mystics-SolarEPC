@@ -478,16 +478,18 @@ export default function ProcurementDashboard() {
   const [dateRange, setDateRange] = useState<DateRange>(defaultRange);
 
   /* ── Single query, cached for 2 minutes ────────────────────────────────── */
-  const { data, isLoading, isError, error, refetch } = useQuery({
+  const { data, isLoading, isError, isFetching, error, refetch, dataUpdatedAt } = useQuery({
     queryKey: ["procurement-dashboard", dateRange.from, dateRange.to],
     queryFn:  () => apiGet<any>("/procurement-dashboard", {
       from: dateRange.from,
       to:   dateRange.to,
     }),
-    staleTime:          2 * 60_000,   // fresh for 2 min — no refetch on navigation
-    gcTime:             10 * 60_000,  // keep in cache for 10 min
-    refetchOnWindowFocus: false,       // don't surprise users mid-task
-    placeholderData:    (prev: any) => prev, // show stale data while revalidating
+    staleTime:            2 * 60_000,  // fresh for 2 min — no refetch on navigation
+    gcTime:               10 * 60_000, // keep in cache for 10 min
+    refetchOnWindowFocus: false,        // don't surprise users mid-task
+    placeholderData:      (prev: any) => prev, // keep stale UI stable during revalidation
+    retry:                1,            // only 1 retry on failure (default 3 is too slow)
+    retryDelay:           1500,         // fixed 1.5 s retry delay
   });
 
   const handleRangeChange = useCallback((r: DateRange) => {
@@ -546,7 +548,7 @@ export default function ProcurementDashboard() {
     [s.thisMonthSpend, s.lastMonthSpend],
   );
 
-  const pendingActions = (s.pendingGRNs ?? 0) + (s.pendingInvoices ?? 0);
+  const pendingActions   = useMemo(() => (s.pendingGRNs ?? 0) + (s.pendingInvoices ?? 0), [s.pendingGRNs, s.pendingInvoices]);
   const maxVendorSpend   = useMemo(() => topVendors[0]?.spend ?? 1, [topVendors]);
   const maxCategorySpend = useMemo(() => topCategories[0]?.spend ?? 1, [topCategories]);
 
@@ -643,10 +645,19 @@ export default function ProcurementDashboard() {
       {/* Header */}
       <motion.div variants={fade} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-foreground tracking-tight">Procurement Overview</h1>
+          <h1 className="text-xl font-bold text-foreground tracking-tight flex items-center gap-2">
+            Procurement Overview
+            {isFetching && !isLoading && (
+              <span className="inline-block h-2 w-2 rounded-full bg-primary/60 animate-pulse" title="Refreshing…" />
+            )}
+          </h1>
           <p className="text-[12px] text-muted-foreground mt-0.5">
             Pipeline · Spend analytics · Risk signals &nbsp;·&nbsp;
-            <span className="tabular-nums">Updated {now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span>
+            <span className="tabular-nums">
+              {dataUpdatedAt
+                ? `Updated ${new Date(dataUpdatedAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`
+                : `As of ${now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`}
+            </span>
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">

@@ -85,8 +85,8 @@ router.get("/procurement-dashboard", async (req, res): Promise<void> => {
     /* 10 */ activityGRNs,
     /* 11 */ activityInvoices,
     /* 12 */ activityPOs,
-    /* 13 */ rangeReceivedPOs,
-    /* 14 */ categoryItemsRaw,
+    /* 13 */ vendorMonthlyRaw,
+    /* 14 */ categoryMonthlyRaw,
   ] = await Promise.all([
 
     /* 0: Pipeline — status distribution */
@@ -223,26 +223,33 @@ router.get("/procurement-dashboard", async (req, res): Promise<void> => {
       .orderBy(desc(procurementPOsTable.createdAt))
       .limit(10),
 
-    /* 13: Range-received POs (minimal cols) for vendor monthly drill-down.
-       vendorId is included so the monthly bucketing uses the same stable
-       coalesce(vendorId, vendorName) key as the top-vendors SQL query. */
+    /* 13: Vendor monthly spend — SQL-aggregated by (vendor_key, month).
+       Returns at most top-5-vendors × months rows instead of raw PO rows.
+       Uses the same coalesce(vendorId::text, vendorName) key as the top-vendors
+       query so drill-down data aligns exactly. */
     db.select({
-      vendorId:    procurementPOsTable.vendorId,
-      vendorName:  procurementPOsTable.vendorName,
-      totalAmount: procurementPOsTable.totalAmount,
-      createdAt:   procurementPOsTable.createdAt,
+      groupKey:   sql<string>`coalesce(${procurementPOsTable.vendorId}::text, ${procurementPOsTable.vendorName})`,
+      vendorName: sql<string>`max(${procurementPOsTable.vendorName})`,
+      month:      sql<string>`to_char(${procurementPOsTable.createdAt}, 'YYYY-MM')`,
+      amount:     sql<string>`sum(${procurementPOsTable.totalAmount}::numeric)`,
     }).from(procurementPOsTable)
       .where(and(
         inArray(procurementPOsTable.status, [...RECEIVED_STATUSES]),
         gte(procurementPOsTable.createdAt, fromDate),
         lte(procurementPOsTable.createdAt, toDate),
-      )),
+      ))
+      .groupBy(
+        sql`coalesce(${procurementPOsTable.vendorId}::text, ${procurementPOsTable.vendorName})`,
+        sql`to_char(${procurementPOsTable.createdAt}, 'YYYY-MM')`,
+      ),
 
-    /* 14: Category items — single JOIN query, no two-step round-trip */
+    /* 14: Category spend — SQL-aggregated by (material_name, month).
+       Returns at most unique_materials × months rows instead of every line item.
+       Category derivation runs on unique material names in Node, not on raw rows. */
     db.select({
       materialName: procPOItemsTable.materialName,
-      lineTotal:    procPOItemsTable.lineTotal,
-      poCreatedAt:  procurementPOsTable.createdAt,
+      month:        sql<string>`to_char(${procurementPOsTable.createdAt}, 'YYYY-MM')`,
+      totalAmount:  sql<string>`sum(${procPOItemsTable.lineTotal}::numeric)`,
     }).from(procPOItemsTable)
       .innerJoin(
         procurementPOsTable,
@@ -252,7 +259,11 @@ router.get("/procurement-dashboard", async (req, res): Promise<void> => {
         inArray(procurementPOsTable.status, [...RECEIVED_STATUSES]),
         gte(procurementPOsTable.createdAt, fromDate),
         lte(procurementPOsTable.createdAt, toDate),
-      )),
+      ))
+      .groupBy(
+        procPOItemsTable.materialName,
+        sql`to_char(${procurementPOsTable.createdAt}, 'YYYY-MM')`,
+      ),
   ] as const);
 
   /* ── Derived counts from status map ────────────────────────────────── */
@@ -303,15 +314,13 @@ router.get("/procurement-dashboard", async (req, res): Promise<void> => {
   }));
   const topVendors = topVendorBuckets.map(({ vendorName, spend, poCount }) => ({ vendorName, spend, poCount }));
 
-  /* ── Vendor monthly spend — O(n+m) using a pre-built Map ────────────── */
-  // Key by the same coalesce expression: vendorId (when set) otherwise vendorName.
+  /* ── Vendor monthly spend — SQL-pre-aggregated, O(rows) mapping ─────── */
+  // vendorMonthlyRaw already has one row per (groupKey, month) — no further grouping needed.
   const vendorMonthAmounts = new Map<string, Map<string, number>>();
-  for (const po of rangeReceivedPOs) {
-    const month    = po.createdAt.toISOString().slice(0, 7);
-    const groupKey = po.vendorId != null ? String(po.vendorId) : (po.vendorName ?? "Unknown");
-    const mm       = vendorMonthAmounts.get(groupKey) ?? new Map<string, number>();
-    mm.set(month, (mm.get(month) ?? 0) + n(po.totalAmount));
-    vendorMonthAmounts.set(groupKey, mm);
+  for (const row of vendorMonthlyRaw) {
+    const mm = vendorMonthAmounts.get(row.groupKey) ?? new Map<string, number>();
+    mm.set(row.month, n(row.amount));
+    vendorMonthAmounts.set(row.groupKey, mm);
   }
   const vendorMonthlySpend: Record<string, { month: string; amount: number }[]> = {};
   for (const { vendorName, groupKey } of topVendorBuckets) {
@@ -319,20 +328,20 @@ router.get("/procurement-dashboard", async (req, res): Promise<void> => {
     vendorMonthlySpend[vendorName] = rangeMonths.map(m => ({ month: m, amount: mm.get(m) ?? 0 }));
   }
 
-  /* ── Category spend — O(items) using a pre-built Map ────────────────── */
+  /* ── Category spend — SQL-pre-aggregated by (material_name, month) ───── */
+  // categoryMonthlyRaw has one row per unique material+month.
+  // deriveCategory() runs on unique material names, not raw line items.
   const categorySpend  = new Map<string, number>();
   const categoryPOsSet = new Map<string, Set<string>>();
-  // Map for per-category per-month
   const catMonthMap    = new Map<string, Map<string, number>>();
-  for (const item of categoryItemsRaw) {
-    const cat   = deriveCategory(item.materialName);
-    const month = item.poCreatedAt.toISOString().slice(0, 7);
-    const lt    = n(item.lineTotal);
+  for (const row of categoryMonthlyRaw) {
+    const cat = deriveCategory(row.materialName);
+    const lt  = n(row.totalAmount);
     categorySpend.set(cat, (categorySpend.get(cat) ?? 0) + lt);
     const ps = categoryPOsSet.get(cat) ?? new Set<string>();
-    ps.add(`${month}`); categoryPOsSet.set(cat, ps);
+    ps.add(row.month); categoryPOsSet.set(cat, ps);
     const cm = catMonthMap.get(cat) ?? new Map<string, number>();
-    cm.set(month, (cm.get(month) ?? 0) + lt);
+    cm.set(row.month, (cm.get(row.month) ?? 0) + lt);
     catMonthMap.set(cat, cm);
   }
   const topCategories = [...categorySpend.entries()]
@@ -365,6 +374,9 @@ router.get("/procurement-dashboard", async (req, res): Promise<void> => {
   ]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 12);
+
+  /* ── HTTP caching — private (user data), fresh 2 min, stale-while-revalidate 60 s ── */
+  res.set("Cache-Control", "private, max-age=120, stale-while-revalidate=60");
 
   /* ── Response ────────────────────────────────────────────────────────── */
   res.json({

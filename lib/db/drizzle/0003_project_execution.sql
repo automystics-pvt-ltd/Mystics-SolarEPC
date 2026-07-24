@@ -119,6 +119,16 @@ CREATE TABLE IF NOT EXISTS testing_commissioning (
 );
 CREATE INDEX IF NOT EXISTS idx_testing_commissioning_project_id ON testing_commissioning(project_id);
 
+-- ── Procurement Dashboard performance indexes ────────────────────────────────
+-- Covering index for the category-spend JOIN (proc_po_items × procurement_pos)
+CREATE INDEX IF NOT EXISTS idx_po_items_po_mat_total
+  ON proc_po_items (po_id, material_name, line_total);
+-- Composite indexes for pending-GRN and pending-invoice queries
+CREATE INDEX IF NOT EXISTS idx_grns_status_created
+  ON proc_grns (status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_invoices_status_created
+  ON proc_invoices (status, created_at DESC);
+
 -- ── Seed standard inspection checklists ──────────────────────────────────────
 INSERT INTO inspection_checklists (name, inspection_type, items) VALUES
 ('Module Mounting Inspection','ModuleMounting','[{"id":"mm1","section":"Structural","description":"Mounting structure is level and properly aligned","passCriteria":"Level within ±2mm over 1m","isRequired":true},{"id":"mm2","section":"Structural","description":"All bolts and fasteners are torqued to specification","passCriteria":"Per manufacturer torque spec","isRequired":true},{"id":"mm3","section":"Structural","description":"Module frames are undamaged (no cracks or dents)","passCriteria":"Visual inspection — no damage","isRequired":true},{"id":"mm4","section":"Structural","description":"Tilt angle matches design drawings","passCriteria":"Within ±1° of design angle","isRequired":true},{"id":"mm5","section":"Safety","description":"Anti-bird and anti-theft measures installed","passCriteria":"Mesh and locks present","isRequired":false}]'),
