@@ -704,11 +704,18 @@ router.post("/procurement-quotations/:id/reopen", async (req, res): Promise<void
   }
 
   const newVersion = existing.version + 1;
+
+  // Recall the linked approval request BEFORE clearing the FK so we can still reference its id
+  const existingApprovalRequestId = (existing as any).approvalRequestId as number | null;
+  if (existingApprovalRequestId) {
+    await syncApprovalRequest(existingApprovalRequestId, "recalled", `Quotation reopened by ${actor.role}: ${reason}`, actor.userId);
+  }
+
   const [q] = await db.update(procurementQuotationsTable).set({
     status: "RevisionRequested",
     version: newVersion,
     lockedAt: null, lockedBy: null,
-    reopenedAt: new Date(), reopenedBy: actor.userId,
+    reopenedAt: new Date(), reopenedBy: actor.userId, reopenedByName: userName,
     reopenReason: reason,
     approvalRemarks: `Reopened: ${reason}`,
     approvalRequestId: null,
