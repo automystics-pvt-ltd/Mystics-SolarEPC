@@ -178,7 +178,7 @@ export default function GRNDetail({ id }: { id: string }) {
   const grnId = Number(id);
   const { user: authUser } = useAuth();
   const user = (() => { try { return JSON.parse(localStorage.getItem("mystics_user") ?? "{}"); } catch { return {}; } })();
-  const { canApprove: isApprover } = usePermissions("procurement");
+  const { canApprove: isApprover, canEdit } = usePermissions("procurement");
 
   const { data: grn, isLoading } = useGetProcGrn(grnId, { query: { enabled: !!grnId, queryKey: getGetProcGrnQueryKey(grnId) } });
 
@@ -226,10 +226,10 @@ export default function GRNDetail({ id }: { id: string }) {
   );
 
   const g = grn as any;
-  const canSubmit        = g.status === "Draft";
+  const canSubmit        = canEdit && g.status === "Draft";
   const canApprove       = isApprover && g.status === "Submitted";
   const canReject        = isApprover && g.status === "Submitted";
-  const canCreateInvoice = ["Accepted", "PartiallyAccepted"].includes(g.status);
+  const canCreateInvoice = canEdit && ["Accepted", "PartiallyAccepted"].includes(g.status);
   const invUrl           = `/procurement/invoices/new?poId=${g.poId}`;
   const hasActions       = canSubmit || canApprove || canReject;
 

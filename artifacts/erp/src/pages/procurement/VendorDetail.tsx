@@ -27,6 +27,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { PageHeader, SectionCard, StatusBadge } from "@/components/shared";
 import { addRecentEntry } from "@/lib/recentHistory";
 import { useAuth } from "@/lib/auth";
+import { usePermissions } from "@/lib/permissions";
 import { validateVendorFull, validateContact, hasErrors, type VendorErrors } from "@/lib/vendor-validation";
 import { SearchableSelect, type SelectOption } from "@/components/ui/searchable-select";
 import { INDIAN_BANKS, ACCOUNT_TYPES, INDIAN_STATES, INDIAN_CITIES, COUNTRIES, GST_STATE_CODES, GST_STATE_CODE_MAP, getStatesForCountry, getCitiesForState, getStateLabel } from "@/lib/vendor-select-data";
@@ -401,6 +402,7 @@ export default function VendorDetail({ id }: { id: string }) {
   const qc = useQueryClient();
   const vendorId = Number(id);
   const { user: authUser } = useAuth();
+  const { canEdit: rbacCanEdit, canDelete: rbacCanDelete } = usePermissions("procurement");
 
   // Read the ?tab= query param to support deep-linking to a specific tab
   const [activeTab, setActiveTab] = useState(() => {
@@ -803,10 +805,12 @@ export default function VendorDetail({ id }: { id: string }) {
     </>
   ) : (
     <>
-      <Button variant="outline" size="sm" onClick={startEdit}><Edit3 className="w-3.5 h-3.5 mr-1" /> Edit</Button>
+      {rbacCanEdit && (
+        <Button variant="outline" size="sm" onClick={startEdit}><Edit3 className="w-3.5 h-3.5 mr-1" /> Edit</Button>
+      )}
 
       {/* Delete vendor */}
-      <AlertDialog>
+      {rbacCanDelete && <AlertDialog>
         <AlertDialogTrigger asChild>
           <Button variant="outline" size="sm" className="text-red-500 hover:text-red-600 hover:border-red-300">
             <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete
@@ -832,7 +836,7 @@ export default function VendorDetail({ id }: { id: string }) {
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
-      </AlertDialog>
+      </AlertDialog>}
     </>
   );
 
@@ -1124,6 +1128,7 @@ export default function VendorDetail({ id }: { id: string }) {
           <SectionCard
             title="Contacts"
             actions={
+              rbacCanEdit ? (
               <Dialog open={contactOpen} onOpenChange={(v) => { setContactOpen(v); if (!v) resetContactForm(); }}>
                 <DialogTrigger asChild>
                   <Button size="sm" className="gap-1.5"><Plus className="w-3.5 h-3.5" /> Add Contact</Button>
@@ -1233,6 +1238,7 @@ export default function VendorDetail({ id }: { id: string }) {
                   </div>
                 </DialogContent>
               </Dialog>
+              ) : undefined
             }
           >
             {!(vendor as any).contacts?.length ? (
@@ -1278,8 +1284,8 @@ export default function VendorDetail({ id }: { id: string }) {
                       </div>
                     </div>
 
-                    {/* Set Primary star — shown only for non-primary contacts */}
-                    {!c.isPrimary && (
+                    {/* Set Primary star — shown only for non-primary contacts with edit permission */}
+                    {!c.isPrimary && rbacCanEdit && (
                       <Button
                         variant="ghost" size="icon"
                         className="h-8 w-8 text-muted-foreground/40 hover:text-amber-500 shrink-0"
@@ -1291,15 +1297,17 @@ export default function VendorDetail({ id }: { id: string }) {
                       </Button>
                     )}
 
-                    {/* Delete */}
-                    <Button
-                      variant="ghost" size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-red-500 shrink-0"
-                      onClick={() => delContact(c.id)}
-                      disabled={delContactMut.isPending}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
+                    {/* Delete — requires delete permission */}
+                    {rbacCanDelete && (
+                      <Button
+                        variant="ghost" size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-red-500 shrink-0"
+                        onClick={() => delContact(c.id)}
+                        disabled={delContactMut.isPending}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
                   </div>
                 ))}
               </div>

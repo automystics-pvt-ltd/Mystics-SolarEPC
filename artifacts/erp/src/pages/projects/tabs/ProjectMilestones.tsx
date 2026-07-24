@@ -11,6 +11,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Loader2, Plus, Zap, Flag, List, BarChart2, AlertTriangle, CheckCircle2, Clock, CircleDashed } from "lucide-react";
 import { format, differenceInDays, parseISO, startOfDay } from "date-fns";
 import { SectionCard, StatusBadge, EmptyState } from "@/components/shared";
+import { usePermissions } from "@/lib/permissions";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { apiGet, apiPost, apiPatch } from "@/lib/fetch";
@@ -105,6 +106,7 @@ function TimelineView({ milestones }: { milestones: ExecMilestone[] }) {
 
 // ── Main component ─────────────────────────────────────────────────────────────
 export function ProjectMilestones({ projectId }: { projectId: number }) {
+  const { canEdit: canEditProject } = usePermissions("projects");
   const [view, setView] = useState<"list" | "timeline">("list");
   const [addOpen, setAddOpen] = useState(false);
   const [detailMilestone, setDetailMilestone] = useState<ExecMilestone | null>(null);
@@ -169,14 +171,16 @@ export function ProjectMilestones({ projectId }: { projectId: number }) {
                 <BarChart2 className="h-3.5 w-3.5" /> Timeline
               </button>
             </div>
-            <Button size="sm" className="h-8 gap-1.5" onClick={() => setAddOpen(true)}>
-              <Plus className="h-3.5 w-3.5" /> Add
-            </Button>
+            {canEditProject && (
+              <Button size="sm" className="h-8 gap-1.5" onClick={() => setAddOpen(true)}>
+                <Plus className="h-3.5 w-3.5" /> Add
+              </Button>
+            )}
           </div>
         }
       >
         {execMs.length === 0 ? (
-          <EmptyState icon={Flag} title="No execution milestones" description="Add milestones to track progress with baseline, forecast, and actual dates." action={{ label: "Add Milestone", onClick: () => setAddOpen(true) }} size="sm" />
+          <EmptyState icon={Flag} title="No execution milestones" description="Add milestones to track progress with baseline, forecast, and actual dates." action={canEditProject ? { label: "Add Milestone", onClick: () => setAddOpen(true) } : undefined} size="sm" />
         ) : view === "timeline" ? (
           <TimelineView milestones={execMs} />
         ) : (
@@ -232,9 +236,11 @@ export function ProjectMilestones({ projectId }: { projectId: number }) {
         isLoading={payLoading}
         noPadding
         actions={
-          <Button size="sm" variant="outline" className="h-8 gap-1.5" onClick={() => setPayOpen(true)}>
-            <Plus className="h-3.5 w-3.5" /> Add
-          </Button>
+          canEditProject ? (
+            <Button size="sm" variant="outline" className="h-8 gap-1.5" onClick={() => setPayOpen(true)}>
+              <Plus className="h-3.5 w-3.5" /> Add
+            </Button>
+          ) : undefined
         }
       >
         <table className="w-full text-sm">
@@ -254,7 +260,7 @@ export function ProjectMilestones({ projectId }: { projectId: number }) {
                 <td className="px-4 py-2.5 font-mono font-bold text-right">₹{Number(m.amount).toLocaleString("en-IN")}</td>
                 <td className="px-4 py-2.5"><StatusBadge status={m.status} size="sm" /></td>
                 <td className="px-4 py-2.5 text-right">
-                  {m.status === "Pending" && (
+                  {m.status === "Pending" && canEditProject && (
                     <Button size="sm" className="h-7 gap-1 text-xs" onClick={() => triggerPay.mutate({ id: m.id })} disabled={triggerPay.isPending}>
                       <Zap className="h-3 w-3" /> Trigger
                     </Button>
@@ -367,9 +373,11 @@ export function ProjectMilestones({ projectId }: { projectId: number }) {
                 </div>
                 <div className="flex gap-2 justify-end pt-2">
                   <Button variant="outline" onClick={() => setDetailMilestone(null)}>Cancel</Button>
-                  <Button disabled={patchExec.isPending} onClick={() => patchExec.mutate({ id: detailMilestone.id, completionPct: detailMilestone.completionPct, status: detailMilestone.status, baselineDate: detailMilestone.baselineDate || null, forecastDate: detailMilestone.forecastDate || null, actualDate: detailMilestone.actualDate || null, weightPct: detailMilestone.weightPct, blockerReason: detailMilestone.blockerReason || null })}>
-                    {patchExec.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Changes"}
-                  </Button>
+                  {canEditProject && (
+                    <Button disabled={patchExec.isPending} onClick={() => patchExec.mutate({ id: detailMilestone.id, completionPct: detailMilestone.completionPct, status: detailMilestone.status, baselineDate: detailMilestone.baselineDate || null, forecastDate: detailMilestone.forecastDate || null, actualDate: detailMilestone.actualDate || null, weightPct: detailMilestone.weightPct, blockerReason: detailMilestone.blockerReason || null })}>
+                      {patchExec.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Changes"}
+                    </Button>
+                  )}
                 </div>
               </div>
             </>

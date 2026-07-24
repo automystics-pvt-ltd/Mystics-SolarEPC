@@ -4,6 +4,7 @@ import { apiGet, apiPost, apiPatch, apiDelete } from "@/lib/fetch";
 import { motion } from "framer-motion";
 import { useLocation } from "wouter";
 import { SectionCard, EmptyState, StatusBadge } from "@/components/shared";
+import { usePermissions } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,12 +45,14 @@ const CAT_COLORS: Record<string, string> = {
   Service: "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300",
 };
 
-function InlineEdit({ value, type = "number", onSave }: {
-  value: number | string; type?: string; onSave: (v: string) => void;
+function InlineEdit({ value, type = "number", onSave, disabled = false }: {
+  value: number | string; type?: string; onSave: (v: string) => void; disabled?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(String(value));
   const ref = useRef<HTMLInputElement>(null);
+
+  if (disabled) return <span className="text-sm">{value}</span>;
 
   if (editing) return (
     <div className="flex items-center gap-1">
@@ -81,6 +84,7 @@ function InlineEdit({ value, type = "number", onSave }: {
 }
 
 export function ProjectBOQ({ projectId, clientPoId }: { projectId: number; clientPoId?: number | null }) {
+  const { canEdit: canEditProject } = usePermissions("projects");
   const [, navigate] = useLocation();
   const [catFilter, setCatFilter] = useState<string>("All");
   const [addOpen, setAddOpen] = useState(false);
@@ -172,23 +176,25 @@ export function ProjectBOQ({ projectId, clientPoId }: { projectId: number; clien
               </SelectContent>
             </Select>
 
-            {/* Import from Quotation */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span>
-                  <Button
-                    size="sm" variant="outline" className="h-7 gap-1 text-xs"
-                    onClick={() => importMut.mutate()} disabled={!clientPoId || importMut.isPending}
-                  >
-                    {importMut.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
-                    Import from Quotation
-                  </Button>
-                </span>
-              </TooltipTrigger>
-              {!clientPoId && (
-                <TooltipContent><p>Project has no linked quotation</p></TooltipContent>
-              )}
-            </Tooltip>
+            {/* Import from Quotation — requires edit permission */}
+            {canEditProject && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <Button
+                      size="sm" variant="outline" className="h-7 gap-1 text-xs"
+                      onClick={() => importMut.mutate()} disabled={!clientPoId || importMut.isPending}
+                    >
+                      {importMut.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                      Import from Quotation
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {!clientPoId && (
+                  <TooltipContent><p>Project has no linked quotation</p></TooltipContent>
+                )}
+              </Tooltip>
+            )}
 
             <Button
               size="sm" variant={showMaterialStatus ? "secondary" : "outline"}
@@ -198,35 +204,41 @@ export function ProjectBOQ({ projectId, clientPoId }: { projectId: number; clien
               Material Status
             </Button>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="sm" variant="outline" className="h-7 gap-1 text-xs text-blue-700 border-blue-200 hover:bg-blue-50"
-                  onClick={() => createMRsMut.mutate()} disabled={createMRsMut.isPending}
-                >
-                  {createMRsMut.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <ShoppingCart className="h-3 w-3" />}
-                  Create MRs
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent><p>Create material requests for Procurement-sourced BOQ lines</p></TooltipContent>
-            </Tooltip>
+            {canEditProject && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="sm" variant="outline" className="h-7 gap-1 text-xs text-blue-700 border-blue-200 hover:bg-blue-50"
+                    onClick={() => createMRsMut.mutate()} disabled={createMRsMut.isPending}
+                  >
+                    {createMRsMut.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <ShoppingCart className="h-3 w-3" />}
+                    Create MRs
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent><p>Create material requests for Procurement-sourced BOQ lines</p></TooltipContent>
+              </Tooltip>
+            )}
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="sm" variant="outline" className="h-7 gap-1 text-xs text-emerald-700 border-emerald-200 hover:bg-emerald-50"
-                  onClick={() => reserveInvMut.mutate()} disabled={reserveInvMut.isPending}
-                >
-                  {reserveInvMut.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Warehouse className="h-3 w-3" />}
-                  Reserve Inventory
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent><p>Reserve inventory for Inventory-sourced BOQ lines</p></TooltipContent>
-            </Tooltip>
+            {canEditProject && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="sm" variant="outline" className="h-7 gap-1 text-xs text-emerald-700 border-emerald-200 hover:bg-emerald-50"
+                    onClick={() => reserveInvMut.mutate()} disabled={reserveInvMut.isPending}
+                  >
+                    {reserveInvMut.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Warehouse className="h-3 w-3" />}
+                    Reserve Inventory
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent><p>Reserve inventory for Inventory-sourced BOQ lines</p></TooltipContent>
+              </Tooltip>
+            )}
 
-            <Button size="sm" className="h-7 gap-1 text-xs" onClick={() => setAddOpen(true)}>
-              <Plus className="h-3 w-3" /> Add Item
-            </Button>
+            {canEditProject && (
+              <Button size="sm" className="h-7 gap-1 text-xs" onClick={() => setAddOpen(true)}>
+                <Plus className="h-3 w-3" /> Add Item
+              </Button>
+            )}
           </div>
         }
       >
@@ -264,12 +276,14 @@ export function ProjectBOQ({ projectId, clientPoId }: { projectId: number; clien
                     <InlineEdit
                       value={item.quantity}
                       onSave={v => updateMut.mutate({ id: item.id, data: { quantity: parseFloat(v) } })}
+                      disabled={!canEditProject}
                     />
                   </TableCell>
                   <TableCell className="py-2 text-right text-sm font-mono">
                     <InlineEdit
                       value={item.unitRate}
                       onSave={v => updateMut.mutate({ id: item.id, data: { unitRate: parseFloat(v) } })}
+                      disabled={!canEditProject}
                     />
                   </TableCell>
                   <TableCell className="py-2 text-right text-sm font-bold font-mono">
@@ -343,12 +357,14 @@ export function ProjectBOQ({ projectId, clientPoId }: { projectId: number; clien
                     );
                   })()}
                   <TableCell className="py-2 pr-3">
-                    <button
-                      className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-red-600"
-                      onClick={() => { if (confirm("Delete this BOQ item?")) deleteMut.mutate(item.id); }}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    {canEditProject && (
+                      <button
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-red-600"
+                        onClick={() => { if (confirm("Delete this BOQ item?")) deleteMut.mutate(item.id); }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
                   </TableCell>
                 </TableRow>
               );

@@ -30,7 +30,7 @@ export default function InvoiceDetail({ id }: { id: string }) {
   const invId = Number(id);
   const { user: authUser } = useAuth();
   const user = (() => { try { return JSON.parse(localStorage.getItem("mystics_user") ?? "{}"); } catch { return {}; } })();
-  const { canApprove: isApprover } = usePermissions("procurement");
+  const { canApprove: isApprover, canEdit } = usePermissions("procurement");
 
   const { data: invoice, isLoading } = useGetProcInvoice(invId, { query: { enabled: !!invId, queryKey: getGetProcInvoiceQueryKey(invId) } });
 
@@ -75,11 +75,11 @@ export default function InvoiceDetail({ id }: { id: string }) {
   );
 
   const inv = invoice as any;
-  const canSubmit = inv.status === "Draft" && (inv.matchStatus !== "MismatchPending" || inv.mismatchApprovedAt);
+  const canSubmit = canEdit && inv.status === "Draft" && (inv.matchStatus !== "MismatchPending" || inv.mismatchApprovedAt);
   const canApproveMismatch = isApprover && inv.matchStatus === "MismatchPending" && !inv.mismatchApprovedAt;
   const canApprove = isApprover && inv.status === "PendingApproval";
   const canReject = isApprover && inv.status === "PendingApproval";
-  const canMarkPaid = inv.status === "Approved";
+  const canMarkPaid = isApprover && inv.status === "Approved";
   const hasMobileActions = canSubmit || canApprove || canReject || canMarkPaid;
 
   const desktopActions = (

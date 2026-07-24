@@ -10,6 +10,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost, apiDelete } from "@/lib/fetch";
 import { toast } from "sonner";
 import { SectionCard, StatusBadge, EmptyState } from "@/components/shared";
+import { usePermissions } from "@/lib/permissions";
 import { motion } from "framer-motion";
 import { format, parseISO, eachWeekOfInterval, startOfWeek, endOfWeek, isWithinInterval } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -92,6 +93,7 @@ function ResourceTimeline({ allocations }: { allocations: ResourceAllocation[] }
 }
 
 export function ProjectResources({ projectId }: { projectId: number }) {
+  const { canEdit: canEditProject } = usePermissions("projects");
   const [addOpen, setAddOpen] = useState(false);
   const qc = useQueryClient();
 
@@ -167,11 +169,11 @@ export function ProjectResources({ projectId }: { projectId: number }) {
       <SectionCard
         title="Resource Allocations"
         isLoading={isLoading}
-        actions={<Button size="sm" className="h-8 gap-1.5" onClick={() => setAddOpen(true)}><Plus className="h-3.5 w-3.5" /> Add Allocation</Button>}
+        actions={canEditProject ? <Button size="sm" className="h-8 gap-1.5" onClick={() => setAddOpen(true)}><Plus className="h-3.5 w-3.5" /> Add Allocation</Button> : undefined}
         noPadding
       >
         {resources.length === 0 ? (
-          <EmptyState icon={Users} title="No resource allocations" description="Assign team members, contractors, and equipment to activities." action={{ label: "Add Allocation", onClick: () => setAddOpen(true) }} size="sm" />
+          <EmptyState icon={Users} title="No resource allocations" description="Assign team members, contractors, and equipment to activities." action={canEditProject ? { label: "Add Allocation", onClick: () => setAddOpen(true) } : undefined} size="sm" />
         ) : (
           <div>
             {Object.entries(grouped).map(([activity, allocs]) => (
@@ -195,13 +197,15 @@ export function ProjectResources({ projectId }: { projectId: number }) {
                       ) : "No dates"}
                     </div>
                     <StatusBadge status={a.status} size="sm" />
-                    <Button
-                      size="sm" variant="ghost"
-                      className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-500"
-                      onClick={() => deleteMut.mutate(a.id)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+                    {canEditProject && (
+                      <Button
+                        size="sm" variant="ghost"
+                        className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-500"
+                        onClick={() => deleteMut.mutate(a.id)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
                   </div>
                 ))}
               </div>

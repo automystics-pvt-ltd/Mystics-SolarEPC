@@ -29,6 +29,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { StatusBadge, DetailRow, DetailGrid, SectionCard, PageHeader } from "@/components/shared";
 import { addRecentEntry } from "@/lib/recentHistory";
 import { useAuth } from "@/lib/auth";
+import { usePermissions } from "@/lib/permissions";
 import { apiPost, apiPatch } from "@/lib/fetch";
 
 function formatDate(d?: string | null) {
@@ -184,6 +185,9 @@ export default function ProcurementPODetail({ id }: { id: string }) {
     onError: (e: any) => toast({ title: "Failed", description: e?.data?.error ?? e?.message, variant: "destructive" }),
   });
 
+  // usePermissions MUST be called here, before any early return, to satisfy React's Rules of Hooks
+  const { canApprove: rbacCanApprove, canEdit: rbacCanEdit } = usePermissions("procurement");
+
   if (isLoading || !po) return (
     <div className="flex h-60 items-center justify-center">
       <div className="animate-pulse text-muted-foreground">Loading PO…</div>
@@ -199,17 +203,17 @@ export default function ProcurementPODetail({ id }: { id: string }) {
   const daysOverdue = deadline ? Math.floor((Date.now() - new Date(deadline).getTime()) / 86400000) : 0;
 
   const isLocked       = p.isLocked === true;
-  const isApprover     = ["pm", "director", "admin"].includes(user.role);
-  const isManager      = ["pm", "director", "admin", "manager"].includes(user.role);
-  const canSubmit      = ["Draft", "Revised"].includes(p.status) && !isLocked;
+  const isApprover     = rbacCanApprove;
+  const isManager      = rbacCanEdit;
+  const canSubmit      = rbacCanEdit && ["Draft", "Revised"].includes(p.status) && !isLocked;
   const canApprove     = isApprover && ["Submitted", "PendingApproval"].includes(p.status);
-  const canIssue       = p.status === "Approved" && isLocked;
-  const canCancel      = !["Closed", "Cancelled"].includes(p.status);
+  const canIssue       = rbacCanEdit && p.status === "Approved" && isLocked;
+  const canCancel      = rbacCanEdit && !["Closed", "Cancelled"].includes(p.status);
   const canHold        = isManager && !["Closed", "Cancelled", "OnHold"].includes(p.status);
-  const canUnhold      = p.status === "OnHold";
-  const canRevise      = p.status === "Rejected";
-  const canCreateGRN   = ["Issued", "Acknowledged", "PartiallyReceived"].includes(p.status);
-  const canCreateInvoice = ["PartiallyReceived", "FullyReceived", "Closed"].includes(p.status);
+  const canUnhold      = rbacCanEdit && p.status === "OnHold";
+  const canRevise      = rbacCanEdit && p.status === "Rejected";
+  const canCreateGRN   = rbacCanEdit && ["Issued", "Acknowledged", "PartiallyReceived"].includes(p.status);
+  const canCreateInvoice = rbacCanEdit && ["PartiallyReceived", "FullyReceived", "Closed"].includes(p.status);
 
   const grnUrl = `/procurement/grns/new?poId=${p.id}`;
   const invUrl = `/procurement/invoices/new?poId=${p.id}`;
