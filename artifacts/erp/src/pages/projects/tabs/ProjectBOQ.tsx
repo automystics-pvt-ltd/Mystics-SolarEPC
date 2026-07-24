@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost, apiPatch, apiDelete } from "@/lib/fetch";
 import { motion } from "framer-motion";
+import { useLocation } from "wouter";
 import { SectionCard, EmptyState, StatusBadge } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { PackageSearch, Plus, Download, AlertCircle, Loader2, Trash2, Check, X, ShoppingCart, Warehouse } from "lucide-react";
+import { PackageSearch, Plus, Download, Loader2, Trash2, Check, X, ShoppingCart, Warehouse, ExternalLink } from "lucide-react";
 import { useForm, Controller } from "react-hook-form";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -20,8 +21,8 @@ import { toast } from "sonner";
 interface BOQMaterialStatus {
   boqItemId: number; description: string; sourcedFrom: string;
   quantity: number; allocatedQty: number; status: string;
-  mrNumber: string | null; mrStatus: string | null;
-  poNumber: string | null; poStatus: string | null;
+  mrId: number | null; mrNumber: string | null; mrStatus: string | null;
+  poId: number | null; poNumber: string | null; poStatus: string | null;
   allocNumber: string | null; allocStatus: string | null;
 }
 
@@ -80,6 +81,7 @@ function InlineEdit({ value, type = "number", onSave }: {
 }
 
 export function ProjectBOQ({ projectId, clientPoId }: { projectId: number; clientPoId?: number | null }) {
+  const [, navigate] = useLocation();
   const [catFilter, setCatFilter] = useState<string>("All");
   const [addOpen, setAddOpen] = useState(false);
   const [showMaterialStatus, setShowMaterialStatus] = useState(false);
@@ -293,11 +295,48 @@ export function ProjectBOQ({ projectId, clientPoId }: { projectId: number; clien
                     return (
                       <TableCell className="py-2 text-[10px] leading-snug">
                         {!ms ? <span className="text-muted-foreground">—</span> : (
-                          <div className="space-y-0.5">
-                            {ms.mrNumber && <div><span className="text-muted-foreground">MR:</span> <span className="font-mono">{ms.mrNumber}</span> <StatusBadge status={ms.mrStatus ?? ""} size="sm" /></div>}
-                            {ms.allocNumber && <div><span className="text-muted-foreground">Alloc:</span> <span className="font-mono">{ms.allocNumber}</span> <StatusBadge status={ms.allocStatus ?? ""} size="sm" /></div>}
-                            {ms.poNumber && <div><span className="text-muted-foreground">PO:</span> <span className="font-mono">{ms.poNumber}</span></div>}
-                            {!ms.mrNumber && !ms.allocNumber && <span className="text-muted-foreground">Not linked</span>}
+                          <div className="space-y-1">
+                            {ms.mrNumber && (
+                              <div className="flex items-center gap-1 flex-wrap">
+                                <span className="text-muted-foreground">MR:</span>
+                                <button
+                                  onClick={() => navigate("/procurement/pos")}
+                                  className="font-mono font-semibold text-primary hover:underline flex items-center gap-0.5"
+                                  title="Open in Procurement"
+                                >
+                                  {ms.mrNumber}
+                                  <ExternalLink className="h-2.5 w-2.5 opacity-60" />
+                                </button>
+                                <StatusBadge status={ms.mrStatus ?? ""} size="sm" />
+                              </div>
+                            )}
+                            {ms.allocNumber && (
+                              <div className="flex items-center gap-1">
+                                <span className="text-muted-foreground">Alloc:</span>
+                                <span className="font-mono">{ms.allocNumber}</span>
+                                <StatusBadge status={ms.allocStatus ?? ""} size="sm" />
+                              </div>
+                            )}
+                            {ms.poNumber && (
+                              <div className="flex items-center gap-1">
+                                <span className="text-muted-foreground">PO:</span>
+                                <button
+                                  onClick={() => ms.poId
+                                    ? navigate(`/procurement/pos/${ms.poId}`)
+                                    : navigate("/procurement/pos")
+                                  }
+                                  className="font-mono font-semibold text-primary hover:underline flex items-center gap-0.5"
+                                  title="Open PO in Procurement"
+                                >
+                                  {ms.poNumber}
+                                  <ExternalLink className="h-2.5 w-2.5 opacity-60" />
+                                </button>
+                                {ms.poStatus && <StatusBadge status={ms.poStatus} size="sm" />}
+                              </div>
+                            )}
+                            {!ms.mrNumber && !ms.allocNumber && (
+                              <span className="text-muted-foreground italic">Not linked</span>
+                            )}
                           </div>
                         )}
                       </TableCell>

@@ -1,10 +1,13 @@
 import { useGetProjectBudgetVsActual, getGetProjectBudgetVsActualQueryKey } from "@workspace/api-client-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PieChart, DollarSign, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { PieChart, DollarSign, TrendingDown, TrendingUp, Wallet, ExternalLink, ShoppingCart, FileText } from "lucide-react";
 import { SectionCard, StatCard, EmptyState, SkeletonStats } from "@/components/shared";
 import { motion } from "framer-motion";
+import { useLocation } from "wouter";
 
 export function ProjectBudget({ projectId }: { projectId: number }) {
+  const [, navigate] = useLocation();
   const { data: budget, isLoading } = useGetProjectBudgetVsActual(projectId, {
     query: { enabled: !!projectId, queryKey: getGetProjectBudgetVsActualQueryKey(projectId) }
   });
@@ -57,7 +60,26 @@ export function ProjectBudget({ projectId }: { projectId: number }) {
       </div>
 
       {/* Line Items Table */}
-      <SectionCard title="Budget vs Actuals" noPadding>
+      <SectionCard
+        title="Budget vs Actuals"
+        noPadding
+        actions={
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm" variant="outline" className="h-7 text-xs gap-1.5"
+              onClick={() => navigate("/procurement/pos")}
+            >
+              <ShoppingCart className="h-3 w-3" /> View POs <ExternalLink className="h-3 w-3" />
+            </Button>
+            <Button
+              size="sm" variant="outline" className="h-7 text-xs gap-1.5"
+              onClick={() => navigate("/procurement/invoices")}
+            >
+              <FileText className="h-3 w-3" /> Invoices <ExternalLink className="h-3 w-3" />
+            </Button>
+          </div>
+        }
+      >
         <Table>
           <TableHeader>
             <TableRow className="border-b border-border/60 bg-muted/30 hover:bg-muted/30">

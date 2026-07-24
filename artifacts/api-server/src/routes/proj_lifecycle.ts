@@ -471,12 +471,12 @@ router.get("/projects/:id/boq/material-status", async (req, res): Promise<void> 
     );
 
     // Map descriptions to procurement records for display
-    const mrByDesc = new Map<string, { mrNumber: string; mrStatus: string }>();
+    const mrByDesc = new Map<string, { mrId: number; mrNumber: string; mrStatus: string }>();
     for (const mr of mrs) {
       const items = (mr.items ?? []) as Array<{ itemName: string }>;
       for (const item of items) {
         if (!mrByDesc.has(item.itemName)) {
-          mrByDesc.set(item.itemName, { mrNumber: mr.mr_number, mrStatus: mr.status });
+          mrByDesc.set(item.itemName, { mrId: mr.id, mrNumber: mr.mr_number, mrStatus: mr.status });
         }
       }
     }
@@ -499,8 +499,10 @@ router.get("/projects/:id/boq/material-status", async (req, res): Promise<void> 
         quantity: Number(item.quantity),
         allocatedQty: Number(item.allocated_qty),
         status: item.status,
+        mrId: mr?.mrId ?? null,
         mrNumber: mr?.mrNumber ?? null,
         mrStatus: mr?.mrStatus ?? null,
+        poId: latestPO?.id ?? null,
         poNumber: latestPO?.po_number ?? null,
         poStatus: latestPO?.status ?? null,
         allocNumber: alloc?.allocNumber ?? null,
