@@ -48,18 +48,10 @@ if [ ! -d "$REPO_DIR/.git" ]; then
   # If repo is private, git will prompt for credentials.
   # To avoid prompts, set: export GH_TOKEN=your_token  before running this script,
   # and the URL will be injected automatically below.
-  CLONE_URL="$REPO_URL"
-  if [ -n "${GH_TOKEN:-}" ]; then
-    CLONE_URL="https://${GH_TOKEN}@github.com/automystics-pvt-ltd/Mystics-SolarEPC"
-  fi
-  git clone --depth 1 --branch "$BRANCH" "$CLONE_URL" "$REPO_DIR"
+  git clone --depth 1 --branch "$BRANCH" "$REPO_URL" "$REPO_DIR"
 else
   info "Updating existing repo (branch: $BRANCH)..."
   cd "$REPO_DIR"
-  if [ -n "${GH_TOKEN:-}" ]; then
-    git remote set-url origin \
-      "https://${GH_TOKEN}@github.com/automystics-pvt-ltd/Mystics-SolarEPC"
-  fi
   git fetch origin "$BRANCH"
   git checkout "$BRANCH"
   git reset --hard "origin/$BRANCH"
