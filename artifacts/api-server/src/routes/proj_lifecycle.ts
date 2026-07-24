@@ -440,4 +440,257 @@ function fmtRisk(r: any) {
   };
 }
 
+/* ══════════════════════════════════════════════════════════════
+   BOQ CROSS-MODULE INTEGRATION
+══════════════════════════════════════════════════════════════ */
+
+/** Fetch procurement linkage status per BOQ item (MR#, PO#, GRN status) */
+router.get("/projects/:id/boq/material-status", async (req, res): Promise<void> => {
+  const projectId = parseInt(req.params.id, 10);
+  await withClient(async (c) => {
+    // For each BOQ item linked to Procurement, find the latest MR and PO for this project
+    const { rows: boqItems } = await c.query(
+      `SELECT id, description, quantity, sourced_from, allocated_qty, status FROM project_boq_items WHERE project_id = $1`,
+      [projectId]
+    );
+
+    const { rows: mrs } = await c.query(
+      `SELECT id, mr_number, status, items FROM material_requests WHERE project_id = $1 ORDER BY created_at DESC`,
+      [projectId]
+    );
+
+    const { rows: pos } = await c.query(
+      `SELECT id, po_number, status FROM purchase_orders WHERE project_id = $1 ORDER BY created_at DESC`,
+      [projectId]
+    );
+
+    const { rows: allocs } = await c.query(
+      `SELECT id, allocation_number, material_name, status, allocated_qty FROM project_material_allocations
+       WHERE project_id = $1 ORDER BY created_at DESC`,
+      [projectId]
+    );
+
+    // Map descriptions to procurement records for display
+    const mrByDesc = new Map<string, { mrNumber: string; mrStatus: string }>();
+    for (const mr of mrs) {
+      const items = (mr.items ?? []) as Array<{ itemName: string }>;
+      for (const item of items) {
+        if (!mrByDesc.has(item.itemName)) {
+          mrByDesc.set(item.itemName, { mrNumber: mr.mr_number, mrStatus: mr.status });
+        }
+      }
+    }
+
+    const allocByDesc = new Map<string, { allocNumber: string; allocStatus: string; allocQty: number }>();
+    for (const a of allocs) {
+      if (!allocByDesc.has(a.material_name)) {
+        allocByDesc.set(a.material_name, { allocNumber: a.allocation_number, allocStatus: a.status, allocQty: Number(a.allocated_qty) });
+      }
+    }
+
+    const result = boqItems.map((item: any) => {
+      const mr = mrByDesc.get(item.description) ?? null;
+      const alloc = allocByDesc.get(item.description) ?? null;
+      const latestPO = pos[0] ?? null;
+      return {
+        boqItemId: item.id,
+        description: item.description,
+        sourcedFrom: item.sourced_from,
+        quantity: Number(item.quantity),
+        allocatedQty: Number(item.allocated_qty),
+        status: item.status,
+        mrNumber: mr?.mrNumber ?? null,
+        mrStatus: mr?.mrStatus ?? null,
+        poNumber: latestPO?.po_number ?? null,
+        poStatus: latestPO?.status ?? null,
+        allocNumber: alloc?.allocNumber ?? null,
+        allocStatus: alloc?.allocStatus ?? null,
+      };
+    });
+
+    res.json(result);
+  });
+});
+
+/** Create material requests for all Procurement-sourced BOQ lines not yet fully allocated */
+router.post("/projects/:id/boq/create-material-requests", async (req, res): Promise<void> => {
+  const projectId = parseInt(req.params.id, 10);
+  const { requestedBy } = req.body;
+
+  await withClient(async (c) => {
+    const { rows: items } = await c.query(
+      `SELECT * FROM project_boq_items
+       WHERE project_id = $1 AND sourced_from = 'Procurement' AND status != 'FullyAllocated'`,
+      [projectId]
+    );
+
+    if (!items.length) {
+      res.json({ created: 0, mrIds: [], message: "No eligible BOQ lines found" });
+      return;
+    }
+
+    // Get next MR number
+    const { rows: lastMR } = await c.query(
+      `SELECT mr_number FROM material_requests ORDER BY id DESC LIMIT 1`
+    );
+    const lastNum = lastMR[0] ? parseInt(lastMR[0].mr_number.replace("MR-", ""), 10) : 0;
+    let counter = lastNum + 1;
+
+    const createdIds: number[] = [];
+    for (const item of items) {
+      const mrNumber = `MR-${String(counter++).padStart(4, "0")}`;
+      const mrItems = [{
+        itemName: item.description,
+        itemCode: item.item_code ?? undefined,
+        qty: Number(item.quantity) - Number(item.allocated_qty),
+        unit: item.unit ?? "Nos",
+      }];
+      const { rows } = await c.query(
+        `INSERT INTO material_requests (project_id, activity_id, mr_number, items, status)
+         VALUES ($1, $2, $3, $4, 'Open') RETURNING id`,
+        [projectId, item.activity_id, mrNumber, JSON.stringify(mrItems)]
+      );
+      createdIds.push(rows[0].id);
+    }
+
+    res.json({ created: createdIds.length, mrIds: createdIds, message: `Created ${createdIds.length} material request(s)` });
+  });
+});
+
+/** Reserve inventory for all Inventory-sourced BOQ lines with stock availability validation */
+router.post("/projects/:id/boq/reserve-inventory", async (req, res): Promise<void> => {
+  const projectId = parseInt(req.params.id, 10);
+
+  await withClient(async (c) => {
+    const { rows: items } = await c.query(
+      `SELECT * FROM project_boq_items
+       WHERE project_id = $1 AND sourced_from = 'Inventory' AND status != 'FullyAllocated'`,
+      [projectId]
+    );
+
+    if (!items.length) {
+      res.json({ reserved: 0, failed: 0, allocationIds: [], results: [], message: "No eligible BOQ lines found" });
+      return;
+    }
+
+    const { rows: projectRows } = await c.query(`SELECT name FROM projects WHERE id = $1`, [projectId]);
+    const projectName = projectRows[0]?.name ?? `Project ${projectId}`;
+
+    // Get next allocation number base
+    const { rows: lastAlloc } = await c.query(
+      `SELECT allocation_number FROM project_material_allocations ORDER BY id DESC LIMIT 1`
+    );
+    const lastNum = lastAlloc[0]
+      ? parseInt(lastAlloc[0].allocation_number.replace(/\D/g, ""), 10) || 0
+      : 0;
+    let counter = lastNum + 1;
+
+    const succeeded: Array<{ boqItemId: number; description: string; allocId: number; allocNumber: string; qty: number }> = [];
+    const failed: Array<{ boqItemId: number; description: string; reason: string; availableQty: number | null }> = [];
+
+    for (const item of items) {
+      const neededQty = Number(item.quantity) - Number(item.allocated_qty);
+      if (neededQty <= 0) continue;
+
+      // Look up stock by material name (best match across all warehouses, pick warehouse with most available)
+      const { rows: stockRows } = await c.query(
+        `SELECT id, material_id, material_code, material_name, category_code, category_name,
+                warehouse_id, warehouse_name, uom, available_qty, unit_cost
+         FROM material_stock_levels
+         WHERE LOWER(material_name) = LOWER($1) AND available_qty > 0
+         ORDER BY available_qty DESC LIMIT 1`,
+        [item.description]
+      );
+
+      const stock = stockRows[0] ?? null;
+
+      if (!stock) {
+        failed.push({ boqItemId: item.id, description: item.description, reason: "Material not found in inventory", availableQty: null });
+        continue;
+      }
+
+      // Reserve atomically with row-level lock — the preliminary availableQty check is advisory only;
+      // the guarded UPDATE is the authoritative availability gate.
+      const allocNumber = `ALLOC-${String(counter++).padStart(4, "0")}`;
+      const unitCost = Number(stock.unit_cost) || 0;
+      const totalValue = unitCost * neededQty;
+
+      await c.query("BEGIN");
+      try {
+        // Lock the stock row for this transaction
+        const { rows: lockedStock } = await c.query(
+          `SELECT id, available_qty FROM material_stock_levels WHERE id = $1 FOR UPDATE`,
+          [stock.id]
+        );
+        if (!lockedStock.length || Number(lockedStock[0].available_qty) < neededQty) {
+          await c.query("ROLLBACK");
+          failed.push({
+            boqItemId: item.id, description: item.description,
+            reason: `Insufficient stock — available: ${lockedStock[0]?.available_qty ?? 0}, needed: ${neededQty}`,
+            availableQty: lockedStock[0] ? Number(lockedStock[0].available_qty) : null,
+          });
+          continue;
+        }
+
+        // Guarded decrement — fails (returns 0 rows) if another transaction already consumed the stock
+        const { rows: decremented } = await c.query(
+          `UPDATE material_stock_levels
+           SET allocated_qty = allocated_qty + $1,
+               available_qty  = available_qty  - $1,
+               updated_at     = NOW()
+           WHERE id = $2 AND available_qty >= $1
+           RETURNING id`,
+          [neededQty, stock.id]
+        );
+        if (!decremented.length) {
+          await c.query("ROLLBACK");
+          failed.push({ boqItemId: item.id, description: item.description, reason: "Stock consumed by concurrent request", availableQty: null });
+          continue;
+        }
+
+        const { rows: allocRows } = await c.query(
+          `INSERT INTO project_material_allocations
+             (allocation_number, project_id, project_name,
+              warehouse_id, warehouse_name,
+              material_id, material_code, material_name, category_code, category_name,
+              uom, requested_qty, allocated_qty,
+              unit_cost, total_value, status, purpose)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$12,$13,$14,'Approved',$15)
+           RETURNING id`,
+          [
+            allocNumber, projectId, projectName,
+            stock.warehouse_id, stock.warehouse_name ?? null,
+            stock.material_id ?? null, stock.material_code ?? null,
+            stock.material_name, stock.category_code ?? null, stock.category_name ?? null,
+            item.unit ?? stock.uom ?? "Nos",
+            neededQty, unitCost, totalValue,
+            `BOQ reservation — project ${projectId}`,
+          ]
+        );
+
+        // Update BOQ line only after confirmed stock decrement
+        await c.query(
+          `UPDATE project_boq_items SET allocated_qty = quantity, status = 'FullyAllocated' WHERE id = $1`,
+          [item.id]
+        );
+
+        await c.query("COMMIT");
+        succeeded.push({ boqItemId: item.id, description: item.description, allocId: allocRows[0].id, allocNumber, qty: neededQty });
+      } catch (err) {
+        await c.query("ROLLBACK");
+        failed.push({ boqItemId: item.id, description: item.description, reason: "Transaction failed", availableQty: null });
+      }
+    }
+
+    res.json({
+      reserved: succeeded.length,
+      failed: failed.length,
+      allocationIds: succeeded.map(s => s.allocId),
+      results: succeeded,
+      failures: failed,
+      message: `Reserved ${succeeded.length} item(s)${failed.length ? `; ${failed.length} item(s) could not be reserved (see failures)` : ""}`,
+    });
+  });
+});
+
 export default router;

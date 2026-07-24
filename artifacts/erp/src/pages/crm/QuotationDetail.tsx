@@ -5,7 +5,8 @@ import {
   useGetLeads, useGetMaterials, useCreateMaterial,
   getGetQuotationQueryKey, getGetMaterialsQueryKey,
 } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { apiPost } from "@/lib/fetch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -16,7 +17,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
   Loader2, Plus, Trash2, Save, FileCheck, CheckCircle, Printer,
-  FileText, Calculator, ChevronsUpDown, Search, PlusCircle, Check,
+  FileText, Calculator, ChevronsUpDown, Search, PlusCircle, Check, FolderPlus,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -237,9 +238,21 @@ export function QuotationDetail({ id }: { id?: string }) {
   const gstAmount = preGstTotal * gstPct / 100;
   const grandTotal = preGstTotal + gstAmount;
 
+  // ── Create-Project-from-Quotation mutation ──
+  const createProjectMut = useMutation({
+    mutationFn: (name: string) => apiPost(`/quotations/${quoteId}/create-project`, { projectName: name }),
+    onSuccess: (data: any) => {
+      toast({ title: "Solar project created!", description: `${data.projectName} — ${data.boqItemsCreated} BOQ items seeded.` });
+      navigate(`/projects/${data.projectId}`);
+    },
+    onError: () => toast({ title: "Failed to create project", variant: "destructive" }),
+  });
+
   // ── dialog state — must be above early returns ──
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showConvertDialog, setShowConvertDialog] = useState(false);
+  const [showCreateProjectDialog, setShowCreateProjectDialog] = useState(false);
+  const [newProjectName, setNewProjectName] = useState("");
   const [clientPoNum, setClientPoNum] = useState("");
 
   // ── save ──
@@ -273,9 +286,19 @@ export function QuotationDetail({ id }: { id?: string }) {
         </Button>
       )}
       {!isNew && quote?.approvalStatus === "Approved" && (
-        <Button onClick={() => { setClientPoNum(""); setShowConvertDialog(true); }} disabled={logPoMut.isPending} className="h-10 bg-[#0C1445] hover:bg-[#0A0F2C] text-white font-bold rounded-[8px]">
-          <FileCheck className="h-4 w-4 mr-2" /> Convert to Project
-        </Button>
+        <>
+          <Button
+            onClick={() => { setNewProjectName(selectedLead ? `${selectedLead.companyName} — Solar Project` : ""); setShowCreateProjectDialog(true); }}
+            disabled={createProjectMut.isPending}
+            variant="outline"
+            className="h-10 gap-2 border-emerald-300 text-emerald-700 hover:bg-emerald-50 font-bold rounded-[8px]"
+          >
+            <FolderPlus className="h-4 w-4" /> Create Solar Project
+          </Button>
+          <Button onClick={() => { setClientPoNum(""); setShowConvertDialog(true); }} disabled={logPoMut.isPending} className="h-10 bg-[#0C1445] hover:bg-[#0A0F2C] text-white font-bold rounded-[8px]">
+            <FileCheck className="h-4 w-4 mr-2" /> Log Client PO
+          </Button>
+        </>
       )}
       {isEditing ? (
         <>
@@ -585,6 +608,44 @@ export function QuotationDetail({ id }: { id?: string }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ── Create Solar Project Dialog ── */}
+      <Dialog open={showCreateProjectDialog} onOpenChange={setShowCreateProjectDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create Solar Project</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              This will create a new project pre-seeded with all 12 phases and{" "}
+              <strong>{(quote?.boqItems as any[])?.length ?? 0} BOQ items</strong> from this quotation.
+            </p>
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider text-foreground block mb-1.5">
+                Project Name *
+              </label>
+              <Input
+                value={newProjectName}
+                onChange={e => setNewProjectName(e.target.value)}
+                placeholder="e.g. Acme Corp — 100kW Rooftop Solar"
+                className="h-10 bg-muted/50"
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateProjectDialog(false)}>Cancel</Button>
+            <Button
+              disabled={!newProjectName.trim() || createProjectMut.isPending}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              onClick={() => { setShowCreateProjectDialog(false); createProjectMut.mutate(newProjectName.trim()); }}
+            >
+              {createProjectMut.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FolderPlus className="h-4 w-4 mr-2" />}
+              Create Project
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* ── Convert to Project Dialog ── */}
       <Dialog open={showConvertDialog} onOpenChange={setShowConvertDialog}>

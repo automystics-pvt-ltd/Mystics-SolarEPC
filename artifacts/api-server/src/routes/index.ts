@@ -32,6 +32,7 @@ import rbacRouter from "./rbac";
 import solarInventoryRouter from "./solar_inventory";
 import projLifecycleRouter from "./proj_lifecycle";
 import projExecutionRouter from "./proj_execution";
+import projClosureRouter from "./proj_closure";
 
 const router: IRouter = Router();
 
@@ -68,5 +69,6 @@ router.use(rbacRouter);
 router.use(solarInventoryRouter);
 router.use(projLifecycleRouter);
 router.use(projExecutionRouter);
+router.use(projClosureRouter);
 
 export default router;

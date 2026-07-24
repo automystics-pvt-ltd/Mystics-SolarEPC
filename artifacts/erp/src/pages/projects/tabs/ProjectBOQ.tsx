@@ -12,10 +12,18 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { PackageSearch, Plus, Download, AlertCircle, Loader2, Trash2, Check, X } from "lucide-react";
+import { PackageSearch, Plus, Download, AlertCircle, Loader2, Trash2, Check, X, ShoppingCart, Warehouse } from "lucide-react";
 import { useForm, Controller } from "react-hook-form";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+
+interface BOQMaterialStatus {
+  boqItemId: number; description: string; sourcedFrom: string;
+  quantity: number; allocatedQty: number; status: string;
+  mrNumber: string | null; mrStatus: string | null;
+  poNumber: string | null; poStatus: string | null;
+  allocNumber: string | null; allocStatus: string | null;
+}
 
 interface BOQItem {
   id: number; projectId: number; activityId: number | null; itemCode: string | null;
@@ -74,6 +82,7 @@ function InlineEdit({ value, type = "number", onSave }: {
 export function ProjectBOQ({ projectId, clientPoId }: { projectId: number; clientPoId?: number | null }) {
   const [catFilter, setCatFilter] = useState<string>("All");
   const [addOpen, setAddOpen] = useState(false);
+  const [showMaterialStatus, setShowMaterialStatus] = useState(false);
   const qc = useQueryClient();
   const { register, handleSubmit, control, reset } = useForm<any>({
     defaultValues: { category: "Material", sourcedFrom: "Procurement", quantity: 1, unitRate: 0 },
@@ -83,6 +92,13 @@ export function ProjectBOQ({ projectId, clientPoId }: { projectId: number; clien
     queryKey: ["project-boq", projectId],
     queryFn: () => apiGet(`/projects/${projectId}/boq`),
     enabled: !!projectId,
+  });
+
+  const { data: materialStatus = [] } = useQuery<BOQMaterialStatus[]>({
+    queryKey: ["project-boq-material-status", projectId],
+    queryFn: () => apiGet(`/projects/${projectId}/boq/material-status`),
+    enabled: !!projectId && showMaterialStatus,
+    staleTime: 30_000,
   });
 
   const addMut = useMutation({
@@ -109,6 +125,25 @@ export function ProjectBOQ({ projectId, clientPoId }: { projectId: number; clien
       toast.success(`Imported ${data.imported} items from quotation`);
     },
     onError: (e: any) => toast.error(e?.data?.error ?? "No quotation items found to import"),
+  });
+
+  const createMRsMut = useMutation({
+    mutationFn: () => apiPost(`/projects/${projectId}/boq/create-material-requests`, {}),
+    onSuccess: (data: any) => {
+      qc.invalidateQueries({ queryKey: ["project-boq-material-status", projectId] });
+      toast.success(data.message ?? `Created ${data.created} material request(s)`);
+    },
+    onError: () => toast.error("Failed to create material requests"),
+  });
+
+  const reserveInvMut = useMutation({
+    mutationFn: () => apiPost(`/projects/${projectId}/boq/reserve-inventory`, {}),
+    onSuccess: (data: any) => {
+      qc.invalidateQueries({ queryKey: ["project-boq", projectId] });
+      qc.invalidateQueries({ queryKey: ["project-boq-material-status", projectId] });
+      toast.success(data.message ?? `Reserved ${data.reserved} inventory allocation(s)`);
+    },
+    onError: () => toast.error("Failed to reserve inventory"),
   });
 
   const filtered = catFilter === "All" ? items : items.filter(i => i.category === catFilter);
@@ -153,6 +188,40 @@ export function ProjectBOQ({ projectId, clientPoId }: { projectId: number; clien
               )}
             </Tooltip>
 
+            <Button
+              size="sm" variant={showMaterialStatus ? "secondary" : "outline"}
+              className="h-7 gap-1 text-xs"
+              onClick={() => setShowMaterialStatus(v => !v)}
+            >
+              Material Status
+            </Button>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm" variant="outline" className="h-7 gap-1 text-xs text-blue-700 border-blue-200 hover:bg-blue-50"
+                  onClick={() => createMRsMut.mutate()} disabled={createMRsMut.isPending}
+                >
+                  {createMRsMut.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <ShoppingCart className="h-3 w-3" />}
+                  Create MRs
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent><p>Create material requests for Procurement-sourced BOQ lines</p></TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm" variant="outline" className="h-7 gap-1 text-xs text-emerald-700 border-emerald-200 hover:bg-emerald-50"
+                  onClick={() => reserveInvMut.mutate()} disabled={reserveInvMut.isPending}
+                >
+                  {reserveInvMut.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Warehouse className="h-3 w-3" />}
+                  Reserve Inventory
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent><p>Reserve inventory for Inventory-sourced BOQ lines</p></TooltipContent>
+            </Tooltip>
+
             <Button size="sm" className="h-7 gap-1 text-xs" onClick={() => setAddOpen(true)}>
               <Plus className="h-3 w-3" /> Add Item
             </Button>
@@ -172,6 +241,7 @@ export function ProjectBOQ({ projectId, clientPoId }: { projectId: number; clien
               <TableHead className="h-9 text-[10px] font-bold uppercase tracking-wider w-24">Source</TableHead>
               <TableHead className="h-9 text-[10px] font-bold uppercase tracking-wider w-32">Allocated</TableHead>
               <TableHead className="h-9 text-[10px] font-bold uppercase tracking-wider w-24">Status</TableHead>
+              {showMaterialStatus && <TableHead className="h-9 text-[10px] font-bold uppercase tracking-wider w-36">Procurement Link</TableHead>}
               <TableHead className="h-9 w-10"></TableHead>
             </TableRow>
           </TableHeader>
@@ -218,6 +288,21 @@ export function ProjectBOQ({ projectId, clientPoId }: { projectId: number; clien
                   <TableCell className="py-2">
                     <StatusBadge status={item.status} size="sm" />
                   </TableCell>
+                  {showMaterialStatus && (() => {
+                    const ms = materialStatus.find(m => m.boqItemId === item.id);
+                    return (
+                      <TableCell className="py-2 text-[10px] leading-snug">
+                        {!ms ? <span className="text-muted-foreground">—</span> : (
+                          <div className="space-y-0.5">
+                            {ms.mrNumber && <div><span className="text-muted-foreground">MR:</span> <span className="font-mono">{ms.mrNumber}</span> <StatusBadge status={ms.mrStatus ?? ""} size="sm" /></div>}
+                            {ms.allocNumber && <div><span className="text-muted-foreground">Alloc:</span> <span className="font-mono">{ms.allocNumber}</span> <StatusBadge status={ms.allocStatus ?? ""} size="sm" /></div>}
+                            {ms.poNumber && <div><span className="text-muted-foreground">PO:</span> <span className="font-mono">{ms.poNumber}</span></div>}
+                            {!ms.mrNumber && !ms.allocNumber && <span className="text-muted-foreground">Not linked</span>}
+                          </div>
+                        )}
+                      </TableCell>
+                    );
+                  })()}
                   <TableCell className="py-2 pr-3">
                     <button
                       className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-red-600"

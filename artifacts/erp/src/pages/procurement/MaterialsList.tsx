@@ -1037,7 +1037,7 @@ export default function MaterialsList() {
                 </div>
               ) : sorted.length === 0 ? (
                 <EmptyState icon={Package} heading="No materials found" message={dSearch || activeFilters.length ? "Try adjusting your search or filters." : "Add materials to get started, or load demo data."}
-                  action={materials.length === 0 ? <Button size="sm" className="gap-1.5 mt-3" onClick={() => { setEditMaterial(null); setFormOpen(true); }}><Plus className="w-3.5 h-3.5" /> Add first material</Button> : undefined} />
+                  action={materials.length === 0 ? { label: "Add first material", onClick: () => { setEditMaterial(null); setFormOpen(true); } } : undefined} />
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm min-w-[800px]">

@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
-import { db, quotationsTable, clientPOsTable, projectsTable } from "@workspace/db";
+import { db, quotationsTable, clientPOsTable, projectsTable, leadsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
+import pg from "pg";
 import { CreateQuotationBody, GetQuotationParams, UpdateQuotationParams, UpdateQuotationBody, ApproveQuotationParams, ApproveQuotationBody, LogClientPOParams, LogClientPOBody } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -102,6 +103,82 @@ router.post("/quotations/:id/log-client-po", async (req, res): Promise<void> => 
     clientPO: fmtPO(clientPO),
     project: { id: project.id, clientPoId: clientPO.id, name: project.name, siteLocation: null, pmOwnerId: null, pmOwnerName: null, startDate: null, plannedEnd: null, status: project.status, parentProjectId: null, contractValue: Number(body.data.contractValue), percentComplete: 0, createdAt: project.createdAt.toISOString() },
   });
+});
+
+/** Create a Solar Project directly from an approved CRM quotation */
+router.post("/quotations/:id/create-project", async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  const [quotation] = await db.select().from(quotationsTable).where(eq(quotationsTable.id, id));
+  if (!quotation) { res.status(404).json({ error: "Quotation not found" }); return; }
+  if (quotation.approvalStatus !== "Approved") {
+    res.status(400).json({ error: "Only approved quotations can create a project" });
+    return;
+  }
+
+  // Read lead for client name / site info
+  const [lead] = quotation.leadId
+    ? await db.select().from(leadsTable).where(eq(leadsTable.id, quotation.leadId))
+    : [null];
+
+  const { projectName, siteLocation } = req.body;
+  const name = projectName || (lead ? `${lead.companyName} — Solar Project` : `Solar Project QTN-${String(id).padStart(4, "0")}`);
+  const site = siteLocation || lead?.siteLocation || null;
+
+  // Use a single pg.Client transaction for the whole operation (atomic)
+  const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
+  await client.connect();
+  try {
+    await client.query("BEGIN");
+
+    // Insert project inside the transaction
+    const { rows: [project] } = await client.query(
+      `INSERT INTO projects (name, site_location, contract_value, status)
+       VALUES ($1, $2, $3, 'Planning') RETURNING id, name`,
+      [name, site, quotation.totalAmount?.toString() ?? null]
+    );
+
+    const PHASE_ORDER = [
+      "SiteSurvey","Planning","BOQ","Budgeting","ResourceAllocation",
+      "Procurement","Installation","QualityInspection","TestingCommissioning",
+      "Handover","Warranty","Closure",
+    ];
+    for (const phase of PHASE_ORDER) {
+      await client.query(
+        `INSERT INTO project_phases (project_id, phase, status)
+         VALUES ($1, $2, 'NotStarted') ON CONFLICT DO NOTHING`,
+        [project.id, phase]
+      );
+    }
+
+    const boqItems = (quotation.boqItems ?? []) as Array<{
+      description: string; qty: number; unit?: string; unitPrice: number; amount?: number;
+    }>;
+    let lineNo = 1;
+    for (const item of boqItems) {
+      const qty = Number(item.qty) || 1;
+      const rate = Number(item.unitPrice) || 0;
+      await client.query(
+        `INSERT INTO project_boq_items
+           (project_id, description, category, unit, quantity, unit_rate, sourced_from, status)
+         VALUES ($1,$2,'Material',$3,$4,$5,'Procurement','Draft')`,
+        [project.id, item.description || `Item ${lineNo}`, item.unit || "Nos", qty, rate]
+      );
+      lineNo++;
+    }
+
+    await client.query("COMMIT");
+
+    res.status(201).json({
+      projectId: project.id,
+      projectName: project.name,
+      boqItemsCreated: boqItems.length,
+    });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    await client.end();
+  }
 });
 
 router.get("/client-pos", async (req, res): Promise<void> => {

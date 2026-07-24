@@ -1,5 +1,5 @@
 import { useGetProjectDashboard, getGetProjectDashboardQueryKey } from "@workspace/api-client-react";
-import { TrendingUp, AlertTriangle, FileCheck, ClipboardCheck, Calendar, CheckCircle2, Target } from "lucide-react";
+import { TrendingUp, AlertTriangle, FileCheck, ClipboardCheck, Calendar, CheckCircle2, Target, ShieldCheck, Layers } from "lucide-react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import { SectionCard, StatCard, EmptyState, SkeletonStats } from "@/components/shared";
@@ -18,6 +18,22 @@ export function ProjectOverview({ projectId }: { projectId: number }) {
     enabled: !!projectId,
   });
   const overallPct = milestoneData?.overallCompletionPct ?? 0;
+
+  // Warranty status (active vs expiring)
+  const { data: expiringWarranty = [] } = useQuery<Array<{ status: string }>>({
+    queryKey: ["project-warranty-expiring", projectId],
+    queryFn: () => apiGet(`/projects/${projectId}/warranty/expiring`),
+    enabled: !!projectId,
+    staleTime: 2 * 60_000,
+  });
+  const { data: allWarranty = [] } = useQuery<Array<{ status: string }>>({
+    queryKey: ["project-warranty", projectId],
+    queryFn: () => apiGet(`/projects/${projectId}/warranty`),
+    enabled: !!projectId,
+    staleTime: 2 * 60_000,
+  });
+  const warrantyActive = allWarranty.filter(w => w.status === "Active").length;
+  const warrantyExpiring = expiringWarranty.length;
 
   if (isLoading) {
     return (
@@ -63,12 +79,21 @@ export function ProjectOverview({ projectId }: { projectId: number }) {
           className={dashboard?.openEscalationsCount ? "border-red-200" : undefined}
         />
         <StatCard
-          label="Pending Proc."
-          value={dashboard?.openMRsCount || 0}
-          icon={FileCheck}
+          label="Material Pipeline"
+          value={`${dashboard?.openMRsCount || 0} MR · ${dashboard?.pendingPOsCount || 0} PO`}
+          icon={Layers}
           iconColor="text-blue-600"
           iconBg="bg-blue-100"
-          trendLabel="Open material requests"
+          trendLabel="Open material requests & purchase orders"
+        />
+        <StatCard
+          label="Warranty Status"
+          value={allWarranty.length === 0 ? "—" : `${warrantyActive} active`}
+          icon={ShieldCheck}
+          iconColor={warrantyExpiring > 0 ? "text-amber-600" : "text-emerald-600"}
+          iconBg={warrantyExpiring > 0 ? "bg-amber-100" : "bg-emerald-100"}
+          trendLabel={warrantyExpiring > 0 ? `${warrantyExpiring} expiring within 90 days` : allWarranty.length === 0 ? "No components tracked" : "All components healthy"}
+          className={warrantyExpiring > 0 ? "border-amber-200 bg-amber-50/30" : undefined}
         />
       </div>
 

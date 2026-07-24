@@ -3,7 +3,7 @@ import { useGetProject, getGetProjectQueryKey } from "@workspace/api-client-reac
 import {
   LayoutDashboard, Activity, Package, FileText, DollarSign, Milestone,
   AlertOctagon, ClipboardList, PackageSearch, GitBranch, ShieldAlert,
-  Users, ClipboardCheck, Zap,
+  Users, ClipboardCheck, Zap, HandshakeIcon, ShieldCheck, Archive, FolderOpen,
 } from "lucide-react";
 import { ProjectOverview }        from "./tabs/ProjectOverview";
 import { ProjectActivities }      from "./tabs/ProjectActivities";
@@ -19,6 +19,10 @@ import { ProjectRisks }           from "./tabs/ProjectRisks";
 import { ProjectResources }       from "./tabs/ProjectResources";
 import { ProjectInspections }     from "./tabs/ProjectInspections";
 import { ProjectTC }              from "./tabs/ProjectTC";
+import { ProjectHandover }        from "./tabs/ProjectHandover";
+import { ProjectWarranty }        from "./tabs/ProjectWarranty";
+import { ProjectClosure }         from "./tabs/ProjectClosure";
+import { ProjectDocuments }       from "./tabs/ProjectDocuments";
 import { PhaseTracker }           from "./components/PhaseTracker";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -39,6 +43,10 @@ const TAB_CONFIG = [
   { value: "changes",     label: "Change Requests",    Icon: GitBranch },
   { value: "risks",       label: "Risk Register",      Icon: ShieldAlert },
   { value: "snags",       label: "Snag Log",           Icon: AlertOctagon },
+  { value: "handover",    label: "Handover",           Icon: HandshakeIcon },
+  { value: "warranty",    label: "Warranty",           Icon: ShieldCheck },
+  { value: "closure",     label: "Closure",            Icon: Archive },
+  { value: "documents",   label: "Documents",          Icon: FolderOpen },
 ];
 
 export function ProjectWorkspace({ id }: { id: string }) {
@@ -115,6 +123,10 @@ export function ProjectWorkspace({ id }: { id: string }) {
           {activeTab === "changes"     && <ProjectChangeRequests projectId={projectId} />}
           {activeTab === "risks"       && <ProjectRisks          projectId={projectId} />}
           {activeTab === "snags"       && <ProjectSnagLog        projectId={projectId} />}
+          {activeTab === "handover"    && <ProjectHandover       projectId={projectId} />}
+          {activeTab === "warranty"    && <ProjectWarranty       projectId={projectId} />}
+          {activeTab === "closure"     && <ProjectClosure        projectId={projectId} />}
+          {activeTab === "documents"   && <ProjectDocuments      projectId={projectId} />}
         </div>
       </div>
     </motion.div>
