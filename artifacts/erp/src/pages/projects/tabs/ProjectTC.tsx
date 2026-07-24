@@ -104,7 +104,7 @@ export function ProjectTC({ projectId }: { projectId: number }) {
   });
 
   const patchMut = useMutation({
-    mutationFn: ({ id, ...d }: any) => apiPatch(`/testing-commissioning/${id}`, d),
+    mutationFn: ({ id, ...d }: any) => apiPatch<TCSession>(`/testing-commissioning/${id}`, d),
     onSuccess: (updated: TCSession) => { qc.invalidateQueries({ queryKey: tcKey }); setDetail(updated); toast.success("Session updated"); },
     onError: () => toast.error("Failed to update"),
   });

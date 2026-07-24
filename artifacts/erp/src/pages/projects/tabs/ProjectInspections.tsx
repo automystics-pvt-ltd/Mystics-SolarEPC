@@ -67,7 +67,7 @@ export function ProjectInspections({ projectId }: { projectId: number }) {
   });
 
   const submitMut = useMutation({
-    mutationFn: ({ id, ...d }: any) => apiPatch(`/project-inspections/${id}`, d),
+    mutationFn: ({ id, ...d }: any) => apiPatch<Inspection>(`/project-inspections/${id}`, d),
     onSuccess: (updated: Inspection) => {
       qc.invalidateQueries({ queryKey: inspKey });
       setDetail(updated);
