@@ -79,14 +79,11 @@ router.post("/design-documents/:id/approve", async (req, res): Promise<void> => 
   const parsed = ApproveDesignDocBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error }); return; }
   const { approvalType, approvedBy, rejectionReason } = parsed.data;
-  let update: Partial<typeof designDocumentsTable.$inferInsert> = {};
-  if (rejectionReason) {
-    update = { internalStatus: "Rejected", rejectionReason };
-  } else if (approvalType === "internal") {
-    update = { internalStatus: "InternalApproved", internalApprovedBy: typeof approvedBy === "number" ? approvedBy : null, internalApprovedAt: new Date() };
-  } else {
-    update = { internalStatus: "ClientApproved", clientApprovedBy: approvedBy?.toString(), clientApprovedAt: new Date() };
-  }
+  const update: Partial<typeof designDocumentsTable.$inferInsert> = rejectionReason
+    ? { internalStatus: "Rejected", rejectionReason }
+    : approvalType === "internal"
+    ? { internalStatus: "InternalApproved", internalApprovedBy: typeof approvedBy === "number" ? approvedBy : null, internalApprovedAt: new Date() }
+    : { internalStatus: "ClientApproved", clientApprovedBy: approvedBy?.toString(), clientApprovedAt: new Date() };
   const [updated] = await db.update(designDocumentsTable).set(update).where(eq(designDocumentsTable.id, id)).returning();
   if (!updated) { res.status(404).json({ error: "Not found" }); return; }
   res.json(fmt(updated));

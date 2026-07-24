@@ -528,9 +528,8 @@ router.post("/procurement-quotations/:id/submit", async (req, res): Promise<void
 
   // Create approval request — use JWT actor's userId for the FK (body userId may differ)
   const jwtUserId = actor?.userId ?? userId ?? 0;
-  let approvalRequestId: number | null = null;
   try {
-    approvalRequestId = await createApprovalRequest(id, q.referenceId, jwtUserId, userName);
+    const approvalRequestId = await createApprovalRequest(id, q.referenceId, jwtUserId, userName);
     await db.update(procurementQuotationsTable)
       .set({ approvalRequestId } as any)
       .where(eq(procurementQuotationsTable.id, id));

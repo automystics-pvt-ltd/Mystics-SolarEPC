@@ -25,7 +25,7 @@ export function useAutosave<T>({ key, data, interval = 10_000, enabled = true }:
     const timer = setInterval(() => {
       try {
         localStorage.setItem(storageKey, JSON.stringify({ data: dataRef.current, ts: Date.now() }));
-      } catch {}
+      } catch { /* noop: localStorage may be unavailable in private browsing */ }
     }, interval);
     return () => clearInterval(timer);
   }, [storageKey, interval, enabled]);
@@ -44,7 +44,7 @@ export function useAutosave<T>({ key, data, interval = 10_000, enabled = true }:
   const clear = useCallback(() => {
     try {
       localStorage.removeItem(storageKey);
-    } catch {}
+    } catch { /* noop */ }
   }, [storageKey]);
 
   const hasDraft = useCallback((): boolean => {

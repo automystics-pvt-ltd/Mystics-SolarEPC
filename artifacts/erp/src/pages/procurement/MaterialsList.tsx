@@ -873,7 +873,7 @@ export default function MaterialsList() {
   /* ── Selection helpers ──────────────────────────────────────────────── */
   const allSelected = sorted.length > 0 && sorted.every(m => selectedIds.has(m.id));
   const toggleAll = () => setSelectedIds(allSelected ? new Set() : new Set(sorted.map(m => m.id)));
-  const toggleOne = (id: number) => setSelectedIds(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
+  const toggleOne = (id: number) => setSelectedIds(prev => { const s = new Set(prev); if (s.has(id)) s.delete(id); else s.add(id); return s; });
 
   /* ── Export CSV ─────────────────────────────────────────────────────── */
   const exportCSV = () => {

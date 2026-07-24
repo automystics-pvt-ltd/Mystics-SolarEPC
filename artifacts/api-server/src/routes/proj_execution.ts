@@ -277,7 +277,7 @@ router.patch("/project-inspections/:id", async (req, res): Promise<void> => {
   await withClient(async (c) => {
     const b = req.body;
     // Auto-determine overallResult and status from results if submitting
-    let results = b.results;
+    const results = b.results;
     let status = b.status;
     let overallResult = b.overallResult;
 

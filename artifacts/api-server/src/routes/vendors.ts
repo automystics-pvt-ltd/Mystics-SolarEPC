@@ -47,7 +47,7 @@ function validateVendorBody(body: Record<string, any>): FieldErrors {
 
   // Primary phone
   if (body.primaryPhone?.trim()) {
-    const ph = body.primaryPhone.replace(/[\s\-\(\)]/g, "");
+    const ph = body.primaryPhone.replace(/[\s\-()]/g, "");
     if (!PHONE_RE.test(ph))
       err.primaryPhone = "Enter a valid 10-digit Indian mobile number (starts 6–9)";
   }
@@ -97,7 +97,7 @@ function normaliseBody(body: Record<string, any>) {
   if (b.gstin)          b.gstin          = String(b.gstin).trim().toUpperCase();
   if (b.pan)            b.pan            = String(b.pan).trim().toUpperCase();
   if (b.primaryEmail)   b.primaryEmail   = String(b.primaryEmail).trim().toLowerCase();
-  if (b.primaryPhone)   b.primaryPhone   = String(b.primaryPhone).replace(/[\s\-\(\)]/g, "");
+  if (b.primaryPhone)   b.primaryPhone   = String(b.primaryPhone).replace(/[\s\-()]/g, "");
   if (b.bankIfsc)       b.bankIfsc       = String(b.bankIfsc).trim().toUpperCase();
   if (b.billingPincode) b.billingPincode = String(b.billingPincode).trim();
   return b;
@@ -277,7 +277,7 @@ router.post("/vendors/:id/contacts", requirePermission("vendors", "edit"), async
   if (body.email?.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email.trim()))
     err.email = "Invalid email address";
   if (body.phone?.trim()) {
-    const ph = body.phone.replace(/[\s\-\(\)]/g, "");
+    const ph = body.phone.replace(/[\s\-()]/g, "");
     if (!/^[6-9]\d{9}$/.test(ph)) err.phone = "Enter a valid 10-digit Indian mobile number";
   }
   if (Object.keys(err).length > 0) {

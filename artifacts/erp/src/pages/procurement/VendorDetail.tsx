@@ -1250,7 +1250,7 @@ export default function VendorDetail({ id }: { id: string }) {
                                   : country === "Canada"         ? "Postal Code"
                                   : "Pincode / Postal Code";
               const pincodeMaxLen = country === "India" ? 6 : 10;
-              const pincodeMask   = country === "India" ? /\D/g : /[^A-Za-z0-9 \-]/g;
+              const pincodeMask   = country === "India" ? /\D/g : /[^A-Za-z0-9 -]/g;
 
               return (
                 <div className="grid grid-cols-2 gap-4">

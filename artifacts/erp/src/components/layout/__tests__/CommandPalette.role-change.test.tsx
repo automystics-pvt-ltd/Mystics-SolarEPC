@@ -41,7 +41,7 @@ vi.mock("framer-motion", () => ({
     {},
     {
       get: (_t, tag: string) =>
-        // eslint-disable-next-line react/display-name
+        // display-name not needed in test mocks
         ({ children, ...rest }: React.HTMLAttributes<HTMLElement> & { children?: React.ReactNode }) =>
           React.createElement(tag, rest, children),
     }

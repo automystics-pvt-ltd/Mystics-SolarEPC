@@ -57,7 +57,7 @@ export function validateVendorCore(form: Record<string, any>): VendorErrors {
 
   /* Primary phone */
   if (form.primaryPhone?.trim()) {
-    const ph = form.primaryPhone.replace(/[\s\-\(\)]/g, "");
+    const ph = form.primaryPhone.replace(/[\s\-()]/g, "");
     if (ph.length !== 10)
       errors.primaryPhone = `Mobile number must be exactly 10 digits — you've entered ${ph.length}.`;
     else if (!PHONE_REGEX.test(ph))
@@ -113,7 +113,7 @@ export function validateContact(form: Record<string, any>): VendorErrors {
     errors.email = "That doesn't look like a valid email. Please use the format: name@company.com";
 
   if (form.phone?.trim()) {
-    const ph = form.phone.replace(/[\s\-\(\)]/g, "");
+    const ph = form.phone.replace(/[\s\-()]/g, "");
     if (ph.length !== 10)
       errors.phone = `Mobile number must be exactly 10 digits — you've entered ${ph.length}.`;
     else if (!PHONE_REGEX.test(ph))

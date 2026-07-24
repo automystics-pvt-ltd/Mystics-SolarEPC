@@ -215,7 +215,7 @@ export function Sidebar({ className }: { className?: string }) {
     });
     setExpanded(next);
     saveExpanded(next);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line -- react-hooks/exhaustive-deps: location change intentionally re-initialises expanded state
   }, [location]);
 
   const toggleSection = useCallback((key: string) => {

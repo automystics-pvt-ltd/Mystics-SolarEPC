@@ -1029,7 +1029,7 @@ function RequestList({ items, loading, tab, user, onOpen, onApprove, onReject, o
   }, [items, search, modFilter, priFilter, entityFilter]);
 
   const toggleAll  = (v: boolean) => setSelected(v ? new Set(filtered.map(r => r.id)) : new Set());
-  const toggle     = (id: number) => setSelected(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const toggle     = (id: number) => setSelected(s => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   const allChecked = filtered.length > 0 && filtered.every(r => selected.has(r.id));
   const someChecked = selected.size > 0;
 

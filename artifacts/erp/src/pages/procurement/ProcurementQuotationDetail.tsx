@@ -205,7 +205,6 @@ export default function ProcurementQuotationDetail({ id }: { id: string }) {
   /* ── File upload ─────────────────────────────────────────────────────────── */
   const handleFileUpload = async (file: File) => {
     setUploading(true);
-    let attachmentId: number | null = null;
     try {
       // Step 1: Register metadata + get presigned URL in one call
       const metaRes = await fetch(`${BASE}api/procurement-quotations/${qId}/attachments`, {
@@ -215,7 +214,7 @@ export default function ProcurementQuotationDetail({ id }: { id: string }) {
       });
       if (!metaRes.ok) throw new Error("Failed to register attachment");
       const { uploadURL, attachment } = await metaRes.json();
-      attachmentId = attachment?.id ?? null;
+      const attachmentId: number | null = attachment?.id ?? null;
 
       // Step 2: Upload directly to GCS
       const uploadRes = await fetch(uploadURL, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
