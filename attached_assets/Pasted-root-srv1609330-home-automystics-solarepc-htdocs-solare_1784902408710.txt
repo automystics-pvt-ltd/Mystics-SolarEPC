@@ -1,0 +1,70 @@
+root@srv1609330:/home/automystics-solarepc/htdocs/solarepc.automystics.tech# bash deploy/server/deploy.sh
+
+═══════════════════════════════════════════════════
+  Auto Deploy — solarepc.automystics.tech
+  Branch: main   2026-07-24 14:09:25
+═══════════════════════════════════════════════════
+
+[1/9] Checking required tools
+    ✓ node v24.16.0  |  pnpm 9.15.9
+
+[2/9] Git pull from https://github.com/automystics-pvt-ltd/Mystics-SolarEPC (main)
+From https://github.com/automystics-pvt-ltd/Mystics-SolarEPC
+ * branch            main       -> FETCH_HEAD
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+HEAD is now at 451a81d Update deployment script and associated assets
+    ✓ Pulled
+    ✓ Commit: 451a81d
+
+[3/9] Installing dependencies (pnpm install)
+ ERR_PNPM_LOCKFILE_CONFIG_MISMATCH  Cannot proceed with the frozen installation. The current "overrides" configuration doesn't match the value found in the lockfile
+
+Update your lockfile using "pnpm install --no-frozen-lockfile"
+root@srv1609330:/home/automystics-solarepc/htdocs/solarepc.automystics.tech# sed -i 's/--frozen-lockfile/--no-frozen-lockfile/' deploy/server/deploy.sh
+bash deploy/server/deploy.sh
+
+═══════════════════════════════════════════════════
+  Auto Deploy — solarepc.automystics.tech
+  Branch: main   2026-07-24 14:11:47
+═══════════════════════════════════════════════════
+
+[1/9] Checking required tools
+    ✓ node v24.16.0  |  pnpm 9.15.9
+
+[2/9] Git pull from https://github.com/automystics-pvt-ltd/Mystics-SolarEPC (main)
+From https://github.com/automystics-pvt-ltd/Mystics-SolarEPC
+ * branch            main       -> FETCH_HEAD
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+HEAD is now at 451a81d Update deployment script and associated assets
+    ✓ Pulled
+    ✓ Commit: 451a81d
+
+[3/9] Installing dependencies (pnpm install)
+    └── ✕ unmet peer zod@^3.24.4: found 4.4.3
+
+Done in 27.2s using pnpm v9.15.9
+    ✓ Dependencies installed
+
+[4/9] Building API server
+  dist/thread-stream-worker.mjs.map   12.0kb
+
+⚡ Done in 1424ms
+    ✓ API server built → artifacts/api-server/dist/
+
+[5/9] Building ERP frontend
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 25.95s
+    ✓ ERP frontend built → artifacts/erp/dist/public/
+
+[6/9] Backing up current live files
+    ✓ Backup saved (20260724_141147)
+
+[7/9] Deploying files
+    ✓ public/ updated
+    ✓ api-server/dist/ updated
+
+[8/9] Installing production Node deps
+root@srv1609330:/home/automystics-solarepc/htdocs/solarepc.automystics.tech# 
