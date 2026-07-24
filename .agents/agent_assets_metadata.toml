@@ -5,4 +5,4 @@ generated = []
 id = "hZXlCMBWKDuFtxu4DtYtT"
 uri = "file://solarepc-deploy.tar.gz"
 type = "unspecified"
-title = "solarepc-deploy.tar.gz — Production deployment package"
+title = "solarepc-deploy.tar.gz — includes git-deploy, git-pull, git-reset"
