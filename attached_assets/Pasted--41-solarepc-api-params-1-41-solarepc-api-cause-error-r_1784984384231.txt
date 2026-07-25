@@ -1,0 +1,523 @@
+
+41|solarepc-api  |   params: [ 1 ],
+41|solarepc-api  |   cause: error: relation "proc_invoices" does not exist
+41|solarepc-api  |       at /home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server/node_modules/pg-pool/index.js:45:11
+41|solarepc-api  |       at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+41|solarepc-api  |       at async <anonymous> (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/node-postgres/session.ts:161:13)
+41|solarepc-api  |       at async NodePgPreparedQuery.queryWithCache (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/pg-core/session.ts:71:12)
+41|solarepc-api  |       at async <anonymous> (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/node-postgres/session.ts:154:19)
+41|solarepc-api  |       at async <anonymous> (/home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server/src/routes/proc_invoices.ts:15:13) {
+41|solarepc-api  |     length: 114,
+41|solarepc-api  |     severity: 'ERROR',
+41|solarepc-api  |     code: '42P01',
+41|solarepc-api  |     detail: undefined,
+41|solarepc-api  |     hint: undefined,
+41|solarepc-api  |     position: '1369',
+41|solarepc-api  |     internalPosition: undefined,
+41|solarepc-api  |     internalQuery: undefined,
+41|solarepc-api  |     where: undefined,
+41|solarepc-api  |     schema: undefined,
+41|solarepc-api  |     table: undefined,
+41|solarepc-api  |     column: undefined,
+41|solarepc-api  |     dataType: undefined,
+41|solarepc-api  |     constraint: undefined,
+41|solarepc-api  |     file: 'parse_relation.c',
+41|solarepc-api  |     line: '1449',
+41|solarepc-api  |     routine: 'parserOpenTable'
+41|solarepc-api  |   }
+41|solarepc-api  | }
+41|solarepc-api  | _DrizzleQueryError: Failed query: select "id", "grn_number", "po_id", "vendor_id", "vendor_name", "status", "is_locked", "warehouse_id", "warehouse_name", "storage_location", "delivery_date", "vehicle_number", "dc_number", "dc_date", "received_by", "received_by_name", "received_at", "inspected_by", "inspected_by_name", "inspected_at", "approved_by", "approved_by_name", "approved_at", "rejected_by", "rejected_by_name", "rejected_at", "approval_remarks", "cancelled_at", "cancelled_by", "cancelled_by_name", "cancellation_reason", "reversed_at", "reversed_by", "reversed_by_name", "reversal_reason", "total_ordered_qty", "total_received_qty", "total_accepted_qty", "total_rejected_qty", "total_accepted_value", "remarks", "internal_notes", "created_by", "created_by_name", "created_at", "updated_at" from "proc_grns" order by "proc_grns"."id" desc limit $1
+41|solarepc-api  | params: 1
+41|solarepc-api  |     at NodePgPreparedQuery.queryWithCache (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/pg-core/session.ts:73:11)
+41|solarepc-api  |     at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+41|solarepc-api  |     at async <anonymous> (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/node-postgres/session.ts:154:19)
+41|solarepc-api  |     at async <anonymous> (/home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server/src/routes/proc_grns.ts:16:13) {
+41|solarepc-api  |   query: 'select "id", "grn_number", "po_id", "vendor_id", "vendor_name", "status", "is_locked", "warehouse_id", "warehouse_name", "storage_location", "delivery_date", "vehicle_number", "dc_number", "dc_date", "received_by", "received_by_name", "received_at", "inspected_by", "inspected_by_name", "inspected_at", "approved_by", "approved_by_name", "approved_at", "rejected_by", "rejected_by_name", "rejected_at", "approval_remarks", "cancelled_at", "cancelled_by", "cancelled_by_name", "cancellation_reason", "reversed_at", "reversed_by", "reversed_by_name", "reversal_reason", "total_ordered_qty", "total_received_qty", "total_accepted_qty", "total_rejected_qty", "total_accepted_value", "remarks", "internal_notes", "created_by", "created_by_name", "created_at", "updated_at" from "proc_grns" order by "proc_grns"."id" desc limit $1',
+41|solarepc-api  |   params: [ 1 ],
+41|solarepc-api  |   cause: error: relation "proc_grns" does not exist
+41|solarepc-api  |       at /home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server/node_modules/pg-pool/index.js:45:11
+41|solarepc-api  |       at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+41|solarepc-api  |       at async <anonymous> (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/node-postgres/session.ts:161:13)
+41|solarepc-api  |       at async NodePgPreparedQuery.queryWithCache (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/pg-core/session.ts:71:12)
+41|solarepc-api  |       at async <anonymous> (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/node-postgres/session.ts:154:19)
+41|solarepc-api  |       at async <anonymous> (/home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server/src/routes/proc_grns.ts:16:13) {
+41|solarepc-api  |     length: 109,
+41|solarepc-api  |     severity: 'ERROR',
+41|solarepc-api  |     code: '42P01',
+41|solarepc-api  |     detail: undefined,
+41|solarepc-api  |     hint: undefined,
+41|solarepc-api  |     position: '774',
+41|solarepc-api  |     internalPosition: undefined,
+41|solarepc-api  |     internalQuery: undefined,
+41|solarepc-api  |     where: undefined,
+41|solarepc-api  |     schema: undefined,
+41|solarepc-api  |     table: undefined,
+41|solarepc-api  |     column: undefined,
+41|solarepc-api  |     dataType: undefined,
+41|solarepc-api  |     constraint: undefined,
+41|solarepc-api  |     file: 'parse_relation.c',
+41|solarepc-api  |     line: '1449',
+41|solarepc-api  |     routine: 'parserOpenTable'
+41|solarepc-api  |   }
+41|solarepc-api  | }
+41|solarepc-api  | _DrizzleQueryError: Failed query: select "id", "transfer_number", "from_warehouse_id", "from_warehouse_name", "to_warehouse_id", "to_warehouse_name", "status", "reason", "transfer_date", "completed_date", "remarks", "initiated_by", "initiated_by_name", "approved_by", "approved_by_name", "approved_at", "completed_by", "completed_by_name", "completed_at", "total_items", "created_at", "updated_at" from "stock_transfers" order by "stock_transfers"."id" desc limit $1
+41|solarepc-api  | params: 1
+41|solarepc-api  |     at NodePgPreparedQuery.queryWithCache (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/pg-core/session.ts:73:11)
+41|solarepc-api  |     at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+41|solarepc-api  |     at async <anonymous> (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/node-postgres/session.ts:154:19)
+41|solarepc-api  |     at async <anonymous> (/home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server/src/routes/stock_transfers.ts:14:13) {
+41|solarepc-api  |   query: 'select "id", "transfer_number", "from_warehouse_id", "from_warehouse_name", "to_warehouse_id", "to_warehouse_name", "status", "reason", "transfer_date", "completed_date", "remarks", "initiated_by", "initiated_by_name", "approved_by", "approved_by_name", "approved_at", "completed_by", "completed_by_name", "completed_at", "total_items", "created_at", "updated_at" from "stock_transfers" order by "stock_transfers"."id" desc limit $1',
+41|solarepc-api  |   params: [ 1 ],
+41|solarepc-api  |   cause: error: relation "stock_transfers" does not exist
+41|solarepc-api  |       at /home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server/node_modules/pg-pool/index.js:45:11
+41|solarepc-api  |       at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+41|solarepc-api  |       at async <anonymous> (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/node-postgres/session.ts:161:13)
+41|solarepc-api  |       at async NodePgPreparedQuery.queryWithCache (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/pg-core/session.ts:71:12)
+41|solarepc-api  |       at async <anonymous> (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/node-postgres/session.ts:154:19)
+41|solarepc-api  |       at async <anonymous> (/home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server/src/routes/stock_transfers.ts:14:13) {
+41|solarepc-api  |     length: 115,
+41|solarepc-api  |     severity: 'ERROR',
+41|solarepc-api  |     code: '42P01',
+41|solarepc-api  |     detail: undefined,
+41|solarepc-api  |     hint: undefined,
+41|solarepc-api  |     position: '370',
+41|solarepc-api  |     internalPosition: undefined,
+41|solarepc-api  |     internalQuery: undefined,
+41|solarepc-api  |     where: undefined,
+41|solarepc-api  |     schema: undefined,
+41|solarepc-api  |     table: undefined,
+41|solarepc-api  |     column: undefined,
+41|solarepc-api  |     dataType: undefined,
+41|solarepc-api  |     constraint: undefined,
+41|solarepc-api  |     file: 'parse_relation.c',
+41|solarepc-api  |     line: '1449',
+41|solarepc-api  |     routine: 'parserOpenTable'
+41|solarepc-api  |   }
+41|solarepc-api  | }
+41|solarepc-api  | _DrizzleQueryError: Failed query: select "id" from "procurement_quotations" order by "procurement_quotations"."id" desc limit $1
+41|solarepc-api  | params: 1
+41|solarepc-api  |     at NodePgPreparedQuery.queryWithCache (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/pg-core/session.ts:73:11)
+41|solarepc-api  |     at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+41|solarepc-api  |     at async <anonymous> (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/node-postgres/session.ts:154:19)
+41|solarepc-api  |     at async <anonymous> (/home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server/src/routes/proc_quotations.ts:29:14) {
+41|solarepc-api  |   query: 'select "id" from "procurement_quotations" order by "procurement_quotations"."id" desc limit $1',
+41|solarepc-api  |   params: [ 1 ],
+41|solarepc-api  |   cause: error: relation "procurement_quotations" does not exist
+41|solarepc-api  |       at /home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server/node_modules/pg-pool/index.js:45:11
+41|solarepc-api  |       at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+41|solarepc-api  |       at async <anonymous> (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/node-postgres/session.ts:161:13)
+41|solarepc-api  |       at async NodePgPreparedQuery.queryWithCache (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/pg-core/session.ts:71:12)
+41|solarepc-api  |       at async <anonymous> (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/node-postgres/session.ts:154:19)
+41|solarepc-api  |       at async <anonymous> (/home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server/src/routes/proc_quotations.ts:29:14) {
+41|solarepc-api  |     length: 121,
+41|solarepc-api  |     severity: 'ERROR',
+41|solarepc-api  |     code: '42P01',
+41|solarepc-api  |     detail: undefined,
+41|solarepc-api  |     hint: undefined,
+41|solarepc-api  |     position: '18',
+41|solarepc-api  |     internalPosition: undefined,
+41|solarepc-api  |     internalQuery: undefined,
+41|solarepc-api  |     where: undefined,
+41|solarepc-api  |     schema: undefined,
+41|solarepc-api  |     table: undefined,
+41|solarepc-api  |     column: undefined,
+41|solarepc-api  |     dataType: undefined,
+41|solarepc-api  |     constraint: undefined,
+41|solarepc-api  |     file: 'parse_relation.c',
+41|solarepc-api  |     line: '1449',
+41|solarepc-api  |     routine: 'parserOpenTable'
+41|solarepc-api  |   }
+41|solarepc-api  | }
+41|solarepc-api  | _DrizzleQueryError: Failed query: select "id" from "approval_requests" order by "approval_requests"."id" desc limit $1
+41|solarepc-api  | params: 1
+41|solarepc-api  |     at NodePgPreparedQuery.queryWithCache (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/pg-core/session.ts:73:11)
+41|solarepc-api  |     at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+41|solarepc-api  |     at async <anonymous> (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/node-postgres/session.ts:154:19)
+41|solarepc-api  |     at async <anonymous> (/home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server/src/routes/proc_pos.ts:32:13) {
+41|solarepc-api  |   query: 'select "id" from "approval_requests" order by "approval_requests"."id" desc limit $1',
+41|solarepc-api  |   params: [ 1 ],
+41|solarepc-api  |   cause: error: relation "approval_requests" does not exist
+41|solarepc-api  |       at /home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server/node_modules/pg-pool/index.js:45:11
+41|solarepc-api  |       at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+41|solarepc-api  |       at async <anonymous> (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/node-postgres/session.ts:161:13)
+41|solarepc-api  |       at async NodePgPreparedQuery.queryWithCache (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/pg-core/session.ts:71:12)
+41|solarepc-api  |       at async <anonymous> (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/node-postgres/session.ts:154:19)
+41|solarepc-api  |       at async <anonymous> (/home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server/src/routes/proc_pos.ts:32:13) {
+41|solarepc-api  |     length: 116,
+41|solarepc-api  |     severity: 'ERROR',
+41|solarepc-api  |     code: '42P01',
+41|solarepc-api  |     detail: undefined,
+41|solarepc-api  |     hint: undefined,
+41|solarepc-api  |     position: '18',
+41|solarepc-api  |     internalPosition: undefined,
+41|solarepc-api  |     internalQuery: undefined,
+41|solarepc-api  |     where: undefined,
+41|solarepc-api  |     schema: undefined,
+41|solarepc-api  |     table: undefined,
+41|solarepc-api  |     column: undefined,
+41|solarepc-api  |     dataType: undefined,
+41|solarepc-api  |     constraint: undefined,
+41|solarepc-api  |     file: 'parse_relation.c',
+41|solarepc-api  |     line: '1449',
+41|solarepc-api  |     routine: 'parserOpenTable'
+41|solarepc-api  |   }
+41|solarepc-api  | }
+41|solarepc-api  | {"level":50,"time":1784983523207,"pid":3857173,"hostname":"srv1609330","err":{"type":"_DrizzleQueryError","message":"Failed query: select \"id\", \"request_id\", \"step_order\", \"name\", \"step_type\", \"approver_type\", \"approver_role\", \"approver_user_id\", \"status\", \"acted_by_id\", \"delegated_to_id\", \"acted_at\", \"sla_deadline\", \"is_escalated\", \"escalated_at\", \"comment\" from \"approval_request_steps\" where (\"approval_request_steps\".\"status\" = $1 and \"approval_request_steps\".\"is_escalated\" = $2 and \"approval_request_steps\".\"sla_deadline\" < $3)\nparams: pending,false,2026-07-25T12:45:21.797Z: relation \"approval_request_steps\" does not exist","stack":"Error: Failed query: select \"id\", \"request_id\", \"step_order\", \"name\", \"step_type\", \"approver_type\", \"approver_role\", \"approver_user_id\", \"status\", \"acted_by_id\", \"delegated_to_id\", \"acted_at\", \"sla_deadline\", \"is_escalated\", \"escalated_at\", \"comment\" from \"approval_request_steps\" where (\"approval_request_steps\".\"status\" = $1 and \"approval_request_steps\".\"is_escalated\" = $2 and \"approval_request_steps\".\"sla_deadline\" < $3)\nparams: pending,false,2026-07-25T12:45:21.797Z\n    at NodePgPreparedQuery.queryWithCache (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/pg-core/session.ts:73:11)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async <anonymous> (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/node-postgres/session.ts:154:19)\n    at async runSlaEscalation (/home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server/src/index.ts:41:26)\ncaused by: error: relation \"approval_request_steps\" does not exist\n    at /home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server/node_modules/pg-pool/index.js:45:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async <anonymous> (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/node-postgres/session.ts:161:13)\n    at async NodePgPreparedQuery.queryWithCache (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/pg-core/session.ts:71:12)\n    at async <anonymous> (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/node-postgres/session.ts:154:19)\n    at async runSlaEscalation (/home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server/src/index.ts:41:26)","query":"select \"id\", \"request_id\", \"step_order\", \"name\", \"step_type\", \"approver_type\", \"approver_role\", \"approver_user_id\", \"status\", \"acted_by_id\", \"delegated_to_id\", \"acted_at\", \"sla_deadline\", \"is_escalated\", \"escalated_at\", \"comment\" from \"approval_request_steps\" where (\"approval_request_steps\".\"status\" = $1 and \"approval_request_steps\".\"is_escalated\" = $2 and \"approval_request_steps\".\"sla_deadline\" < $3)","params":["pending",false,"2026-07-25T12:45:21.797Z"]},"msg":"SLA escalation job error"}
+41|solarepc-api  | [SLA Job] Error: _DrizzleQueryError: Failed query: select "id", "request_id", "name", "approver_role" from "approval_request_steps" where ("approval_request_steps"."status" = $1 and "approval_request_steps"."sla_deadline" < $2 and "approval_request_steps"."is_escalated" = $3) limit $4
+41|solarepc-api  | params: pending,2026-07-25T12:45:51.796Z,false,50
+41|solarepc-api  |     at NodePgPreparedQuery.queryWithCache (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/pg-core/session.ts:73:11)
+41|solarepc-api  |     at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+41|solarepc-api  |     at async <anonymous> (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/node-postgres/session.ts:154:19)
+41|solarepc-api  |     at async slaEscalationJob (/home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server/src/jobs/slaEscalation.ts:19:26) {
+41|solarepc-api  |   query: 'select "id", "request_id", "name", "approver_role" from "approval_request_steps" where ("approval_request_steps"."status" = $1 and "approval_request_steps"."sla_deadline" < $2 and "approval_request_steps"."is_escalated" = $3) limit $4',
+41|solarepc-api  |   params: [ 'pending', '2026-07-25T12:45:51.796Z', false, 50 ],
+41|solarepc-api  |   cause: error: relation "approval_request_steps" does not exist
+41|solarepc-api  |       at /home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server/node_modules/pg-pool/index.js:45:11
+41|solarepc-api  |       at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+41|solarepc-api  |       at async <anonymous> (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/node-postgres/session.ts:161:13)
+41|solarepc-api  |       at async NodePgPreparedQuery.queryWithCache (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/pg-core/session.ts:71:12)
+41|solarepc-api  |       at async <anonymous> (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/node-postgres/session.ts:154:19)
+41|solarepc-api  |       at async slaEscalationJob (/home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server/src/jobs/slaEscalation.ts:19:26) {
+41|solarepc-api  |     length: 121,
+41|solarepc-api  |     severity: 'ERROR',
+41|solarepc-api  |     code: '42P01',
+41|solarepc-api  |     detail: undefined,
+41|solarepc-api  |     hint: undefined,
+41|solarepc-api  |     position: '57',
+41|solarepc-api  |     internalPosition: undefined,
+41|solarepc-api  |     internalQuery: undefined,
+41|solarepc-api  |     where: undefined,
+41|solarepc-api  |     schema: undefined,
+41|solarepc-api  |     table: undefined,
+41|solarepc-api  |     column: undefined,
+41|solarepc-api  |     dataType: undefined,
+41|solarepc-api  |     constraint: undefined,
+41|solarepc-api  |     file: 'parse_relation.c',
+41|solarepc-api  |     line: '1449',
+41|solarepc-api  |     routine: 'parserOpenTable'
+41|solarepc-api  |   }
+41|solarepc-api  | }
+^X^X^C
+root@srv1609330:/home/automystics-solarepc/htdocs/solarepc.automystics.tech/repo# git pull orgin main
+fatal: 'orgin' does not appear to be a git repository
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.
+root@srv1609330:/home/automystics-solarepc/htdocs/solarepc.automystics.tech/repo# git pull
+remote: Enumerating objects: 6, done.
+remote: Counting objects: 100% (6/6), done.
+remote: Compressing objects: 100% (2/2), done.
+remote: Total 4 (delta 2), reused 4 (delta 2), pack-reused 0 (from 0)
+Unpacking objects: 100% (4/4), 2.97 KiB | 303.00 KiB/s, done.
+From https://github.com/automystics-pvt-ltd/Mystics-SolarEPC
+   1b85160..14ebb1a  main       -> origin/main
+Updating 1b85160..14ebb1a
+Fast-forward
+ attached_assets/Pasted--s-DATABASE-URL-DATABASE-URL-postgresql-solarepc-SolarE_1784983421244.txt | 264 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 264 insertions(+)
+ create mode 100644 attached_assets/Pasted--s-DATABASE-URL-DATABASE-URL-postgresql-solarepc-SolarE_1784983421244.txt
+root@srv1609330:/home/automystics-solarepc/htdocs/solarepc.automystics.tech/repo# # Find the nginx config for this domain
+grep -r "solarepc\|5000\|5001" /etc/nginx/sites-enabled/ /etc/nginx/conf.d/ 2>/dev/null
+/etc/nginx/sites-enabled/solarepc.automystics.tech.conf:  ssl_certificate_key /etc/nginx/ssl-certificates/solarepc.automystics.tech.key;
+/etc/nginx/sites-enabled/solarepc.automystics.tech.conf:  ssl_certificate /etc/nginx/ssl-certificates/solarepc.automystics.tech.crt;
+/etc/nginx/sites-enabled/solarepc.automystics.tech.conf:  server_name solarepc.automystics.tech;
+/etc/nginx/sites-enabled/solarepc.automystics.tech.conf:  root /home/automystics-solarepc/htdocs/solarepc.automystics.tech;
+/etc/nginx/sites-enabled/solarepc.automystics.tech.conf:  access_log /home/automystics-solarepc/logs/nginx/access.log main;
+/etc/nginx/sites-enabled/solarepc.automystics.tech.conf:  error_log /home/automystics-solarepc/logs/nginx/error.log;
+/etc/nginx/sites-enabled/www.fitro360.com.conf:    proxy_pass http://127.0.0.1:5000/;
+root@srv1609330:/home/automystics-solarepc/htdocs/solarepc.automystics.tech/repo# # Replace 5000 with 5001 in the nginx config for this site
+sed -i 's/proxy_pass http:\/\/127.0.0.1:5000/proxy_pass http:\/\/127.0.0.1:5001/' \
+  /etc/nginx/sites-enabled/solarepc.automystics.tech.conf 2>/dev/null || \
+sed -i 's/proxy_pass http:\/\/localhost:5000/proxy_pass http:\/\/localhost:5001/' \
+  /etc/nginx/sites-enabled/solarepc.automystics.tech.conf 2>/dev/null
+
+# Test and reload nginx
+nginx -t && systemctl reload nginx
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/automystics.com.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/automystics.com.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/vadamadurai-ayyappan-temple.automystics.tech.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/ctr.tamilagavetrikalagam.com.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/docscan.automystics.tech.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/erp.automystics.tech.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/erp.mmwear.in.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/kalvicore.automystics.tech.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/kuralai.automystics.tech.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/mysticsaudit.automystics.tech.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/mysticscivil.automystics.tech.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/mysticshr.automystics.tech.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/mysticsinv.automystics.tech.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/scada.automystics.tech.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/solarepc.automystics.tech.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/solarnexus.automystics.tech.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/tkprabhu.tamilagavetrikalagam.com.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/ungalrajeev.tamilagavetrikalagam.com.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/ungaludansarath.tamilagavetrikalagam.com.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/ungalvignesh.tamilagavetrikalagam.com.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/www.fitro360.com.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/www.fitro360.com.crt"
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+root@srv1609330:/home/automystics-solarepc/htdocs/solarepc.automystics.tech/repo# curl -s http://localhost:5001/api/healthz
+{"status":"ok"}root@srv1609330:/home/automystics-solarepc/htdocs/solarepc.automystbash /home/automystics-solarepc/htdocs/solarepc.automystics.tech/deploy/server/deploy.sh
+
+═══════════════════════════════════════════════════
+  Auto Deploy — solarepc.automystics.tech
+  Branch: main   2026-07-25 12:49:35
+═══════════════════════════════════════════════════
+
+[1/9] Checking required tools
+[WARN] The "pnpm" field in package.json is no longer read by pnpm. The following keys were ignored: "pnpm.onlyBuiltDependencies". See https://pnpm.io/settings for the new home of each setting.
+    ✓ node v24.16.0  |  pnpm 11.17.0
+
+[2/9] Git pull from https://github.com/automystics-pvt-ltd/Mystics-SolarEPC (main)
+From https://github.com/automystics-pvt-ltd/Mystics-SolarEPC
+ * branch            main       -> FETCH_HEAD
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+HEAD is now at 14ebb1a Add database connection configuration asset
+    ✓ Pulled
+    ✓ Commit: 14ebb1a
+
+[3/9] Installing dependencies (pnpm install)
+Scope: all 10 workspace projects
+Already up to date
+Done in 3.2s using pnpm v11.17.0
+    ✓ Dependencies installed
+
+[4/9] Building API server
+  dist/thread-stream-worker.mjs.map   12.0kb
+
+⚡ Done in 4280ms
+    ✓ API server built → artifacts/api-server/dist/
+
+[5/9] Building ERP frontend
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 1m 26s
+    ✓ ERP frontend built → artifacts/erp/dist/public/
+
+[6/9] Backing up current live files
+    ✓ Backup saved (20260725_124935)
+
+[7/9] Deploying files
+    ✓ public/ updated
+    ✓ api-server/dist/ updated
+
+[8/9] Installing production Node deps
+root@srv1609330:/home/automystics-solarepc/htdocs/solarepc.automystics.tech/repo# # 1. Confirm API is actually up
+curl -sv http://localhost:5001/api/healthz 2>&1 | tail -5
+
+# 2. Find the nginx config for this domain
+grep -rn "solarepc\|5000\|5001\|proxy_pass" \
+  /etc/nginx/sites-enabled/ \
+  /etc/nginx/conf.d/ \
+  /etc/clp/nginx/ 2>/dev/null
+
+# 3. Show the full config file
+cat /etc/nginx/sites-enabled/solarepc.automystics.tech.conf 2>/dev/null || \
+cat /etc/nginx/conf.d/solarepc.automystics.tech.conf 2>/dev/null
+< Keep-Alive: timeout=5
+< 
+{ [15 bytes data]
+* Connection #0 to host localhost left intact
+{"status":"ok"}/etc/nginx/sites-enabled/mysticsinv.automystics.tech.conf:41:    proxy_pass http://127.0.0.1:6000;
+/etc/nginx/sites-enabled/mysticsinv.automystics.tech.conf:51:    proxy_pass_request_headers on;
+/etc/nginx/sites-enabled/solarepc.automystics.tech.conf:10:  ssl_certificate_key /etc/nginx/ssl-certificates/solarepc.automystics.tech.key;
+/etc/nginx/sites-enabled/solarepc.automystics.tech.conf:11:  ssl_certificate /etc/nginx/ssl-certificates/solarepc.automystics.tech.crt;
+/etc/nginx/sites-enabled/solarepc.automystics.tech.conf:12:  server_name solarepc.automystics.tech;
+/etc/nginx/sites-enabled/solarepc.automystics.tech.conf:13:  root /home/automystics-solarepc/htdocs/solarepc.automystics.tech;
+/etc/nginx/sites-enabled/solarepc.automystics.tech.conf:15:  access_log /home/automystics-solarepc/logs/nginx/access.log main;
+/etc/nginx/sites-enabled/solarepc.automystics.tech.conf:16:  error_log /home/automystics-solarepc/logs/nginx/error.log;
+/etc/nginx/sites-enabled/solarepc.automystics.tech.conf:34:    proxy_pass http://127.0.0.1:3020/;
+/etc/nginx/sites-enabled/solarepc.automystics.tech.conf:44:    proxy_pass_request_headers on;
+/etc/nginx/sites-enabled/solarnexus.automystics.tech.conf:38:    proxy_pass http://127.0.0.1:9000/api/;
+/etc/nginx/sites-enabled/solarnexus.automystics.tech.conf:48:    proxy_pass_request_headers on;
+/etc/nginx/sites-enabled/automystics.com.conf:59:    proxy_pass         http://127.0.0.1:8080;
+/etc/nginx/sites-enabled/mysticsaudit.automystics.tech.conf:34:    proxy_pass http://127.0.0.1:3500/;
+/etc/nginx/sites-enabled/mysticsaudit.automystics.tech.conf:44:    proxy_pass_request_headers on;
+/etc/nginx/sites-enabled/ayyappan-temple:17:        proxy_pass         http://127.0.0.1:3010;
+/etc/nginx/sites-enabled/ungalrajeev.tamilagavetrikalagam.com.conf:34:    proxy_pass http://127.0.0.1:6500/;
+/etc/nginx/sites-enabled/ungalrajeev.tamilagavetrikalagam.com.conf:44:    proxy_pass_request_headers on;
+/etc/nginx/sites-enabled/ungalvignesh.tamilagavetrikalagam.com.conf:34:    proxy_pass http://127.0.0.1:8500/;
+/etc/nginx/sites-enabled/ungalvignesh.tamilagavetrikalagam.com.conf:44:    proxy_pass_request_headers on;
+/etc/nginx/sites-enabled/scada.automystics.tech.conf:30:    proxy_pass http://127.0.0.1:18080;
+/etc/nginx/sites-enabled/tkprabhu.tamilagavetrikalagam.com.conf:34:    proxy_pass http://127.0.0.1:3002;
+/etc/nginx/sites-enabled/tkprabhu.tamilagavetrikalagam.com.conf:46:    proxy_pass http://127.0.0.1:3002;
+/etc/nginx/sites-enabled/kuralai.automystics.tech.conf.bak.1778000544:34:    proxy_pass http://127.0.0.1:3000;
+/etc/nginx/sites-enabled/kuralai.automystics.tech.conf.bak.1778000544:51:    proxy_pass http://127.0.0.1:3000/;
+/etc/nginx/sites-enabled/kuralai.automystics.tech.conf.bak.1778000544:61:    proxy_pass_request_headers on;
+/etc/nginx/sites-enabled/docscan.automystics.tech.conf:35:    proxy_pass http://127.0.0.1:3019;
+/etc/nginx/sites-enabled/docscan.automystics.tech.conf:45:    proxy_pass_request_headers on;
+/etc/nginx/sites-enabled/ungaludansarath.tamilagavetrikalagam.com.conf:34:    proxy_pass http://127.0.0.1:5500/;
+/etc/nginx/sites-enabled/ungaludansarath.tamilagavetrikalagam.com.conf:44:    proxy_pass_request_headers on;
+/etc/nginx/sites-enabled/www.fitro360.com.conf:49:    proxy_pass http://127.0.0.1:5000/;
+/etc/nginx/sites-enabled/www.fitro360.com.conf:59:    proxy_pass_request_headers on;
+/etc/nginx/sites-enabled/erp.automystics.tech.conf.bak:39:    proxy_pass http://127.0.0.1:3051;
+/etc/nginx/sites-enabled/kuralai.automystics.tech.conf.bak.1777997518:34:    proxy_pass http://127.0.0.1:3000/;
+/etc/nginx/sites-enabled/kuralai.automystics.tech.conf.bak.1777997518:44:    proxy_pass_request_headers on;
+/etc/nginx/sites-enabled/kalvicore.automystics.tech.conf:34:    proxy_pass http://127.0.0.1:3001;
+/etc/nginx/sites-enabled/kalvicore.automystics.tech.conf:42:    proxy_pass_request_headers on;
+/etc/nginx/sites-enabled/kuralai.automystics.tech.conf:34:    proxy_pass http://127.0.0.1:3000;
+/etc/nginx/sites-enabled/kuralai.automystics.tech.conf:51:    proxy_pass http://127.0.0.1:3000;
+/etc/nginx/sites-enabled/kuralai.automystics.tech.conf:68:    proxy_pass http://127.0.0.1:3000/;
+/etc/nginx/sites-enabled/kuralai.automystics.tech.conf:78:    proxy_pass_request_headers on;
+/etc/nginx/sites-enabled/ctr.tamilagavetrikalagam.com.conf:18:        proxy_pass http://localhost:2500;
+/etc/nginx/sites-enabled/ctr.tamilagavetrikalagam.com.conf:27:        proxy_pass http://localhost:2500;
+/etc/nginx/sites-enabled/erp.automystics.tech.conf:39:    proxy_pass http://127.0.0.1:3051;
+/etc/nginx/sites-enabled/mysticscivil.automystics.tech.conf:33:    proxy_pass http://127.0.0.1:3050;
+/etc/nginx/sites-enabled/erp.mmwear.in.conf:35:    proxy_pass http://127.0.0.1:7501;
+/etc/nginx/sites-enabled/erp.mmwear.in.conf:45:    proxy_pass_request_headers on;
+server {
+  listen 80;
+  listen [::]:80;
+  listen 443 quic;
+  listen 443 ssl;
+  listen [::]:443 quic;
+  listen [::]:443 ssl;
+  http2 on;
+  http3 off;
+  ssl_certificate_key /etc/nginx/ssl-certificates/solarepc.automystics.tech.key;
+  ssl_certificate /etc/nginx/ssl-certificates/solarepc.automystics.tech.crt;
+  server_name solarepc.automystics.tech;
+  root /home/automystics-solarepc/htdocs/solarepc.automystics.tech;
+
+  access_log /home/automystics-solarepc/logs/nginx/access.log main;
+  error_log /home/automystics-solarepc/logs/nginx/error.log;
+
+  if ($scheme != "https") {
+    rewrite ^ https://$host$request_uri permanent;
+  }
+
+  location ~ /.well-known {
+    auth_basic off;
+    allow all;
+  }
+
+  
+
+  include /etc/nginx/global_settings;
+
+  index index.html;
+
+  location / {
+    proxy_pass http://127.0.0.1:3020/;
+    proxy_http_version 1.1;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-Server $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header Host $host;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "Upgrade";
+    proxy_pass_request_headers on;
+    proxy_max_temp_file_size 0;
+    proxy_connect_timeout 900;
+    proxy_send_timeout 900;
+    proxy_read_timeout 900;
+    proxy_buffer_size 128k;
+    proxy_buffers 4 256k;
+    proxy_busy_buffers_size 256k;
+    proxy_temp_file_write_size 256k;
+  }
+}
+root@srv1609330:/home/automystics-solarepc/htdocs/solarepc.automystics.tech/repo# cat > /etc/nginx/sites-enabled/solarepc.automystics.tech.conf << 'EOF'
+server {
+  listen 80;
+  listen [::]:80;
+  listen 443 quic;
+  listen 443 ssl;
+  listen [::]:443 quic;
+  listen [::]:443 ssl;
+  http2 on;
+  http3 off;
+  ssl_certificate_key /etc/nginx/ssl-certificates/solarepc.automystics.tech.key;
+  ssl_certificate /etc/nginx/ssl-certificates/solarepc.automystics.tech.crt;
+  server_name solarepc.automystics.tech;
+  root /home/automystics-solarepc/htdocs/solarepc.automystics.tech/public;
+
+  access_log /home/automystics-solarepc/logs/nginx/access.log main;
+  error_log /home/automystics-solarepc/logs/nginx/error.log;
+
+  if ($scheme != "https") {
+    rewrite ^ https://$host$request_uri permanent;
+  }
+
+  location ~ /.well-known {
+    auth_basic off;
+    allow all;
+  }
+
+  include /etc/nginx/global_settings;
+
+  # API — proxy to Node.js
+  location /api/ {
+    proxy_pass http://127.0.0.1:5001;
+    proxy_http_version 1.1;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-Server $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header Host $host;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "Upgrade";
+    proxy_pass_request_headers on;
+    proxy_connect_timeout 900;
+    proxy_send_timeout 900;
+nginx -t && systemctl reload nginxml;llback to index.html for SPA routing
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/automystics.com.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/automystics.com.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/vadamadurai-ayyappan-temple.automystics.tech.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/ctr.tamilagavetrikalagam.com.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/docscan.automystics.tech.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/erp.automystics.tech.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/erp.mmwear.in.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/kalvicore.automystics.tech.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/kuralai.automystics.tech.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/mysticsaudit.automystics.tech.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/mysticscivil.automystics.tech.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/mysticshr.automystics.tech.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/mysticsinv.automystics.tech.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/scada.automystics.tech.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/solarepc.automystics.tech.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/solarnexus.automystics.tech.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/tkprabhu.tamilagavetrikalagam.com.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/ungalrajeev.tamilagavetrikalagam.com.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/ungaludansarath.tamilagavetrikalagam.com.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/ungalvignesh.tamilagavetrikalagam.com.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/www.fitro360.com.crt"
+nginx: [warn] "ssl_stapling" ignored, no OCSP responder URL in the certificate "/etc/nginx/ssl-certificates/www.fitro360.com.crt"
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+root@srv1609330:/home/automystics-solarepc/htdocs/solarepc.automystics.tech/repo# curl -s https://solarepc.automystics.tech/api/healthz
+{"status":"ok"}root@srv1609330:/home/automystics-solarepc/htdocs/solarepc.automystics.tech/repo# pm2 logs solarepc-api --lines 20 --nostream 2>&1 | grep -A5 "login\|relation\|error" | head -30
+/root/.pm2/logs/solarepc-api-error.log last 20 lines:
+41|solarep |     at async <anonymous> (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/node-postgres/session.ts:154:19)
+41|solarep |     at async <anonymous> (/home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server/src/routes/auth.ts:18:18)
+41|solarep | Error: Failed query: select "id", "name", "email", "password_hash", "role", "org_id", "created_at" from "users" where "users"."email" = $1
+41|solarep | params: admin@automystics.com
+41|solarep |     at NodePgPreparedQuery.queryWithCache (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/pg-core/session.ts:73:11)
+--
+41|solarep | {"level":30,"time":1784984125007,"pid":3857173,"hostname":"srv1609330","req":{"id":4,"method":"POST","url":"/api/auth/login"},"res":{"statusCode":500},"err":{"type":"Error","message":"failed with status code 500","stack":"Error: failed with status code 500\n    at onResFinished (/home/automystics-solarepc/htdocs/node_modules/.pnpm/pino-http@10.5.0/node_modules/pino-http/logger.js:115:39)\n    at ServerResponse.onResponseComplete (/home/automystics-solarepc/htdocs/node_modules/.pnpm/pino-http@10.5.0/node_modules/pino-http/logger.js:178:14)\n    at ServerResponse.emit (node:events:521:24)\n    at onFinish (node:_http_outgoing:1031:10)\n    at callback (node:internal/streams/writable:764:21)\n    at afterWrite (node:internal/streams/writable:708:5)\n    at afterWriteTick (node:internal/streams/writable:694:10)\n    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)"},"responseTime":195,"msg":"request errored"}
+41|solarep | {"level":30,"time":1784984145014,"pid":3857173,"hostname":"srv1609330","req":{"id":5,"method":"POST","url":"/api/auth/login"},"res":{"statusCode":500},"err":{"type":"Error","message":"failed with status code 500","stack":"Error: failed with status code 500\n    at onResFinished (/home/automystics-solarepc/htdocs/node_modules/.pnpm/pino-http@10.5.0/node_modules/pino-http/logger.js:115:39)\n    at ServerResponse.onResponseComplete (/home/automystics-solarepc/htdocs/node_modules/.pnpm/pino-http@10.5.0/node_modules/pino-http/logger.js:178:14)\n    at ServerResponse.emit (node:events:521:24)\n    at onFinish (node:_http_outgoing:1031:10)\n    at callback (node:internal/streams/writable:764:21)\n    at afterWrite (node:internal/streams/writable:708:5)\n    at afterWriteTick (node:internal/streams/writable:694:10)\n    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)"},"responseTime":100,"msg":"request errored"}
+41|solarep | {"level":30,"time":1784984163109,"pid":3857173,"hostname":"srv1609330","req":{"id":6,"method":"POST","url":"/api/auth/login"},"res":{"statusCode":500},"err":{"type":"Error","message":"failed with status code 500","stack":"Error: failed with status code 500\n    at onResFinished (/home/automystics-solarepc/htdocs/node_modules/.pnpm/pino-http@10.5.0/node_modules/pino-http/logger.js:115:39)\n    at ServerResponse.onResponseComplete (/home/automystics-solarepc/htdocs/node_modules/.pnpm/pino-http@10.5.0/node_modules/pino-http/logger.js:178:14)\n    at ServerResponse.emit (node:events:521:24)\n    at onFinish (node:_http_outgoing:1031:10)\n    at callback (node:internal/streams/writable:764:21)\n    at afterWrite (node:internal/streams/writable:708:5)\n    at afterWriteTick (node:internal/streams/writable:694:10)\n    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)"},"responseTime":114,"msg":"request errored"}
+41|solarep | {"level":30,"time":1784984188016,"pid":3857173,"hostname":"srv1609330","req":{"id":7,"method":"POST","url":"/api/auth/login"},"res":{"statusCode":500},"err":{"type":"Error","message":"failed with status code 500","stack":"Error: failed with status code 500\n    at onResFinished (/home/automystics-solarepc/htdocs/node_modules/.pnpm/pino-http@10.5.0/node_modules/pino-http/logger.js:115:39)\n    at ServerResponse.onResponseComplete (/home/automystics-solarepc/htdocs/node_modules/.pnpm/pino-http@10.5.0/node_modules/pino-http/logger.js:178:14)\n    at ServerResponse.emit (node:events:521:24)\n    at onFinish (node:_http_outgoing:1031:10)\n    at callback (node:internal/streams/writable:764:21)\n    at afterWrite (node:internal/streams/writable:708:5)\n    at afterWriteTick (node:internal/streams/writable:694:10)\n    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)"},"responseTime":21,"msg":"request errored"}
+
+root@srv1609330:/home/automystics-solarepc/htdocs/solarepc.automystics.tech/repo# ls /home/automystics-solarepc/htdocs/solarepc.automystics.tech/repo/artifacts/api-server/drizzle/
+ls: cannot access '/home/automystics-solarepc/htdocs/solarepc.automystics.tech/repo/artifacts/api-server/drizzle/': No such file or directory
+root@srv1609330:/home/automystics-solarepc/htdocs/solarepc.automystics.tech/repo# cd /home/automystics-solarepc/htdocs/solarepc.automystics.tech/repo
+
+# Push the schema to the database
+DATABASE_URL="postgresql://solarepc:SolarEPC2026@localhost:5432/solarepc" \
+  pnpm --filter @workspace/api-server run db:push 2>&1 || \
+
+# If db:push doesn't exist, try migrate
+DATABASE_URL="postgresql://solarepc:SolarEPC2026@localhost:5432/solarepc" \
+  pnpm --filter @workspace/api-server run db:migrate 2>&1
+[WARN] The "pnpm" field in package.json is no longer read by pnpm. The following keys were ignored: "pnpm.onlyBuiltDependencies". See https://pnpm.io/settings for the new home of each setting.
+[ERR_PNPM_RECURSIVE_RUN_NO_SCRIPT] None of the selected packages has a "db:push" script
+[WARN] The "pnpm" field in package.json is no longer read by pnpm. The following keys were ignored: "pnpm.onlyBuiltDependencies". See https://pnpm.io/settings for the new home of each setting.
+[ERR_PNPM_RECURSIVE_RUN_NO_SCRIPT] None of the selected packages has a "db:migrate" script
+root@srv1609330:/home/automystics-solarepc/htdocs/solarepc.automystics.tech/repo# 
