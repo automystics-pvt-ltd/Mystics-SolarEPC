@@ -127,7 +127,16 @@ cat > package.json << 'PKGJSON'
   "private": true,
   "type": "module",
   "dependencies": {
-    "pg": "^8.22.0"
+    "pg": "^8.22.0",
+    "@google-cloud/storage": "^7.21.0",
+    "google-auth-library": "^10.9.0",
+    "bcryptjs": "^3.0.3",
+    "express": "^5.2.1",
+    "pino": "^9.14.0",
+    "pino-http": "^10.5.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "jsonwebtoken": "^9.0.3"
   }
 }
 PKGJSON
