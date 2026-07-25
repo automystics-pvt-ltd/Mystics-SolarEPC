@@ -118,7 +118,20 @@ ok "api-server/dist/ updated"
 # ── [8] Install production Node deps (pg only — bundle needs it at runtime) ──
 step "Installing production Node deps"
 cd "$API_DIR"
-npm install pg 2>&1 | tail -5
+# Write a minimal package.json — the one copied from the repo has workspace:*
+# references that plain npm cannot resolve outside a pnpm workspace.
+cat > package.json << 'PKGJSON'
+{
+  "name": "solarepc-api-server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "pg": "^8.22.0"
+  }
+}
+PKGJSON
+npm install 2>&1 | tail -5
 ok "node_modules ready (pg installed)"
 cd "$BASE"
 

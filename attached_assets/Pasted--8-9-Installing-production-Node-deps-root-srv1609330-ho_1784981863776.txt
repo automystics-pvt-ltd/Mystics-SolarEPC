@@ -1,0 +1,75 @@
+
+[8/9] Installing production Node deps
+root@srv1609330:/home/automystics-solarepc/htdocs/solarepc.automystics.tech/repo# cd /home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server 
+npm install pg
+pm2 restart solarepc-api
+pm2 logs solarepc-api --lines 20
+npm warn Unknown user config "auto-install-peers". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown user config "strict-peer-dependencies". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm error code EUNSUPPORTEDPROTOCOL
+npm error Unsupported URL Type "workspace:": workspace:*
+npm error A complete log of this run can be found in: /root/.npm/_logs/2026-07-25T12_17_15_406Z-debug-0.log
+Use --update-env to update environment variables
+[PM2] Applying action restartProcessId on app [solarepc-api](ids: [ 40 ])
+[PM2] [solarepc-api](40) ✓
+┌────┬───────────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name                  │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼───────────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 39 │ automystics-api       │ default     │ 0.0.0   │ fork    │ 3380868  │ 6h     │ 74   │ online    │ 0%       │ 94.4mb   │ root     │ disabled │
+│ 38 │ ayyappan-api          │ default     │ N/A     │ fork    │ 1746386  │ 17h    │ 10   │ online    │ 2%       │ 269.3mb  │ root     │ disabled │
+│ 32 │ docscan-api           │ default     │ 0.0.0   │ fork    │ 1392181  │ 18h    │ 9    │ online    │ 0%       │ 144.7mb  │ root     │ disabled │
+│ 11 │ erp-automystics       │ default     │ N/A     │ fork    │ 342673   │ 21h    │ 11   │ online    │ 0%       │ 117.1mb  │ root     │ disabled │
+│ 1  │ fitro360              │ default     │ 1.0.0   │ fork    │ 1524182  │ 14D    │ 4    │ online    │ 0%       │ 108.6mb  │ root     │ disabled │
+│ 2  │ kalvicore-api         │ default     │ 0.0.0   │ fork    │ 198081   │ 2D     │ 8    │ online    │ 0%       │ 122.4mb  │ root     │ disabled │
+│ 13 │ mmwear-erp            │ default     │ 0.0.0   │ fork    │ 3396013  │ 4D     │ 137  │ online    │ 0%       │ 626.9mb  │ root     │ disabled │
+│ 14 │ mystics-audit         │ default     │ 0.0.0   │ fork    │ 1035800  │ 10D    │ 586  │ online    │ 0%       │ 200.1mb  │ root     │ disabled │
+│ 5  │ mysticscivil-api      │ default     │ N/A     │ fork    │ 1524242  │ 14D    │ 4    │ online    │ 0%       │ 99.2mb   │ root     │ disabled │
+│ 26 │ mysticshr-api         │ default     │ 0.0.0   │ fork    │ 852146   │ 9D     │ 14   │ online    │ 0%       │ 408.6mb  │ root     │ disabled │
+│ 12 │ mysticsinventory      │ default     │ N/A     │ fork    │ 3824298  │ 1s     │ 249… │ online    │ 58%      │ 74.6mb   │ root     │ disabled │
+│ 3  │ people-connect-api    │ default     │ 0.0.0   │ fork    │ 1524209  │ 14D    │ 4    │ online    │ 2%       │ 177.6mb  │ root     │ disabled │
+│ 40 │ solarepc-api          │ default     │ 0.0.0   │ fork    │ 3824351  │ 0s     │ 2    │ online    │ 0%       │ 640.0kb  │ root     │ disabled │
+│ 6  │ solarnexus-api        │ default     │ 0.0.0   │ fork    │ 1524251  │ 14D    │ 4    │ online    │ 0%       │ 117.0mb  │ root     │ disabled │
+│ 4  │ tkprabhu-api          │ default     │ 0.0.0   │ fork    │ 1524217  │ 14D    │ 4    │ online    │ 0%       │ 179.6mb  │ root     │ disabled │
+│ 8  │ ungalrajeev-api       │ default     │ N/A     │ fork    │ 3824350  │ 0s     │ 964… │ online    │ 0%       │ 2.3mb    │ root     │ disabled │
+│ 7  │ ungaludan-sarath      │ default     │ 0.0.0   │ fork    │ 1524287  │ 14D    │ 4    │ online    │ 2%       │ 191.7mb  │ root     │ disabled │
+│ 9  │ ungalvignesh-api      │ default     │ N/A     │ fork    │ 3824296  │ 1s     │ 268… │ online    │ 62%      │ 96.4mb   │ root     │ disabled │
+│ 10 │ ungalvignesh-api      │ default     │ N/A     │ fork    │ 1524307  │ 14D    │ 199… │ online    │ 0%       │ 49.6mb   │ root     │ disabled │
+└────┴───────────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+host metrics | cpu: 98.8% | ram usage: 37.3% | lo: ⇓ 0.019mb/s ⇑ 0.019mb/s | eth0: ⇓ 0.002mb/s ⇑ 0.002mb/s | disk: ⇓ 0.001mb/s ⇑ 0.579mb/s |
+[TAILING] Tailing last 20 lines for [solarepc-api] process (change the value with --lines option)
+/root/.pm2/logs/solarepc-api-out.log last 20 lines:
+/root/.pm2/logs/solarepc-api-error.log last 20 lines:
+40|solarep |     at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:708:38)
+40|solarep |     at ModuleLoader.resolveSync (node:internal/modules/esm/loader:740:52)
+40|solarep |     at #resolve (node:internal/modules/esm/loader:673:17)
+40|solarep |     at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:593:35)
+40|solarep |     at ModuleJob.syncLink (node:internal/modules/esm/module_job:163:33) {
+40|solarep |   code: 'ERR_MODULE_NOT_FOUND'
+40|solarep | }
+40|solarep | Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'pg' imported from /home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server/dist/index.mjs
+40|solarep |     at Object.getPackageJSONURL (node:internal/modules/package_json_reader:301:9)
+40|solarep |     at packageResolve (node:internal/modules/esm/resolve:768:81)
+40|solarep |     at moduleResolve (node:internal/modules/esm/resolve:859:18)
+40|solarep |     at defaultResolve (node:internal/modules/esm/resolve:992:11)
+40|solarep |     at #cachedDefaultResolve (node:internal/modules/esm/loader:691:20)
+40|solarep |     at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:708:38)
+40|solarep |     at ModuleLoader.resolveSync (node:internal/modules/esm/loader:740:52)
+40|solarep |     at #resolve (node:internal/modules/esm/loader:673:17)
+40|solarep |     at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:593:35)
+40|solarep |     at ModuleJob.syncLink (node:internal/modules/esm/module_job:163:33) {
+40|solarep |   code: 'ERR_MODULE_NOT_FOUND'
+40|solarep | }
+
+40|solarepc-api  | Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'pg' imported from /home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server/dist/index.mjs
+40|solarepc-api  |     at Object.getPackageJSONURL (node:internal/modules/package_json_reader:301:9)
+40|solarepc-api  |     at packageResolve (node:internal/modules/esm/resolve:768:81)
+40|solarepc-api  |     at moduleResolve (node:internal/modules/esm/resolve:859:18)
+40|solarepc-api  |     at defaultResolve (node:internal/modules/esm/resolve:992:11)
+40|solarepc-api  |     at #cachedDefaultResolve (node:internal/modules/esm/loader:691:20)
+40|solarepc-api  |     at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:708:38)
+40|solarepc-api  |     at ModuleLoader.resolveSync (node:internal/modules/esm/loader:740:52)
+40|solarepc-api  |     at #resolve (node:internal/modules/esm/loader:673:17)
+40|solarepc-api  |     at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:593:35)
+40|solarepc-api  |     at ModuleJob.syncLink (node:internal/modules/esm/module_job:163:33) {
+40|solarepc-api  |   code: 'ERR_MODULE_NOT_FOUND'
+40|solarepc-api  | }
