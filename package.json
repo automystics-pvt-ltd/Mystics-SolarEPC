@@ -9,6 +9,9 @@
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
   },
   "private": true,
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild", "@esbuild/linux-x64", "@esbuild/darwin-arm64", "@esbuild/darwin-x64", "@esbuild/win32-x64"]
+  },
   "dependencies": {
     "@replit/connectors-sdk": "^0.4.1"
   },
