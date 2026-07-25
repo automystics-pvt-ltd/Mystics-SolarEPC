@@ -1,0 +1,30 @@
+host metrics | cpu: 98.8% | ram usage: 37.3% | lo: ⇓ 0.026mb/s ⇑ 0.026mb/s | eth0: ⇓ 0.002mb/s ⇑ 0.002mb/s | disk: ⇓ 0mb/s ⇑ 0.654mb/s |
+[PM2] Saving current process list...
+[PM2] Successfully saved in /root/.pm2/dump.pm2
+[TAILING] Tailing last 20 lines for [solarepc-api] process (change the value with --lines option)
+/root/.pm2/logs/solarepc-api-out.log last 20 lines:
+/root/.pm2/logs/solarepc-api-error.log last 20 lines:
+41|solarep |   code: 'ERR_MODULE_NOT_FOUND'
+41|solarep | }
+41|solarep | Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@google-cloud/storage' imported from /home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server/dist/index.mjs
+41|solarep |     at Object.getPackageJSONURL (node:internal/modules/package_json_reader:301:9)
+41|solarep |     at packageResolve (node:internal/modules/esm/resolve:768:81)
+41|solarep |     at moduleResolve (node:internal/modules/esm/resolve:859:18)
+41|solarep |     at defaultResolve (node:internal/modules/esm/resolve:992:11)
+41|solarep |     at #cachedDefaultResolve (node:internal/modules/esm/loader:691:20)
+41|solarep |     at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:708:38)
+41|solarep |     at ModuleLoader.resolveSync (node:internal/modules/esm/loader:740:52)
+41|solarep |     at #resolve (node:internal/modules/esm/loader:673:17)
+41|solarep |     at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:593:35)
+41|solarep |     at ModuleJob.syncLink (node:internal/modules/esm/module_job:163:33) {
+41|solarep |   code: 'ERR_MODULE_NOT_FOUND'
+41|solarep | }
+41|solarep | Error: DATABASE_URL must be set. Did you forget to provision a database?
+41|solarep |     at <anonymous> (/home/automystics-solarepc/htdocs/lib/db/src/index.ts:8:9)
+41|solarep |     at ModuleJob.run (node:internal/modules/esm/module_job:439:25)
+41|solarep |     at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+41|solarep |     at async node:internal/modules/esm/loader:633:26
+
+41|solarepc-api  | {"level":50,"time":1784982667897,"pid":3840192,"hostname":"srv1609330","err":{"type":"Error","message":"listen EADDRINUSE: address already in use :::5000","stack":"Error: listen EADDRINUSE: address already in use :::5000\n    at Server.setupListenHandle [as _listen2] (node:net:2008:16)\n    at listenInCluster (node:net:2065:12)\n    at Server.listen (node:net:2170:7)\n    at app2.listen (/home/automystics-solarepc/htdocs/node_modules/.pnpm/express@5.2.1/node_modules/express/lib/application.js:605:24)\n    at <anonymous> (/home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server/src/index.ts:23:5)\n    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async node:internal/modules/esm/loader:633:26","code":"EADDRINUSE","errno":-98,"syscall":"listen","address":"::","port":5000},"msg":"Error listening on port"}
+41|solarepc-api  | {"level":50,"time":1784982676722,"pid":3840377,"hostname":"srv1609330","err":{"type":"Error","message":"listen EADDRINUSE: address already in use :::5000","stack":"Error: listen EADDRINUSE: address already in use :::5000\n    at Server.setupListenHandle [as _listen2] (node:net:2008:16)\n    at listenInCluster (node:net:2065:12)\n    at Server.listen (node:net:2170:7)\n    at app2.listen (/home/automystics-solarepc/htdocs/node_modules/.pnpm/express@5.2.1/node_modules/express/lib/application.js:605:24)\n    at <anonymous> (/home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server/src/index.ts:23:5)\n    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async node:internal/modules/esm/loader:633:26","code":"EADDRINUSE","errno":-98,"syscall":"listen","address":"::","port":5000},"msg":"Error listening on port"}
+41|solarepc-api  | {"level":50,"time":1784982684115,"pid":3840584,"hostname":"srv1609330","err":{"type":"Error","message":"listen EADDRINUSE: address already in use :::5000","stack":"Error: listen EADDRINUSE: address already in use :::5000\n    at Server.setupListenHandle [as _listen2] (node:net:2008:16)\n    at listenInCluster (node:net:2065:12)\n    at Server.listen (node:net:2170:7)\n    at app2.listen (/home/automystics-solarepc/htdocs/node_modules/.pnpm/express@5.2.1/node_modules/express/lib/application.js:605:24)\n    at <anonymous> (/home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server/src/index.ts:23:5)\n    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async node:internal/modules/esm/loader:633:26
