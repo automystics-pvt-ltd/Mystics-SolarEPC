@@ -83,9 +83,7 @@ ok "Commit: $COMMIT"
 # ── [3] Install dependencies ──────────────────────────────────────────────────
 step "Installing dependencies (pnpm install)"
 cd "$REPO_DIR"
-# Allow esbuild and other native packages to run their install scripts
-echo 'dangerously-allow-all-builds=true' >> .npmrc
-pnpm install --no-frozen-lockfile 2>&1 | tail -3
+pnpm install --no-frozen-lockfile --config.dangerouslyAllowAllBuilds 2>&1 | tail -3
 ok "Dependencies installed"
 
 # ── [4] Build API server ──────────────────────────────────────────────────────
