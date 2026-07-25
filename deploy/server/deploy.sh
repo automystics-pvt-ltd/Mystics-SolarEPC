@@ -115,10 +115,10 @@ rsync -a --delete "$REPO_DIR/artifacts/api-server/dist/"  "$API_DIST/"
 cp "$REPO_DIR/artifacts/api-server/package.json"          "$API_DIR/package.json"
 ok "api-server/dist/ updated"
 
-# ── [8] Install production Node deps (pg) ────────────────────────────────────
+# ── [8] Install production Node deps (pg only — bundle needs it at runtime) ──
 step "Installing production Node deps"
 cd "$API_DIR"
-npm install --production 2>&1 | tail -5
+npm install pg 2>&1 | tail -5
 ok "node_modules ready (pg installed)"
 cd "$BASE"
 
