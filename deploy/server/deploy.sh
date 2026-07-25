@@ -118,7 +118,7 @@ ok "api-server/dist/ updated"
 # ── [8] Install production Node deps (pg) ────────────────────────────────────
 step "Installing production Node deps"
 cd "$API_DIR"
-npm install --production --silent
+npm install --production 2>&1 | tail -5
 ok "node_modules ready (pg installed)"
 cd "$BASE"
 
