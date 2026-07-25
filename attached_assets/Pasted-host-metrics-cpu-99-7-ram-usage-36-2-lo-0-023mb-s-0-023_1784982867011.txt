@@ -1,0 +1,59 @@
+host metrics | cpu: 99.7% | ram usage: 36.2% | lo: ⇓ 0.023mb/s ⇑ 0.023mb/s | eth0: ⇓ 0.001mb/s ⇑ 0.001mb/s | disk: ⇓ 0mb/s ⇑ 0.16mb/s |
+root@srv1609330:/home/automystics-solarepc/htdocs/solarepc.automystics.tech/repo# sed -i 's/^PORT=.*/PORT=5001/' \
+  /home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server/.env
+pm2 restart solarepc-api
+Use --update-env to update environment variables
+[PM2] Applying action restartProcessId on app [solarepc-api](ids: [ 41 ])
+[PM2] [solarepc-api](41) ✓
+┌────┬───────────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name                  │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼───────────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 39 │ automystics-api       │ default     │ 0.0.0   │ fork    │ 3380868  │ 6h     │ 74   │ online    │ 0%       │ 94.4mb   │ root     │ disabled │
+│ 38 │ ayyappan-api          │ default     │ N/A     │ fork    │ 1746386  │ 17h    │ 10   │ online    │ 1.7%     │ 269.3mb  │ root     │ disabled │
+│ 32 │ docscan-api           │ default     │ 0.0.0   │ fork    │ 1392181  │ 18h    │ 9    │ online    │ 0%       │ 144.7mb  │ root     │ disabled │
+│ 11 │ erp-automystics       │ default     │ N/A     │ fork    │ 342673   │ 22h    │ 11   │ online    │ 0%       │ 117.1mb  │ root     │ disabled │
+│ 1  │ fitro360              │ default     │ 1.0.0   │ fork    │ 3843201  │ 15s    │ 5    │ online    │ 0%       │ 111.0mb  │ root     │ disabled │
+│ 2  │ kalvicore-api         │ default     │ 0.0.0   │ fork    │ 198081   │ 2D     │ 8    │ online    │ 0%       │ 122.4mb  │ root     │ disabled │
+│ 13 │ mmwear-erp            │ default     │ 0.0.0   │ fork    │ 3396013  │ 4D     │ 137  │ online    │ 0%       │ 627.0mb  │ root     │ disabled │
+│ 14 │ mystics-audit         │ default     │ 0.0.0   │ fork    │ 1035800  │ 10D    │ 586  │ online    │ 1.7%     │ 200.1mb  │ root     │ disabled │
+│ 5  │ mysticscivil-api      │ default     │ N/A     │ fork    │ 1524242  │ 14D    │ 4    │ online    │ 0%       │ 99.2mb   │ root     │ disabled │
+│ 26 │ mysticshr-api         │ default     │ 0.0.0   │ fork    │ 852146   │ 9D     │ 14   │ online    │ 0%       │ 408.6mb  │ root     │ disabled │
+│ 12 │ mysticsinventory      │ default     │ N/A     │ fork    │ 3843472  │ 1s     │ 249… │ online    │ 39%      │ 68.8mb   │ root     │ disabled │
+│ 3  │ people-connect-api    │ default     │ 0.0.0   │ fork    │ 1524209  │ 14D    │ 4    │ online    │ 0%       │ 177.6mb  │ root     │ disabled │
+│ 41 │ solarepc-api          │ default     │ 0.0.0   │ fork    │ 3843515  │ 0s     │ 20   │ online    │ 0%       │ 26.6mb   │ root     │ disabled │
+│ 6  │ solarnexus-api        │ default     │ 0.0.0   │ fork    │ 1524251  │ 14D    │ 4    │ online    │ 0%       │ 117.0mb  │ root     │ disabled │
+│ 4  │ tkprabhu-api          │ default     │ 0.0.0   │ fork    │ 1524217  │ 14D    │ 4    │ online    │ 0%       │ 179.6mb  │ root     │ disabled │
+│ 8  │ ungalrajeev-api       │ default     │ N/A     │ fork    │ 3843447  │ 2s     │ 964… │ online    │ 45.8%    │ 105.7mb  │ root     │ disabled │
+│ 7  │ ungaludan-sarath      │ default     │ 0.0.0   │ fork    │ 1524287  │ 14D    │ 4    │ online    │ 0%       │ 191.7mb  │ root     │ disabled │
+│ 9  │ ungalvignesh-api      │ default     │ N/A     │ fork    │ 3843364  │ 6s     │ 268… │ online    │ 0%       │ 138.6mb  │ root     │ disabled │
+│ 10 │ ungalvignesh-api      │ default     │ N/A     │ fork    │ 1524307  │ 14D    │ 199… │ online    │ 0%       │ 49.6mb   │ root     │ disabled │
+└────┴───────────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+host metrics | cpu: 99.8% | ram usage: 35.7% | lo: ⇓ 0.028mb/s ⇑ 0.028mb/s | eth0: ⇓ 0.005mb/s ⇑ 0.003mb/s | disk: ⇓ 0.155mb/s ⇑ 0.143mb/s |
+root@srv1609330:/home/automystics-solarepc/htdocs/solarepc.automystics.tech/repo# pm2 logs solarepc-api --lines 20
+[TAILING] Tailing last 20 lines for [solarepc-api] process (change the value with --lines option)
+/root/.pm2/logs/solarepc-api-out.log last 20 lines:
+41|solarep | net:2065:12)\n    at Server.listen (node:net:2170:7)\n    at app2.listen (/home/automystics-solarepc/htdocs/node_modules/.pnpm/express@5.2.1/node_modules/express/lib/application.js:605:24)\n    at <anonymous> (/home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server/src/index.ts:23:5)\n    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async node:internal/modules/esm/loader:633:26","code":"EADDRINUSE","errno":-98,"syscall":"listen","address":"::","port":5000},"msg":"Error listening on port"}
+41|solarep | {"level":30,"time":1784982842823,"pid":3843515,"hostname":"srv1609330","port":5001,"msg":"Server listening"}
+41|solarep | {"level":50,"time":1784982843911,"pid":3843515,"hostname":"srv1609330","err":{"type":"_DrizzleQueryError","message":"Failed query: select \"id\", \"request_id\", \"step_order\", \"name\", \"step_type\", \"approver_type\", \"approver_role\", \"approver_user_id\", \"status\", \"acted_by_id\", \"delegated_to_id\", \"acted_at\", \"sla_deadline\", \"is_escalated\", \"escalated_at\", \"comment\" from \"approval_request_steps\" where (\"approval_request_steps\".\"status\" = $1 and \"approval_request_steps\".\"is_escalated\" = $2 and \"approval_request_steps\".\"sla_deadline\" < $3)\nparams: pending,false,2026-07-25T12:34:02.422Z: password authentication failed for user \"solarepc\"","stack":"Error: Failed query: select \"id\", \"request_id\", \"step_order\", \"name\", \"step_type\", \"approver_type\", \"approver_role\", \"approver_user_id\", \"status\", \"acted_by_id\", \"delegated_to_id\", \"acted_at\", \"sla_deadline\", \"is_escalated\", \"escalated_at\", \"comment\" from \"approval_request_steps\" where (\"approval_request_steps\".\"status\" = $1 and \"approval_request_steps\".\"is_escalated\" = $2 and \"approval_request_steps\".\"sla_deadline\" < $3)\nparams: pending,false,2026-07-25T12:34:02.422Z\n    at NodePgPreparedQuery.queryWithCache (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/pg-core/session.ts:73:11)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async <anonymous> (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/node-postgres/session.ts:154:19)\n    at async runSlaEscalation (/home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server/src/index.ts:41:26)\ncaused by: error: password authentication failed for user \"solarepc\"\n    at /home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server/node_modules/pg-pool/index.js:45:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async <anonymous> (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/node-postgres/session.ts:161:13)\n    at async NodePgPreparedQuery.queryWithCache (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/pg-core/session.ts:71:12)\n    at async <anonymous> (/home/automystics-solarepc/htdocs/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/src/node-postgres/session.ts:154:19)\n    at async runSlaEscalation (/home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server/src/index.ts:41:26)","query":"select \"id\", \"request_id\", \"step_order\", \"name\", \"step_type\", \"approver_type\", \"approver_role\", \"approver_user_id\", \"status\", \"acted_by_id\", \"delegated_to_id\", \"acted_at\", \"sla_deadline\", \"is_escalated\", \"escalated_at\", \"comment\" from \"approval_request_steps\" where (\"approval_request_steps\".\"status\" = $1 and \"approval_request_steps\".\"is_escalated\" = $2 and \"approval_request_steps\".\"sla_deadline\" < $3)","params":["pending",false,"2026-07-25T12:34:02.422Z"]},"msg":"SLA escalation job error"}
+
+/root/.pm2/logs/solarepc-api-error.log last 20 lines:
+41|solarep |       at async <anonymous> (/home/automystics-solarepc/htdocs/solarepc.automystics.tech/api-server/src/routes/grn_returns.ts:13:13) {
+41|solarep |     length: 104,
+41|solarep |     severity: 'FATAL',
+41|solarep |     code: '28P01',
+41|solarep |     detail: undefined,
+41|solarep |     hint: undefined,
+41|solarep |     position: undefined,
+41|solarep |     internalPosition: undefined,
+41|solarep |     internalQuery: undefined,
+41|solarep |     where: undefined,
+41|solarep |     schema: undefined,
+41|solarep |     table: undefined,
+41|solarep |     column: undefined,
+41|solarep |     dataType: undefined,
+41|solarep |     constraint: undefined,
+41|solarep |     file: 'auth.c',
+41|solarep |     line: '331',
+41|solarep |     routine: 'auth_failed'
+41|solarep |   }
+41|solarep | }
