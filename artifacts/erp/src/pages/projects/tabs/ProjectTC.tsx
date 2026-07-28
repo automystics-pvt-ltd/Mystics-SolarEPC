@@ -62,7 +62,7 @@ function ParameterTable({ session }: { session: TCSession }) {
   if (!rows.length) return <p className="text-sm text-muted-foreground">No parameters recorded.</p>;
 
   return (
-    <div className="grid grid-cols-2 gap-2">
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
       {rows.map(row => (
         <div key={row.label} className={cn("flex items-center justify-between p-3 rounded-lg border", row.pass ? "border-emerald-200 bg-emerald-50/30" : "border-red-200 bg-red-50/30")}>
           <div>
@@ -164,7 +164,7 @@ export function ProjectTC({ projectId }: { projectId: number }) {
         <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
           <SheetHeader><SheetTitle>New T&C Session</SheetTitle></SheetHeader>
           <div className="space-y-4 pt-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Test Type</Label>
                 <Select value={form.testType} onValueChange={v => setForm(f => ({ ...f, testType: v }))}>
                   <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
@@ -175,7 +175,7 @@ export function ProjectTC({ projectId }: { projectId: number }) {
                 <Input type="date" className="mt-1" value={form.testDate} onChange={e => setForm(f => ({ ...f, testDate: e.target.value }))} />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Conducted By (User ID)</Label>
                 <Input type="number" className="mt-1 font-mono" value={form.conductedBy} onChange={e => setForm(f => ({ ...f, conductedBy: e.target.value }))} placeholder="Optional" />
               </div>
@@ -186,7 +186,7 @@ export function ProjectTC({ projectId }: { projectId: number }) {
 
             <div className="rounded-xl border border-border/60 p-4 space-y-3">
               <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Electrical Parameters</p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {[
                   { label: "System Capacity (kWp)", key: "systemCapacityKwp" },
                   { label: "Measured Output (kW)", key: "measuredOutputKw" },

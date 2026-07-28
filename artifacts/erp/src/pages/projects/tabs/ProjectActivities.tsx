@@ -122,7 +122,7 @@ export function ProjectActivities({ projectId }: { projectId: number }) {
                 <FormControl><Input className="h-10" {...field} /></FormControl>
               </FormItem>
             )} />
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField control={form.control} name="plannedStart" render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Start Date</FormLabel>

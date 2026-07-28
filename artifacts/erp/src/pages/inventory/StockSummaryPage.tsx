@@ -242,7 +242,7 @@ export function StockSummaryPage() {
       />
 
       {/* Summary Strip */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="bg-card border border-border rounded-xl p-4 text-center">
           <p className="text-2xl font-black font-mono text-[#EA580C]">₹{(totalValue / 100000).toFixed(1)}L</p>
           <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mt-0.5">Total Stock Value</p>
@@ -311,7 +311,7 @@ export function StockSummaryPage() {
           <DialogHeader><DialogTitle className="text-xl font-black">Add Stock Level</DialogTitle></DialogHeader>
           <Form {...addForm}>
             <form onSubmit={addForm.handleSubmit(d => addMut.mutate(d))} className="space-y-4 mt-2">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField control={addForm.control} name="warehouseId" render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs font-bold uppercase tracking-wider">Warehouse *</FormLabel>
@@ -339,7 +339,7 @@ export function StockSummaryPage() {
                   <FormMessage />
                 </FormItem>
               )} />
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <FormField control={addForm.control} name="materialCode" render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs font-bold uppercase tracking-wider">Material Code</FormLabel>
@@ -363,7 +363,7 @@ export function StockSummaryPage() {
                   </FormItem>
                 )} />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField control={addForm.control} name="unitCost" render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs font-bold uppercase tracking-wider">Unit Cost (₹)</FormLabel>
@@ -377,7 +377,7 @@ export function StockSummaryPage() {
                   </FormItem>
                 )} />
               </div>
-              <div className="grid grid-cols-3 gap-4 pt-2 border-t border-border">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2 border-t border-border">
                 <FormField control={addForm.control} name="minStockLevel" render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs font-bold uppercase tracking-wider">Min Level</FormLabel>
@@ -417,7 +417,7 @@ export function StockSummaryPage() {
           )}
           <Form {...editForm}>
             <form onSubmit={editForm.handleSubmit(d => editMut.mutate(d))} className="space-y-4">
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 <FormField control={editForm.control} name="minStockLevel" render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs font-bold uppercase tracking-wider">Min Level</FormLabel>
@@ -437,7 +437,7 @@ export function StockSummaryPage() {
                   </FormItem>
                 )} />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <FormField control={editForm.control} name="unitCost" render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs font-bold uppercase tracking-wider">Unit Cost (₹)</FormLabel>

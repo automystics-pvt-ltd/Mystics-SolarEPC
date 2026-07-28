@@ -328,7 +328,7 @@ export default function GRNReturnDetail({ id }: { id: string }) {
         <DialogContent>
           <DialogHeader><DialogTitle>Close Return</DialogTitle></DialogHeader>
           <div className="space-y-3 py-2">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label>Credit Note # (optional)</Label>
                 <Input value={creditNoteNumber} onChange={e => setCreditNoteNumber(e.target.value)} placeholder="CN-001" />

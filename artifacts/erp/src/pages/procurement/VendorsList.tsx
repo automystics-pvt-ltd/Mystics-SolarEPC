@@ -241,7 +241,7 @@ export default function VendorsList() {
                 </div>
 
                 {/* Trade Name + Status */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <Label>Trade Name</Label>
                     <Input
@@ -265,7 +265,7 @@ export default function VendorsList() {
                 </div>
 
                 {/* GSTIN + PAN */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <Label>GSTIN</Label>
                     <Input

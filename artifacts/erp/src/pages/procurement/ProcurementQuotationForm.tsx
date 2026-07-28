@@ -310,7 +310,7 @@ export default function ProcurementQuotationForm({ editId }: Props) {
       {/* STEP 2: Pricing & Terms */}
       {step === 2 && (
         <SectionCard title="Pricing & Terms" badge={<Calculator className="w-4 h-4 text-orange-500" />}>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div><Label>Quotation Date</Label><Input type="date" value={pricing.quotationDate} onChange={e => setPricing(p => ({ ...p, quotationDate: e.target.value }))} className="mt-1" /></div>
             <div><Label>Validity Date</Label><Input type="date" value={pricing.validityDate} onChange={e => setPricing(p => ({ ...p, validityDate: e.target.value }))} className="mt-1" /></div>
             <div><Label>Payment Terms</Label><Input value={pricing.paymentTerms} onChange={e => setPricing(p => ({ ...p, paymentTerms: e.target.value }))} placeholder="e.g. Net 30" className="mt-1" /></div>
@@ -329,7 +329,7 @@ export default function ProcurementQuotationForm({ editId }: Props) {
       {step === 3 && (
         <SectionCard title={`Review & ${editId ? "Save Changes" : "Create"}`} badge={<FileText className="w-4 h-4 text-orange-500" />}>
           <div className="space-y-3">
-            <div className="bg-muted/40 rounded-xl p-4 grid grid-cols-2 gap-3 text-sm">
+            <div className="bg-muted/40 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div><span className="text-muted-foreground">Vendor</span><p className="font-semibold">{selectedVendor?.name ?? "None selected"}</p></div>
               <div><span className="text-muted-foreground">Items</span><p className="font-semibold">{items.length} line item{items.length !== 1 ? "s" : ""}</p></div>
               <div><span className="text-muted-foreground">Subtotal</span><p className="font-semibold font-mono">₹{totals.subtotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</p></div>
@@ -407,7 +407,7 @@ export default function ProcurementQuotationForm({ editId }: Props) {
       <Dialog open={newMatOpen} onOpenChange={setNewMatOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader><DialogTitle>Create New Material</DialogTitle></DialogHeader>
-          <div className="grid grid-cols-2 gap-3 pt-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
             <div className="col-span-2"><Label>Name *</Label><Input value={newMatForm.name} onChange={e => setNewMatForm((f: any) => ({ ...f, name: e.target.value }))} className="mt-1" /></div>
             <div><Label>HSN Code</Label><Input value={newMatForm.hsnSacCode ?? ""} onChange={e => setNewMatForm((f: any) => ({ ...f, hsnSacCode: e.target.value }))} className="mt-1" /></div>
             <div><Label>GST %</Label><Input type="number" value={newMatForm.gstRate} onChange={e => setNewMatForm((f: any) => ({ ...f, gstRate: Number(e.target.value) }))} className="mt-1" /></div>

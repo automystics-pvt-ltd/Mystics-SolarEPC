@@ -186,7 +186,7 @@ export default function GRNForm({ poId: initPoId }: { poId?: string }) {
           </div>
 
           {poData && (
-            <div className="bg-muted/30 rounded-lg p-3 text-sm grid grid-cols-2 gap-2 border border-border">
+            <div className="bg-muted/30 rounded-lg p-3 text-sm grid grid-cols-2 sm:grid-cols-4 gap-2 border border-border">
               <div><span className="text-muted-foreground">Vendor:</span> <span className="font-medium">{(poData as any).vendorName}</span></div>
               <div><span className="text-muted-foreground">PO Date:</span> <span className="font-medium">{(poData as any).poDate}</span></div>
               <div><span className="text-muted-foreground">Deadline:</span> <span className="font-medium">{(poData as any).deliveryDeadline ?? "—"}</span></div>
@@ -329,7 +329,7 @@ export default function GRNForm({ poId: initPoId }: { poId?: string }) {
                       {isExpanded && (
                         <tr key={`trace-${idx}`} className="bg-blue-50/40 dark:bg-blue-950/10">
                           <td colSpan={10} className="px-3 py-3">
-                            <div className="grid grid-cols-4 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                               <div>
                                 <Label className="text-[11px] font-semibold text-muted-foreground mb-1 block flex items-center gap-1">
                                   <Hash className="w-3 h-3" /> Batch Number
@@ -385,7 +385,7 @@ export default function GRNForm({ poId: initPoId }: { poId?: string }) {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <Label className="text-xs text-muted-foreground mb-1 block">Received Qty *</Label>
                       <Input type="number" inputMode="numeric" min="0" max={remaining}
@@ -420,7 +420,7 @@ export default function GRNForm({ poId: initPoId }: { poId?: string }) {
                       </button>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
-                      <div className="grid grid-cols-2 gap-3 mt-2 pt-2 border-t border-border">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2 pt-2 border-t border-border">
                         <div>
                           <Label className="text-[11px] text-muted-foreground mb-1 block">Batch Number</Label>
                           <Input value={item.batchNumber} onChange={e => updateItem(idx, "batchNumber", e.target.value)}

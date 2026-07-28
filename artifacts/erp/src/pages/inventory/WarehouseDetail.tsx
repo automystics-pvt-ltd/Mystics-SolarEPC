@@ -320,7 +320,7 @@ export function WarehouseDetail({ id }: { id: string }) {
                       <DialogHeader className="mb-4"><DialogTitle className="text-xl font-bold tracking-tight">New Location</DialogTitle></DialogHeader>
                       <Form {...form}>
                         <form onSubmit={form.handleSubmit(d => createLocMut.mutate({ id: whId, data: { ...d, warehouseId: whId } as any }))} className="space-y-5">
-                          <div className="grid grid-cols-3 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             <FormField control={form.control} name="zone" render={({ field }) => (
                               <FormItem><FormLabel className="text-xs font-bold uppercase">Zone</FormLabel><FormControl><Input className="h-10 bg-muted/50" {...field} placeholder="A" /></FormControl></FormItem>
                             )} />
@@ -405,7 +405,7 @@ export function WarehouseDetail({ id }: { id: string }) {
           <DialogHeader><DialogTitle className="text-xl font-black">Edit Warehouse Details</DialogTitle></DialogHeader>
           <Form {...editForm}>
             <form onSubmit={editForm.handleSubmit(d => editWhMut.mutate(d))} className="space-y-4 mt-2">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <FormField control={editForm.control} name="warehouseCode" render={({ field }) => (
                   <FormItem><FormLabel className="text-xs font-bold uppercase">Code</FormLabel>
                     <FormControl><Input className="h-10 bg-muted/30" {...field} placeholder="WH-001" /></FormControl></FormItem>

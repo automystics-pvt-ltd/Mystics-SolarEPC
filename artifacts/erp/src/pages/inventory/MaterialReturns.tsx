@@ -48,7 +48,7 @@ const STATUS_COLORS: Record<string, string> = {
 function ReturnDetail({ ret, onAction }: { ret: any; onAction: (act: string, id: number) => void }) {
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {[
           { label: "Return #", val: ret.returnNumber },
           { label: "Status", val: <Badge className={cn("text-[10px] font-bold border-0", STATUS_COLORS[ret.status] || "")}>{ret.status}</Badge> },
@@ -242,7 +242,7 @@ export function MaterialReturns() {
           <DialogHeader><DialogTitle className="text-xl font-black">New Material Return</DialogTitle></DialogHeader>
           <Form {...returnForm}>
             <form onSubmit={returnForm.handleSubmit(d => createMut.mutate(d))} className="space-y-4 mt-2">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <FormField control={returnForm.control} name="fromSite" render={({ field }) => (
                   <FormItem><FormLabel className="text-xs font-bold uppercase tracking-wider">From Site *</FormLabel>
                     <FormControl><Input className="h-10 bg-muted/30" {...field} placeholder="Site name" /></FormControl>
@@ -259,7 +259,7 @@ export function MaterialReturns() {
                   </FormItem>
                 )} />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <FormField control={returnForm.control} name="projectName" render={({ field }) => (
                   <FormItem><FormLabel className="text-xs font-bold uppercase tracking-wider">Project</FormLabel>
                     <FormControl><Input className="h-10 bg-muted/30" {...field} /></FormControl>
@@ -271,7 +271,7 @@ export function MaterialReturns() {
                   </FormItem>
                 )} />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <FormField control={returnForm.control} name="condition" render={({ field }) => (
                   <FormItem><FormLabel className="text-xs font-bold uppercase tracking-wider">Condition</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
@@ -346,7 +346,7 @@ export function MaterialReturns() {
                   <FormMessage />
                 </FormItem>
               )} />
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <FormField control={itemForm.control} name="qty" render={({ field }) => (
                   <FormItem><FormLabel className="text-xs font-bold uppercase tracking-wider">Quantity *</FormLabel>
                     <FormControl><Input className="h-10 bg-muted/30" type="number" min="0.001" step="0.001" {...field} /></FormControl>
@@ -362,7 +362,7 @@ export function MaterialReturns() {
                   </FormItem>
                 )} />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <FormField control={itemForm.control} name="condition" render={({ field }) => (
                   <FormItem><FormLabel className="text-xs font-bold uppercase tracking-wider">Condition</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>

@@ -146,7 +146,7 @@ export function ProjectChangeRequests({ projectId }: { projectId: number }) {
               <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5 block">Title *</Label>
               <Input className="h-9" {...register("title", { required: true })} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5 block">Type</Label>
                 <Controller control={control} name="type" render={({ field }) => (
@@ -170,7 +170,7 @@ export function ProjectChangeRequests({ projectId }: { projectId: number }) {
               <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5 block">Description</Label>
               <Textarea className="h-20 resize-none" {...register("description")} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5 block">Budget Impact (₹)</Label>
                 <Input type="number" className="h-9 font-mono" {...register("budgetImpact")} />
@@ -209,7 +209,7 @@ export function ProjectChangeRequests({ projectId }: { projectId: number }) {
                 <p className="text-sm text-muted-foreground">{detailCR.description}</p>
               )}
 
-              <div className="grid grid-cols-2 gap-3 p-3 bg-muted/30 rounded-lg">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-muted/30 rounded-lg">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">Budget Impact</p>
                   <p className={cn("font-mono font-bold text-sm", detailCR.budgetImpact > 0 ? "text-red-600" : detailCR.budgetImpact < 0 ? "text-emerald-600" : "text-muted-foreground")}>

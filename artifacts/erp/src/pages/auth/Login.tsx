@@ -147,7 +147,7 @@ export function Login() {
           {/* Demo accounts */}
           <div className="mt-8 text-center">
             <p className="text-xs font-medium text-gray-400 mb-3">Quick access (Demo only)</p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[
                 { label: "Admin", email: "admin@automystics.com", pw: "admin123" },
                 { label: "Sales", email: "meera@automystics.com", pw: "sales123" },

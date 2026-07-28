@@ -214,7 +214,7 @@ export function ProjectRisks({ projectId }: { projectId: number }) {
               <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5 block">Risk Title *</Label>
               <Input className="h-9" {...register("title", { required: true })} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5 block">Category</Label>
                 <Controller control={control} name="category" render={({ field }) => (
@@ -229,7 +229,7 @@ export function ProjectRisks({ projectId }: { projectId: number }) {
                 <Input className="h-9" placeholder="Person responsible" {...register("owner")} />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5 block">Probability</Label>
                 <Controller control={control} name="probability" render={({ field }) => (

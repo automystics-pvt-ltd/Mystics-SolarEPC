@@ -134,15 +134,15 @@ export default function AmcContractsList() {
       <DialogContent className="sm:max-w-lg">
         <DialogHeader><DialogTitle>New AMC Contract</DialogTitle></DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-2">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div><Label>Project ID</Label><Input {...register("projectId")} placeholder="e.g. 4" className="mt-1" /></div>
             <div><Label>Client Name</Label><Input {...register("clientName")} placeholder="Client company name" className="mt-1" /></div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div><Label>Start Date</Label><Input {...register("startDate")} type="date" className="mt-1" /></div>
             <div><Label>End Date</Label><Input {...register("endDate")} type="date" className="mt-1" /></div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div><Label>Annual Value (₹)</Label><Input {...register("annualValue")} type="number" placeholder="e.g. 75000" className="mt-1" /></div>
             <div>
               <Label>Visit Frequency</Label>

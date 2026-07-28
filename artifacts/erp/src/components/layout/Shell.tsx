@@ -69,7 +69,7 @@ function ShellInner({ children }: ShellProps) {
           id="main-content"
           className="flex-1 overflow-y-auto scrollbar-thin print:overflow-visible pb-[calc(1.5rem+4rem)] lg:pb-0"
         >
-          <div className="w-full px-4 py-4 print:px-0 print:py-0">
+          <div className="w-full px-3 sm:px-4 py-4 print:px-0 print:py-0">
             {children}
           </div>
         </main>

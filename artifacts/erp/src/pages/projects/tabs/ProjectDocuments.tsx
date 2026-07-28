@@ -245,7 +245,7 @@ export function ProjectDocuments({ projectId }: { projectId: number }) {
               <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5 block">Title *</Label>
               <Input className="h-9" placeholder="e.g. As-Built Single Line Diagram" value={form.title ?? ""} onChange={e => setForm((f: any) => ({ ...f, title: e.target.value }))} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5 block">Document Type</Label>
                 <Select value={form.documentType ?? "Other"} onValueChange={v => setForm((f: any) => ({ ...f, documentType: v }))}>

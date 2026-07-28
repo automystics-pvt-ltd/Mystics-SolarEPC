@@ -169,7 +169,7 @@ function SurveyForm({ register, handleSubmit, onSubmit, setValue, isPending, onC
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-5 bg-white border border-slate-200 rounded-xl p-5">
       <h3 className="text-sm font-semibold text-slate-800">Site Survey Details</h3>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div><Label>Survey Date</Label><Input {...register("surveyDate")} type="date" className="mt-1" /></div>
         <div>
           <Label>Roof Type</Label>

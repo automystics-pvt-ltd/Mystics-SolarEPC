@@ -145,11 +145,11 @@ export default function MaintenanceList() {
       <DialogContent className="sm:max-w-md">
         <DialogHeader><DialogTitle>Schedule Maintenance Visit</DialogTitle></DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-2">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div><Label>Project ID</Label><Input {...register("projectId")} placeholder="e.g. 4" className="mt-1" /></div>
             <div><Label>AMC Contract ID</Label><Input {...register("amcContractId")} placeholder="Optional" className="mt-1" /></div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label>Visit Type</Label>
               <Select onValueChange={v => setValue("visitType", v)} defaultValue="Preventive">

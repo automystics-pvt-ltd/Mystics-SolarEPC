@@ -356,7 +356,7 @@ function DetailSheet({ req, open, onClose, canAct, onApprove, onReject, onRecall
           </div>
 
           {/* Quick info row */}
-          <div className="grid grid-cols-3 gap-3 mt-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-3">
             {[
               { label: "Submitted by", value: req.requesterName },
               { label: "Submitted",    value: relTime(req.createdAt) },
@@ -455,7 +455,7 @@ function NewRequestDialog({ open, onClose, workflows, onSubmit }: {
             <Label>Title <span className="text-red-500">*</span></Label>
             <Input value={form.title} onChange={e => set("title", e.target.value)} placeholder="e.g. PO Approval for Solar Panels Q4" className="mt-1" />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label>Module</Label>
               <Select value={form.module} onValueChange={v => set("module", v)}>
@@ -606,7 +606,7 @@ function WorkflowBuilder({ workflows, onRefresh }: { workflows: Workflow[]; onRe
           <div className="space-y-4">
             <div><Label>Workflow Name <span className="text-red-500">*</span></Label>
               <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Purchase Order Approval" className="mt-1" /></div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><Label>Module</Label>
                 <Select value={form.module} onValueChange={v => setForm(f => ({ ...f, module: v }))}>
                   <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
@@ -895,7 +895,7 @@ function DelegatesPanel({ currentUserId }: { currentUserId: number }) {
             <p className="text-[10px] text-muted-foreground mt-1">Leave as "All modules" to delegate everything</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label className="text-xs font-semibold">Start date <span className="text-red-500">*</span></Label>
               <Input type="date" value={form.startDate} onChange={e => setF("startDate", e.target.value)}

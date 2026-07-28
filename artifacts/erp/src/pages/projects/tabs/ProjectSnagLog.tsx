@@ -56,7 +56,7 @@ export function ProjectSnagLog({ projectId }: Props) {
       <DialogContent className="sm:max-w-lg">
         <DialogHeader><DialogTitle>Log Snag / Issue</DialogTitle></DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-2">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label>Zone / Location</Label>
               <Input {...register("zone")} placeholder="e.g. Block A, Row 3" className="mt-1" />

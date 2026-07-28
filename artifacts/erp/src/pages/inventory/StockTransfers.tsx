@@ -292,7 +292,7 @@ export default function StockTransfers() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>New Stock Transfer</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label>From Warehouse <span className="text-red-500">*</span></Label>
                 {(warehouses as any[]).length > 0 ? (
@@ -324,7 +324,7 @@ export default function StockTransfers() {
                 )}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label>Transfer Date</Label>
                 <Input type="date" value={transferDate} onChange={e => setTransferDate(e.target.value)} />

@@ -156,11 +156,11 @@ export default function ServiceTicketsList() {
       <DialogContent className="sm:max-w-lg">
         <DialogHeader><DialogTitle>Raise Service Ticket</DialogTitle></DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-2">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div><Label>Project ID</Label><Input {...register("projectId")} placeholder="e.g. 4" className="mt-1" /></div>
             <div><Label>Raised By (Client)</Label><Input {...register("raisedBy")} placeholder="Client contact name" className="mt-1" /></div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label>Issue Category</Label>
               <Select onValueChange={v => setValue("issueCategory", v)} defaultValue="Performance">
@@ -177,7 +177,7 @@ export default function ServiceTicketsList() {
             </div>
           </div>
           <div><Label>Description</Label><Textarea {...register("description")} placeholder="Describe the issue in detail..." className="mt-1 min-h-[80px]" /></div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div><Label>Assigned Technician</Label><Input {...register("assignedTechnicianName")} placeholder="Technician name" className="mt-1" /></div>
             <div><Label>SLA Hours</Label><Input {...register("slaHours")} type="number" defaultValue={48} className="mt-1" /></div>
           </div>

@@ -79,10 +79,10 @@ export function PageHeader({
       )}
 
       {/* Title row */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-[22px] font-bold text-foreground leading-tight tracking-tight">
+            <h1 className="text-[20px] sm:text-[22px] font-bold text-foreground leading-tight tracking-tight">
               {title}
             </h1>
             {badge}
@@ -99,7 +99,7 @@ export function PageHeader({
           )}
         </div>
         {actions && (
-          <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+          <div className="flex items-center gap-2 flex-wrap shrink-0">
             {actions}
           </div>
         )}

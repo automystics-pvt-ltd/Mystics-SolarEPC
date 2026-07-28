@@ -219,7 +219,7 @@ export function ProjectClosure({ projectId }: { projectId: number }) {
 
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 pb-1 border-b border-border">Financial Summary</p>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[
                   { label: "Final Cost (₹)", key: "finalCost" },
                   { label: "Final Revenue (₹)", key: "finalRevenue" },

@@ -413,7 +413,7 @@ export function ProjectBOQ({ projectId, clientPoId }: { projectId: number; clien
                 <Input className="h-9" placeholder={f.placeholder} {...register(f.name)} />
               </div>
             ))}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5 block">Quantity</Label>
                 <Input type="number" step="0.001" className="h-9" {...register("quantity")} />

@@ -151,7 +151,7 @@ export function ProjectResources({ projectId }: { projectId: number }) {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
       {/* Summary footer row */}
       {resources.length > 0 && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[
             { label: "Total Allocations", value: resources.length },
             { label: "Est. Person-Days", value: Math.round(totalPersonDays) },
@@ -226,7 +226,7 @@ export function ProjectResources({ projectId }: { projectId: number }) {
         <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
           <SheetHeader><SheetTitle>Add Resource Allocation</SheetTitle></SheetHeader>
           <div className="space-y-4 pt-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Type</Label>
                 <Select value={form.resourceType} onValueChange={v => setForm(f => ({ ...f, resourceType: v }))}>
                   <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
@@ -246,7 +246,7 @@ export function ProjectResources({ projectId }: { projectId: number }) {
             <div><Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Resource Name *</Label>
               <Input className="mt-1" value={form.resourceName} onChange={e => setForm(f => ({ ...f, resourceName: e.target.value }))} placeholder="e.g. Ravi Kumar / JCB #3" />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Role</Label>
                 <Input className="mt-1" value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} placeholder="e.g. Site Engineer" />
               </div>
@@ -254,7 +254,7 @@ export function ProjectResources({ projectId }: { projectId: number }) {
                 <Input type="number" className="mt-1 font-mono" value={form.allocationPct} onChange={e => setForm(f => ({ ...f, allocationPct: e.target.value }))} min={1} max={100} />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Start Date</Label>
                 <Input type="date" className="mt-1" value={form.plannedStartDate} onChange={e => setForm(f => ({ ...f, plannedStartDate: e.target.value }))} />
               </div>
@@ -262,7 +262,7 @@ export function ProjectResources({ projectId }: { projectId: number }) {
                 <Input type="date" className="mt-1" value={form.plannedEndDate} onChange={e => setForm(f => ({ ...f, plannedEndDate: e.target.value }))} />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Hourly Rate (₹)</Label>
                 <Input type="number" className="mt-1 font-mono" value={form.hourlyRate} onChange={e => setForm(f => ({ ...f, hourlyRate: e.target.value }))} placeholder="Optional" />
               </div>

@@ -187,7 +187,7 @@ export function ProjectHandover({ projectId }: { projectId: number }) {
         }>
           <div className="space-y-6">
             {/* Header */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5 block">Handover Type</Label>
                 <Select value={form.handoverType ?? "Provisional"} onValueChange={v => setForm(f => ({ ...f, handoverType: v }))}>
@@ -207,7 +207,7 @@ export function ProjectHandover({ projectId }: { projectId: number }) {
             {/* Client Details */}
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 pb-1 border-b border-border">Client Details</p>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5 block">Client Representative</Label>
                   <Input className="h-9" value={form.clientRepresentative ?? ""} onChange={e => setForm(f => ({ ...f, clientRepresentative: e.target.value }))} />
@@ -222,7 +222,7 @@ export function ProjectHandover({ projectId }: { projectId: number }) {
             {/* System Summary */}
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 pb-1 border-b border-border">System Summary</p>
-              <div className="grid grid-cols-3 gap-4 mb-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-3">
                 <div>
                   <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5 block">Capacity (kWp)</Label>
                   <Input type="number" step="0.001" className="h-9" value={form.installedCapacityKwp ?? ""} onChange={e => setForm(f => ({ ...f, installedCapacityKwp: Number(e.target.value) }))} />
@@ -245,7 +245,7 @@ export function ProjectHandover({ projectId }: { projectId: number }) {
             {/* Warranty & AMC Dates */}
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 pb-1 border-b border-border">Warranty & AMC Dates</p>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
                   { label: "Warranty Start", key: "warrantyStartDate" },
                   { label: "Warranty End", key: "warrantyEndDate" },
@@ -263,7 +263,7 @@ export function ProjectHandover({ projectId }: { projectId: number }) {
             {/* Documents Checklist */}
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 pb-1 border-b border-border">Documents Handed Over</p>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {DOC_CHECKLIST.map(doc => (
                   <label key={doc} className="flex items-center gap-2.5 cursor-pointer group">
                     <Switch

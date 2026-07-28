@@ -51,7 +51,7 @@ export function ProjectDPRs({ projectId }: { projectId: number }) {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 mb-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
                   <div className="bg-muted/30 p-3 rounded-lg border border-border/60">
                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Manpower</p>
                     <p className="font-semibold text-sm text-foreground">

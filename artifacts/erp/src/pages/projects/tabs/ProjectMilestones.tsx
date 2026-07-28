@@ -283,7 +283,7 @@ export function ProjectMilestones({ projectId }: { projectId: number }) {
             <div><Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Name *</Label>
               <Input className="mt-1" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Module Mounting Complete" />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Phase</Label>
                 <Select value={form.phase} onValueChange={v => setForm(f => ({ ...f, phase: v }))}>
                   <SelectTrigger className="mt-1"><SelectValue placeholder="Select…" /></SelectTrigger>
@@ -297,7 +297,7 @@ export function ProjectMilestones({ projectId }: { projectId: number }) {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Baseline Date</Label>
                 <Input type="date" className="mt-1" value={form.baselineDate} onChange={e => setForm(f => ({ ...f, baselineDate: e.target.value }))} />
               </div>
@@ -305,7 +305,7 @@ export function ProjectMilestones({ projectId }: { projectId: number }) {
                 <Input type="date" className="mt-1" value={form.forecastDate} onChange={e => setForm(f => ({ ...f, forecastDate: e.target.value }))} />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Weight %</Label>
                 <Input type="number" className="mt-1 font-mono" value={form.weightPct} onChange={e => setForm(f => ({ ...f, weightPct: e.target.value }))} min={0} max={100} />
               </div>
@@ -337,7 +337,7 @@ export function ProjectMilestones({ projectId }: { projectId: number }) {
                 </SheetTitle>
               </SheetHeader>
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {[
                     { label: "Completion %", key: "completionPct", type: "number" },
                     { label: "Status", key: "status", type: "select", opts: STATUSES },

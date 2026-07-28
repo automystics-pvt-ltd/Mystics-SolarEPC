@@ -87,7 +87,7 @@ function SwipeableLineCard({ item }: { item: any }) {
           </span>
         </div>
 
-        <div className="grid grid-cols-4 gap-2 text-center">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
           {[
             { label: "Ordered",  value: item.orderedQty,  color: "text-foreground" },
             { label: "Received", value: item.receivedQty, color: "text-blue-600" },

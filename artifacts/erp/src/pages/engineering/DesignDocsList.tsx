@@ -150,7 +150,7 @@ export default function DesignDocsList() {
             <Label>Project ID</Label>
             <Input {...register("projectId")} placeholder="e.g. 4" className="mt-1" />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label>Document Type</Label>
               <Select onValueChange={v => setValue("docType", v)} defaultValue="Layout">

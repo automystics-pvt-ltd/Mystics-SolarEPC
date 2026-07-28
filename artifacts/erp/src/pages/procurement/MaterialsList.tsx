@@ -227,7 +227,7 @@ function SuppliersTab({ materialId }: { materialId: number }) {
       {adding ? (
         <div className="border border-border/60 rounded-lg p-4 space-y-3 bg-muted/20">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">New Supplier</p>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="col-span-2"><Label className="text-xs">Vendor Name *</Label><Input value={form.vendorName} onChange={e => setForm({ ...form, vendorName: e.target.value })} className="mt-1 h-8 text-sm" /></div>
             <div><Label className="text-xs">Supplier Part Code</Label><Input value={form.supplierPartCode ?? ""} onChange={e => setForm({ ...form, supplierPartCode: e.target.value })} className="mt-1 h-8 text-sm" /></div>
             <div><Label className="text-xs">Unit Price</Label><Input type="number" value={form.unitPrice ?? ""} onChange={e => setForm({ ...form, unitPrice: e.target.value ? Number(e.target.value) : null })} className="mt-1 h-8 text-sm" /></div>
@@ -388,7 +388,7 @@ function DetailPanel({ materialId, categories, onClose, onEdit }: {
 
           <div className="flex-1 overflow-y-auto px-6 py-5">
             <TabsContent value="overview" className="mt-0 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
                   ["Category", material.categoryName ?? "—"],
                   ["Unit of Measure", material.uom],
@@ -410,7 +410,7 @@ function DetailPanel({ materialId, categories, onClose, onEdit }: {
               {(material.minStockLevel != null || material.maxStockLevel != null || material.reorderPoint != null) && (
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Inventory Levels</p>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {[
                       ["Min Stock", material.minStockLevel],
                       ["Max Stock", material.maxStockLevel],
@@ -440,7 +440,7 @@ function DetailPanel({ materialId, categories, onClose, onEdit }: {
                 <div className="py-10 text-center text-muted-foreground text-sm">No specifications recorded.</div>
               )}
               {(material.brand || material.model) && (
-                <div className="mt-4 grid grid-cols-2 gap-3">
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="bg-muted/30 rounded-lg p-3">
                     <p className="text-[10px] text-muted-foreground mb-1">Brand</p>
                     <p className="text-sm font-medium">{material.brand ?? "—"}</p>
@@ -454,7 +454,7 @@ function DetailPanel({ materialId, categories, onClose, onEdit }: {
             </TabsContent>
 
             <TabsContent value="pricing" className="mt-0 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
                   { label: "Base Price", value: fmtCurrency(material.basePrice, material.currency), highlight: true },
                   { label: "Last Purchase Price", value: fmtCurrency(material.lastPurchasePrice, material.currency), highlight: false },
@@ -532,7 +532,7 @@ function MaterialFormDialog({ material, categories, onClose }: {
               <Label className="text-xs">Name *</Label>
               <Input {...f("name")} className="mt-1" placeholder="e.g. 540Wp Mono PERC Module" />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs">Category</Label>
                 <Select value={form.categoryId?.toString() ?? "__none"} onValueChange={v => upd({ categoryId: v === "__none" ? null : Number(v) })}>
@@ -574,7 +574,7 @@ function MaterialFormDialog({ material, categories, onClose }: {
           </TabsContent>
 
           <TabsContent value="pricing" className="space-y-4 mt-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs">Base Price</Label>
                 <Input type="number" {...fn("basePrice")} className="mt-1" placeholder="0.00" />
@@ -611,7 +611,7 @@ function MaterialFormDialog({ material, categories, onClose }: {
           </TabsContent>
 
           <TabsContent value="inventory" className="space-y-4 mt-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs">Min. Order Quantity</Label>
                 <Input type="number" {...fn("minOrderQty")} className="mt-1" />
@@ -769,7 +769,7 @@ function CategoryManager({ categories }: { categories: Category[] }) {
 
       {adding ? (
         <div className="border border-border/60 rounded-xl p-4 space-y-3 bg-muted/10">
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <div><Label className="text-xs">Name *</Label><Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="mt-1 h-8 text-sm" /></div>
             <div><Label className="text-xs">Code</Label><Input value={form.code} onChange={e => setForm({ ...form, code: e.target.value })} className="mt-1 h-8 text-sm" placeholder="e.g. SOL" /></div>
             <div><Label className="text-xs">Description</Label><Input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="mt-1 h-8 text-sm" /></div>

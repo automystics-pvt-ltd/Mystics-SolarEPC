@@ -93,7 +93,7 @@ export default function DesignDocDetail() {
                 <DialogContent className="sm:max-w-md">
                   <DialogHeader><DialogTitle>Add Revision</DialogTitle></DialogHeader>
                   <form onSubmit={revSubmit(onRevision)} className="space-y-4 pt-2">
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div><Label>Version</Label><Input {...revReg("version")} placeholder="v2" className="mt-1" /></div>
                       <div><Label>File URL</Label><Input {...revReg("fileUrl")} placeholder="https://..." className="mt-1" /></div>
                     </div>
@@ -134,7 +134,7 @@ export default function DesignDocDetail() {
           </div>
 
           {/* Approval timeline */}
-          <div className="mt-6 pt-5 border-t border-slate-100 grid grid-cols-2 gap-4">
+          <div className="mt-6 pt-5 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex items-center gap-3">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${doc.internalApprovedAt ? "bg-blue-100" : "bg-slate-100"}`}>
                 <CheckCircle2 className={`w-4 h-4 ${doc.internalApprovedAt ? "text-blue-600" : "text-slate-400"}`} />

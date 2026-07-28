@@ -57,7 +57,7 @@ function AllocationDetail({ alloc, onClose, onAction }: { alloc: any; onClose: (
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {[
           { label: "Allocation #", val: alloc.allocationNumber },
           { label: "Status", val: <Badge className={cn("text-[10px] font-bold", STATUS_COLORS[alloc.status] || "")}>{alloc.status}</Badge> },
@@ -240,7 +240,7 @@ export function ProjectAllocations() {
           <DialogHeader><DialogTitle className="text-xl font-black">New Material Allocation</DialogTitle></DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(d => createMut.mutate(d))} className="space-y-4 mt-2">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField control={form.control} name="projectName" render={({ field }) => (
                   <FormItem><FormLabel className="text-xs font-bold uppercase tracking-wider">Project *</FormLabel>
                     <FormControl><Input className="h-10 bg-muted/30" {...field} placeholder="Project name" /></FormControl>
@@ -263,7 +263,7 @@ export function ProjectAllocations() {
                   <FormMessage />
                 </FormItem>
               )} />
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 <FormField control={form.control} name="requestedQty" render={({ field }) => (
                   <FormItem><FormLabel className="text-xs font-bold uppercase tracking-wider">Qty *</FormLabel>
                     <FormControl><Input className="h-10 bg-muted/30" type="number" min="0.001" step="0.001" {...field} /></FormControl>
@@ -284,7 +284,7 @@ export function ProjectAllocations() {
                   </FormItem>
                 )} />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <FormField control={form.control} name="categoryCode" render={({ field }) => (
                   <FormItem><FormLabel className="text-xs font-bold uppercase tracking-wider">Category</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>

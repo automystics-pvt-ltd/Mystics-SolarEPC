@@ -1083,7 +1083,7 @@ export default function VendorDetail({ id }: { id: string }) {
         {/* ── GST & Details ── */}
         <TabsContent value="details" className="mt-4 space-y-4">
           <SectionCard title="GST Information">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {renderField({ label: "GSTIN", field: "gstin", placeholder: "27AABCU9603R1ZX", uppercase: true, mono: true, hint: `${(form.gstin ?? "").length}/15 chars` })}
               {renderField({ label: "PAN", field: "pan", placeholder: "AABCU9603R", uppercase: true, mono: true, hint: `${(form.pan ?? "").length}/10 chars` })}
               {renderCombobox({ label: "GST Registered State", field: "gstRegisteredState", options: INDIAN_STATES, searchPlaceholder: "Search state…" })}
@@ -1106,7 +1106,7 @@ export default function VendorDetail({ id }: { id: string }) {
           </SectionCard>
 
           <SectionCard title="Contact &amp; Terms">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {renderStatus()}
               {renderField({ label: "Website", field: "website", placeholder: "https://vendor.com" })}
               {renderField({ label: "Primary Email", field: "primaryEmail", placeholder: "vendor@example.com" })}
@@ -1323,7 +1323,7 @@ export default function VendorDetail({ id }: { id: string }) {
         {/* ── Bank ── */}
         <TabsContent value="bank" className="mt-4">
           <SectionCard title="Bank Account Details">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {renderCombobox({ label: "Bank Name", field: "bankName", options: INDIAN_BANKS, searchPlaceholder: "Search bank…", allowCustom: true })}
               {renderCombobox({ label: "Branch / Location", field: "bankBranch", options: INDIAN_CITIES, searchPlaceholder: "Search city or area…", allowCustom: true })}
               {/* Account Number — special digit-only input */}
@@ -1382,7 +1382,7 @@ export default function VendorDetail({ id }: { id: string }) {
               const pincodeMask   = country === "India" ? /\D/g : /[^A-Za-z0-9 -]/g;
 
               return (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* ① Full-width address line */}
                   <div className="col-span-2">
                     {renderField({ label: "Address Line", field: "billingAddress", placeholder: "Street, building, floor…" })}
