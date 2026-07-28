@@ -1,5 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import { runAuditLogsMigration } from "./migrations/create_audit_logs";
 import {
   db, approvalRequestsTable, approvalRequestStepsTable, approvalActionsTable,
   approvalWorkflowStepsTable, notificationsTable, usersTable,
@@ -19,6 +20,9 @@ const port = Number(rawPort);
 if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
+
+// Run idempotent migrations on every boot
+void runAuditLogsMigration();
 
 app.listen(port, (err) => {
   if (err) {

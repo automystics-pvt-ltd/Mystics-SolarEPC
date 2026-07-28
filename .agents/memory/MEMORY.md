@@ -15,3 +15,4 @@
 - [ERP Vite Fast Refresh pitfalls](erp-vite-fast-refresh.md) — files mixing components+hooks+constants break HMR; fix with // @refresh reset or split exports; auth.tsx, permissions.tsx, NavRail.tsx affected
 - [ERP Zod v4 resolver fix](erp-zod-resolver-fix.md) — zod v4 uses .issues not .errors; always import zodResolver from @/lib/zodResolver, never @hookform/resolvers/zod directly; quotation_attachments column is object_path not file_key
 - [Solar EPC real seed data](solar-epc-seed-data.md) — comprehensive seed covering full P2P chain; key column name quirks for stock_ledger, material_stock_levels, material_suppliers, proc_invoice_items
+- [Mystics ERP audit logs module](mystics-erp-audit-logs.md) — system-wide audit trail; req.path inside /api router has NO /api prefix; params mutation bug pattern to avoid in pg queries

@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import { requireAuth } from "../lib/rbac";
+import { auditMiddleware } from "../middleware/auditMiddleware";
 import healthRouter from "./health";
 import storageRouter from "./storage";
 import procQuotationAttachmentsRouter from "./proc_quotation_attachments";
@@ -34,6 +35,7 @@ import solarInventoryRouter from "./solar_inventory";
 import projLifecycleRouter from "./proj_lifecycle";
 import projExecutionRouter from "./proj_execution";
 import projClosureRouter from "./proj_closure";
+import auditLogsRouter from "./audit_logs";
 
 const router: IRouter = Router();
 
@@ -43,6 +45,8 @@ router.use(procQuotationAttachmentsRouter);
 router.use(authRouter);
 // Catch-all auth guard — any future router that omits requireAuth is still protected
 router.use(requireAuth());
+// Automatic audit capture for all non-GET, non-excluded routes
+router.use(auditMiddleware());
 router.use(dashboardRouter);
 router.use(leadsRouter);
 router.use(quotationsRouter);
@@ -73,5 +77,6 @@ router.use(solarInventoryRouter);
 router.use(projLifecycleRouter);
 router.use(projExecutionRouter);
 router.use(projClosureRouter);
+router.use(auditLogsRouter);
 
 export default router;
