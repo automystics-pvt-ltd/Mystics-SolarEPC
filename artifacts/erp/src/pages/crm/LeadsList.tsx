@@ -16,7 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@/lib/zodResolver";
 import { z } from "zod";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
@@ -89,6 +89,10 @@ const SOURCE_OPTIONS = [
   { value: "Inbound", label: "Inbound" },
   { value: "Outbound", label: "Outbound" },
   { value: "Referral", label: "Referral" },
+  { value: "Website", label: "Website" },
+  { value: "IndiaMART", label: "IndiaMART" },
+  { value: "JustDial", label: "JustDial" },
+  { value: "Card-scan", label: "Card Scan / Event" },
   { value: "Event", label: "Event" },
   { value: "Digital", label: "Digital / Social" },
   { value: "Tender", label: "Tender / Bid" },
@@ -172,7 +176,17 @@ export function LeadsList() {
 
   const form = useForm<z.infer<typeof createLeadSchema>>({
     resolver: zodResolver(createLeadSchema),
-    defaultValues: { source: "Inbound", status: "New" }
+    defaultValues: {
+      companyName: "",
+      contactName: "",
+      contactEmail: "",
+      contactPhone: "",
+      source: "Inbound",
+      status: "New",
+      territory: "",
+      productInterest: "",
+      notes: "",
+    }
   });
 
   const createMutation = useCreateLead({

@@ -8,9 +8,9 @@ import { Plus, Warehouse } from "lucide-react";
 import { CanCreate } from "@/lib/permissions";
 import { useLocation } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@/lib/zodResolver";
 import { z } from "zod";
 import { motion } from "framer-motion";
 import { PageHeader, DataTable, StatusBadge } from "@/components/shared";
@@ -34,7 +34,7 @@ export function WarehousesList() {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: { type: "Main" }
+    defaultValues: { name: "", location: "", type: "Main", capacity: "" }
   });
 
   const createMut = useCreateWarehouse({
@@ -125,24 +125,28 @@ export function WarehousesList() {
               <FormItem>
                 <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Name</FormLabel>
                 <FormControl><Input className="h-10 bg-muted/30" {...field} /></FormControl>
+                <FormMessage />
               </FormItem>
             )} />
             <FormField control={form.control} name="type" render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Type</FormLabel>
                 <FormControl><Input className="h-10 bg-muted/30" {...field} placeholder="Main, Site, Yard..." /></FormControl>
+                <FormMessage />
               </FormItem>
             )} />
             <FormField control={form.control} name="location" render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Location / Address</FormLabel>
                 <FormControl><Input className="h-10 bg-muted/30" {...field} /></FormControl>
+                <FormMessage />
               </FormItem>
             )} />
             <FormField control={form.control} name="capacity" render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Capacity</FormLabel>
                 <FormControl><Input className="h-10 bg-muted/30" {...field} /></FormControl>
+                <FormMessage />
               </FormItem>
             )} />
             <Button type="submit" className="w-full h-11 bg-[#0A0F2C] hover:bg-[#0A0F2C]/90 text-white font-bold rounded-[8px] mt-2" disabled={createMut.isPending}>

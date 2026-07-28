@@ -13,3 +13,4 @@
 - [Procurement PO DB schema gaps](proc-pos-db-schema.md) — po_comments, po_versions tables and is_locked/approval columns must be created manually; project_id added to procurement_pos
 - [QA Audit Findings (July 2026)](qa-audit-findings.md) — all 26 endpoints green; key fixes: quotations missing DB column, SLA enum cast, vendor perf unlinked POs, report status filter, SortIcon key prop
 - [ERP Vite Fast Refresh pitfalls](erp-vite-fast-refresh.md) — files mixing components+hooks+constants break HMR; fix with // @refresh reset or split exports; auth.tsx, permissions.tsx, NavRail.tsx affected
+- [ERP Zod v4 resolver fix](erp-zod-resolver-fix.md) — zod v4 uses .issues not .errors; always import zodResolver from @/lib/zodResolver, never @hookform/resolvers/zod directly; quotation_attachments column is object_path not file_key

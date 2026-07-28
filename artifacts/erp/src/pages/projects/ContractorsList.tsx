@@ -7,9 +7,9 @@ import { Plus, HardHat, Star, Phone } from "lucide-react";
 import { CanCreate } from "@/lib/permissions";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@/lib/zodResolver";
 import { z } from "zod";
 import { motion } from "framer-motion";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -39,7 +39,7 @@ export function ContractorsList() {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: { rating: 3 }
+    defaultValues: { name: "", trade: "", contact: "", rating: 3 }
   });
 
   const createMut = useCreateContractor({
@@ -118,12 +118,14 @@ export function ContractorsList() {
               <FormItem>
                 <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Company Name</FormLabel>
                 <FormControl><Input className="h-10 bg-muted/30" {...field} /></FormControl>
+                <FormMessage />
               </FormItem>
             )} />
             <FormField control={form.control} name="trade" render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Trade / Specialty</FormLabel>
                 <FormControl><Input className="h-10 bg-muted/30" {...field} placeholder="e.g. Electrical, Civil" /></FormControl>
+                <FormMessage />
               </FormItem>
             )} />
             <div className="grid grid-cols-2 gap-4">
@@ -131,12 +133,14 @@ export function ContractorsList() {
                 <FormItem>
                   <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Contact Info</FormLabel>
                   <FormControl><Input className="h-10 bg-muted/30" {...field} /></FormControl>
+                  <FormMessage />
                 </FormItem>
               )} />
               <FormField control={form.control} name="rating" render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Rating (1-5)</FormLabel>
                   <FormControl><Input className="h-10 bg-muted/30 font-mono" type="number" min="1" max="5" {...field} /></FormControl>
+                  <FormMessage />
                 </FormItem>
               )} />
             </div>

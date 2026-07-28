@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { useGetProcurementPOs } from "@workspace/api-client-react";
 import { useLocation, useSearch } from "wouter";
+import { CanCreate } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
-import { Search, ShoppingCart, ChevronRight, Clock, XCircle, Download, X, AlertCircle } from "lucide-react";
+import { Search, ShoppingCart, ChevronRight, Clock, XCircle, Download, X, AlertCircle, Plus } from "lucide-react";
 import { exportToCsv } from "@/lib/export";
 import { cn } from "@/lib/utils";
 
@@ -107,9 +108,17 @@ export default function ProcurementPOsList() {
           <h1 className="text-2xl font-bold text-gray-900">Purchase Orders</h1>
           <p className="text-sm text-gray-500 mt-1">Full lifecycle from draft through approval, issuance, and payment</p>
         </div>
-        <Button variant="outline" size="sm" className="gap-2" onClick={handleExport}>
-          <Download className="w-4 h-4" /> Export CSV
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" className="gap-2" onClick={handleExport}>
+            <Download className="w-4 h-4" /> Export CSV
+          </Button>
+          <CanCreate module="procurement">
+            <Button size="sm" className="gap-2 bg-[#EA580C] hover:bg-[#C2410C] text-white font-bold"
+              onClick={() => setLocation("/procurement/quotations")}>
+              <Plus className="w-4 h-4" /> New PO
+            </Button>
+          </CanCreate>
+        </div>
       </div>
 
       {/* Tabs */}

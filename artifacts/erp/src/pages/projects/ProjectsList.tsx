@@ -5,14 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, FolderKanban, MapPin, UserCircle } from "lucide-react";
+import { Plus, Search, FolderKanban, MapPin, UserCircle, Filter } from "lucide-react";
 import { CanCreate } from "@/lib/permissions";
 import { SkeletonList, EmptyState } from "@/components/shared";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@/lib/zodResolver";
 import { z } from "zod";
 import { motion } from "framer-motion";
 import { formatINRCompact } from "@/lib/currency";
@@ -36,8 +37,18 @@ function getStatusColor(status: string) {
   }
 }
 
+const STATUS_OPTIONS = [
+  { value: "all", label: "All Statuses" },
+  { value: "Active", label: "Active" },
+  { value: "Planning", label: "Planning" },
+  { value: "On Hold", label: "On Hold" },
+  { value: "Completed", label: "Completed" },
+  { value: "Cancelled", label: "Cancelled" },
+];
+
 export function ProjectsList() {
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const queryClient = useQueryClient();
 
@@ -49,7 +60,7 @@ export function ProjectsList() {
 
   const form = useForm<z.infer<typeof createProjectSchema>>({
     resolver: zodResolver(createProjectSchema),
-    defaultValues: { name: "" }
+    defaultValues: { name: "", siteLocation: "", startDate: "", plannedEnd: "" }
   });
 
   const createMutation = useCreateProject({
@@ -62,10 +73,13 @@ export function ProjectsList() {
     }
   });
 
-  const filteredProjects = projects?.filter(p => 
-    p.name.toLowerCase().includes(search.toLowerCase()) || 
-    p.siteLocation?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredProjects = projects?.filter(p => {
+    const matchesSearch = !search ||
+      p.name.toLowerCase().includes(search.toLowerCase()) ||
+      p.siteLocation?.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = statusFilter === "all" || p.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-10">
@@ -159,8 +173,8 @@ export function ProjectsList() {
 
       {/* List Area */}
       <div className="bg-white rounded-[12px] premium-shadow border border-gray-100 overflow-hidden">
-        <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
-          <div className="relative w-full max-w-sm">
+        <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row gap-3 items-center justify-between">
+          <div className="relative w-full sm:max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input 
               placeholder="Search projects by name or location..." 
@@ -169,6 +183,16 @@ export function ProjectsList() {
               onChange={e => setSearch(e.target.value)}
             />
           </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full sm:w-[180px] h-10 bg-white border-gray-200 shadow-sm rounded-[8px] font-medium text-sm">
+              <div className="flex items-center gap-2"><Filter className="w-4 h-4 text-gray-400" /><SelectValue placeholder="All Statuses" /></div>
+            </SelectTrigger>
+            <SelectContent>
+              {STATUS_OPTIONS.map(o => (
+                <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         
         <div className="overflow-x-auto">

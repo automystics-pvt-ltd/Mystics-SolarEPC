@@ -126,7 +126,7 @@ export const quotationAttachmentsTable = pgTable("quotation_attachments", {
   id: serial("id").primaryKey(),
   quotationId: integer("quotation_id").notNull().references(() => procurementQuotationsTable.id, { onDelete: "cascade" }),
   fileName: text("file_name").notNull(),
-  fileKey: text("file_key").notNull(), // Stable object path, e.g. /objects/private-objects/<uuid>
+  fileKey: text("object_path").notNull(), // DB column is "object_path"; alias kept as fileKey for TS usage
   fileSize: integer("file_size"),
   mimeType: text("mime_type"),
   uploadedBy: integer("uploaded_by"),
