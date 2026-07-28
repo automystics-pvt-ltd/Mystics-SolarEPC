@@ -87,6 +87,8 @@ const FinanceDashboard = lazy(() => import('@/pages/finance/FinanceDashboard'));
 const UserManagement = lazy(() => import('@/pages/admin/UserManagement'));
 const AuditLogs = lazy(() => import('@/pages/admin/AuditLogs'));
 const RBACManager = lazy(() => import('@/pages/admin/RBACManager'));
+const PlatformHome = lazy(() => import('@/pages/admin/PlatformHome'));
+const DbAdmin = lazy(() => import('@/pages/admin/db/DbAdmin'));
 
 // Approvals — lazy loaded
 const ApprovalWorkbench = lazy(() => import('@/pages/approvals/ApprovalWorkbench'));
@@ -317,6 +319,8 @@ function Router() {
       <Route path="/reports">{() => <ProtectedRoute component={ReportsModule} module="reports" />}</Route>
 
       {/* Admin */}
+      <Route path="/admin/platform">{() => <ProtectedRoute component={PlatformHome} module="admin" />}</Route>
+      <Route path="/admin/db">{() => <ProtectedRoute component={DbAdmin} module="admin" />}</Route>
       <Route path="/admin/users">{() => <ProtectedRoute component={UserManagement} module="admin" />}</Route>
       <Route path="/admin/audit-logs">{() => <ProtectedRoute component={AuditLogs} module="admin" />}</Route>
       <Route path="/admin/rbac">{() => <ProtectedRoute component={RBACManager} module="admin" />}</Route>

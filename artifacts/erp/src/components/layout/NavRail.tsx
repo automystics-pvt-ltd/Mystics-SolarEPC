@@ -35,7 +35,7 @@ import {
   ClipboardList, Building2, Package, RotateCcw, Boxes,
   BarChart2, BarChart3, TrendingUp, UserCog, ScrollText, X,
   ChevronRight, Users2, FileCode, Calendar, Receipt, Star, Clock,
-  Trash2, Pin, PinOff, ListChecks, GitBranch, Shield,
+  Trash2, Pin, PinOff, ListChecks, GitBranch, Shield, Database,
 } from "lucide-react";
 
 /* ════════════════════════════════════════════════════════════════
@@ -143,6 +143,8 @@ const RAIL: RailEntry[] = [
   {
     type: "group", key: "admin", icon: Settings2, label: "Administration",
     items: [
+      { name: "Platform",        href: "/admin/platform",   icon: LayoutDashboard, module: "admin" },
+      { name: "DB Admin",        href: "/admin/db",         icon: Database,        module: "admin" },
       { name: "User Management", href: "/admin/users",      icon: UserCog  },
       { name: "Audit Logs",      href: "/admin/audit-logs", icon: ScrollText },
       { name: "Access Control",  href: "/admin/rbac",       icon: Shield,  module: "admin" },

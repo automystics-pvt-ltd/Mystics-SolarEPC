@@ -36,6 +36,7 @@ import projLifecycleRouter from "./proj_lifecycle";
 import projExecutionRouter from "./proj_execution";
 import projClosureRouter from "./proj_closure";
 import auditLogsRouter from "./audit_logs";
+import dbAdminRouter from "./db_admin";
 
 const router: IRouter = Router();
 
@@ -78,5 +79,6 @@ router.use(projLifecycleRouter);
 router.use(projExecutionRouter);
 router.use(projClosureRouter);
 router.use(auditLogsRouter);
+router.use(dbAdminRouter);
 
 export default router;
