@@ -27,8 +27,12 @@ export function auditMiddleware(): RequestHandler {
     const path = req.path;
     if (shouldSkip(path)) { next(); return; }
 
-    const routeInfo = resolveRoute(path);
-    if (!routeInfo) { next(); return; }
+    // Resolve route info; fall back to "unknown" so no write action is ever silently dropped
+    const routeInfo = resolveRoute(path) ?? {
+      module: "unknown",
+      entityType: path.split("/")[1] ?? "unknown",
+      entityLabel: path.split("/")[1] ?? "unknown",
+    };
 
     const startMs = Date.now();
     const actor   = (req as any).actor as { userId: number; role: string } | undefined;

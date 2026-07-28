@@ -93,52 +93,76 @@ export async function writeAuditLog(data: AuditLogData): Promise<void> {
 export interface RouteInfo { module: string; entityType: string; entityLabel: string }
 
 // NOTE: req.path inside the /api router is WITHOUT the /api prefix.
-// e.g. POST /api/leads arrives here as req.path = "/leads"
+// e.g. POST /api/leads → req.path = "/leads", POST /api/proc-grns → "/proc-grns"
+// More-specific prefixes must appear BEFORE shorter ones that would also match.
 const PREFIX_MAP: [string, RouteInfo][] = [
-  // CRM
-  ["/leads",                   { module: "crm",          entityType: "lead",              entityLabel: "Lead"              }],
-  ["/quotations",              { module: "crm",          entityType: "quotation",          entityLabel: "CRM Quotation"     }],
-  ["/crm-invoices",            { module: "crm",          entityType: "crm_invoice",        entityLabel: "CRM Invoice"       }],
-  ["/client-pos",              { module: "crm",          entityType: "client_po",          entityLabel: "Client PO"         }],
-  ["/tasks",                   { module: "crm",          entityType: "task",               entityLabel: "Task"              }],
-  ["/escalations",             { module: "crm",          entityType: "escalation",         entityLabel: "Escalation"        }],
-  // Projects
-  ["/projects",                { module: "projects",     entityType: "project",            entityLabel: "Project"           }],
-  ["/contractors",             { module: "projects",     entityType: "contractor",         entityLabel: "Contractor"        }],
-  ["/activities",              { module: "projects",     entityType: "activity",           entityLabel: "Activity"          }],
-  ["/budgets",                 { module: "projects",     entityType: "budget",             entityLabel: "Budget"            }],
-  ["/dprs",                    { module: "projects",     entityType: "dpr",                entityLabel: "DPR"               }],
-  ["/expenses",                { module: "projects",     entityType: "expense",            entityLabel: "Expense"           }],
-  ["/payment-milestones",      { module: "projects",     entityType: "payment_milestone",  entityLabel: "Payment Milestone" }],
-  ["/material-requests",       { module: "projects",     entityType: "material_request",   entityLabel: "Material Request"  }],
-  // Procurement
-  ["/vendors",                 { module: "procurement",  entityType: "vendor",             entityLabel: "Vendor"            }],
-  ["/material-categories",     { module: "procurement",  entityType: "material_category",  entityLabel: "Material Category" }],
-  ["/material-suppliers",      { module: "procurement",  entityType: "material_supplier",  entityLabel: "Material Supplier" }],
-  ["/materials",               { module: "procurement",  entityType: "material",           entityLabel: "Material"          }],
-  ["/procurement-quotations",  { module: "procurement",  entityType: "proc_quotation",     entityLabel: "Vendor Quotation"  }],
-  ["/procurement-pos",         { module: "procurement",  entityType: "purchase_order",     entityLabel: "Purchase Order"    }],
-  ["/procurement-grns",        { module: "procurement",  entityType: "grn",                entityLabel: "GRN"               }],
-  ["/procurement-invoices",    { module: "procurement",  entityType: "invoice",            entityLabel: "Invoice"           }],
-  ["/grn-returns",             { module: "procurement",  entityType: "grn_return",         entityLabel: "GRN Return"        }],
-  // Inventory
-  ["/warehouses",              { module: "inventory",    entityType: "warehouse",          entityLabel: "Warehouse"         }],
-  ["/stock-transfers",         { module: "inventory",    entityType: "stock_transfer",     entityLabel: "Stock Transfer"    }],
-  ["/inventory",               { module: "inventory",    entityType: "inventory",          entityLabel: "Inventory"         }],
-  ["/solar-inventory",         { module: "inventory",    entityType: "solar_inventory",    entityLabel: "Solar Inventory"   }],
-  // Engineering / Commissioning / O&M
-  ["/engineering",             { module: "engineering",    entityType: "document",         entityLabel: "Engineering Doc"   }],
-  ["/commissioning",           { module: "commissioning",  entityType: "checklist",        entityLabel: "Commissioning"     }],
-  ["/oam",                     { module: "oam",            entityType: "service_ticket",   entityLabel: "Service Ticket"    }],
-  // Approvals
-  ["/approvals",               { module: "approvals",    entityType: "approval",           entityLabel: "Approval"          }],
-  // Admin
-  ["/users",                   { module: "admin",        entityType: "user",               entityLabel: "User"              }],
-  ["/rbac",                    { module: "admin",        entityType: "role_permission",    entityLabel: "Permission"        }],
-  // Project lifecycle sub-routes
-  ["/proj-lifecycle",          { module: "projects",     entityType: "project_lifecycle",  entityLabel: "Project Lifecycle" }],
-  ["/proj-execution",          { module: "projects",     entityType: "project_execution",  entityLabel: "Project Execution" }],
-  ["/proj-closure",            { module: "projects",     entityType: "project_closure",    entityLabel: "Project Closure"   }],
+  // ── CRM ──────────────────────────────────────────────────────────────────
+  ["/leads",                    { module: "crm",          entityType: "lead",                    entityLabel: "Lead"                   }],
+  ["/quotations",               { module: "crm",          entityType: "quotation",               entityLabel: "CRM Quotation"          }],
+  ["/crm-invoices",             { module: "crm",          entityType: "crm_invoice",             entityLabel: "CRM Invoice"            }],
+  ["/client-pos",               { module: "crm",          entityType: "client_po",               entityLabel: "Client PO"              }],
+  ["/tasks",                    { module: "crm",          entityType: "task",                    entityLabel: "Task"                   }],
+  ["/escalations",              { module: "crm",          entityType: "escalation",              entityLabel: "Escalation"             }],
+
+  // ── Projects (specific sub-resources before the generic /projects) ────────
+  ["/material-requests",        { module: "projects",     entityType: "material_request",        entityLabel: "Material Request"       }],
+  ["/payment-milestones",       { module: "projects",     entityType: "payment_milestone",       entityLabel: "Payment Milestone"      }],
+  ["/boq-items",                { module: "projects",     entityType: "boq_item",                entityLabel: "BOQ Item"               }],
+  ["/change-requests",          { module: "projects",     entityType: "change_request",          entityLabel: "Change Request"         }],
+  ["/project-milestones",       { module: "projects",     entityType: "project_milestone",       entityLabel: "Project Milestone"      }],
+  ["/project-inspections",      { module: "projects",     entityType: "project_inspection",      entityLabel: "Project Inspection"     }],
+  ["/closure",                  { module: "projects",     entityType: "project_closure",         entityLabel: "Project Closure"        }],
+  ["/handover",                 { module: "projects",     entityType: "project_handover",        entityLabel: "Project Handover"       }],
+  ["/projects",                 { module: "projects",     entityType: "project",                 entityLabel: "Project"                }],
+  ["/contractors",              { module: "projects",     entityType: "contractor",              entityLabel: "Contractor"             }],
+  ["/activities",               { module: "projects",     entityType: "activity",                entityLabel: "Activity"               }],
+  ["/budgets",                  { module: "projects",     entityType: "budget",                  entityLabel: "Budget"                 }],
+  ["/dprs",                     { module: "projects",     entityType: "dpr",                     entityLabel: "DPR"                    }],
+  ["/expenses",                 { module: "projects",     entityType: "expense",                 entityLabel: "Expense"                }],
+
+  // ── Procurement (longer prefixes before shorter that would also match) ────
+  ["/material-categories",      { module: "procurement",  entityType: "material_category",       entityLabel: "Material Category"      }],
+  ["/material-suppliers",       { module: "procurement",  entityType: "material_supplier",       entityLabel: "Material Supplier"      }],
+  ["/materials",                { module: "procurement",  entityType: "material",                entityLabel: "Material"               }],
+  ["/vendors",                  { module: "procurement",  entityType: "vendor",                  entityLabel: "Vendor"                 }],
+  ["/procurement-quotations",   { module: "procurement",  entityType: "proc_quotation",          entityLabel: "Vendor Quotation"       }],
+  ["/procurement-pos",          { module: "procurement",  entityType: "purchase_order",          entityLabel: "Purchase Order"         }],
+  ["/purchase-orders",          { module: "procurement",  entityType: "purchase_order",          entityLabel: "Purchase Order"         }],
+  ["/proc-grns",                { module: "procurement",  entityType: "grn",                     entityLabel: "GRN"                    }],
+  ["/proc-invoices",            { module: "procurement",  entityType: "invoice",                 entityLabel: "Invoice"                }],
+  ["/grn-returns",              { module: "procurement",  entityType: "grn_return",              entityLabel: "GRN Return"             }],
+  ["/delivery-challans",        { module: "procurement",  entityType: "delivery_challan",        entityLabel: "Delivery Challan"       }],
+
+  // ── Inventory ─────────────────────────────────────────────────────────────
+  ["/stock-transfers",          { module: "inventory",    entityType: "stock_transfer",          entityLabel: "Stock Transfer"         }],
+  ["/solar-inventory",          { module: "inventory",    entityType: "solar_inventory",         entityLabel: "Solar Inventory"        }],
+  ["/inventory-audits",         { module: "inventory",    entityType: "inventory_audit",         entityLabel: "Inventory Audit"        }],
+  ["/inventory",                { module: "inventory",    entityType: "inventory",               entityLabel: "Inventory"              }],
+  ["/warehouses",               { module: "inventory",    entityType: "warehouse",               entityLabel: "Warehouse"              }],
+  ["/grns",                     { module: "inventory",    entityType: "grn",                     entityLabel: "GRN"                    }],
+
+  // ── Engineering ───────────────────────────────────────────────────────────
+  ["/design-documents",         { module: "engineering",    entityType: "design_document",       entityLabel: "Design Document"        }],
+  ["/inspection-checklists",    { module: "engineering",    entityType: "inspection_checklist",  entityLabel: "Inspection Checklist"   }],
+
+  // ── Commissioning ─────────────────────────────────────────────────────────
+  ["/commissioning-checklists", { module: "commissioning",  entityType: "commissioning_checklist",entityLabel: "Commissioning Checklist"}],
+  ["/commissioning-items",      { module: "commissioning",  entityType: "commissioning_item",    entityLabel: "Commissioning Item"     }],
+  ["/compliance-documents",     { module: "commissioning",  entityType: "compliance_document",   entityLabel: "Compliance Document"    }],
+
+  // ── O&M ───────────────────────────────────────────────────────────────────
+  ["/amc-contracts",            { module: "oam",          entityType: "amc_contract",            entityLabel: "AMC Contract"           }],
+  ["/maintenance-schedules",    { module: "oam",          entityType: "maintenance_schedule",    entityLabel: "Maintenance Schedule"   }],
+  ["/service-tickets",          { module: "oam",          entityType: "service_ticket",          entityLabel: "Service Ticket"         }],
+
+  // ── Approvals ─────────────────────────────────────────────────────────────
+  ["/approval-workflows",       { module: "approvals",    entityType: "approval_workflow",       entityLabel: "Approval Workflow"      }],
+  ["/approval-requests",        { module: "approvals",    entityType: "approval_request",        entityLabel: "Approval Request"       }],
+  ["/approvals",                { module: "approvals",    entityType: "approval",                entityLabel: "Approval"               }],
+
+  // ── Admin ─────────────────────────────────────────────────────────────────
+  ["/users",                    { module: "admin",        entityType: "user",                    entityLabel: "User"                   }],
+  ["/rbac",                     { module: "admin",        entityType: "role_permission",         entityLabel: "Permission"             }],
 ];
 
 /** Paths that should NOT be audited by the middleware (auth handled manually).
