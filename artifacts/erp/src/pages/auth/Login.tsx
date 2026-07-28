@@ -150,9 +150,9 @@ export function Login() {
             <div className="grid grid-cols-2 gap-2">
               {[
                 { label: "Admin", email: "admin@automystics.com", pw: "admin123" },
-                { label: "Sales", email: "rajan@automystics.com", pw: "sales123" },
-                { label: "PM", email: "priya@automystics.com", pw: "pm123" },
-                { label: "Warehouse", email: "kiran@automystics.com", pw: "wh123" },
+                { label: "Sales", email: "meera@automystics.com", pw: "sales123" },
+                { label: "PM", email: "vikram@automystics.com", pw: "pm123" },
+                { label: "Warehouse", email: "santosh@automystics.com", pw: "wh123" },
               ].map((acc) => (
                 <button key={acc.label} type="button"
                   onClick={() => { form.setValue("email", acc.email); form.setValue("password", acc.pw); }}
