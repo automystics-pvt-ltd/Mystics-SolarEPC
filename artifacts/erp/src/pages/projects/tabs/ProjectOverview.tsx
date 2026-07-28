@@ -158,6 +158,87 @@ function PhaseStrip({ projectId }: { projectId: number }) {
   );
 }
 
+/* ── Health glance bar ───────────────────────────────────────────────────────── */
+function HealthGlance({
+  bg, openMRs, pendingPOs, openIssues, overallPct, warrantyExpiring, onTabChange,
+}: {
+  bg: any; openMRs: number; pendingPOs: number; openIssues: number;
+  overallPct: number; warrantyExpiring: number;
+  onTabChange?: (t: string) => void;
+}) {
+  const isOverBudget = bg ? bg.totalVariance < 0 : false;
+
+  const pills = [
+    {
+      label:  "Schedule",
+      value:  `${overallPct}%`,
+      icon:   Target,
+      status: overallPct >= 70 ? "ok" : overallPct >= 40 ? "warn" : "risk",
+      sub:    overallPct >= 70 ? "On track" : overallPct >= 40 ? "At risk" : "Behind",
+      tab:    "milestones",
+    },
+    {
+      label:  "Budget",
+      value:  isOverBudget ? "Over" : bg ? "OK" : "—",
+      icon:   DollarSign,
+      status: !bg ? "neutral" : isOverBudget ? "risk" : "ok",
+      sub:    !bg ? "Not set" : isOverBudget ? "Over budget" : "Under budget",
+      tab:    "budget",
+    },
+    {
+      label:  "Procurement",
+      value:  openMRs + pendingPOs > 0 ? `${openMRs + pendingPOs}` : "Clear",
+      icon:   Layers,
+      status: openMRs + pendingPOs > 0 ? "warn" : "ok",
+      sub:    openMRs + pendingPOs > 0 ? `${openMRs} MR · ${pendingPOs} PO open` : "All clear",
+      tab:    "mrs",
+    },
+    {
+      label:  "Issues",
+      value:  openIssues > 0 ? `${openIssues}` : "None",
+      icon:   AlertCircle,
+      status: openIssues > 0 ? "risk" : "ok",
+      sub:    openIssues > 0 ? "Needs attention" : "No open issues",
+      tab:    undefined,
+    },
+  ] as const;
+
+  const pillStyle = {
+    ok:      { bg: "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200/60 dark:border-emerald-900/60", icon: "text-emerald-600 dark:text-emerald-400", iconBg: "bg-emerald-100 dark:bg-emerald-900/50", value: "text-emerald-700 dark:text-emerald-300", sub: "text-emerald-600/70 dark:text-emerald-500" },
+    warn:    { bg: "bg-amber-50   dark:bg-amber-950/30   border-amber-200/60   dark:border-amber-900/60",   icon: "text-amber-600   dark:text-amber-400",   iconBg: "bg-amber-100   dark:bg-amber-900/50",   value: "text-amber-700   dark:text-amber-300",   sub: "text-amber-600/70   dark:text-amber-500" },
+    risk:    { bg: "bg-red-50     dark:bg-red-950/30     border-red-200/60     dark:border-red-900/60",     icon: "text-red-600     dark:text-red-400",     iconBg: "bg-red-100     dark:bg-red-900/50",     value: "text-red-700     dark:text-red-300",     sub: "text-red-600/70     dark:text-red-500" },
+    neutral: { bg: "bg-card border-border", icon: "text-muted-foreground", iconBg: "bg-muted", value: "text-foreground", sub: "text-muted-foreground/60" },
+  };
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+      {pills.map(p => {
+        const s = pillStyle[p.status];
+        return (
+          <button
+            key={p.label}
+            onClick={() => p.tab && onTabChange?.(p.tab)}
+            className={cn(
+              "flex items-center gap-3 p-3 rounded-xl border text-left transition-shadow",
+              s.bg,
+              p.tab ? "cursor-pointer hover:shadow-sm" : "cursor-default"
+            )}
+          >
+            <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center shrink-0", s.iconBg)}>
+              <p.icon className={cn("h-4 w-4", s.icon)} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60 leading-none mb-1">{p.label}</p>
+              <p className={cn("text-[16px] font-bold leading-none tabular-nums", s.value)}>{p.value}</p>
+              <p className={cn("text-[10px] mt-0.5 leading-none truncate", s.sub)}>{p.sub}</p>
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 /* ── Main overview ───────────────────────────────────────────────────────────── */
 export function ProjectOverview({ projectId, onTabChange }: ProjectOverviewProps) {
   const [, navigate] = useLocation();
@@ -201,6 +282,17 @@ export function ProjectOverview({ projectId, onTabChange }: ProjectOverviewProps
 
   return (
     <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.15 }} className="space-y-5">
+
+      {/* ── Health glance bar ─────────────────────────────────────────────── */}
+      <HealthGlance
+        bg={bg}
+        openMRs={openMRs}
+        pendingPOs={pendingPOs}
+        openIssues={openIssues}
+        overallPct={overallPct}
+        warrantyExpiring={warrantyExpiring}
+        onTabChange={onTabChange}
+      />
 
       {/* ── Phase lifecycle strip ─────────────────────────────────────────── */}
       <PhaseStrip projectId={projectId} />

@@ -1,5 +1,5 @@
+// @refresh reset
 import { useState } from "react";
-import { useLocation } from "wouter";
 import {
   useGetProjectDashboard,
   getGetProjectDashboardQueryKey,
@@ -9,166 +9,169 @@ import { apiGet } from "@/lib/fetch";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import {
-  MapPin, Calendar, User, DollarSign, ChevronDown, ChevronRight,
-  ShoppingCart, Package2, AlertTriangle, CheckSquare, FileText,
-  ExternalLink, TrendingUp, Activity, Zap, Target, ClipboardList,
-  Shield,
+  TooltipProvider, Tooltip, TooltipTrigger, TooltipContent,
+} from "@/components/ui/tooltip";
+import {
+  LayoutDashboard, Activity, PackageSearch, DollarSign, Milestone,
+  ShoppingCart, FolderOpen, Users, ClipboardList, ClipboardCheck,
+  Zap, GitBranch, ShieldAlert, AlertOctagon, HandshakeIcon,
+  ShieldCheck, Archive, MapPin, Calendar, User, TrendingUp,
+  ChevronDown, ChevronRight, AlertTriangle, CheckCircle2,
 } from "lucide-react";
 import { StatusBadge } from "@/components/shared";
 
+// ── Types ─────────────────────────────────────────────────────────────────────
 interface Props {
-  project: any;
-  projectId: number;
+  project:    any;
+  projectId:  number;
+  activeTab:  string;
   onTabChange: (tab: string) => void;
+  collapsed?: boolean;   // true = 48px icon-rail mode
 }
 
-/* ── Collapsible section ──────────────────────────────────────────────────────── */
-function Section({
-  title,
-  defaultOpen = true,
-  children,
-}: {
-  title: string;
-  defaultOpen?: boolean;
-  children: React.ReactNode;
-}) {
-  const [open, setOpen] = useState(defaultOpen);
-  return (
-    <div className="border-b border-border/30 last:border-0">
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground/70 hover:text-muted-foreground transition-colors"
-      >
-        {title}
-        {open
-          ? <ChevronDown className="h-3 w-3 opacity-60" />
-          : <ChevronRight className="h-3 w-3 opacity-60" />}
-      </button>
-      {open && <div className="pb-3">{children}</div>}
-    </div>
-  );
-}
-
-/* ── Inline data row ─────────────────────────────────────────────────────────── */
-function DataRow({
-  icon: Icon,
-  label,
-  value,
-  mono = false,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
+interface NavItem {
+  value: string;
   label: string;
-  value?: string | null;
-  mono?: boolean;
-}) {
-  if (!value) return null;
-  return (
-    <div className="flex items-start gap-2.5 px-4 py-1.5">
-      <Icon className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0 mt-[1px]" />
-      <div className="min-w-0">
-        <p className="text-[10px] text-muted-foreground/50 uppercase tracking-wide leading-none mb-0.5">{label}</p>
-        <p className={cn("text-[12px] font-medium text-foreground leading-snug break-words", mono && "font-mono")}>
-          {value}
-        </p>
-      </div>
-    </div>
-  );
+  Icon:  React.ComponentType<{ className?: string }>;
+  badge?: React.ReactNode;
 }
 
-/* ── Module quick-link row ───────────────────────────────────────────────────── */
-function ModuleRow({
-  icon: Icon,
-  label,
-  badge,
-  badgeColor,
-  onClick,
-  onExternalClick,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  badge?: string | number;
-  badgeColor?: "amber" | "red" | "emerald" | "blue" | "muted";
-  onClick?: () => void;
-  onExternalClick?: () => void;
-}) {
-  const badgeCls = {
-    amber:   "bg-amber-100  text-amber-700  dark:bg-amber-950/40  dark:text-amber-400",
-    red:     "bg-red-100    text-red-700    dark:bg-red-950/40    dark:text-red-400",
-    emerald: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400",
-    blue:    "bg-blue-100   text-blue-700   dark:bg-blue-950/40   dark:text-blue-400",
-    muted:   "bg-muted      text-muted-foreground",
-  }[badgeColor ?? "muted"];
-
-  return (
-    <div className="group/mr flex items-center gap-1 px-2 mx-2">
-      <button
-        onClick={onClick}
-        className="flex items-center gap-2 flex-1 min-w-0 rounded-md px-2 py-1.5 hover:bg-accent transition-colors text-left"
-      >
-        <div className={cn("h-5 w-5 rounded flex items-center justify-center shrink-0", badgeCls)}>
-          <Icon className="h-2.5 w-2.5" />
-        </div>
-        <span className="text-[12px] font-medium text-foreground truncate">{label}</span>
-        {badge !== undefined && badge !== "" && (
-          <span className={cn(
-            "ml-auto text-[10px] font-bold tabular-nums shrink-0 px-1 py-0.5 rounded",
-            badgeCls,
-          )}>
-            {badge}
-          </span>
-        )}
-      </button>
-      {onExternalClick && (
-        <button
-          onClick={onExternalClick}
-          className="opacity-0 group-hover/mr:opacity-50 hover:!opacity-100 p-1 text-muted-foreground transition-opacity shrink-0"
-        >
-          <ExternalLink className="h-3 w-3" />
-        </button>
-      )}
-    </div>
-  );
+interface NavGroup {
+  group: string | null;
+  items: NavItem[];
 }
 
-/* ── Progress bar sub-component ─────────────────────────────────────────────── */
-function MiniBar({
-  label, pct, color,
-}: {
-  label: string; pct: number; color: "emerald" | "blue" | "amber" | "red";
-}) {
-  const bar = {
-    emerald: "bg-emerald-500",
-    blue:    "bg-blue-500",
-    amber:   "bg-amber-500",
-    red:     "bg-red-500",
-  }[color];
-  return (
-    <div className="px-4 py-1">
-      <div className="flex justify-between items-center mb-1">
-        <span className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</span>
-        <span className="text-[11px] font-bold text-foreground tabular-nums">{pct}%</span>
-      </div>
-      <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-        <div
-          className={cn("h-full rounded-full transition-all duration-700", bar)}
-          style={{ width: `${Math.min(pct, 100)}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
-/* ── Currency formatter ─────────────────────────────────────────────────────── */
+// ── Currency helper ───────────────────────────────────────────────────────────
 function fmtINR(v: number): string {
-  if (v >= 10_000_000) return `₹${(v / 10_000_000).toFixed(2)}Cr`;
-  if (v >= 100_000) return `₹${(v / 100_000).toFixed(2)}L`;
+  if (v >= 10_000_000) return `₹${(v / 10_000_000).toFixed(1)}Cr`;
+  if (v >= 100_000)    return `₹${(v / 100_000).toFixed(1)}L`;
   return `₹${v.toLocaleString("en-IN")}`;
 }
 
-/* ── Main sidebar ────────────────────────────────────────────────────────────── */
-export function ProjectSidebar({ project, projectId, onTabChange }: Props) {
-  const [, navigate] = useLocation();
+// ── Badge pill ─────────────────────────────────────────────────────────────────
+function NavBadge({
+  value, color = "amber",
+}: {
+  value: React.ReactNode;
+  color?: "amber" | "red" | "blue" | "emerald" | "muted";
+}) {
+  const cls = {
+    amber:   "bg-amber-100  text-amber-700  dark:bg-amber-950/50  dark:text-amber-400",
+    red:     "bg-red-100    text-red-700    dark:bg-red-950/50    dark:text-red-400",
+    blue:    "bg-blue-100   text-blue-700   dark:bg-blue-950/50   dark:text-blue-400",
+    emerald: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400",
+    muted:   "bg-muted text-muted-foreground",
+  }[color];
+  return (
+    <span className={cn("ml-auto shrink-0 text-[9px] font-bold tabular-nums px-1.5 py-0.5 rounded-full leading-none", cls)}>
+      {value}
+    </span>
+  );
+}
 
+// ── Single nav item ────────────────────────────────────────────────────────────
+function NavItemButton({
+  item,
+  isActive,
+  collapsed,
+  onClick,
+}: {
+  item: NavItem;
+  isActive: boolean;
+  collapsed: boolean;
+  onClick: () => void;
+}) {
+  const btn = (
+    <button
+      onClick={onClick}
+      title={collapsed ? item.label : undefined}
+      className={cn(
+        "w-full flex items-center rounded-md transition-all duration-100 text-left group/navitem",
+        collapsed
+          ? "justify-center h-9 w-9 mx-auto p-0"
+          : "gap-2.5 px-2.5 py-1.5",
+        isActive
+          ? "bg-primary/10 text-primary font-semibold"
+          : "text-muted-foreground hover:bg-accent hover:text-foreground"
+      )}
+    >
+      <item.Icon className={cn(
+        "shrink-0 transition-colors",
+        collapsed ? "h-4 w-4" : "h-3.5 w-3.5",
+        isActive ? "text-primary" : "text-muted-foreground group-hover/navitem:text-foreground"
+      )} />
+      {!collapsed && (
+        <>
+          <span className="text-[12px] truncate flex-1 leading-none">{item.label}</span>
+          {item.badge}
+        </>
+      )}
+    </button>
+  );
+
+  if (collapsed) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>{btn}</TooltipTrigger>
+        <TooltipContent side="right" className="text-[12px] font-medium">
+          {item.label}
+          {item.badge && <span className="ml-1.5 opacity-70">(has updates)</span>}
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return btn;
+}
+
+// ── Collapsible section header ─────────────────────────────────────────────────
+function SectionHeader({
+  label, open, onToggle,
+}: {
+  label: string; open: boolean; onToggle: () => void;
+}) {
+  return (
+    <button
+      onClick={onToggle}
+      className="w-full flex items-center justify-between px-2.5 pt-3 pb-1 group/sec"
+    >
+      <span className="text-[9px] font-bold uppercase tracking-[0.13em] text-muted-foreground/50 group-hover/sec:text-muted-foreground/80 transition-colors">
+        {label}
+      </span>
+      {open
+        ? <ChevronDown  className="h-2.5 w-2.5 text-muted-foreground/30 group-hover/sec:text-muted-foreground/60" />
+        : <ChevronRight className="h-2.5 w-2.5 text-muted-foreground/30 group-hover/sec:text-muted-foreground/60" />}
+    </button>
+  );
+}
+
+// ── Icon-rail section divider ──────────────────────────────────────────────────
+function RailDivider() {
+  return <div className="my-1.5 mx-3 h-px bg-border/40" />;
+}
+
+// ── Progress mini-bar ─────────────────────────────────────────────────────────
+function MiniBar({ pct, color }: { pct: number; color: string }) {
+  return (
+    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+      <div className={cn("h-full rounded-full transition-all duration-700", color)} style={{ width: `${Math.min(pct, 100)}%` }} />
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main sidebar
+// ─────────────────────────────────────────────────────────────────────────────
+export function ProjectSidebar({ project, projectId, activeTab, onTabChange, collapsed = false }: Props) {
+  // Section collapse state — all open by default
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    Core: true, "Field Ops": true, Lifecycle: false,
+  });
+
+  const toggleSection = (label: string) =>
+    setOpenSections(s => ({ ...s, [label]: !s[label] }));
+
+  // ── Dashboard data for badges ──
   const { data: dashboard } = useGetProjectDashboard(projectId, {
     query: {
       queryKey: getGetProjectDashboardQueryKey(projectId),
@@ -184,141 +187,299 @@ export function ProjectSidebar({ project, projectId, onTabChange }: Props) {
     staleTime: 5 * 60_000,
   });
 
-  const d = dashboard as any;
-  const openMRs    = d?.openMRsCount    ?? 0;
-  const pendingPOs = d?.pendingPOsCount ?? 0;
-  const openIssues = d?.openEscalationsCount ?? 0;
-  const bg         = d?.budgetSummary;
+  const d            = dashboard as any;
+  const openMRs      = d?.openMRsCount       ?? 0;
+  const pendingPOs   = d?.pendingPOsCount     ?? 0;
+  const openIssues   = d?.openEscalationsCount ?? 0;
+  const bg           = d?.budgetSummary;
+  const isOverBudget = bg ? bg.totalVariance < 0 : false;
 
-  const overallPct   = milestoneData?.overallCompletionPct ?? project.percentComplete ?? 0;
+  const pct          = milestoneData?.overallCompletionPct ?? project.percentComplete ?? 0;
   const totalBudget  = bg?.totalBudgeted ?? 0;
   const totalActual  = bg?.totalActual   ?? 0;
-  const isOverBudget = totalBudget > 0 && totalActual > totalBudget;
-  const budgetPct    = totalBudget > 0 ? Math.round((totalActual / totalBudget) * 100) : 0;
+  const budgetPct    = totalBudget > 0 ? Math.min(Math.round((totalActual / totalBudget) * 100), 100) : 0;
 
-  const overallColor: "emerald" | "blue" | "amber" =
-    overallPct >= 80 ? "emerald" : overallPct >= 40 ? "blue" : "amber";
-  const budgetColor: "emerald" | "amber" | "red" =
-    isOverBudget ? "red" : budgetPct >= 80 ? "amber" : "emerald";
+  const prjCode = `PRJ-${project.id.toString().padStart(4, "0")}`;
 
-  return (
-    <div className="py-1">
+  // ── Build nav groups with live badges ──
+  const NAV_GROUPS: NavGroup[] = [
+    {
+      group: null,
+      items: [
+        { value: "overview", label: "Overview", Icon: LayoutDashboard },
+      ],
+    },
+    {
+      group: "Core",
+      items: [
+        { value: "activities",  label: "Activities",  Icon: Activity },
+        { value: "boq",         label: "BOQ",         Icon: PackageSearch },
+        {
+          value: "budget", label: "Budget", Icon: DollarSign,
+          badge: isOverBudget
+            ? <NavBadge value="Over" color="red" />
+            : undefined,
+        },
+        { value: "milestones",  label: "Milestones",  Icon: Milestone },
+        {
+          value: "mrs", label: "Procurement", Icon: ShoppingCart,
+          badge: (openMRs + pendingPOs) > 0
+            ? <NavBadge value={`${openMRs + pendingPOs}`} color="amber" />
+            : undefined,
+        },
+        { value: "documents",   label: "Documents",   Icon: FolderOpen },
+      ],
+    },
+    {
+      group: "Field Ops",
+      items: [
+        { value: "resources",   label: "Resources",       Icon: Users },
+        { value: "dprs",        label: "Daily Reports",   Icon: ClipboardList },
+        { value: "inspections", label: "Inspections",     Icon: ClipboardCheck },
+        { value: "tc",          label: "Testing & Comm.", Icon: Zap },
+        { value: "changes",     label: "Change Requests", Icon: GitBranch },
+        {
+          value: "risks", label: "Risk Register", Icon: ShieldAlert,
+          badge: openIssues > 0
+            ? <NavBadge value={openIssues} color="red" />
+            : undefined,
+        },
+        { value: "snags",       label: "Snag Log",        Icon: AlertOctagon },
+      ],
+    },
+    {
+      group: "Lifecycle",
+      items: [
+        { value: "survey",   label: "Site Survey", Icon: ClipboardList },
+        { value: "handover", label: "Handover",    Icon: HandshakeIcon },
+        { value: "warranty", label: "Warranty",    Icon: ShieldCheck },
+        { value: "closure",  label: "Closure",     Icon: Archive },
+      ],
+    },
+  ];
 
-      {/* ── Project vitals ─────────────────────────────────────────────────── */}
-      <Section title="Project Info">
-        {/* Status row */}
-        <div className="px-4 pb-1 flex items-center gap-2">
-          <StatusBadge status={project.status} />
-          <span className="text-[11px] font-mono text-muted-foreground/60">
-            PRJ-{project.id.toString().padStart(4, "0")}
-          </span>
+  // ── Progress bar colour ──
+  const progColor = pct >= 80 ? "bg-emerald-500" : pct >= 40 ? "bg-blue-500" : "bg-amber-500";
+  const budgetColor = isOverBudget ? "bg-red-500" : budgetPct >= 80 ? "bg-amber-500" : "bg-emerald-500";
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // COLLAPSED (icon-rail) mode
+  // ─────────────────────────────────────────────────────────────────────────
+  if (collapsed) {
+    return (
+      <TooltipProvider delayDuration={150}>
+        <div className="flex flex-col items-center py-2 h-full overflow-y-auto scrollbar-none">
+
+          {/* Status dot */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="w-9 h-9 flex items-center justify-center mb-1 cursor-default">
+                <div className={cn(
+                  "h-2.5 w-2.5 rounded-full",
+                  project.status === "Active"    ? "bg-emerald-500 ring-2 ring-emerald-300/40 dark:ring-emerald-700/40" :
+                  project.status === "On Hold"   ? "bg-amber-500" :
+                  project.status === "Completed" ? "bg-violet-500" :
+                  project.status === "Cancelled" ? "bg-red-400" :
+                  "bg-blue-500"
+                )} />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="text-[11px]">
+              {prjCode} · {project.status} · {pct}%
+            </TooltipContent>
+          </Tooltip>
+
+          {/* All nav items flattened, with group dividers */}
+          {NAV_GROUPS.map((group, gi) => (
+            <div key={gi} className="w-full">
+              {gi > 0 && <RailDivider />}
+              <div className="flex flex-col items-center gap-0.5 px-1.5">
+                {group.items.map(item => (
+                  <div key={item.value} className="relative w-full flex justify-center">
+                    {/* Active dot indicator */}
+                    {activeTab === item.value && (
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-primary rounded-r-full" />
+                    )}
+                    <NavItemButton
+                      item={item}
+                      isActive={activeTab === item.value}
+                      collapsed={true}
+                      onClick={() => onTabChange(item.value)}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
+      </TooltipProvider>
+    );
+  }
 
-        <DataRow icon={MapPin}   label="Location"     value={project.siteLocation} />
-        <DataRow icon={User}     label="PM Owner"     value={project.pmOwnerName ?? "Not assigned"} />
-        <DataRow icon={Calendar} label="Start Date"   value={project.startDate ? format(new Date(project.startDate), "dd MMM yyyy") : null} />
-        <DataRow icon={Calendar} label="Target End"   value={project.plannedEnd ? format(new Date(project.plannedEnd), "dd MMM yyyy") : null} />
-        <DataRow icon={DollarSign} label="Contract Value"
-          value={project.contractValue ? fmtINR(Number(project.contractValue)) : null}
-          mono
-        />
-      </Section>
+  // ─────────────────────────────────────────────────────────────────────────
+  // EXPANDED mode
+  // ─────────────────────────────────────────────────────────────────────────
+  return (
+    <TooltipProvider delayDuration={400}>
+      <div className="flex flex-col h-full overflow-y-auto scrollbar-thin">
 
-      {/* ── Progress ──────────────────────────────────────────────────────── */}
-      <Section title="Progress & Budget">
-        <MiniBar label="Completion" pct={overallPct}   color={overallColor} />
-        {totalBudget > 0 && (
-          <>
-            <MiniBar label="Budget Burn" pct={budgetPct} color={budgetColor} />
-            <div className="flex justify-between px-4 mt-0.5 mb-1">
-              <span className="text-[10px] text-muted-foreground">
-                Spent {fmtINR(totalActual)}
-              </span>
-              <span className="text-[10px] text-muted-foreground">
-                of {fmtINR(totalBudget)}
+        {/* ── Project vitals card ───────────────────────────────────────────── */}
+        <div className="px-3 pt-3 pb-3 border-b border-border/40 space-y-2.5">
+
+          {/* Code + status */}
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-mono font-bold text-muted-foreground/50 tracking-wider">
+              {prjCode}
+            </span>
+            <StatusBadge status={project.status} />
+          </div>
+
+          {/* Overall progress */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] text-muted-foreground">Progress</span>
+              <span className={cn(
+                "text-[11px] font-bold tabular-nums",
+                pct >= 80 ? "text-emerald-600 dark:text-emerald-400" :
+                pct >= 40 ? "text-blue-600 dark:text-blue-400" : "text-amber-600 dark:text-amber-400"
+              )}>
+                {pct}%
               </span>
             </div>
-          </>
-        )}
-        <div className="px-4 mt-2 space-y-0.5">
-          <button
-            onClick={() => onTabChange("budget")}
-            className="flex items-center gap-1 text-[11px] text-primary font-medium hover:underline"
-          >
-            <TrendingUp className="h-3 w-3" /> View full budget
-          </button>
-          <button
-            onClick={() => onTabChange("milestones")}
-            className="flex items-center gap-1 text-[11px] text-primary font-medium hover:underline"
-          >
-            <Target className="h-3 w-3" /> Payment milestones
-          </button>
+            <MiniBar pct={pct} color={progColor} />
+          </div>
+
+          {/* Budget burn (if configured) */}
+          {totalBudget > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] text-muted-foreground">Budget</span>
+                <span className={cn(
+                  "text-[10px] font-bold",
+                  isOverBudget ? "text-red-600 dark:text-red-400" : "text-muted-foreground"
+                )}>
+                  {isOverBudget ? "⚠ Over" : `${budgetPct}% used`}
+                </span>
+              </div>
+              <MiniBar pct={budgetPct} color={budgetColor} />
+            </div>
+          )}
+
+          {/* Site info */}
+          {project.siteLocation && (
+            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <MapPin className="h-3 w-3 shrink-0 opacity-50" />
+              <span className="truncate">{project.siteLocation}</span>
+            </div>
+          )}
+
+          {/* PM + dates */}
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <User className="h-3 w-3 shrink-0 opacity-50" />
+              <span className="truncate">{project.pmOwnerName ?? "Unassigned"}</span>
+            </div>
+            {project.plannedEnd && (
+              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <Calendar className="h-3 w-3 shrink-0 opacity-50" />
+                <span>Target: {format(new Date(project.plannedEnd), "dd MMM yyyy")}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Quick health indicators */}
+          {(openMRs > 0 || pendingPOs > 0 || openIssues > 0 || isOverBudget) && (
+            <div className="flex flex-wrap gap-1 pt-0.5">
+              {(openMRs + pendingPOs) > 0 && (
+                <span className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800">
+                  <ShoppingCart className="h-2.5 w-2.5" />
+                  {openMRs}MR · {pendingPOs}PO
+                </span>
+              )}
+              {openIssues > 0 && (
+                <span className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800">
+                  <AlertTriangle className="h-2.5 w-2.5" />
+                  {openIssues} issue{openIssues > 1 ? "s" : ""}
+                </span>
+              )}
+              {isOverBudget && (
+                <span className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800">
+                  <TrendingUp className="h-2.5 w-2.5" />
+                  Over budget
+                </span>
+              )}
+            </div>
+          )}
         </div>
-      </Section>
 
-      {/* ── Connected modules ─────────────────────────────────────────────── */}
-      <Section title="Connected Modules">
-        <ModuleRow
-          icon={ShoppingCart}
-          label="Procurement"
-          badge={openMRs + pendingPOs > 0 ? `${openMRs}MR · ${pendingPOs}PO` : undefined}
-          badgeColor={openMRs + pendingPOs > 0 ? "amber" : "muted"}
-          onClick={() => onTabChange("mrs")}
-          onExternalClick={() => navigate("/procurement/pos")}
-        />
-        <ModuleRow
-          icon={Package2}
-          label="Inventory"
-          badgeColor="blue"
-          onClick={() => navigate("/inventory/allocations")}
-          onExternalClick={() => navigate("/inventory/allocations")}
-        />
-        <ModuleRow
-          icon={AlertTriangle}
-          label="Issues"
-          badge={openIssues > 0 ? openIssues : undefined}
-          badgeColor={openIssues > 0 ? "red" : "muted"}
-          onClick={() => navigate("/crm/escalations")}
-          onExternalClick={() => navigate("/crm/escalations")}
-        />
-        <ModuleRow
-          icon={CheckSquare}
-          label="Approvals"
-          badgeColor="blue"
-          onClick={() => navigate("/approvals")}
-          onExternalClick={() => navigate("/approvals")}
-        />
-        {project.clientPoId && (
-          <ModuleRow
-            icon={FileText}
-            label={`Client PO · ${String(project.clientPoId).padStart(5, "0")}`}
-            badgeColor="blue"
-            onClick={() => navigate("/crm/client-pos")}
-            onExternalClick={() => navigate("/crm/client-pos")}
-          />
+        {/* ── Navigation ───────────────────────────────────────────────────── */}
+        <nav className="flex-1 px-2 py-2 space-y-0.5">
+          {NAV_GROUPS.map((group, gi) => (
+            <div key={gi}>
+              {/* Group header (collapsible) */}
+              {group.group !== null && (
+                <SectionHeader
+                  label={group.group}
+                  open={openSections[group.group] ?? true}
+                  onToggle={() => toggleSection(group.group!)}
+                />
+              )}
+
+              {/* Items */}
+              {(group.group === null || (openSections[group.group] ?? true)) && (
+                <div className="space-y-0.5">
+                  {group.items.map(item => (
+                    <div key={item.value} className="relative">
+                      {/* Active left accent */}
+                      {activeTab === item.value && (
+                        <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-primary rounded-r-full" />
+                      )}
+                      <div className={activeTab === item.value ? "pl-[3px]" : ""}>
+                        <NavItemButton
+                          item={item}
+                          isActive={activeTab === item.value}
+                          collapsed={false}
+                          onClick={() => onTabChange(item.value)}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </nav>
+
+        {/* ── Footer: contract value + quick links ──────────────────────────── */}
+        {project.contractValue && (
+          <div className="px-3 py-2.5 border-t border-border/40">
+            <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/40 mb-0.5">
+              Contract Value
+            </p>
+            <p className="text-[13px] font-bold font-mono text-foreground">
+              {fmtINR(Number(project.contractValue))}
+            </p>
+          </div>
         )}
-      </Section>
 
-      {/* ── Quick tab links ────────────────────────────────────────────────── */}
-      <Section title="Workspace" defaultOpen={false}>
-        {[
-          { value: "activities",  label: "Activities / WBS", Icon: Activity },
-          { value: "dprs",        label: "Daily Reports",    Icon: ClipboardList },
-          { value: "inspections", label: "Inspections",      Icon: Shield },
-          { value: "tc",          label: "Testing & Comm.",  Icon: Zap },
-          { value: "handover",    label: "Handover",         Icon: CheckSquare },
-          { value: "warranty",    label: "Warranty",         Icon: Shield },
-          { value: "closure",     label: "Closure",          Icon: CheckSquare },
-        ].map(t => (
-          <ModuleRow
-            key={t.value}
-            icon={t.Icon}
-            label={t.label}
-            badgeColor="muted"
-            onClick={() => onTabChange(t.value)}
-          />
-        ))}
-      </Section>
-    </div>
+        {/* Quick budget view link */}
+        {totalBudget > 0 && (
+          <div className="px-3 pb-3 flex items-center gap-3">
+            <button
+              onClick={() => onTabChange("budget")}
+              className="flex items-center gap-1 text-[10px] text-primary font-semibold hover:underline"
+            >
+              <TrendingUp className="h-3 w-3" /> Full budget
+            </button>
+            <button
+              onClick={() => onTabChange("milestones")}
+              className="flex items-center gap-1 text-[10px] text-muted-foreground font-medium hover:text-foreground hover:underline"
+            >
+              <CheckCircle2 className="h-3 w-3" /> Milestones
+            </button>
+          </div>
+        )}
+      </div>
+    </TooltipProvider>
   );
 }

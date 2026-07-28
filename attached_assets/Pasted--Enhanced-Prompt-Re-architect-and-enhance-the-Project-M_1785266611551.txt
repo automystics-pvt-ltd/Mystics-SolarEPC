@@ -1,0 +1,23 @@
+**Enhanced Prompt:**
+
+> Re-architect and enhance the **Project Management / Projects Hub** into a comprehensive, all-in-one project workspace. Eliminate unnecessary dependencies between multiple screens and fragmented processes by consolidating the complete project lifecycle into a single, intuitive, and user-friendly interface wherever practical.
+>
+> Ensure every feature works reliably end-to-end, with no broken workflows, missing functionality, or navigation issues. The entire module should be production-ready, responsive, and optimised for efficiency.
+>
+> Design a modern, attractive, enterprise-grade UI/UX with a clear visual hierarchy, guided workflows, and an intuitive layout that enables users to complete tasks confidently without requiring extensive training.
+>
+> **Key Requirements:**
+>
+> * Create a single, unified Project Workspace where users can manage the entire project lifecycle.
+> * Remove unnecessary screen switching and minimise clicks by keeping related actions within the same workspace using tabs, expandable sections, side panels, drawers, or modal dialogs.
+> * Integrate **Project Details, Site Information, Drawings, Documents, Quotations, Purchase Orders, Tasks, Milestones, Materials, Installation, Commissioning, Approvals, Financials, Team Assignment, Customer Communication, and Project Timeline** into one well-organised interface.
+> * Handle **Project Drawings directly within the Project Hub**, allowing users to upload, preview, organise, annotate (if applicable), download, and manage drawing revisions without leaving the screen.
+> * Include a dedicated **Commissioning** section within each project, enabling complete commissioning management, checklists, inspections, approvals, reports, photos, documents, and status tracking from the same workspace.
+> * Present information using logical sections, tabs, accordions, timelines, dashboards, and progress indicators to keep the interface clean while providing quick access to all project information.
+> * Add KPI cards, project health indicators, progress tracking, risk alerts, overdue tasks, pending approvals, upcoming milestones, and actionable notifications.
+> * Implement powerful search, filtering, sorting, and quick actions so users can locate and update project information efficiently.
+> * Provide contextual actions, inline editing, autosave, validation, confirmation messages, loading states, empty states, and meaningful error handling.
+> * Maintain a consistent design system with proper spacing, typography, colours, icons, and responsive layouts across all components.
+> * Ensure accessibility, readability, and ease of navigation for users of all experience levels.
+> * Optimise performance so large projects, documents, drawings, and related records load efficiently without degrading the user experience.
+> * Ensure the complete workflow is intuitive, attractive, well-structured, easy to understand, and fully functional, allowing users to manage every aspect of a project from a single, cohesive workspace.

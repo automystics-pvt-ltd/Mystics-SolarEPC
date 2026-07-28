@@ -1,27 +1,18 @@
+// @refresh reset
 import { useState, lazy, Suspense, useEffect } from "react";
 import { useGetProject, getGetProjectQueryKey } from "@workspace/api-client-react";
 import { Link } from "wouter";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
-  LayoutDashboard, Activity, PackageSearch, DollarSign, Milestone,
-  AlertOctagon, ClipboardList, GitBranch, ShieldAlert, Users, ClipboardCheck,
-  Zap, HandshakeIcon, ShieldCheck, Archive, FolderOpen, ShoppingCart,
-  ChevronRight, MoreHorizontal, PanelLeftClose, PanelLeftOpen, Check,
-  Plus,
+  PanelLeftClose, PanelLeftOpen, Plus, ShoppingCart, ChevronRight, Menu,
 } from "lucide-react";
 import { SkeletonStats, StatusBadge } from "@/components/shared";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuSeparator, DropdownMenuLabel, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Sheet, SheetContent, SheetHeader, SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ProjectSidebar } from "./components/ProjectSidebar";
 
-// ─── Lazy-load every tab panel — only fetches JS when first visited ───────────
+// ─── Lazy-load every tab panel ────────────────────────────────────────────────
 const ProjectOverview       = lazy(() => import("./tabs/ProjectOverview").then(m => ({ default: m.ProjectOverview })));
 const ProjectActivities     = lazy(() => import("./tabs/ProjectActivities").then(m => ({ default: m.ProjectActivities })));
 const ProjectSiteSurvey     = lazy(() => import("./tabs/ProjectSiteSurvey").then(m => ({ default: m.ProjectSiteSurvey })));
@@ -41,47 +32,17 @@ const ProjectWarranty       = lazy(() => import("./tabs/ProjectWarranty").then(m
 const ProjectClosure        = lazy(() => import("./tabs/ProjectClosure").then(m => ({ default: m.ProjectClosure })));
 const ProjectDocuments      = lazy(() => import("./tabs/ProjectDocuments").then(m => ({ default: m.ProjectDocuments })));
 
-// ─── Tab configuration ──────────────────────────────────────────────────────────
-type TabDef = { value: string; label: string; Icon: React.ComponentType<{ className?: string }> };
+// ─── Tab labels (for breadcrumb display) ─────────────────────────────────────
+const TAB_LABELS: Record<string, string> = {
+  overview: "Overview", activities: "Activities", survey: "Site Survey",
+  boq: "BOQ", mrs: "Procurement", budget: "Budget", milestones: "Milestones",
+  resources: "Resources", dprs: "Daily Reports", inspections: "Inspections",
+  tc: "Testing & Comm.", changes: "Change Requests", risks: "Risk Register",
+  snags: "Snag Log", handover: "Handover", warranty: "Warranty",
+  closure: "Closure", documents: "Documents",
+};
 
-/** 7 tabs always visible in the bar */
-const PRIMARY_TABS: TabDef[] = [
-  { value: "overview",   label: "Overview",    Icon: LayoutDashboard },
-  { value: "activities", label: "Activities",  Icon: Activity },
-  { value: "boq",        label: "BOQ",         Icon: PackageSearch },
-  { value: "budget",     label: "Budget",      Icon: DollarSign },
-  { value: "milestones", label: "Milestones",  Icon: Milestone },
-  { value: "mrs",        label: "Procurement", Icon: ShoppingCart },
-  { value: "documents",  label: "Documents",   Icon: FolderOpen },
-];
-
-/** Extra tabs live in a "More" dropdown, grouped by domain */
-const MORE_GROUPS: { group: string; tabs: TabDef[] }[] = [
-  {
-    group: "Field Operations",
-    tabs: [
-      { value: "resources",   label: "Resources",         Icon: Users },
-      { value: "dprs",        label: "Daily Reports",     Icon: ClipboardList },
-      { value: "inspections", label: "Inspections",       Icon: ClipboardCheck },
-      { value: "tc",          label: "Testing & Comm.",   Icon: Zap },
-      { value: "changes",     label: "Change Requests",   Icon: GitBranch },
-      { value: "risks",       label: "Risk Register",     Icon: ShieldAlert },
-      { value: "snags",       label: "Snag Log",          Icon: AlertOctagon },
-    ],
-  },
-  {
-    group: "Lifecycle",
-    tabs: [
-      { value: "survey",   label: "Site Survey", Icon: ClipboardList },
-      { value: "handover", label: "Handover",    Icon: HandshakeIcon },
-      { value: "warranty", label: "Warranty",    Icon: ShieldCheck },
-      { value: "closure",  label: "Closure",     Icon: Archive },
-    ],
-  },
-];
-
-const ALL_MORE_TABS = MORE_GROUPS.flatMap(g => g.tabs);
-
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
 function TabSkeleton() {
   return (
     <div className="space-y-6">
@@ -95,34 +56,33 @@ function TabSkeleton() {
   );
 }
 
-/* ── Main component ──────────────────────────────────────────────────────────── */
+// ─── Main component ───────────────────────────────────────────────────────────
 export function ProjectWorkspace({ id }: { id: string }) {
   const projectId = parseInt(id, 10);
-  const [activeTab, setActiveTab] = useState("overview");
-  const [sidebarOpen, setSidebarOpen] = useState(true);    // desktop sidebar
-  const [mobileSheetOpen, setMobileSheetOpen] = useState(false); // mobile sheet
+
+  const [activeTab,        setActiveTab]        = useState("overview");
+  const [sidebarExpanded,  setSidebarExpanded]  = useState(true);   // expanded vs icon-rail (desktop)
+  const [mobileSheetOpen,  setMobileSheetOpen]  = useState(false);
 
   const { data: project, isPending } = useGetProject(projectId, {
     query: { enabled: !!projectId, queryKey: getGetProjectQueryKey(projectId) },
   });
 
-  // Close desktop sidebar on small screens by default
+  // Default to icon-rail on screens < 1280px
   useEffect(() => {
-    const mq = window.matchMedia("(max-width: 1023px)");
-    if (mq.matches) setSidebarOpen(false);
-    const handler = (e: MediaQueryListEvent) => { if (e.matches) setSidebarOpen(false); };
+    const mq = window.matchMedia("(max-width: 1279px)");
+    if (mq.matches) setSidebarExpanded(false);
+    const handler = (e: MediaQueryListEvent) => { if (e.matches) setSidebarExpanded(false); };
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
   }, []);
 
+  // ── Loading ──
   if (isPending) {
     return (
       <div className="h-full flex flex-col overflow-hidden">
         <div className="shrink-0 h-12 bg-muted/40 border-b border-border/60 animate-pulse" />
-        <div className="shrink-0 h-10 bg-muted/20 border-b border-border/40 animate-pulse" />
-        <div className="flex-1 p-6">
-          <TabSkeleton />
-        </div>
+        <div className="flex-1 p-6"><TabSkeleton /></div>
       </div>
     );
   }
@@ -132,62 +92,85 @@ export function ProjectWorkspace({ id }: { id: string }) {
   }
 
   const prjCode = `PRJ-${project.id.toString().padStart(4, "0")}`;
-  const pct = project.percentComplete ?? 0;
-  const activeInMore = ALL_MORE_TABS.find(t => t.value === activeTab);
+  const pct     = project.percentComplete ?? 0;
+  const tabLabel = TAB_LABELS[activeTab] ?? activeTab;
 
   function switchTab(tab: string) {
     setActiveTab(tab);
     setMobileSheetOpen(false);
   }
 
+  // ── Sidebar content (shared between desktop + mobile sheet) ──
+  const sidebarContent = (
+    <ProjectSidebar
+      project={project}
+      projectId={projectId}
+      activeTab={activeTab}
+      onTabChange={switchTab}
+      collapsed={false}
+    />
+  );
+
   return (
     <div className="h-full flex flex-col overflow-hidden">
 
-      {/* ── COMMAND BAR (sticky) ─────────────────────────────────────────────── */}
-      <header className="shrink-0 bg-background/95 backdrop-blur-sm border-b border-border/60 px-3 py-2 flex items-center gap-2 sm:gap-3 z-10">
+      {/* ── COMMAND BAR ──────────────────────────────────────────────────────── */}
+      <header className="shrink-0 bg-background/95 backdrop-blur-sm border-b border-border/60 px-3 py-0 flex items-stretch gap-2 sm:gap-3 z-10 min-h-[44px]">
+
         {/* Sidebar toggle */}
-        <div className="flex items-center gap-1 shrink-0">
-          {/* Desktop toggle */}
+        <div className="flex items-center gap-1 shrink-0 py-2">
+          {/* Desktop: expand ↔ icon-rail */}
           <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 hidden lg:flex"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            title={sidebarOpen ? "Collapse info panel" : "Expand info panel"}
+            variant="ghost" size="icon"
+            className="h-8 w-8 hidden lg:flex"
+            onClick={() => setSidebarExpanded(e => !e)}
+            title={sidebarExpanded ? "Collapse sidebar" : "Expand sidebar"}
           >
-            {sidebarOpen
+            {sidebarExpanded
               ? <PanelLeftClose className="h-4 w-4" />
               : <PanelLeftOpen  className="h-4 w-4" />}
           </Button>
-          {/* Mobile toggle */}
+          {/* Mobile: open sheet */}
           <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 lg:hidden"
+            variant="ghost" size="icon"
+            className="h-8 w-8 lg:hidden"
             onClick={() => setMobileSheetOpen(true)}
           >
-            <PanelLeftOpen className="h-4 w-4" />
+            <Menu className="h-4 w-4" />
           </Button>
         </div>
 
-        {/* Breadcrumb */}
-        <nav className="hidden sm:flex items-center gap-1 text-[11px] text-muted-foreground shrink-0">
-          <Link href="/projects" className="hover:text-foreground font-medium">Projects</Link>
+        {/* Breadcrumb + current section */}
+        <div className="hidden sm:flex items-center gap-1 text-[11px] text-muted-foreground shrink-0 py-2">
+          <Link href="/projects" className="hover:text-foreground font-medium transition-colors">
+            Projects
+          </Link>
           <ChevronRight className="h-3 w-3 opacity-40" />
           <span className="font-mono text-muted-foreground/60">{prjCode}</span>
-        </nav>
+          {activeTab !== "overview" && (
+            <>
+              <ChevronRight className="h-3 w-3 opacity-40" />
+              <span className="text-foreground/70 font-medium">{tabLabel}</span>
+            </>
+          )}
+        </div>
+
+        {/* Divider */}
+        <div className="hidden sm:block w-px bg-border/60 my-2 shrink-0" />
 
         {/* Project name + status */}
-        <div className="flex items-center gap-2 min-w-0 flex-1">
-          <h1 className="text-[15px] font-bold text-foreground truncate leading-none">{project.name}</h1>
+        <div className="flex items-center gap-2 min-w-0 flex-1 py-2">
+          <h1 className="text-[14px] sm:text-[15px] font-bold text-foreground truncate leading-none">
+            {project.name}
+          </h1>
           <StatusBadge status={project.status} />
         </div>
 
-        {/* Progress bar + quick actions */}
-        <div className="flex items-center gap-2 shrink-0">
-          {/* Compact progress */}
+        {/* Progress + quick actions */}
+        <div className="flex items-center gap-2 shrink-0 py-2">
+          {/* Progress mini-bar */}
           <div className="hidden md:flex items-center gap-2">
-            <div className="w-[72px] h-1.5 bg-muted rounded-full overflow-hidden">
+            <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
               <div
                 className={cn(
                   "h-full rounded-full transition-all duration-500",
@@ -201,16 +184,14 @@ export function ProjectWorkspace({ id }: { id: string }) {
 
           {/* Quick actions */}
           <Button
-            variant="outline"
-            size="sm"
+            variant="outline" size="sm"
             className="h-7 gap-1 text-[12px] hidden sm:flex"
             onClick={() => switchTab("dprs")}
           >
             <Plus className="h-3.5 w-3.5" /> DPR
           </Button>
           <Button
-            variant="default"
-            size="sm"
+            variant="default" size="sm"
             className="h-7 gap-1 text-[12px]"
             onClick={() => switchTab("mrs")}
           >
@@ -220,117 +201,35 @@ export function ProjectWorkspace({ id }: { id: string }) {
         </div>
       </header>
 
-      {/* ── TAB BAR ─────────────────────────────────────────────────────────── */}
-      <div className="shrink-0 bg-background border-b border-border/60 px-2 sm:px-4 overflow-x-auto scrollbar-none">
-        <div className="flex items-center -mb-px">
-          {PRIMARY_TABS.map(tab => (
-            <button
-              key={tab.value}
-              onClick={() => switchTab(tab.value)}
-              className={cn(
-                "flex items-center gap-1.5 px-2.5 sm:px-3 py-2.5 text-[12px] font-medium whitespace-nowrap border-b-2 transition-colors shrink-0",
-                activeTab === tab.value
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground hover:border-border/50"
-              )}
-            >
-              <tab.Icon className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">{tab.label}</span>
-            </button>
-          ))}
-
-          {/* ── More dropdown for overflow tabs ──────────────────────────── */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-2.5 text-[12px] font-medium whitespace-nowrap border-b-2 transition-colors shrink-0",
-                  activeInMore
-                    ? "border-primary text-primary"
-                    : "border-transparent text-muted-foreground hover:text-foreground hover:border-border/50"
-                )}
-              >
-                {activeInMore ? (
-                  <>
-                    <activeInMore.Icon className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">{activeInMore.label}</span>
-                  </>
-                ) : (
-                  <>
-                    <MoreHorizontal className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">More</span>
-                  </>
-                )}
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52">
-              {MORE_GROUPS.map((group, gi) => (
-                <div key={group.group}>
-                  {gi > 0 && <DropdownMenuSeparator />}
-                  <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/60 font-bold px-2 py-1.5">
-                    {group.group}
-                  </DropdownMenuLabel>
-                  {group.tabs.map(tab => (
-                    <DropdownMenuItem
-                      key={tab.value}
-                      onClick={() => switchTab(tab.value)}
-                      className={cn(
-                        "text-[12px] gap-2 cursor-pointer",
-                        activeTab === tab.value && "text-primary bg-primary/5"
-                      )}
-                    >
-                      <tab.Icon className="h-3.5 w-3.5" />
-                      {tab.label}
-                      {activeTab === tab.value && <Check className="h-3 w-3 ml-auto" />}
-                    </DropdownMenuItem>
-                  ))}
-                </div>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-
-      {/* ── BODY: sidebar + scrollable content ──────────────────────────────── */}
+      {/* ── BODY ──────────────────────────────────────────────────────────────── */}
       <div className="flex-1 flex overflow-hidden">
 
-        {/* ── Desktop sidebar (animated) ──────────────────────────────────── */}
-        <AnimatePresence initial={false}>
-          {sidebarOpen && (
-            <motion.aside
-              key="sidebar"
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 248, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              transition={{ duration: 0.18, ease: "easeInOut" }}
-              className="hidden lg:block shrink-0 overflow-hidden border-r border-border/60 bg-muted/10"
-            >
-              <div className="w-[248px] h-full overflow-y-auto scrollbar-thin">
-                <ProjectSidebar
-                  project={project}
-                  projectId={projectId}
-                  onTabChange={switchTab}
-                />
-              </div>
-            </motion.aside>
-          )}
-        </AnimatePresence>
+        {/* Desktop sidebar — always visible; animates between 260px (expanded) and 48px (icon rail) */}
+        <motion.aside
+          animate={{ width: sidebarExpanded ? 260 : 48 }}
+          transition={{ duration: 0.22, ease: "easeInOut" }}
+          className="hidden lg:block shrink-0 border-r border-border/60 bg-muted/10 overflow-hidden"
+        >
+          <ProjectSidebar
+            project={project}
+            projectId={projectId}
+            activeTab={activeTab}
+            onTabChange={switchTab}
+            collapsed={!sidebarExpanded}
+          />
+        </motion.aside>
 
-        {/* ── Mobile sidebar sheet ────────────────────────────────────────── */}
+        {/* Mobile sidebar sheet */}
         <Sheet open={mobileSheetOpen} onOpenChange={setMobileSheetOpen}>
           <SheetContent side="left" className="w-72 p-0 overflow-y-auto">
             <SheetHeader className="px-4 pt-4 pb-2 border-b border-border/60">
-              <SheetTitle className="text-[13px] font-bold">{project.name}</SheetTitle>
+              <SheetTitle className="text-[13px] font-bold truncate">{project.name}</SheetTitle>
             </SheetHeader>
-            <ProjectSidebar
-              project={project}
-              projectId={projectId}
-              onTabChange={switchTab}
-            />
+            {sidebarContent}
           </SheetContent>
         </Sheet>
 
-        {/* ── Tab content ────────────────────────────────────────────────── */}
+        {/* ── Tab content ────────────────────────────────────────────────────── */}
         <main className="flex-1 overflow-y-auto scrollbar-thin">
           <div className="p-4 sm:p-5 max-w-screen-2xl">
             <Suspense fallback={<TabSkeleton />}>
