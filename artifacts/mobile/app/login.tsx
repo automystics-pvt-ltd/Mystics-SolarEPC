@@ -147,7 +147,7 @@ export default function LoginScreen() {
             )}
           </TouchableOpacity>
 
-          <Text style={styles.hint}>Use your Mystics ERP account credentials.</Text>
+          <Text style={styles.hint}>Use your Solar EPC account credentials.</Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>

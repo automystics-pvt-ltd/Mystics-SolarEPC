@@ -1,5 +1,5 @@
 /**
- * Currency formatting utilities for Mystics ERP — Indian Rupees (INR / en-IN)
+ * Currency formatting utilities for Solar EPC — Indian Rupees (INR / en-IN)
  *
  * We manually prepend ₹ and use toLocaleString only for digit grouping
  * (lakhs / crores) so the symbol is always correct regardless of whether

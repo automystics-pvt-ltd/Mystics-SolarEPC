@@ -164,7 +164,7 @@ function getBreadcrumbs(path: string): BreadcrumbItem[] {
     return [{ label: "Engineering" }, { label: "Design Documents", href: "/engineering/docs" }, { label: "Document" }];
   if (path.match(/^\/commissioning\/\d+/))
     return [{ label: "Commissioning", href: "/commissioning" }, { label: "Checklist" }];
-  return [{ label: "Mystics ERP" }];
+  return [{ label: "Solar EPC" }];
 }
 
 function getFYLabel() {
@@ -542,7 +542,7 @@ function MobileNavSheet() {
           >
             <Zap className="h-3.5 w-3.5 text-white" aria-hidden />
           </div>
-          <span className="text-sm font-bold text-white tracking-tight">Mystics ERP</span>
+          <span className="text-sm font-bold text-white tracking-tight">Solar EPC</span>
         </div>
 
         {/* Nav groups */}

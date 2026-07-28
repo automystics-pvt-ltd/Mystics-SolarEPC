@@ -277,7 +277,7 @@ export function Sidebar({ className }: { className?: string }) {
               className="min-w-0"
             >
               <div className="font-bold text-[14px] text-white leading-tight tracking-tight">
-                Mystics ERP
+                Solar EPC
               </div>
               <div className="text-[10px] leading-tight text-white/50 tracking-wide font-medium uppercase mt-0.5">
                 Automystics

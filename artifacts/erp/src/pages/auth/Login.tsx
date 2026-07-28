@@ -52,7 +52,7 @@ export function Login() {
               <Zap className="h-5 w-5 text-white" />
             </div>
             <div>
-              <div className="font-bold text-xl leading-tight tracking-tight">Mystics ERP</div>
+              <div className="font-bold text-xl leading-tight tracking-tight">Solar EPC</div>
               <div className="text-[11px] font-bold text-white/50 tracking-widest uppercase">Automystics Technologies</div>
             </div>
           </div>
@@ -92,7 +92,7 @@ export function Login() {
             <div className="h-10 w-10 rounded-[8px] flex items-center justify-center bg-gradient-to-br from-[#F97316] to-[#EA580C]">
               <Zap className="h-5 w-5 text-white" />
             </div>
-            <span className="font-bold text-xl text-gray-900 tracking-tight">Mystics ERP</span>
+            <span className="font-bold text-xl text-gray-900 tracking-tight">Solar EPC</span>
           </div>
 
           <div className="mb-8 text-center lg:text-left">

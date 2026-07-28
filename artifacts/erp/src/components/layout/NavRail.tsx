@@ -1,6 +1,6 @@
 // @refresh reset
 /**
- * NavRail — Enterprise navigation rail for Mystics ERP
+ * NavRail — Enterprise navigation rail for Solar EPC
  *
  * Inspired by: SAP Fiori, Microsoft Dynamics 365, Salesforce Lightning,
  *              Oracle Fusion Cloud, ServiceNow, Workday, Linear, Jira
@@ -728,7 +728,7 @@ export function NavRail() {
           <div
             className="h-8 w-8 rounded-[9px] flex items-center justify-center"
             style={{ background: "linear-gradient(135deg,#F97316,#EA580C)", boxShadow: "0 0 14px rgba(249,115,22,0.35)" }}
-            aria-label="Mystics ERP"
+            aria-label="Solar EPC"
           >
             <Zap className="h-4 w-4 text-white" aria-hidden />
           </div>

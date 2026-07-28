@@ -1,5 +1,5 @@
 /**
- * useGlobalShortcuts — Gmail-style keyboard navigation for Mystics ERP
+ * useGlobalShortcuts — Gmail-style keyboard navigation for Solar EPC
  *
  * Shortcuts:
  *   ⌘K / Ctrl+K     → Command palette (handled in Topbar, not here)

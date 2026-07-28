@@ -23,7 +23,7 @@ export const env = {
   version: (import.meta.env.VITE_APP_VERSION ?? '2.4.0') as string,
 
   /** App name */
-  appName: 'Mystics ERP',
+  appName: 'Solar EPC',
 
   /** Company name */
   company: 'Automystics Technologies',
