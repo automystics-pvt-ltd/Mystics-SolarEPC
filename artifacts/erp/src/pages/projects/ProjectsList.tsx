@@ -635,6 +635,7 @@ export function ProjectsList() {
 
   const [search,       setSearch]       = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [pmFilter,     setPmFilter]     = useState<string>("all");
   const [viewMode,     setViewMode]     = useState<ViewMode>("cards");
   const [sortBy,       setSortBy]       = useState<SortOption>("newest");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -669,6 +670,16 @@ export function ProjectsList() {
     }, {});
   }, [projects]);
 
+  // ── Distinct PM names for filter dropdown ──
+  const pmNames = useMemo(() => {
+    if (!projects) return [] as string[];
+    const names = new Set<string>();
+    for (const p of projects) {
+      if (p.pmOwnerName) names.add(p.pmOwnerName);
+    }
+    return Array.from(names).sort();
+  }, [projects]);
+
   // ── Filtered + sorted list ──
   const filtered = useMemo(() => {
     const list = projects?.filter(p => {
@@ -677,7 +688,8 @@ export function ProjectsList() {
         p.name.toLowerCase().includes(q) ||
         (p.siteLocation ?? "").toLowerCase().includes(q);
       const matchStatus = statusFilter === "all" || p.status === statusFilter;
-      return matchSearch && matchStatus;
+      const matchPm = pmFilter === "all" || p.pmOwnerName === pmFilter;
+      return matchSearch && matchStatus && matchPm;
     }) ?? [];
 
     return [...list].sort((a, b) => {
@@ -700,9 +712,9 @@ export function ProjectsList() {
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       }
     });
-  }, [projects, search, statusFilter, sortBy]);
+  }, [projects, search, statusFilter, pmFilter, sortBy]);
 
-  const hasFilters = search.length > 0 || statusFilter !== "all";
+  const hasFilters = search.length > 0 || statusFilter !== "all" || pmFilter !== "all";
 
   return (
     <motion.div
@@ -820,6 +832,32 @@ export function ProjectsList() {
             <span className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground/40 text-[10px]">▾</span>
           </div>
 
+          {/* PM filter dropdown */}
+          {pmNames.length > 0 && (
+            <div className="relative shrink-0">
+              <User2 className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground/50 pointer-events-none" />
+              <select
+                value={pmFilter}
+                onChange={e => setPmFilter(e.target.value)}
+                className={cn(
+                  "h-8 pl-7 pr-7 rounded-lg border bg-background text-[12px] font-medium text-foreground",
+                  "appearance-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-ring",
+                  "hover:border-border transition-colors",
+                  pmFilter !== "all"
+                    ? "border-primary/60 text-primary"
+                    : "border-border/60"
+                )}
+                aria-label="Filter by project manager"
+              >
+                <option value="all">All PMs</option>
+                {pmNames.map(name => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground/40 text-[10px]">▾</span>
+            </div>
+          )}
+
           {/* View toggle */}
           <div className="flex items-center gap-0.5 p-0.5 bg-muted/50 border border-border/60 rounded-lg shrink-0">
             {([
@@ -888,7 +926,7 @@ export function ProjectsList() {
             <EmptyState
               icon={FolderKanban}
               heading={hasFilters ? "No matching projects" : "No projects yet"}
-              message={hasFilters ? "Try adjusting your search or status filter." : "Create your first project to get started."}
+              message={hasFilters ? "Try adjusting your search, status, or PM filter." : "Create your first project to get started."}
               action={!hasFilters ? { label: "Create Project", onClick: () => setIsCreateOpen(true) } : undefined}
             />
           </motion.div>
