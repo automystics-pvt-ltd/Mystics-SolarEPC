@@ -35,7 +35,7 @@ import {
   ClipboardList, Building2, Package, RotateCcw, Boxes,
   BarChart2, BarChart3, TrendingUp, UserCog, ScrollText, X,
   ChevronRight, Users2, FileCode, Calendar, Receipt, Star, Clock,
-  Trash2, Pin, PinOff, ListChecks, GitBranch, Shield, Database,
+  Trash2, Pin, PinOff, ListChecks, GitBranch, Shield, Database, Cpu,
 } from "lucide-react";
 
 /* ════════════════════════════════════════════════════════════════
@@ -64,6 +64,13 @@ const RAIL: RailEntry[] = [
   { type: "link",      key: "approvals", icon: ListChecks,     label: "Approval Workbench",  href: "/approvals"  },
   { type: "separator", key: "s1" },
   {
+    type: "group", key: "projects", icon: FolderKanban, label: "Projects",
+    items: [
+      { name: "Projects Hub", href: "/projects",             icon: FolderKanban },
+      { name: "Contractors",  href: "/projects/contractors", icon: HardHat },
+    ],
+  },
+  {
     type: "group", key: "crm", icon: Users2, label: "Sales & CRM",
     items: [
       { name: "Command Center", href: "/crm",              icon: Zap        },
@@ -87,13 +94,6 @@ const RAIL: RailEntry[] = [
       { name: "GRNs",               href: "/procurement/grns",        icon: Boxes },
       { name: "GRN Returns",        href: "/procurement/grn-returns", icon: RotateCcw },
       { name: "Invoices",           href: "/procurement/invoices",    icon: FilePlus },
-    ],
-  },
-  {
-    type: "group", key: "projects", icon: FolderKanban, label: "Projects",
-    items: [
-      { name: "Projects Hub", href: "/projects",             icon: FolderKanban },
-      { name: "Contractors",  href: "/projects/contractors", icon: HardHat },
     ],
   },
   {
@@ -144,6 +144,7 @@ const RAIL: RailEntry[] = [
   {
     type: "group", key: "admin", icon: Settings2, label: "Administration",
     items: [
+      { name: "Platform Admin",  href: "/platform-admin",   icon: Cpu,             module: "admin" },
       { name: "Platform",        href: "/admin/platform",   icon: LayoutDashboard, module: "admin" },
       { name: "DB Admin",        href: "/admin/db",         icon: Database,        module: "admin" },
       { name: "User Management", href: "/admin/users",      icon: UserCog  },
@@ -552,7 +553,7 @@ function ModuleFlyout({
   permMap?: Record<string, Record<string, boolean>>;
 }) {
   const visibleItems = section.items.filter((item) => {
-    if (role === "admin") return true;
+    if (role === "admin" || role === "super_admin") return true;
     if (!item.module) return true; // no sub-module restriction
     if (!permMap) return true; // still loading
     return permMap[item.module]?.view === true;
@@ -675,10 +676,11 @@ export function NavRail() {
   });
 
   // Filter by RBAC permission map — DB-backed, no hardcoded role arrays
+  // super_admin sees everything (same as admin)
   const visible = RAIL.filter((e) => {
     if (e.type === "separator") return true;
     if (e.type === "group") {
-      if (role === "admin") return true;
+      if (role === "admin" || role === "super_admin") return true;
       if (!permMap) return true; // still loading — show all (server auth enforced)
       return permMap[e.key]?.view !== false;
     }

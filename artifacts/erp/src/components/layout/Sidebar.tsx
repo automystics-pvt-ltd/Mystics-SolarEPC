@@ -41,6 +41,15 @@ const MODULES: NavSection[] = [
     ],
   },
   {
+    section: "PROJECT MGMT",
+    key: "projects",
+    roles: ["admin", "director", "pm", "sales"],
+    items: [
+      { name: "Projects Hub", href: "/projects", icon: FolderKanban },
+      { name: "Contractors", href: "/projects/contractors", icon: HardHat },
+    ],
+  },
+  {
     section: "SALES & CRM",
     key: "crm",
     roles: ["admin", "director", "sales", "pm"],
@@ -51,15 +60,6 @@ const MODULES: NavSection[] = [
       { name: "Invoices", href: "/crm/invoices", icon: FilePlus },
       { name: "Tasks", href: "/crm/tasks", icon: CheckSquare },
       { name: "Escalations", href: "/crm/escalations", icon: AlertTriangle },
-    ],
-  },
-  {
-    section: "PROJECT MGMT",
-    key: "projects",
-    roles: ["admin", "director", "pm", "sales"],
-    items: [
-      { name: "Projects Hub", href: "/projects", icon: FolderKanban },
-      { name: "Contractors", href: "/projects/contractors", icon: HardHat },
     ],
   },
   {

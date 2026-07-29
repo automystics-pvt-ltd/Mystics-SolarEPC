@@ -109,7 +109,7 @@ const FALLBACK: Record<string, Record<string, string[]>> = {
 };
 
 function hasFallback(role: string, module: string, action: string): boolean {
-  if (role === "admin") return true;
+  if (role === "admin" || role === "super_admin") return true;
   const roleMap = FALLBACK[role];
   if (!roleMap) return false;
   return (roleMap[module] ?? []).includes(action);
@@ -117,7 +117,7 @@ function hasFallback(role: string, module: string, action: string): boolean {
 
 /* ── Core permission check ──────────────────────────────────────────────── */
 export async function checkPermission(role: string, module: string, action: string): Promise<boolean> {
-  if (role === "admin") return true;
+  if (role === "admin" || role === "super_admin") return true;
   await ensureCache();
   if (_cacheEmpty) return hasFallback(role, module, action);
   return _cache.get(`${role}:${module}`)?.has(action) ?? false;
@@ -184,7 +184,7 @@ export function requireAdmin() {
     if (!token) { res.status(401).json({ error: "Unauthorized" }); return; }
     try {
       const decoded = jwt.verify(token, JWT_SECRET) as { userId: number; role: string };
-      if (decoded.role !== "admin" && decoded.role !== "director") {
+      if (decoded.role !== "admin" && decoded.role !== "director" && decoded.role !== "super_admin") {
         res.status(403).json({ error: "Admin access required" }); return;
       }
       (req as any).actor = decoded;
@@ -205,4 +205,4 @@ export const ACTIONS = [
   "view","create","edit","delete","approve","export","import","admin",
 ] as const;
 
-export const ROLES = ["admin","director","pm","finance","warehouse","sales"] as const;
+export const ROLES = ["super_admin","admin","director","pm","finance","warehouse","sales"] as const;

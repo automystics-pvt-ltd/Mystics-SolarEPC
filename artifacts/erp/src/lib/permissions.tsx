@@ -75,7 +75,7 @@ export function usePermissions(module?: string): ModulePerms {
 
   if (authLoading) return LOADING_PERMS;
   if (!user) return NO_ACCESS;
-  if (user.role === "admin") return ALL_ALLOWED;
+  if (user.role === "admin" || user.role === "super_admin") return ALL_ALLOWED;
   if (!module) return ALL_ALLOWED;
   if (permLoading || !permMap) return LOADING_PERMS;
   const modulePerms = permMap[module];
@@ -89,7 +89,7 @@ export function useAllPermissions() {
   return useQuery<Record<string, PermissionMap>>({
     queryKey: ["rbac-all-permissions"],
     queryFn: () => apiGet<Record<string, PermissionMap>>("/rbac/all"),
-    enabled: !!user && (user.role === "admin" || user.role === "director"),
+    enabled: !!user && (user.role === "admin" || user.role === "director" || user.role === "super_admin"),
     staleTime: 60_000,
   });
 }

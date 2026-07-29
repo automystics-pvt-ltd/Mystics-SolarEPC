@@ -22,6 +22,14 @@ interface QuickAction {
 
 const ALL_ACTIONS: QuickAction[] = [
   {
+    label: "New Project",
+    icon: FolderKanban,
+    href: "/projects",
+    iconColor: "text-slate-600 dark:text-slate-400",
+    iconBg: "bg-slate-100 dark:bg-slate-800",
+    roles: ["admin", "pm", "director"],
+  },
+  {
     label: "New Lead",
     icon: Users,
     href: "/crm/leads",
@@ -59,14 +67,6 @@ const ALL_ACTIONS: QuickAction[] = [
     iconColor: "text-violet-600 dark:text-violet-400",
     iconBg: "bg-violet-50 dark:bg-violet-950/50",
     roles: ["finance", "admin", "director"],
-  },
-  {
-    label: "New Project",
-    icon: FolderKanban,
-    href: "/projects",
-    iconColor: "text-slate-600 dark:text-slate-400",
-    iconBg: "bg-slate-100 dark:bg-slate-800",
-    roles: ["admin", "pm", "director"],
   },
 ];
 

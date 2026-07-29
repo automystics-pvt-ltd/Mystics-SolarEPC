@@ -95,6 +95,9 @@ const DbAdmin = lazy(() => import('@/pages/admin/db/DbAdmin'));
 // Approvals — lazy loaded
 const ApprovalWorkbench = lazy(() => import('@/pages/approvals/ApprovalWorkbench'));
 
+// Platform Admin — lazy loaded (renders its own AdminShell, not Shell)
+const PlatformAdminRoot = lazy(() => import('@/pages/platform-admin/PlatformAdminRoot').then(m => ({ default: m.PlatformAdminRoot })));
+
 
 /** Route-transition skeleton — matches the PageHeader + two SectionCard blocks */
 function PageLoader() {
@@ -320,6 +323,18 @@ function Router() {
       <Route path="/finance/dashboard">{() => <ProtectedRoute component={FinanceDashboard} module="finance" />}</Route>
       <Route path="/reports/vendors">{() => <ProtectedRoute component={VendorPerformance} module="reports" />}</Route>
       <Route path="/reports">{() => <ProtectedRoute component={ReportsModule} module="reports" />}</Route>
+
+      {/* Platform Admin Portal — own shell (no NavRail), must come before /admin/* */}
+      <Route path="/platform-admin/:section">{(p) =>
+        <Suspense fallback={<div className="flex items-center justify-center h-screen bg-zinc-950"><Loader2 className="w-6 h-6 animate-spin text-violet-400" /></div>}>
+          <PlatformAdminRoot section={p.section as any} />
+        </Suspense>
+      }</Route>
+      <Route path="/platform-admin">{() =>
+        <Suspense fallback={<div className="flex items-center justify-center h-screen bg-zinc-950"><Loader2 className="w-6 h-6 animate-spin text-violet-400" /></div>}>
+          <PlatformAdminRoot />
+        </Suspense>
+      }</Route>
 
       {/* Admin */}
       <Route path="/admin/platform">{() => <ProtectedRoute component={PlatformHome} module="admin" />}</Route>

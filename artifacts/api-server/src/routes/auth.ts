@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { LoginBody } from "@workspace/api-zod";
 import jwt from "jsonwebtoken";
 import { writeAuditLog, getClientIP } from "../lib/auditLogger";
+import bcrypt from "bcryptjs";
 
 const router: IRouter = Router();
 
@@ -21,7 +22,18 @@ router.post("/auth/login", async (req, res): Promise<void> => {
 
   const [user] = await db.select().from(usersTable).where(eq(usersTable.email, parsed.data.email));
 
-  if (!user || user.passwordHash !== parsed.data.password) {
+  // Support both plaintext passwords (legacy seed accounts) and bcrypt hashes
+  // (super_admin and any future properly-hashed accounts). Bcrypt hashes always
+  // start with "$2" — if the stored hash doesn't match that prefix, fall back
+  // to the legacy direct comparison used by all existing seed users.
+  const isBcrypt = user?.passwordHash?.startsWith("$2");
+  const passwordValid = user && (
+    isBcrypt
+      ? await bcrypt.compare(parsed.data.password, user.passwordHash)
+      : user.passwordHash === parsed.data.password
+  );
+
+  if (!passwordValid) {
     // Audit failed login (fire-and-forget)
     void writeAuditLog({
       action:       "login",

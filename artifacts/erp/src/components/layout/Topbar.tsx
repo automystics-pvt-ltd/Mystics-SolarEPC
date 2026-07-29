@@ -35,6 +35,10 @@ const ALL_NAV: { name: string; href: string; icon: React.ElementType; section: s
   // Core — no module restriction (visible to all authenticated users)
   { name: "Dashboard",             href: "/dashboard",               icon: LayoutDashboard, section: "Core" },
 
+  // Project Mgmt
+  { name: "Projects Hub",          href: "/projects",                icon: FolderKanban,    section: "Project Mgmt",  module: "projects" },
+  { name: "Contractors",           href: "/projects/contractors",    icon: HardHat,         section: "Project Mgmt",  module: "projects" },
+
   // Sales & CRM
   { name: "Leads",                 href: "/crm/leads",               icon: Users,           section: "Sales & CRM",   module: "crm" },
   { name: "Quotations",            href: "/crm/quotations",          icon: FileText,        section: "Sales & CRM",   module: "crm" },
@@ -42,10 +46,6 @@ const ALL_NAV: { name: string; href: string; icon: React.ElementType; section: s
   { name: "Invoices",              href: "/crm/invoices",            icon: FilePlus,        section: "Sales & CRM",   module: "crm" },
   { name: "Tasks",                 href: "/crm/tasks",               icon: CheckSquare,     section: "Sales & CRM",   module: "crm" },
   { name: "Escalations",           href: "/crm/escalations",         icon: AlertTriangle,   section: "Sales & CRM",   module: "crm" },
-
-  // Project Mgmt
-  { name: "Projects Hub",          href: "/projects",                icon: FolderKanban,    section: "Project Mgmt",  module: "projects" },
-  { name: "Contractors",           href: "/projects/contractors",    icon: HardHat,         section: "Project Mgmt",  module: "projects" },
 
   // Inventory
   { name: "Warehouses",            href: "/inventory/warehouses",    icon: Warehouse,       section: "Inventory",     module: "inventory" },
@@ -89,8 +89,8 @@ const ALL_NAV: { name: string; href: string; icon: React.ElementType; section: s
 /* ── Mobile nav groups ───────────────────────────────────────── */
 const MOBILE_NAV_GROUPS = [
   { label: "Core",           items: ALL_NAV.filter(n => n.section === "Core") },
-  { label: "Sales & CRM",    items: ALL_NAV.filter(n => n.section === "Sales & CRM") },
   { label: "Project Mgmt",   items: ALL_NAV.filter(n => n.section === "Project Mgmt") },
+  { label: "Sales & CRM",    items: ALL_NAV.filter(n => n.section === "Sales & CRM") },
   { label: "Inventory",      items: ALL_NAV.filter(n => n.section === "Inventory") },
   { label: "Procurement",    items: ALL_NAV.filter(n => n.section === "Procurement") },
   { label: "Finance",        items: ALL_NAV.filter(n => n.section === "Finance") },
