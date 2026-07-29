@@ -59,8 +59,14 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 // ─── Procurement Tab ──────────────────────────────────────────────────────────
 function ProcurementReport() {
-  const { data, isPending } = useQuery({ queryKey: ["reports-procurement"], queryFn: () => apiGet<any>("/reports/procurement") });
+  const { data, isPending, isError, refetch } = useQuery({ queryKey: ["reports-procurement"], queryFn: () => apiGet<any>("/reports/procurement") });
   if (isPending) return <SkeletonList rows={5} />;
+  if (isError) return (
+    <div className="flex flex-col items-center gap-3 py-10 text-muted-foreground">
+      <p className="text-sm font-medium">Failed to load procurement report.</p>
+      <Button variant="outline" size="sm" onClick={() => refetch()}>Retry</Button>
+    </div>
+  );
   if (!data) return null;
   const { summary, byStatus = [], byVendor = [], monthly = [] } = data;
   return (
@@ -130,8 +136,14 @@ function ProcurementReport() {
 
 // ─── GRN Tab ──────────────────────────────────────────────────────────────────
 function GRNReport() {
-  const { data, isPending } = useQuery({ queryKey: ["reports-grn"], queryFn: () => apiGet<any>("/reports/grn") });
+  const { data, isPending, isError, refetch } = useQuery({ queryKey: ["reports-grn"], queryFn: () => apiGet<any>("/reports/grn") });
   if (isPending) return <SkeletonList rows={5} />;
+  if (isError) return (
+    <div className="flex flex-col items-center gap-3 py-10 text-muted-foreground">
+      <p className="text-sm font-medium">Failed to load GRN report.</p>
+      <Button variant="outline" size="sm" onClick={() => refetch()}>Retry</Button>
+    </div>
+  );
   if (!data) return null;
   const { summary, byStatus = [], vendorRejections = [] } = data;
   return (
@@ -206,8 +218,14 @@ function GRNReport() {
 
 // ─── Invoice Tab ──────────────────────────────────────────────────────────────
 function InvoiceReport() {
-  const { data, isPending } = useQuery({ queryKey: ["reports-invoices"], queryFn: () => apiGet<any>("/reports/invoices") });
+  const { data, isPending, isError, refetch } = useQuery({ queryKey: ["reports-invoices"], queryFn: () => apiGet<any>("/reports/invoices") });
   if (isPending) return <SkeletonList rows={5} />;
+  if (isError) return (
+    <div className="flex flex-col items-center gap-3 py-10 text-muted-foreground">
+      <p className="text-sm font-medium">Failed to load invoice report.</p>
+      <Button variant="outline" size="sm" onClick={() => refetch()}>Retry</Button>
+    </div>
+  );
   if (!data) return null;
   const { summary, aging, byVendor = [] } = data;
   const agingData = [
@@ -281,8 +299,14 @@ function InvoiceReport() {
 
 // ─── Inventory Tab ─────────────────────────────────────────────────────────────
 function InventoryReport() {
-  const { data, isPending } = useQuery({ queryKey: ["reports-inventory"], queryFn: () => apiGet<any>("/reports/inventory") });
+  const { data, isPending, isError, refetch } = useQuery({ queryKey: ["reports-inventory"], queryFn: () => apiGet<any>("/reports/inventory") });
   if (isPending) return <SkeletonList rows={5} />;
+  if (isError) return (
+    <div className="flex flex-col items-center gap-3 py-10 text-muted-foreground">
+      <p className="text-sm font-medium">Failed to load inventory report.</p>
+      <Button variant="outline" size="sm" onClick={() => refetch()}>Retry</Button>
+    </div>
+  );
   if (!data) return null;
   const { summary, lowStock = [], txnByType = [] } = data;
   return (
@@ -326,8 +350,14 @@ function InventoryReport() {
 
 // ─── Projects Tab ─────────────────────────────────────────────────────────────
 function ProjectsReport() {
-  const { data, isPending } = useQuery({ queryKey: ["reports-projects"], queryFn: () => apiGet<any>("/reports/projects") });
+  const { data, isPending, isError, refetch } = useQuery({ queryKey: ["reports-projects"], queryFn: () => apiGet<any>("/reports/projects") });
   if (isPending) return <SkeletonList rows={5} />;
+  if (isError) return (
+    <div className="flex flex-col items-center gap-3 py-10 text-muted-foreground">
+      <p className="text-sm font-medium">Failed to load projects report.</p>
+      <Button variant="outline" size="sm" onClick={() => refetch()}>Retry</Button>
+    </div>
+  );
   if (!data) return null;
   const { summary, projects = [] } = data;
   return (
