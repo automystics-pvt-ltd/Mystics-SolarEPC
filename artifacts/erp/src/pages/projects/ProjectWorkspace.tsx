@@ -441,15 +441,39 @@ export function ProjectWorkspace({ id }: { id: string }) {
         </div>
       </header>
 
-      {/* ── MOBILE PM INFO ROW ───────────────────────────────────────────────── */}
-      {project.pmOwnerName && (
-        <div className="sm:hidden shrink-0 bg-background/95 border-b border-border/60 px-3 py-1.5 flex items-center gap-2">
-          <span className="text-[11px] text-muted-foreground">PM:</span>
-          <PMChip
-            name={project.pmOwnerName}
-            email={(project as any).pmOwnerEmail}
-            size="xs"
-          />
+      {/* ── MOBILE INFO ROW ─────────────────────────────────────────────────── */}
+      {(project.pmOwnerName || project.siteLocation || project.plannedEnd) && (
+        <div className="sm:hidden shrink-0 bg-background/95 border-b border-border/60 px-3 py-1.5 flex items-center gap-3 overflow-x-auto scrollbar-none">
+          {project.pmOwnerName && (
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="text-[11px] text-muted-foreground">PM:</span>
+              <PMChip
+                name={project.pmOwnerName}
+                email={(project as any).pmOwnerEmail}
+                size="xs"
+              />
+            </div>
+          )}
+          {project.siteLocation && (
+            <>
+              {project.pmOwnerName && <div className="w-px h-3 bg-border/60 shrink-0" />}
+              <div className="flex items-center gap-1 shrink-0">
+                <MapPin className="h-3 w-3 text-muted-foreground/60 shrink-0" />
+                <span className="text-[11px] text-muted-foreground max-w-[140px] truncate">{project.siteLocation}</span>
+              </div>
+            </>
+          )}
+          {project.plannedEnd && (
+            <>
+              {(project.pmOwnerName || project.siteLocation) && <div className="w-px h-3 bg-border/60 shrink-0" />}
+              <div className="flex items-center gap-1 shrink-0">
+                <Calendar className="h-3 w-3 text-muted-foreground/60 shrink-0" />
+                <span className="text-[11px] text-muted-foreground">
+                  {new Date(project.plannedEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                </span>
+              </div>
+            </>
+          )}
         </div>
       )}
 
