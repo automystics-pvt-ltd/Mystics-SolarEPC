@@ -697,21 +697,27 @@ export function ProjectsList() {
     }, {});
   }, [projects]);
 
-  // ── Distinct PM names for filter dropdown ──
+  // ── Distinct PM names + counts for filter dropdown ──
   const pmNames = useMemo(() => {
-    if (!projects) return [] as string[];
-    const names = new Set<string>();
+    if (!projects) return [] as { name: string; count: number }[];
+    const counts = new Map<string, number>();
     for (const p of projects) {
-      if (p.pmOwnerName) names.add(p.pmOwnerName);
+      if (!p.pmOwnerName) continue;
+      const matchStatus = statusFilter === "all" || p.status === statusFilter;
+      if (matchStatus) {
+        counts.set(p.pmOwnerName, (counts.get(p.pmOwnerName) ?? 0) + 1);
+      }
     }
-    return Array.from(names).sort();
-  }, [projects]);
+    return Array.from(counts.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [projects, statusFilter]);
 
   // Restore saved PM filter once projects have loaded (validates name still exists)
   useEffect(() => {
     if (!pmFilterKey || pmFilterRestored.current || pmNames.length === 0) return;
     const saved = localStorage.getItem(pmFilterKey);
-    if (saved && saved !== "all" && pmNames.includes(saved)) {
+    if (saved && saved !== "all" && pmNames.some(pm => pm.name === saved)) {
       setPmFilter(saved);
     }
     pmFilterRestored.current = true;
@@ -886,9 +892,9 @@ export function ProjectsList() {
                 )}
                 aria-label="Filter by project manager"
               >
-                <option value="all">All PMs</option>
-                {pmNames.map(name => (
-                  <option key={name} value={name}>{name}</option>
+                <option value="all">All PMs ({statusFilter === "all" ? (projects?.length ?? 0) : (projects?.filter(p => p.status === statusFilter).length ?? 0)})</option>
+                {pmNames.map(({ name, count }) => (
+                  <option key={name} value={name}>{name} ({count})</option>
                 ))}
               </select>
               <span className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground/40 text-[10px]">▾</span>
