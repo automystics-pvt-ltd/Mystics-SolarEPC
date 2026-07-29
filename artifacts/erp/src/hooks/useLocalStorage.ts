@@ -13,7 +13,7 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
   const setValue = useCallback((value: T | ((prev: T) => T)) => {
     setStoredValue(prev => {
       const next = typeof value === "function" ? (value as (prev: T) => T)(prev) : value;
-      try { window.localStorage.setItem(key, JSON.stringify(next)); } catch {}
+      try { window.localStorage.setItem(key, JSON.stringify(next)); } catch { /* quota or SSR — ignore */ }
       return next;
     });
   }, [key]);
