@@ -84,7 +84,7 @@ export function ZoomProvider({ children }: { children: ReactNode }) {
       setZoomState(saved);
       applyZoomToDOM(saved);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line
   }, [user?.id]);
 
   /* Canonical setter — updates state, DOM, and storage atomically */
@@ -130,7 +130,7 @@ export function ZoomProvider({ children }: { children: ReactNode }) {
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line
   }, []); // stable — reads zoom through ref
 
   return (

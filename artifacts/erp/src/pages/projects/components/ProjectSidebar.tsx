@@ -3,8 +3,10 @@ import { useState } from "react";
 import {
   useGetProjectDashboard,
   getGetProjectDashboardQueryKey,
+  useUpdateProject,
+  getGetProjectQueryKey,
 } from "@workspace/api-client-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiGet } from "@/lib/fetch";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -12,13 +14,18 @@ import {
   TooltipProvider, Tooltip, TooltipTrigger, TooltipContent,
 } from "@/components/ui/tooltip";
 import {
+  Popover, PopoverContent, PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   LayoutDashboard, Activity, PackageSearch, DollarSign, Milestone,
   ShoppingCart, FolderOpen, Users, ClipboardList, ClipboardCheck,
   Zap, GitBranch, ShieldAlert, AlertOctagon, HandshakeIcon,
   ShieldCheck, Archive, MapPin, Calendar, User, TrendingUp,
   ChevronDown, ChevronRight, AlertTriangle, CheckCircle2,
+  Pencil, Check, Loader2,
 } from "lucide-react";
 import { StatusBadge } from "@/components/shared";
+import { usePermissions } from "@/lib/permissions";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Props {
@@ -170,6 +177,33 @@ export function ProjectSidebar({ project, projectId, activeTab, onTabChange, col
 
   const toggleSection = (label: string) =>
     setOpenSections(s => ({ ...s, [label]: !s[label] }));
+
+  // ── Inline PM reassignment ──
+  const [pmOpen, setPmOpen] = useState(false);
+  const [pmSearch, setPmSearch] = useState("");
+  const { canEdit } = usePermissions("projects");
+  const queryClient = useQueryClient();
+
+  const { data: pmCandidates = [] } = useQuery<{ id: number; name: string; role: string }[]>({
+    queryKey: ["pm-candidates"],
+    queryFn: () => apiGet("/projects/pm-candidates"),
+    staleTime: 5 * 60_000,
+    enabled: pmOpen,
+  });
+
+  const updatePm = useUpdateProject({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetProjectQueryKey(projectId) });
+        setPmOpen(false);
+        setPmSearch("");
+      },
+    },
+  });
+
+  const filteredCandidates = pmCandidates.filter(c =>
+    c.name.toLowerCase().includes(pmSearch.toLowerCase())
+  );
 
   // ── Dashboard data for badges ──
   const { data: dashboard } = useGetProjectDashboard(projectId, {
@@ -375,10 +409,66 @@ export function ProjectSidebar({ project, projectId, activeTab, onTabChange, col
 
           {/* PM + dates */}
           <div className="space-y-1">
-            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-              <User className="h-3 w-3 shrink-0 opacity-50" />
-              <span className="truncate">{project.pmOwnerName ?? "Unassigned"}</span>
-            </div>
+            {/* PM row — click to reassign if permitted */}
+            {canEdit ? (
+              <Popover open={pmOpen} onOpenChange={v => { setPmOpen(v); if (!v) setPmSearch(""); }}>
+                <PopoverTrigger asChild>
+                  <button className="group flex items-center gap-1.5 text-[11px] text-muted-foreground w-full hover:text-foreground transition-colors rounded px-0.5 -mx-0.5">
+                    <User className="h-3 w-3 shrink-0 opacity-50 group-hover:opacity-70" />
+                    <span className="truncate flex-1 text-left">{project.pmOwnerName ?? "Unassigned"}</span>
+                    <Pencil className="h-2.5 w-2.5 opacity-0 group-hover:opacity-40 shrink-0 transition-opacity" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent side="right" align="start" className="w-56 p-2">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 px-1 pb-1.5">
+                    Reassign PM
+                  </p>
+                  <input
+                    className="w-full text-[12px] border border-border/60 rounded px-2 py-1 mb-1.5 bg-muted/40 focus:outline-none focus:ring-1 focus:ring-primary/40"
+                    placeholder="Search…"
+                    value={pmSearch}
+                    onChange={e => setPmSearch(e.target.value)}
+                    autoFocus
+                  />
+                  <div className="max-h-44 overflow-y-auto space-y-0.5">
+                    {filteredCandidates.length === 0 && (
+                      <p className="text-[11px] text-muted-foreground text-center py-2">No match</p>
+                    )}
+                    {filteredCandidates.map(c => (
+                      <button
+                        key={c.id}
+                        disabled={updatePm.isPending}
+                        onClick={() => updatePm.mutate({ id: projectId, data: { pmOwnerId: c.id } })}
+                        className={cn(
+                          "w-full flex items-center gap-2 px-2 py-1.5 rounded text-left text-[12px] transition-colors",
+                          c.id === project.pmOwnerId
+                            ? "bg-primary/10 text-primary font-semibold"
+                            : "hover:bg-accent text-foreground"
+                        )}
+                      >
+                        {c.id === project.pmOwnerId
+                          ? (updatePm.isPending
+                              ? <Loader2 className="h-3 w-3 animate-spin shrink-0" />
+                              : <Check className="h-3 w-3 shrink-0" />)
+                          : <span className="h-3 w-3 shrink-0" />}
+                        <span className="truncate">{c.name}</span>
+                        <span className="ml-auto text-[9px] text-muted-foreground/60 capitalize shrink-0">{c.role}</span>
+                      </button>
+                    ))}
+                  </div>
+                  {updatePm.isPending && (
+                    <p className="text-[10px] text-muted-foreground text-center pt-1.5 flex items-center justify-center gap-1">
+                      <Loader2 className="h-2.5 w-2.5 animate-spin" /> Saving…
+                    </p>
+                  )}
+                </PopoverContent>
+              </Popover>
+            ) : (
+              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <User className="h-3 w-3 shrink-0 opacity-50" />
+                <span className="truncate">{project.pmOwnerName ?? "Unassigned"}</span>
+              </div>
+            )}
             {project.plannedEnd && (
               <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                 <Calendar className="h-3 w-3 shrink-0 opacity-50" />
