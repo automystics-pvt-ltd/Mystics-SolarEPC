@@ -27,6 +27,11 @@ router.post("/quotations", requirePermission("crm", "create"), async (req, res):
   const parsed = CreateQuotationBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const items = parsed.data.boqItems ?? [];
+  // Reject silently-empty submissions: must have at least one item with a non-blank description
+  if (items.length === 0 || !items.some(i => i.description.trim().length > 0)) {
+    res.status(400).json({ error: "At least one BOQ line item with a description is required" });
+    return;
+  }
   const total = items.reduce((s, i) => s + (i.amount ?? i.qty * i.unitPrice), 0);
   const [row] = await db.insert(quotationsTable).values({
     leadId: parsed.data.leadId,
