@@ -183,6 +183,104 @@ router.post("/quotations/:id/create-project", requirePermission("crm", "create")
   }
 });
 
+/**
+ * Single-shot quotation conversion: creates one project (with phases + BOQ seeded) and
+ * one client PO linked to that same project. The project gets clientPoId set so it
+ * appears in /leads/:id/projects (which joins via client_pos).
+ */
+router.post("/quotations/:id/convert", requirePermission("crm", "create"), async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  const [quotation] = await db.select().from(quotationsTable).where(eq(quotationsTable.id, id));
+  if (!quotation) { res.status(404).json({ error: "Quotation not found" }); return; }
+  if (quotation.approvalStatus !== "Approved") {
+    res.status(400).json({ error: "Only approved quotations can be converted to a project" });
+    return;
+  }
+
+  const [lead] = quotation.leadId
+    ? await db.select().from(leadsTable).where(eq(leadsTable.id, quotation.leadId))
+    : [null];
+
+  const { projectName, clientPoNumber, contractValue, startDate, siteLocation } = req.body;
+  if (!clientPoNumber) { res.status(400).json({ error: "clientPoNumber is required" }); return; }
+  if (contractValue == null || isNaN(Number(contractValue))) { res.status(400).json({ error: "contractValue is required" }); return; }
+
+  const name = projectName?.trim() || (lead ? `${lead.companyName} — Solar Project` : `Solar Project QTN-${String(id).padStart(4, "0")}`);
+  const site = siteLocation || null;
+  const value = Number(contractValue);
+
+  const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
+  await client.connect();
+  try {
+    await client.query("BEGIN");
+
+    // 1. Create the project
+    const { rows: [project] } = await client.query(
+      `INSERT INTO projects (name, site_location, contract_value, start_date, status)
+       VALUES ($1, $2, $3, $4, 'Planning') RETURNING id, name`,
+      [name, site, value.toString(), startDate || null]
+    );
+
+    // 2. Seed standard EPC phases
+    const PHASE_ORDER = [
+      "SiteSurvey","Planning","BOQ","Budgeting","ResourceAllocation",
+      "Procurement","Installation","QualityInspection","TestingCommissioning",
+      "Handover","Warranty","Closure",
+    ];
+    for (const phase of PHASE_ORDER) {
+      await client.query(
+        `INSERT INTO project_phases (project_id, phase, status)
+         VALUES ($1, $2, 'NotStarted') ON CONFLICT DO NOTHING`,
+        [project.id, phase]
+      );
+    }
+
+    // 3. Seed BOQ items from the quotation
+    const boqItems = (quotation.boqItems ?? []) as Array<{
+      description: string; qty: number; unit?: string; unitPrice: number; amount?: number;
+    }>;
+    let lineNo = 1;
+    for (const item of boqItems) {
+      const qty = Number(item.qty) || 1;
+      const rate = Number(item.unitPrice) || 0;
+      await client.query(
+        `INSERT INTO project_boq_items
+           (project_id, description, category, unit, quantity, unit_rate, sourced_from, status)
+         VALUES ($1,$2,'Material',$3,$4,$5,'Procurement','Draft')`,
+        [project.id, item.description || `Item ${lineNo}`, item.unit || "Nos", qty, rate]
+      );
+      lineNo++;
+    }
+
+    // 4. Create the client PO linked to this project
+    const { rows: [clientPO] } = await client.query(
+      `INSERT INTO client_pos (quotation_id, client_po_number, contract_value, project_id)
+       VALUES ($1, $2, $3, $4) RETURNING id`,
+      [id, clientPoNumber, value.toString(), project.id]
+    );
+
+    // 5. Back-link the project to the client PO (so /leads/:id/projects resolves it)
+    await client.query(
+      `UPDATE projects SET client_po_id = $1 WHERE id = $2`,
+      [clientPO.id, project.id]
+    );
+
+    await client.query("COMMIT");
+
+    res.status(201).json({
+      projectId: project.id,
+      projectName: project.name,
+      clientPoId: clientPO.id,
+      boqItemsCreated: boqItems.length,
+    });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    await client.end();
+  }
+});
+
 router.get("/client-pos", async (req, res): Promise<void> => {
   const rows = await db.select().from(clientPOsTable).orderBy(desc(clientPOsTable.createdAt));
   res.json(rows.map(fmtPO));

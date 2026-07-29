@@ -11,12 +11,12 @@ import { cn } from "@/lib/utils";
 import { useLocation } from "wouter";
 import { useToast } from "@/components/ui/use-toast";
 import { usePermissions } from "@/lib/permissions";
-import { apiGet } from "@/lib/fetch";
+import { apiGet, apiPost } from "@/lib/fetch";
 import {
   ArrowUpRight, X, Mail, Phone, Edit2, Save, Plus, FileText, Layers,
   StickyNote, Loader2, Check, ThumbsUp, ThumbsDown, Trash2, Calculator,
   ChevronDown, ChevronRight, ExternalLink, Clock, TrendingUp, Building2,
-  MapPin, Star, AlertCircle,
+  MapPin, Star, AlertCircle, FolderPlus,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -275,10 +275,173 @@ function QuotationCreator({ leadId, onDone, onCancel }: {
   );
 }
 
+/* ── Convert to Project Form ─────────────────────────────────────────── */
+function ConvertToProjectForm({ quotation, leadId, leadCompanyName, onDone, onCancel }: {
+  quotation: any;
+  leadId: number;
+  leadCompanyName?: string;
+  onDone: () => void;
+  onCancel: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [projectName, setProjectName] = useState(
+    leadCompanyName
+      ? `${leadCompanyName} — Solar Project`
+      : `Solar Project QTN-${String(quotation.id).padStart(4, "0")}`
+  );
+  const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
+  const [contractValue, setContractValue] = useState(
+    quotation.totalAmount ? String(Math.round(Number(quotation.totalAmount))) : ""
+  );
+  const [clientPoNumber, setClientPoNumber] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!clientPoNumber.trim()) {
+      toast({ title: "Client PO number is required", variant: "destructive" });
+      return;
+    }
+    if (!contractValue || isNaN(Number(contractValue)) || Number(contractValue) <= 0) {
+      toast({ title: "A valid contract value is required", variant: "destructive" });
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      // Single atomic call: seeds phases + BOQ items, creates client PO, links both to one project
+      await apiPost(`/quotations/${quotation.id}/convert`, {
+        projectName: projectName.trim(),
+        clientPoNumber: clientPoNumber.trim(),
+        contractValue: Number(contractValue),
+        startDate: startDate || undefined,
+      });
+
+      // Refresh Projects tab and quotation list
+      queryClient.invalidateQueries({ queryKey: ["lead-projects", leadId] });
+      queryClient.invalidateQueries({ queryKey: getGetQuotationsQueryKey({ leadId }) });
+      queryClient.invalidateQueries({ queryKey: getGetQuotationsQueryKey({}) });
+
+      toast({
+        title: "Project created!",
+        description: `${projectName.trim()} has been created and the client PO has been logged.`,
+      });
+      onDone();
+    } catch (e: any) {
+      toast({
+        title: "Conversion failed",
+        description: e?.message ?? "Could not create project. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 4 }}
+      className="border border-emerald-200 rounded-xl overflow-hidden bg-white shadow-sm mt-2"
+    >
+      {/* Header */}
+      <div className="flex items-center gap-2 px-4 py-3 bg-emerald-50 border-b border-emerald-100">
+        <FolderPlus className="h-4 w-4 text-emerald-600" />
+        <span className="font-bold text-[13px] text-emerald-800">Convert to Project</span>
+        <span className="text-[11px] text-emerald-600 ml-1">
+          · QTN-{String(quotation.id).padStart(4, "0")}
+        </span>
+      </div>
+
+      {/* Form fields */}
+      <div className="px-4 py-4 space-y-3">
+        <div className="space-y-1.5">
+          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+            Project Name
+          </label>
+          <Input
+            value={projectName}
+            onChange={e => setProjectName(e.target.value)}
+            placeholder="Project name…"
+            className="h-8 text-sm border-gray-200"
+            disabled={isSubmitting}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+              Start Date
+            </label>
+            <Input
+              type="date"
+              value={startDate}
+              onChange={e => setStartDate(e.target.value)}
+              className="h-8 text-sm border-gray-200"
+              disabled={isSubmitting}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+              Contract Value (₹)
+            </label>
+            <Input
+              type="number"
+              min={0}
+              value={contractValue}
+              onChange={e => setContractValue(e.target.value)}
+              placeholder="0"
+              className="h-8 text-sm font-mono border-gray-200"
+              disabled={isSubmitting}
+            />
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+            Client PO Number <span className="text-red-400 normal-case font-normal">*required</span>
+          </label>
+          <Input
+            value={clientPoNumber}
+            onChange={e => setClientPoNumber(e.target.value)}
+            placeholder="e.g. PO/2026/00123"
+            className="h-8 text-sm border-gray-200"
+            disabled={isSubmitting}
+          />
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="border-t border-gray-100 px-4 py-3 flex justify-end gap-2 bg-gray-50/40">
+        <Button
+          variant="ghost" size="sm"
+          onClick={onCancel}
+          className="h-8 text-[12px]"
+          disabled={isSubmitting}
+        >
+          Cancel
+        </Button>
+        <Button
+          size="sm"
+          onClick={handleSubmit}
+          disabled={isSubmitting}
+          className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1.5 text-[12px]"
+        >
+          {isSubmitting
+            ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            : <FolderPlus className="h-3.5 w-3.5" />}
+          {isSubmitting ? "Creating…" : "Create Project"}
+        </Button>
+      </div>
+    </motion.div>
+  );
+}
+
 /* ── Quotations Tab ──────────────────────────────────────────────────────── */
-function QuotationsTab({ leadId }: { leadId: number }) {
+function QuotationsTab({ leadId, leadCompanyName }: { leadId: number; leadCompanyName?: string }) {
   const [, setLocation] = useLocation();
   const [showCreate, setShowCreate] = useState(false);
+  const [convertingQuotationId, setConvertingQuotationId] = useState<number | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { canEdit: isAdmin } = usePermissions("crm");
@@ -409,6 +572,46 @@ function QuotationsTab({ leadId }: { leadId: number }) {
                   )}
                 </div>
               )}
+
+              {/* Convert to Project action — only for Approved quotations */}
+              {q.approvalStatus === "Approved" && (
+                <div className="border-t border-gray-50 px-4 py-2.5 flex items-center justify-between bg-emerald-50/40">
+                  <span className="text-[11px] text-emerald-700 font-medium flex items-center gap-1.5">
+                    <Check className="h-3 w-3 text-emerald-600" /> Ready to convert
+                  </span>
+                  {convertingQuotationId === q.id ? (
+                    <button
+                      onClick={() => setConvertingQuotationId(null)}
+                      className="text-[11px] text-gray-400 font-semibold hover:text-gray-600 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      onClick={() => setConvertingQuotationId(q.id)}
+                      className="h-6 text-[11px] px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1"
+                    >
+                      <FolderPlus className="h-3 w-3" /> Convert to Project
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              {/* Inline conversion form */}
+              <AnimatePresence>
+                {convertingQuotationId === q.id && (
+                  <div className="px-4 pb-4">
+                    <ConvertToProjectForm
+                      quotation={q}
+                      leadId={leadId}
+                      leadCompanyName={leadCompanyName}
+                      onDone={() => setConvertingQuotationId(null)}
+                      onCancel={() => setConvertingQuotationId(null)}
+                    />
+                  </div>
+                )}
+              </AnimatePresence>
             </div>
           ))}
         </div>
@@ -818,7 +1021,7 @@ export function CrmLeadSheet({ leadId, open, onClose }: Props) {
 
                 {/* ── Quotations Tab ─────────────────────────────────── */}
                 <TabsContent value="quotations" className="px-5 pb-5 m-0 outline-none">
-                  <QuotationsTab leadId={lead.id} />
+                  <QuotationsTab leadId={lead.id} leadCompanyName={lead.companyName ?? undefined} />
                 </TabsContent>
 
                 {/* ── Survey Tab ─────────────────────────────────────── */}
