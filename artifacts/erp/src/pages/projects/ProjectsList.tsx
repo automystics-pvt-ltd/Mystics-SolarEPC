@@ -39,7 +39,7 @@ import {
 } from "lucide-react";
 import { CanCreate } from "@/lib/permissions";
 import { useAuth } from "@/lib/auth";
-import { EmptyState, SkeletonCards, PMChip } from "@/components/shared";
+import { EmptyState, SkeletonCards, PMChip, ExportButton } from "@/components/shared";
 
 // ── PM candidates type ────────────────────────────────────────────────────────
 interface PmCandidate { id: number; name: string; role: string; }
@@ -874,6 +874,28 @@ export function ProjectsList() {
               <span className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground/40 text-[10px]">▾</span>
             </div>
           )}
+
+          {/* Export */}
+          <ExportButton
+            config={{
+              title: "Projects",
+              module: "projects",
+              filename: "Projects_List",
+              columns: [
+                { header: "Project Name",     key: "name"            },
+                { header: "Status",           key: "status"          },
+                { header: "Site Location",    key: "siteLocation"    },
+                { header: "Contract Value (₹)", key: "contractValue" },
+                { header: "% Complete",       key: "percentComplete" },
+                { header: "Project Manager",  key: "pmOwnerName"     },
+                { header: "Start Date",       key: "startDate"       },
+                { header: "Planned End",      key: "plannedEnd"      },
+              ],
+              getRows: () => filtered as unknown as Record<string, unknown>[],
+            }}
+            size="sm"
+            className="h-8 text-[13px]"
+          />
 
           {/* View toggle */}
           <div className="flex items-center gap-0.5 p-0.5 bg-muted/50 border border-border/60 rounded-lg shrink-0">

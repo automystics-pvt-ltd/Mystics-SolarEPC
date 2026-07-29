@@ -1,13 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost } from "@/lib/fetch";
 import { motion } from "framer-motion";
-import { PageHeader, DataTable } from "@/components/shared";
+import { PageHeader, DataTable, ExportButton } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { AlertTriangle, TrendingDown, Package, Download, Bell, Check } from "lucide-react";
-import { exportToCsv } from "@/lib/export";
+import { AlertTriangle, TrendingDown, Package, Bell, Check } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -167,13 +166,26 @@ export function ReorderPlanning() {
         title="Reorder Planning"
         subtitle="Identify stock shortages and plan procurement orders"
         actions={
-          <Button variant="outline" size="sm" className="gap-2 rounded-[8px] font-bold" onClick={() => exportToCsv(
-            "reorder-analysis.csv",
-            ["Material", "Warehouse", "Current Qty", "UOM", "Min Level", "Shortage", "Suggested Order", "Est. Value"],
-            items.map((i: any) => [i.materialName, i.warehouseName, i.currentQty, i.uom, i.minStockLevel, i.shortageQty, i.reorderQty || i.shortageQty, i.estimatedOrderValue])
-          )}>
-            <Download className="h-4 w-4" /> Export
-          </Button>
+          <ExportButton
+            config={{
+              title: "Reorder Planning",
+              module: "inventory",
+              filename: "Inventory_ReorderPlanning",
+              columns: [
+                { header: "Material",        key: "materialName"          },
+                { header: "Warehouse",        key: "warehouseName"         },
+                { header: "Current Qty",      key: "currentQty"            },
+                { header: "UoM",              key: "uom"                   },
+                { header: "Min Level",        key: "minStockLevel"         },
+                { header: "Shortage",         key: "shortageQty"           },
+                { header: "Suggested Order",  key: "reorderQty"            },
+                { header: "Est. Value (₹)",   key: "estimatedOrderValue"   },
+              ],
+              getRows: () => (items as any[]) as unknown as Record<string, unknown>[],
+            }}
+            size="sm"
+            className="rounded-[8px] font-bold"
+          />
         }
       />
 

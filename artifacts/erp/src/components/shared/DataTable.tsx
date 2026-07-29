@@ -25,11 +25,12 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  ChevronsUpDown, ChevronUp, ChevronDown, Search, Download,
+  ChevronsUpDown, ChevronUp, ChevronDown, Search,
   Settings2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
   X, Loader2, LucideIcon, AlignJustify,
 } from "lucide-react";
 import { EmptyState } from "./EmptyState";
+import { ExportButton } from "./ExportButton";
 
 // ── Filter option type ────────────────────────────────────────────────────────
 
@@ -51,8 +52,12 @@ export interface DataTableProps<TData> {
   actions?: React.ReactNode;
   /** Shown when rows are selected */
   bulkActions?: (rows: TData[], clearSelection: () => void) => React.ReactNode;
-  /** CSV export filename (without extension) */
+  /** Base export filename (without extension or date) — enables the Export button */
   exportFilename?: string;
+  /** ERP module name used in export metadata (e.g. "procurement") */
+  exportModule?: string;
+  /** Report title used in export headers — falls back to a prettified filename */
+  exportTitle?: string;
   /** Additional column-level filter dropdowns */
   filterOptions?: FilterOption[];
   /** Active filters from parent (tab-style) */
@@ -117,35 +122,6 @@ function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }
   );
 }
 
-// ── CSV Export ────────────────────────────────────────────────────────────────
-
-function exportToCsv<TData>(filename: string, columns: ColumnDef<TData, any>[], data: TData[]) {
-  const headers = columns
-    .filter((c) => c.id !== "__select" && c.id !== "__actions")
-    .map((c) => (typeof c.header === "string" ? c.header : c.id ?? ""));
-
-  const rows = data.map((row) =>
-    columns
-      .filter((c) => c.id !== "__select" && c.id !== "__actions")
-      .map((c) => {
-        const key = (c as any).accessorKey;
-        if (!key) return "";
-        const val = (row as any)[key];
-        if (val === null || val === undefined) return "";
-        return typeof val === "string" && val.includes(",") ? `"${val}"` : String(val);
-      })
-  );
-
-  const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${filename}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
 // ── DataTable ─────────────────────────────────────────────────────────────────
 
 export function DataTable<TData>({
@@ -156,6 +132,8 @@ export function DataTable<TData>({
   actions,
   bulkActions,
   exportFilename,
+  exportModule,
+  exportTitle,
   filterOptions,
   onRowClick,
   emptyIcon,
@@ -335,16 +313,26 @@ export function DataTable<TData>({
 
           {/* Export */}
           {exportFilename && (
-            <Button
-              variant="outline"
+            <ExportButton
+              config={{
+                title: exportTitle ?? exportFilename.replace(/[-_]/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
+                module: exportModule ?? "data",
+                filename: exportFilename,
+                columns: columns
+                  .filter((c) => c.id !== "__select" && c.id !== "__actions")
+                  .filter((c) => table.getColumn(c.id ?? "")?.getIsVisible() !== false)
+                  .map((c) => ({
+                    header: typeof c.header === "string" ? c.header : (c.id ?? "").replace(/[_-]/g, " "),
+                    key: (c as any).accessorKey ?? c.id ?? "",
+                  })),
+                getRows: () =>
+                  table
+                    .getFilteredRowModel()
+                    .rows.map((r) => r.original as Record<string, unknown>),
+              }}
               size="sm"
-              onClick={() => exportToCsv(exportFilename, columns, table.getFilteredRowModel().rows.map((r) => r.original))}
-              className="h-8 gap-1.5 text-[12px] border-border/60"
-              aria-label="Export to CSV"
-            >
-              <Download className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Export</span>
-            </Button>
+              className="h-8 text-[12px] border-border/60"
+            />
           )}
 
           {/* Column visibility */}

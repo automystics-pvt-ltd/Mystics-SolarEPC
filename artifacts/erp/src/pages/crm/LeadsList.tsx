@@ -5,9 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Plus, Search, Filter, Building2, UserCircle, Target, ChevronsUpDown, Check, Download } from "lucide-react";
-import { SkeletonList, EmptyState } from "@/components/shared";
-import { exportToCsv } from "@/lib/export";
+import { Loader2, Plus, Search, Filter, Building2, UserCircle, Target, ChevronsUpDown, Check } from "lucide-react";
+import { SkeletonList, EmptyState, ExportButton } from "@/components/shared";
 import { CanCreate, CanExport } from "@/lib/permissions";
 import { Link } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -217,15 +216,26 @@ export function LeadsList() {
         
         <div className="flex gap-2">
           <CanExport module="crm">
-            <Button variant="outline" className="h-10 gap-2" onClick={() => {
-              exportToCsv(
-                `leads-pipeline-${new Date().toISOString().slice(0, 10)}.csv`,
-                ["Company", "Contact", "Email", "Phone", "Stage", "Source", "Territory", "Est. Value (₹)", "Product Interest"],
-                (filteredLeads ?? []).map((l: any) => [l.companyName, l.contactName, l.contactEmail ?? "", l.contactPhone ?? "", l.status, l.source ?? "", l.territory ?? "", l.estimatedValue ?? 0, l.productInterest ?? ""])
-              );
-            }}>
-              <Download className="h-4 w-4" /> Export CSV
-            </Button>
+            <ExportButton
+              config={{
+                title: "Leads Pipeline",
+                module: "crm",
+                filename: "CRM_Leads",
+                columns: [
+                  { header: "Company",           key: "companyName"     },
+                  { header: "Contact",            key: "contactName"     },
+                  { header: "Email",              key: "contactEmail"    },
+                  { header: "Phone",              key: "contactPhone"    },
+                  { header: "Stage",              key: "status"          },
+                  { header: "Source",             key: "source"          },
+                  { header: "Territory",          key: "territory"       },
+                  { header: "Est. Value (₹)",     key: "estimatedValue"  },
+                  { header: "Product Interest",   key: "productInterest" },
+                  { header: "Created",            key: "createdAt"       },
+                ],
+                getRows: () => (filteredLeads ?? []) as unknown as Record<string, unknown>[],
+              }}
+            />
           </CanExport>
           <CanCreate module="crm">
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>

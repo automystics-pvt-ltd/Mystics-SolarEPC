@@ -14,8 +14,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@/lib/zodResolver";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { Package, AlertTriangle, Download, Plus, SlidersHorizontal } from "lucide-react";
-import { exportToCsv } from "@/lib/export";
+import { Package, AlertTriangle, Plus, SlidersHorizontal } from "lucide-react";
+import { ExportButton } from "@/components/shared";
 import type { ColumnDef } from "@tanstack/react-table";
 import { cn } from "@/lib/utils";
 
@@ -227,13 +227,30 @@ export function StockSummaryPage() {
         subtitle="Current stock levels across all warehouses"
         actions={
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="gap-2 rounded-[8px] font-bold" onClick={() => exportToCsv(
-              "stock-summary.csv",
-              ["Material", "Code", "Category", "Warehouse", "Qty", "UOM", "Available", "Min Level", "Unit Cost", "Total Value", "Status"],
-              stock.map((s: any) => [s.materialName, s.materialCode, s.categoryName, s.warehouseName, s.currentQty, s.uom, s.availableQty, s.minStockLevel, s.unitCost, s.totalValue, s.isOutOfStock ? "Out of Stock" : s.isBelowReorder ? "Below Reorder" : "Healthy"])
-            )}>
-              <Download className="h-4 w-4" /> Export
-            </Button>
+            <ExportButton
+              config={{
+                title: "Stock Summary",
+                module: "inventory",
+                filename: "Inventory_StockSummary",
+                columns: [
+                  { header: "Material",    key: "materialName"  },
+                  { header: "Code",        key: "materialCode"  },
+                  { header: "Category",    key: "categoryName"  },
+                  { header: "Warehouse",   key: "warehouseName" },
+                  { header: "Qty",         key: "currentQty"    },
+                  { header: "Available",   key: "availableQty"  },
+                  { header: "UoM",         key: "uom"           },
+                  { header: "Min Level",   key: "minStockLevel" },
+                  { header: "Unit Cost",   key: "unitCost"      },
+                  { header: "Total Value", key: "totalValue"    },
+                  { header: "Status",      key: "isOutOfStock", formatter: (v, row) =>
+                    v ? "Out of Stock" : (row.isBelowReorder ? "Below Reorder" : "Healthy") },
+                ],
+                getRows: () => (stock as any[]) as unknown as Record<string, unknown>[],
+              }}
+              size="sm"
+              className="rounded-[8px] font-bold"
+            />
             <Button size="sm" className="gap-2 rounded-[8px] font-bold bg-[#EA580C] hover:bg-[#C2410C] text-white" onClick={() => setAddOpen(true)}>
               <Plus className="h-4 w-4" /> Add Stock
             </Button>

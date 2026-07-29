@@ -3,10 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, PackageX, Download } from "lucide-react";
-import { exportToCsv } from "@/lib/export";
+import { Plus, PackageX } from "lucide-react";
 import { apiGet } from "@/lib/fetch";
-import { PageHeader, DataTable, StatusBadge } from "@/components/shared";
+import { PageHeader, DataTable, StatusBadge, ExportButton } from "@/components/shared";
 import type { ColumnDef } from "@tanstack/react-table";
 
 const STATUS_OPTIONS = [
@@ -25,18 +24,6 @@ export default function GRNReturnsList() {
     queryKey: ["grn-returns"],
     queryFn: () => apiGet<any[]>("/grn-returns", {}),
   });
-
-  const handleExport = () => {
-    exportToCsv(
-      `grn-returns-${new Date().toISOString().slice(0, 10)}.csv`,
-      ["Return #", "Vendor", "GRN ID", "Return Type", "Status", "Total Qty", "Total Value", "Created At"],
-      (returns as any[]).map(r => [
-        r.returnNumber, r.vendorName, r.grnId, r.returnType, r.status,
-        r.totalReturnQty ?? 0, r.totalReturnValue ?? 0,
-        new Date(r.createdAt).toLocaleDateString("en-IN"),
-      ])
-    );
-  };
 
   const columns: ColumnDef<any, any>[] = [
     {
@@ -101,9 +88,25 @@ export default function GRNReturnsList() {
         subtitle="Return-to-Vendor (RTV) management"
         actions={
           <>
-            <Button variant="outline" size="sm" className="gap-2" onClick={handleExport}>
-              <Download className="w-4 h-4" /> Export CSV
-            </Button>
+            <ExportButton
+              config={{
+                title: "GRN Returns",
+                module: "procurement",
+                filename: "Procurement_GRNReturns",
+                columns: [
+                  { header: "Return #",      key: "returnNumber"    },
+                  { header: "Vendor",        key: "vendorName"      },
+                  { header: "GRN ID",        key: "grnId"           },
+                  { header: "Return Type",   key: "returnType"      },
+                  { header: "Status",        key: "status"          },
+                  { header: "Total Qty",     key: "totalReturnQty"  },
+                  { header: "Total Value",   key: "totalReturnValue"},
+                  { header: "Created At",    key: "createdAt", formatter: (v) => v ? new Date(String(v)).toLocaleDateString("en-IN") : "" },
+                ],
+                getRows: () => returns as unknown as Record<string, unknown>[],
+              }}
+              size="sm"
+            />
             <Button className="gap-2 bg-orange-500 hover:bg-orange-600" onClick={() => setLocation("/procurement/grn-returns/new")}>
               <Plus className="w-4 h-4" /> New Return
             </Button>

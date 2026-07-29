@@ -12,3 +12,5 @@ export { Timeline } from "./Timeline";
 export type { TimelineItem } from "./Timeline";
 export { Kbd } from "./Kbd";
 export { PMChip } from "./PMChip";
+export { ExportButton } from "./ExportButton";
+export type { ExportConfig } from "./ExportButton";

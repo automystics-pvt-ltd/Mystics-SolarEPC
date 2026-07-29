@@ -9,8 +9,7 @@ import {
   Plus, FileText, AlertTriangle, Clock, TrendingUp,
   CheckCircle2, DollarSign, BarChart3, AlertCircle,
 } from "lucide-react";
-import { exportToCsv } from "@/lib/export";
-import { PageHeader, DataTable, StatusBadge } from "@/components/shared";
+import { PageHeader, DataTable, StatusBadge, ExportButton } from "@/components/shared";
 import { apiGet } from "@/lib/fetch";
 import { cn } from "@/lib/utils";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -73,18 +72,6 @@ export default function InvoicesList() {
     staleTime: 60000,
   });
 
-  const handleExport = () => {
-    exportToCsv(
-      `invoices-${new Date().toISOString().slice(0, 10)}.csv`,
-      ["Invoice #", "Type", "Vendor Invoice #", "Vendor", "PO #", "Status", "Match Status", "Net Payable (₹)", "Paid (₹)", "Due Date", "Aging (days)", "Created At"],
-      (invoices as any[]).map(i => [
-        i.invoiceNumber, i.invoiceType ?? "Standard", i.vendorInvoiceNumber ?? "",
-        i.vendorName, `#${i.poId}`, i.status, i.matchStatus ?? "",
-        i.netPayable ?? 0, i.paidAmount ?? 0, i.dueDate ?? "",
-        i.agingDays ?? "", new Date(i.createdAt).toLocaleDateString("en-IN"),
-      ])
-    );
-  };
 
   const columns: ColumnDef<any, any>[] = [
     {
@@ -178,7 +165,29 @@ export default function InvoicesList() {
         subtitle="3-way matched against GRNs and purchase orders"
         actions={
           <>
-            <Button variant="outline" size="sm" className="gap-2" onClick={handleExport}>Export CSV</Button>
+            <ExportButton
+              config={{
+                title: "Vendor Invoices",
+                module: "procurement",
+                filename: "Procurement_Invoices",
+                columns: [
+                  { header: "Invoice #",       key: "invoiceNumber"       },
+                  { header: "Type",             key: "invoiceType", formatter: (v) => String(v ?? "Standard") },
+                  { header: "Vendor Inv. #",   key: "vendorInvoiceNumber" },
+                  { header: "Vendor",           key: "vendorName"          },
+                  { header: "PO #",             key: "poId", formatter: (v) => `#${v ?? ""}` },
+                  { header: "Status",           key: "status"              },
+                  { header: "Match Status",     key: "matchStatus"         },
+                  { header: "Net Payable (₹)", key: "netPayable"          },
+                  { header: "Paid (₹)",        key: "paidAmount"          },
+                  { header: "Due Date",         key: "dueDate"             },
+                  { header: "Aging (days)",     key: "agingDays"           },
+                  { header: "Created At",       key: "createdAt", formatter: (v) => v ? new Date(String(v)).toLocaleDateString("en-IN") : "" },
+                ],
+                getRows: () => (invoices as any[]) as unknown as Record<string, unknown>[],
+              }}
+              size="sm"
+            />
             <Button className="gap-2 bg-orange-500 hover:bg-orange-600" onClick={() => setLocation("/procurement/invoices/new")}>
               <Plus className="w-4 h-4" /> New Invoice
             </Button>

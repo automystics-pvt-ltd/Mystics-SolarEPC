@@ -17,7 +17,7 @@ import { useLocation } from "wouter";
 import {
   Users2, Target, FileText, FileCheck, Receipt, CheckSquare, AlertTriangle,
   Plus, Search, Filter, TrendingUp, DollarSign, Clock, Loader2,
-  Building2, Phone, Mail, MoreHorizontal, ChevronRight, Download,
+  Building2, Phone, Mail, MoreHorizontal, ChevronRight,
   Zap, ArrowUpRight, Eye, Calendar, Tag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { SkeletonList, EmptyState, StatusBadge, PageHeader } from "@/components/shared";
-import { exportToCsv } from "@/lib/export";
+import { ExportButton } from "@/components/shared";
 import { CanCreate, CanExport } from "@/lib/permissions";
 import { CrmLeadSheet } from "./CrmLeadSheet";
 
@@ -781,15 +781,25 @@ export function CrmWorkspace() {
             </div>
             {section === "pipeline" && (
               <CanExport module="crm">
-                <Button variant="outline" size="sm" className="h-9 gap-1.5 bg-white"
-                  onClick={() => exportToCsv(
-                    `leads-${new Date().toISOString().slice(0,10)}.csv`,
-                    ["Company","Contact","Stage","Source","Value","Score","Created"],
-                    (leads as any[]).map(l => [l.companyName, l.contactName, l.status, l.source, l.estimatedValue ?? 0, l.score ?? 0, l.createdAt])
-                  )}>
-                  <Download className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">Export</span>
-                </Button>
+                <ExportButton
+                  config={{
+                    title: "Leads Pipeline",
+                    module: "crm",
+                    filename: "CRM_Leads",
+                    columns: [
+                      { header: "Company", key: "companyName"    },
+                      { header: "Contact", key: "contactName"    },
+                      { header: "Stage",   key: "status"         },
+                      { header: "Source",  key: "source"         },
+                      { header: "Value",   key: "estimatedValue" },
+                      { header: "Score",   key: "score"          },
+                      { header: "Created", key: "createdAt"      },
+                    ],
+                    getRows: () => (leads as any[]) as unknown as Record<string, unknown>[],
+                  }}
+                  size="sm"
+                  className="h-9 bg-white"
+                />
               </CanExport>
             )}
           </div>

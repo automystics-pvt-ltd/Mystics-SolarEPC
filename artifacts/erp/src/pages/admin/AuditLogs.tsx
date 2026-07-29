@@ -10,12 +10,11 @@ import {
   Sheet, SheetContent, SheetHeader, SheetTitle,
 } from "@/components/ui/sheet";
 import {
-  Activity, AlertTriangle, Clock, Download, LogIn, ScrollText, Shield, Users,
+  Activity, AlertTriangle, Clock, LogIn, ScrollText, Shield, Users,
   X,
 } from "lucide-react";
 import { apiGet } from "@/lib/fetch";
-import { exportToCsv } from "@/lib/export";
-import { PageHeader, DataTable, SectionCard, StatusBadge } from "@/components/shared";
+import { PageHeader, DataTable, SectionCard, StatusBadge, ExportButton } from "@/components/shared";
 import { CompactStatCard } from "@/components/shared/StatCard";
 import type { ColumnDef } from "@tanstack/react-table";
 
@@ -209,26 +208,6 @@ export default function AuditLogs() {
   const hasFilters = module !== "all" || action !== "all" || userId !== "all" ||
     status !== "all" || fromDate || toDate || search;
 
-  // ── CSV export ───────────────────────────────────────────────────────────
-  const handleExport = useCallback(() => {
-    exportToCsv(
-      `audit-logs-${new Date().toISOString().slice(0, 10)}.csv`,
-      ["Timestamp", "User", "Role", "Action", "Module", "Entity Type", "Entity", "IP", "Status", "Description"],
-      logs.map(l => [
-        fmtTs(l.created_at),
-        l.user_name  ?? "—",
-        l.user_role  ?? "—",
-        l.action,
-        l.module,
-        l.entity_type  ?? "—",
-        l.entity_label ?? l.entity_id ?? "—",
-        l.ip_address   ?? "—",
-        l.status,
-        l.description  ?? "—",
-      ]),
-    );
-  }, [logs]);
-
   // ── Table columns ─────────────────────────────────────────────────────────
   const columns: ColumnDef<AuditLog, any>[] = useMemo(() => [
     {
@@ -329,14 +308,28 @@ export default function AuditLogs() {
         title="Audit Logs"
         subtitle="System-wide activity trail — every write action captured automatically"
         actions={
-          <Button
-            variant="outline" size="sm"
-            className="gap-1.5 h-9 text-xs"
-            onClick={handleExport}
-            disabled={logs.length === 0}
-          >
-            <Download className="h-3.5 w-3.5" /> Export CSV
-          </Button>
+          <ExportButton
+            config={{
+              title: "Audit Logs",
+              module: "admin",
+              filename: "Admin_AuditLogs",
+              columns: [
+                { header: "Timestamp",   key: "created_at",   formatter: (v) => fmtTs(String(v ?? "")) },
+                { header: "User",        key: "user_name",    formatter: (v) => String(v ?? "—") },
+                { header: "Role",        key: "user_role",    formatter: (v) => String(v ?? "—") },
+                { header: "Action",      key: "action"        },
+                { header: "Module",      key: "module"        },
+                { header: "Entity Type", key: "entity_type",  formatter: (v) => String(v ?? "—") },
+                { header: "Entity",      key: "entity_label", formatter: (v) => String(v ?? "—") },
+                { header: "IP Address",  key: "ip_address",   formatter: (v) => String(v ?? "—") },
+                { header: "Status",      key: "status"        },
+                { header: "Description", key: "description",  formatter: (v) => String(v ?? "—") },
+              ],
+              getRows: () => logs as unknown as Record<string, unknown>[],
+            }}
+            size="sm"
+            className="h-9 text-xs"
+          />
         }
       />
 

@@ -19,7 +19,7 @@ import { usePermissions } from "@/lib/permissions";
 import { useToast } from "@/components/ui/use-toast";
 import { validateVendorCore, hasErrors, type VendorErrors } from "@/lib/vendor-validation";
 import { cn } from "@/lib/utils";
-import { EmptyState, SkeletonCards } from "@/components/shared";
+import { EmptyState, SkeletonCards, ExportButton } from "@/components/shared";
 import { differenceInDays, parseISO } from "date-fns";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -581,6 +581,32 @@ export default function VendorsList() {
               </button>
             ))}
           </div>
+
+          {/* Export */}
+          {perms.canExport && (
+            <ExportButton
+              config={{
+                title: "Vendors",
+                module: "vendors",
+                filename: "Procurement_Vendors",
+                columns: [
+                  { header: "Name",            key: "name"          },
+                  { header: "Trade Name",       key: "tradeName"     },
+                  { header: "Status",           key: "status"        },
+                  { header: "MSME",             key: "isMsme",       formatter: (v) => v ? "Yes" : "No" },
+                  { header: "GSTIN",            key: "gstin"         },
+                  { header: "PAN",              key: "pan"           },
+                  { header: "Email",            key: "primaryEmail"  },
+                  { header: "Phone",            key: "primaryPhone"  },
+                  { header: "City",             key: "billingCity"   },
+                  { header: "State",            key: "billingState"  },
+                ],
+                getRows: () => filtered as unknown as Record<string, unknown>[],
+              }}
+              size="sm"
+              className="h-8 text-[13px]"
+            />
+          )}
         </div>
 
         {/* Status filter pills */}

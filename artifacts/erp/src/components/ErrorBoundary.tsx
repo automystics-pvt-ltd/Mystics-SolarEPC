@@ -18,14 +18,19 @@ export class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, info: ErrorInfo) {
     // In production you'd send this to Sentry / LogRocket
     console.error('[ErrorBoundary]', error.message, info.componentStack);
-    // Hook/context errors (e.g. after HMR module swap) are unrecoverable without
-    // a full page reload — do it automatically so users don't see a dead app.
-    if (
-      error.message.includes('Invalid hook call') ||
-      error.message.includes('must be used within') ||
-      error.message.includes('AuthProvider')
-    ) {
-      window.location.reload();
+    // Hook/context errors are unrecoverable without a full page reload.
+    // Auto-reload so users don't get stuck on a dead page.
+    const msg = error.message;
+    const isHookError =
+      msg.includes('Invalid hook call') ||
+      msg.includes('must be used within') ||
+      msg.includes('AuthProvider') ||
+      // recharts / library ESM-CJS split produces this when React dispatcher is null
+      (msg.includes('Cannot read properties of null') && msg.includes('useContext')) ||
+      msg.includes('Minified React error');
+    if (isHookError) {
+      // Short delay so console.error flushes before reload
+      setTimeout(() => window.location.reload(), 100);
     }
   }
 

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 import { Plus, Search, FileText, ChevronRight, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { PageHeader, StatusBadge } from "@/components/shared";
+import { PageHeader, StatusBadge, ExportButton } from "@/components/shared";
 
 const TABS = ["All", "Draft", "Submitted", "UnderReview", "RevisionRequested", "Approved", "Rejected"];
 
@@ -37,9 +37,32 @@ export default function ProcurementQuotationsList() {
         title="Vendor Quotations"
         subtitle="Procurement quotation workflow with approval tracking and L1 analysis"
         actions={
-          <Button onClick={() => setLocation("/procurement/quotations/new")} className="gap-2">
-            <Plus className="w-4 h-4" /> New Quotation
-          </Button>
+          <div className="flex items-center gap-2">
+            <ExportButton
+              config={{
+                title: "Vendor Quotations",
+                module: "procurement",
+                filename: "Procurement_VendorQuotations",
+                columns: [
+                  { header: "Reference ID",  key: "referenceId"        },
+                  { header: "Status",        key: "status"             },
+                  { header: "Vendor",        key: "vendorSnapshotName" },
+                  { header: "Total (₹)",     key: "totalAmount"        },
+                  { header: "Version",       key: "version"            },
+                  { header: "L1",            key: "isL1", formatter: (v) => v ? "Yes" : "No" },
+                  { header: "PO Generated",  key: "poGenerated", formatter: (v) => v ? "Yes" : "No" },
+                  { header: "Valid Till",    key: "validityDate"       },
+                  { header: "Created",       key: "createdAt"          },
+                  { header: "Created By",    key: "createdByName"      },
+                ],
+                getRows: () => filtered as unknown as Record<string, unknown>[],
+              }}
+              size="sm"
+            />
+            <Button onClick={() => setLocation("/procurement/quotations/new")} className="gap-2">
+              <Plus className="w-4 h-4" /> New Quotation
+            </Button>
+          </div>
         }
       />
 

@@ -24,7 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/use-toast";
-import { PageHeader, SectionCard, EmptyState, StatusBadge } from "@/components/shared";
+import { PageHeader, SectionCard, EmptyState, StatusBadge, ExportButton } from "@/components/shared";
 import { apiGet, apiPost, apiPatch, apiDelete } from "@/lib/fetch";
 import { usePermissions } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
@@ -875,17 +875,6 @@ export default function MaterialsList() {
   const toggleAll = () => setSelectedIds(allSelected ? new Set() : new Set(sorted.map(m => m.id)));
   const toggleOne = (id: number) => setSelectedIds(prev => { const s = new Set(prev); if (s.has(id)) s.delete(id); else s.add(id); return s; });
 
-  /* ── Export CSV ─────────────────────────────────────────────────────── */
-  const exportCSV = () => {
-    const params = new URLSearchParams();
-    if (filters.categoryId) params.set("categoryId", filters.categoryId);
-    if (filters.status !== "all") params.set("status", filters.status);
-    const token = localStorage.getItem("mystics_token");
-    const url = `/api/materials/export${params.size ? `?${params}` : ""}`;
-    const a = document.createElement("a");
-    a.href = url; a.download = "materials.csv"; a.click();
-  };
-
   const activeFilters = [
     filters.categoryId && { key: "categoryId", label: `Category: ${categories.find(c => String(c.id) === filters.categoryId)?.name ?? "?"}` },
     filters.uom && { key: "uom", label: `UoM: ${filters.uom}` },
@@ -912,9 +901,29 @@ export default function MaterialsList() {
               </Button>
             )}
             {perms.canExport && (
-              <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={exportCSV}>
-                <Download className="w-3.5 h-3.5" /> Export
-              </Button>
+              <ExportButton
+                config={{
+                  title: "Materials Catalogue",
+                  module: "materials",
+                  filename: "Materials_Catalogue",
+                  columns: [
+                    { header: "Code",          key: "code"              },
+                    { header: "Name",          key: "name"              },
+                    { header: "Category",      key: "categoryName"      },
+                    { header: "UoM",           key: "uom"               },
+                    { header: "HSN/SAC",       key: "hsnSacCode"        },
+                    { header: "GST Rate (%)",  key: "gstRate"           },
+                    { header: "Base Price",    key: "basePrice"         },
+                    { header: "Last Purchase", key: "lastPurchasePrice" },
+                    { header: "Currency",      key: "currency"          },
+                    { header: "Brand",         key: "brand"             },
+                    { header: "Status",        key: "isActive", formatter: (v) => v ? "Active" : "Inactive" },
+                  ],
+                  getRows: () => sorted as unknown as Record<string, unknown>[],
+                }}
+                size="sm"
+                className="gap-1.5 text-xs"
+              />
             )}
             {perms.canCreate && (
               <Button size="sm" className="gap-1.5" onClick={() => { setEditMaterial(null); setFormOpen(true); }}>

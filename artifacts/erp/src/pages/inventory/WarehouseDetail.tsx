@@ -9,10 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Loader2, Plus, Package, Grid, MapPin, Download, Phone, Mail,
+  Loader2, Plus, Package, Grid, MapPin, Phone, Mail,
   Building2, Edit2, TrendingUp, AlertTriangle, Package2, LayoutGrid, ArrowRightLeft
 } from "lucide-react";
-import { exportToCsv } from "@/lib/export";
+import { ExportButton } from "@/components/shared";
 import { useLocation } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
@@ -199,13 +199,23 @@ export function WarehouseDetail({ id }: { id: string }) {
               <div className="p-6 pb-0 flex justify-between items-end mb-4">
                 <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Inventory Valuation</h3>
                 <div className="flex items-end gap-4">
-                  <Button variant="outline" size="sm" className="gap-2 mb-1" onClick={() => exportToCsv(
-                    `stock-${wh.name.replace(/\s+/g, "-").toLowerCase()}.csv`,
-                    ["Item Name", "Balance Qty", "Unit", "Unit Value", "Total Value"],
-                    (stock?.items ?? []).map((i: any) => [i.itemName, i.balanceQty, i.unit, i.unitValue, i.totalValue])
-                  )}>
-                    <Download className="h-4 w-4" /> Export
-                  </Button>
+                  <ExportButton
+                    config={{
+                      title: `${wh.name} — Stock`,
+                      module: "inventory",
+                      filename: `Inventory_Warehouse_${wh.name.replace(/\s+/g, "_")}`,
+                      columns: [
+                        { header: "Item Name",    key: "itemName"   },
+                        { header: "Balance Qty",  key: "balanceQty" },
+                        { header: "Unit",         key: "unit"       },
+                        { header: "Unit Value",   key: "unitValue"  },
+                        { header: "Total Value",  key: "totalValue" },
+                      ],
+                      getRows: () => (stock?.items ?? []) as unknown as Record<string, unknown>[],
+                    }}
+                    size="sm"
+                    className="mb-1"
+                  />
                   <div className="text-right">
                     <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Total Value</p>
                     <p className="text-3xl font-bold tracking-tight text-[#EA580C] font-mono">₹{Number(stock?.totalValue || 0).toLocaleString("en-IN")}</p>

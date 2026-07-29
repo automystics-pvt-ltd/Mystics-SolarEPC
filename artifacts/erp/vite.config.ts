@@ -59,6 +59,20 @@ export default defineConfig({
     },
     dedupe: ['react', 'react-dom'],
   },
+  // Force CJS pre-bundling for libraries that use React context internally.
+  // Without this, Vite can produce split ESM/CJS React instances where
+  // ReactCurrentDispatcher.current is null, causing the runtime error
+  // "Cannot read properties of null (reading 'useContext')".
+  optimizeDeps: {
+    include: [
+      'recharts',
+      'recharts/es6/component/DefaultLegendContent',
+      'recharts/es6/chart/generateCategoricalChart',
+    ],
+    // Exclude heavy libs that we dynamic-import ourselves so Vite
+    // doesn't eagerly pre-bundle them at startup (they load on demand).
+    exclude: ['jspdf', 'jspdf-autotable', 'xlsx'],
+  },
   root: path.resolve(import.meta.dirname),
   build: {
     outDir: path.resolve(import.meta.dirname, 'dist/public'),

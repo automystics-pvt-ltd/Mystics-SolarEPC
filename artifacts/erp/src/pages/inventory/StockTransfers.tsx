@@ -12,13 +12,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import {
-  Plus, Search, Download, ArrowRightLeft, ChevronDown, ChevronRight,
+  Plus, Search, ArrowRightLeft, ChevronDown, ChevronRight,
   CheckCircle2, Loader2, Trash2, PackageX,
 } from "lucide-react";
 import { apiGet, apiPost, apiPatch } from "@/lib/fetch";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
-import { exportToCsv } from "@/lib/export";
+import { ExportButton } from "@/components/shared";
 import { cn } from "@/lib/utils";
 
 const STATUS_TABS = ["All", "Draft", "Approved", "InTransit", "Completed", "Cancelled"];
@@ -152,13 +152,25 @@ export default function StockTransfers() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search transfers..." className="pl-9 h-9 text-sm" />
             </div>
-            <Button variant="outline" size="sm" className="gap-2 h-9" onClick={() =>
-              exportToCsv(`stock-transfers-${new Date().toISOString().slice(0, 10)}.csv`,
-                ["Transfer #", "From", "To", "Items", "Status", "Transfer Date", "Initiated By"],
-                filtered.map(t => [t.transferNumber, t.fromWarehouseName, t.toWarehouseName, t.totalItems, t.status, t.transferDate ?? "", t.initiatedByName ?? ""])
-              )}>
-              <Download className="h-4 w-4" /> Export
-            </Button>
+            <ExportButton
+              config={{
+                title: "Stock Transfers",
+                module: "inventory",
+                filename: "Inventory_StockTransfers",
+                columns: [
+                  { header: "Transfer #",    key: "transferNumber"   },
+                  { header: "From",          key: "fromWarehouseName"},
+                  { header: "To",            key: "toWarehouseName"  },
+                  { header: "Items",         key: "totalItems"       },
+                  { header: "Status",        key: "status"           },
+                  { header: "Transfer Date", key: "transferDate"     },
+                  { header: "Initiated By",  key: "initiatedByName"  },
+                ],
+                getRows: () => filtered as unknown as Record<string, unknown>[],
+              }}
+              size="sm"
+              className="h-9"
+            />
           </div>
         </CardContent>
       </Card>

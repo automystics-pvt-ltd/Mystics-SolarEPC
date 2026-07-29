@@ -7,14 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Search, ShoppingCart, ChevronRight, XCircle, Download, X,
+  Search, ShoppingCart, ChevronRight, XCircle, X,
   AlertCircle, Plus, LayoutGrid, List, Clock, AlertTriangle,
   CheckCircle2, TrendingUp, PackageCheck,
 } from "lucide-react";
-import { exportToCsv } from "@/lib/export";
 import { cn } from "@/lib/utils";
 import { formatINRCompact } from "@/lib/currency";
-import { EmptyState, SkeletonCards } from "@/components/shared";
+import { EmptyState, SkeletonCards, ExportButton } from "@/components/shared";
 
 // ── Status config ─────────────────────────────────────────────────────────────
 const STATUS_CONFIG: Record<string, { dot: string; pill: string; border: string; label: string }> = {
@@ -355,14 +354,6 @@ export default function ProcurementPOsList() {
     return result;
   }, [pos]);
 
-  const handleExport = () => {
-    exportToCsv(
-      `purchase-orders-${new Date().toISOString().slice(0, 10)}.csv`,
-      ["PO Number", "Vendor", "Status", "Total Amount (₹)", "PO Date", "Delivery Deadline", "Approved By"],
-      filtered.map(p => [p.poNumber, p.vendorName, p.status, p.totalAmount ?? 0, p.poDate ?? "", (p as any).deliveryDeadline ?? "", p.approvedByName ?? ""])
-    );
-  };
-
   const hasUrlFilters = vendorFilter || categoryFilter || projectIdFilter;
   const hasFilters = search.length > 0 || activeStatus !== "all";
 
@@ -384,10 +375,26 @@ export default function ProcurementPOsList() {
           </p>
         </div>
         <div className="flex gap-2 shrink-0 self-start sm:self-auto">
-          <Button variant="outline" size="sm" className="h-9 gap-1.5 text-[13px]" onClick={handleExport}>
-            <Download className="h-4 w-4" />
-            Export CSV
-          </Button>
+          <ExportButton
+            config={{
+              title: "Purchase Orders",
+              module: "procurement",
+              filename: "Procurement_PurchaseOrders",
+              columns: [
+                { header: "PO Number",          key: "poNumber"        },
+                { header: "Vendor",              key: "vendorName"      },
+                { header: "Status",              key: "status"          },
+                { header: "Total Amount (₹)",    key: "totalAmount"     },
+                { header: "PO Date",             key: "poDate"          },
+                { header: "Delivery Deadline",   key: "deliveryDeadline"},
+                { header: "Project",             key: "projectName"     },
+                { header: "Approved By",         key: "approvedByName"  },
+              ],
+              getRows: () => filtered as unknown as Record<string, unknown>[],
+            }}
+            size="sm"
+            className="h-9 text-[13px]"
+          />
           <CanCreate module="procurement">
             <Button
               size="sm"

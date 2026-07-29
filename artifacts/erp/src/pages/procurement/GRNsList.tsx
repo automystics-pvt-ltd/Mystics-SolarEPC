@@ -3,8 +3,7 @@ import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Plus, Package, AlertCircle } from "lucide-react";
-import { exportToCsv } from "@/lib/export";
-import { PageHeader, DataTable, StatusBadge } from "@/components/shared";
+import { PageHeader, DataTable, StatusBadge, ExportButton } from "@/components/shared";
 import type { ColumnDef } from "@tanstack/react-table";
 
 const STATUS_OPTIONS = [
@@ -22,14 +21,6 @@ export default function GRNsList() {
     {},
     { query: { queryKey: getGetProcGrnsQueryKey({}) } }
   );
-
-  const handleExport = () => {
-    exportToCsv(
-      `grns-${new Date().toISOString().slice(0, 10)}.csv`,
-      ["GRN Number", "Vendor", "PO ID", "Status", "Delivery Date", "Accepted Qty", "Ordered Qty", "Created At"],
-      (grns as any[]).map(g => [g.grnNumber, g.vendorName, g.poId, g.status, g.deliveryDate ?? "", g.totalAcceptedQty ?? "", g.totalOrderedQty ?? "", new Date(g.createdAt).toLocaleDateString("en-IN")])
-    );
-  };
 
   const columns: ColumnDef<any, any>[] = [
     {
@@ -78,9 +69,25 @@ export default function GRNsList() {
         subtitle="Record and inspect vendor deliveries"
         actions={
           <>
-            <Button variant="outline" size="sm" className="gap-2" onClick={handleExport}>
-              Export CSV
-            </Button>
+            <ExportButton
+              config={{
+                title: "Goods Receipt Notes",
+                module: "procurement",
+                filename: "Procurement_GRNs",
+                columns: [
+                  { header: "GRN Number",      key: "grnNumber"        },
+                  { header: "Vendor",           key: "vendorName"       },
+                  { header: "PO ID",            key: "poId"             },
+                  { header: "Status",           key: "status"           },
+                  { header: "Delivery Date",    key: "deliveryDate"     },
+                  { header: "Accepted Qty",     key: "totalAcceptedQty" },
+                  { header: "Ordered Qty",      key: "totalOrderedQty"  },
+                  { header: "Created At",       key: "createdAt", formatter: (v) => v ? new Date(String(v)).toLocaleDateString("en-IN") : "" },
+                ],
+                getRows: () => grns as unknown as Record<string, unknown>[],
+              }}
+              size="sm"
+            />
             <Button className="gap-2 bg-orange-500 hover:bg-orange-600" onClick={() => setLocation("/procurement/grns/new")}>
               <Plus className="w-4 h-4" /> New GRN
             </Button>
