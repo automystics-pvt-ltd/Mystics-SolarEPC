@@ -164,6 +164,18 @@ export function ProjectWorkspace({ id }: { id: string }) {
             {project.name}
           </h1>
           <StatusBadge status={project.status} />
+          {project.pmOwnerName && (
+            <div className="hidden sm:flex items-center gap-1 min-w-0 pl-2 border-l border-border/60 shrink-0">
+              <div className="h-4 w-4 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                <span className="text-[8px] font-black text-primary leading-none">
+                  {project.pmOwnerName.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <span className="text-[11px] text-muted-foreground truncate max-w-[80px]">
+                {project.pmOwnerName.split(" ")[0]}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Progress + quick actions */}
