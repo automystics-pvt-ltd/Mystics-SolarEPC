@@ -391,7 +391,7 @@ export function ProjectWorkspace({ id }: { id: string }) {
             <div className="hidden sm:flex items-center pl-2 border-l border-border/60 shrink-0">
               <PMChip
                 name={project.pmOwnerName}
-                email={project.pmOwnerEmail}
+                email={(project as any).pmOwnerEmail}
                 size="xs"
               />
             </div>

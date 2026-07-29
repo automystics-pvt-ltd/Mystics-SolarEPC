@@ -17,6 +17,8 @@ import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
 import { StatusBadge, DetailRow, DetailGrid, SectionCard, PageHeader } from "@/components/shared";
 import { addRecentEntry } from "@/lib/recentHistory";
+import { PrintPreviewModal } from "@/components/print/PrintPreviewModal";
+import { GRNPrint } from "@/components/print/documents/GRNPrint";
 import { useAuth } from "@/lib/auth";
 import { usePermissions } from "@/lib/permissions";
 
@@ -190,6 +192,7 @@ export default function GRNDetail({ id }: { id: string }) {
   const approveMut = useApproveProcGrn();
   const rejectMut = useRejectProcGrn();
 
+  const [showPrint, setShowPrint] = useState(false);
   const [actionDialog, setActionDialog] = useState<string | null>(null);
   const [remarks, setRemarks] = useState("");
   const [photos, setPhotos] = useState<{ url: string; name: string }[]>([]);
@@ -252,8 +255,8 @@ export default function GRNDetail({ id }: { id: string }) {
             <Button variant="outline" size="sm" onClick={() => setLocation("/procurement/grns")} className="gap-1.5">
               <ArrowLeft className="w-3.5 h-3.5" /> Back
             </Button>
-            <Button variant="outline" size="sm" className="gap-1.5 hidden sm:flex" onClick={() => window.print()}>
-              <Printer className="w-3.5 h-3.5" /> Print
+            <Button variant="outline" size="sm" className="gap-1.5 hidden sm:flex" onClick={() => setShowPrint(true)}>
+              <Printer className="w-3.5 h-3.5" /> Preview &amp; Print
             </Button>
             {/* Desktop action buttons (hidden on mobile — shown in sticky bar) */}
             <div className="hidden lg:flex items-center gap-2">
@@ -495,6 +498,15 @@ export default function GRNDetail({ id }: { id: string }) {
       )}
 
       {/* ── Action Dialog ────────────────────────────────────────────────────── */}
+      <PrintPreviewModal
+        open={showPrint}
+        onClose={() => setShowPrint(false)}
+        title={g.grnNumber}
+        subtitle={`${g.vendorName ?? ""} · Goods Received Note`}
+      >
+        <GRNPrint grn={g} />
+      </PrintPreviewModal>
+
       <Dialog open={!!actionDialog} onOpenChange={o => { if (!o) { setActionDialog(null); setRemarks(""); } }}>
         <DialogContent>
           <DialogHeader>

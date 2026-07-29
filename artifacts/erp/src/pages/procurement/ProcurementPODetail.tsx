@@ -31,6 +31,8 @@ import { addRecentEntry } from "@/lib/recentHistory";
 import { useAuth } from "@/lib/auth";
 import { usePermissions } from "@/lib/permissions";
 import { apiPost, apiPatch } from "@/lib/fetch";
+import { PrintPreviewModal } from "@/components/print/PrintPreviewModal";
+import { POPrint } from "@/components/print/documents/POPrint";
 
 function formatDate(d?: string | null) {
   if (!d) return "—";
@@ -117,6 +119,7 @@ export default function ProcurementPODetail({ id }: { id: string }) {
   const [issueError, setIssueError]               = useState("");
 
   // Dialog states
+  const [showPrint, setShowPrint]                 = useState(false);
   const [showCancelWarning, setShowCancelWarning] = useState(false);
   const [showCloseConfirm, setShowCloseConfirm]   = useState(false);
   const [actionDialog, setActionDialog]           = useState<string | null>(null);
@@ -292,8 +295,8 @@ export default function ProcurementPODetail({ id }: { id: string }) {
             <Button variant="outline" size="sm" onClick={() => setLocation("/procurement/pos")} className="gap-1.5">
               <ArrowLeft className="w-3.5 h-3.5" /> Back
             </Button>
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => window.print()}>
-              <Printer className="w-3.5 h-3.5" /> Print
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowPrint(true)}>
+              <Printer className="w-3.5 h-3.5" /> Preview &amp; Print
             </Button>
             {canHold && (
               <Button variant="outline" size="sm" className="gap-1.5 text-amber-600 border-amber-200 hover:bg-amber-50"
@@ -1076,6 +1079,15 @@ export default function ProcurementPODetail({ id }: { id: string }) {
       </AlertDialog>
 
       {/* Close PO confirmation */}
+      <PrintPreviewModal
+        open={showPrint}
+        onClose={() => setShowPrint(false)}
+        title={p.poNumber}
+        subtitle={`${p.vendorName ?? ""} · Purchase Order`}
+      >
+        <POPrint po={p} />
+      </PrintPreviewModal>
+
       <AlertDialog open={showCloseConfirm} onOpenChange={setShowCloseConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>

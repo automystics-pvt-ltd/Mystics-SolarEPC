@@ -24,6 +24,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
+import { PrintPreviewModal } from "@/components/print/PrintPreviewModal";
+import { QuotationPrint } from "@/components/print/documents/QuotationPrint";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { PageHeader, SectionCard, StatusBadge } from "@/components/shared";
@@ -249,6 +251,7 @@ export function QuotationDetail({ id }: { id?: string }) {
   });
 
   // ── dialog state — must be above early returns ──
+  const [showPrint, setShowPrint] = useState(false);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showConvertDialog, setShowConvertDialog] = useState(false);
   const [showCreateProjectDialog, setShowCreateProjectDialog] = useState(false);
@@ -276,8 +279,8 @@ export function QuotationDetail({ id }: { id?: string }) {
   const headerActions = (
     <div className="flex items-center gap-3 flex-wrap">
       {!isNew && (
-        <Button variant="outline" className="h-10 gap-2 print:hidden" onClick={() => window.print()}>
-          <Printer className="h-4 w-4" /> Print
+        <Button variant="outline" className="h-10 gap-2 print:hidden" onClick={() => setShowPrint(true)}>
+          <Printer className="h-4 w-4" /> Preview &amp; Print
         </Button>
       )}
       {!isNew && quote?.approvalStatus === "Draft" && !isEditing && (
@@ -694,6 +697,22 @@ export function QuotationDetail({ id }: { id?: string }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {!isNew && quote && (
+        <PrintPreviewModal
+          open={showPrint}
+          onClose={() => setShowPrint(false)}
+          title={`QTN-${String(quote.id).padStart(4, "0")}`}
+          subtitle={`${selectedLead?.companyName ?? ""} · Quotation v${quote.version ?? 1}`}
+        >
+          <QuotationPrint
+            quote={quote}
+            boqItems={boqItems}
+            leadName={selectedLead?.companyName}
+            markupPct={markupPct}
+          />
+        </PrintPreviewModal>
+      )}
     </motion.div>
   );
 }

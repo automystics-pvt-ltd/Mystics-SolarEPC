@@ -275,8 +275,29 @@
 /* ── Print styles ── */
 @media print {
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-  body { background: white !important; }
+
+  /* Hide everything except the print portal */
+  body > *:not(#mystics-print-portal) { display: none !important; }
+  #mystics-print-portal { display: block !important; position: fixed; inset: 0; z-index: 9999; }
+
+  /* Reset preview scaling so the document prints at full A4 size */
+  #print-preview-content {
+    transform: none !important;
+    width: auto !important;
+    margin: 0 !important;
+  }
+
+  /* Show/hide helpers */
   [style*="opacity: 0"] { opacity: 1 !important; }
   .print-doc-header { display: block !important; }
   .rounded-xl, .rounded-\[12px\] { break-inside: avoid; }
+
+  /* Document layout for print */
+  #print-document {
+    box-shadow: none !important;
+    width: 100% !important;
+    min-height: auto !important;
+  }
+
+  @page { size: A4 portrait; margin: 0; }
 }

@@ -17,6 +17,8 @@ import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
 import { PageHeader, SectionCard, StatusBadge, DetailGrid, DetailRow } from "@/components/shared";
 import { addRecentEntry } from "@/lib/recentHistory";
+import { PrintPreviewModal } from "@/components/print/PrintPreviewModal";
+import { InvoicePrint } from "@/components/print/documents/InvoicePrint";
 import { useAuth } from "@/lib/auth";
 import { usePermissions } from "@/lib/permissions";
 
@@ -44,6 +46,7 @@ export default function InvoiceDetail({ id }: { id: string }) {
   const paidMut = useMarkProcInvoicePaid();
   const mismatchMut = useApproveProcInvoiceMismatch();
 
+  const [showPrint, setShowPrint] = useState(false);
   const [actionDialog, setActionDialog] = useState<string | null>(null);
   const [remarks, setRemarks] = useState("");
   const [paymentRef, setPaymentRef] = useState("");
@@ -89,8 +92,8 @@ export default function InvoiceDetail({ id }: { id: string }) {
 
   const desktopActions = (
     <div className="hidden lg:flex gap-2 flex-wrap print:hidden">
-      <Button variant="outline" size="sm" className="gap-1.5" onClick={() => window.print()}>
-        <Printer className="w-3.5 h-3.5" /> Print
+      <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowPrint(true)}>
+        <Printer className="w-3.5 h-3.5" /> Preview &amp; Print
       </Button>
       {canApproveMismatch && (
         <Button size="sm" variant="outline" className="border-amber-200 text-amber-700 hover:bg-amber-50" onClick={() => setActionDialog("approve-mismatch")}>
@@ -114,7 +117,7 @@ export default function InvoiceDetail({ id }: { id: string }) {
         backHref="/procurement/invoices"
         actions={
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="gap-1.5 lg:hidden print:hidden" onClick={() => window.print()}>
+            <Button variant="outline" size="sm" className="gap-1.5 lg:hidden print:hidden" onClick={() => setShowPrint(true)}>
               <Printer className="w-3.5 h-3.5" />
             </Button>
             {desktopActions}
@@ -347,6 +350,14 @@ export default function InvoiceDetail({ id }: { id: string }) {
           </div>
         </DialogContent>
       </Dialog>
+      <PrintPreviewModal
+        open={showPrint}
+        onClose={() => setShowPrint(false)}
+        title={inv.invoiceNumber}
+        subtitle={`${inv.vendorName ?? ""} · Vendor Invoice`}
+      >
+        <InvoicePrint invoice={inv} />
+      </PrintPreviewModal>
     </motion.div>
   );
 }

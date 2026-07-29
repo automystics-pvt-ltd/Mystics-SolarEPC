@@ -15,6 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { PageHeader, SectionCard, StatusBadge, DetailGrid, DetailRow } from "@/components/shared";
 import { addRecentEntry } from "@/lib/recentHistory";
+import { PrintPreviewModal } from "@/components/print/PrintPreviewModal";
+import { GRNReturnPrint } from "@/components/print/documents/GRNReturnPrint";
 
 const STEPS = ["Draft", "Submitted", "Approved", "Dispatched", "Closed"];
 
@@ -24,6 +26,7 @@ export default function GRNReturnDetail({ id }: { id: string }) {
   const { toast } = useToast();
   const qc = useQueryClient();
 
+  const [showPrint, setShowPrint] = useState(false);
   const [submitDialog, setSubmitDialog] = useState(false);
   const [approveDialog, setApproveDialog] = useState(false);
   const [dispatchDialog, setDispatchDialog] = useState(false);
@@ -105,8 +108,8 @@ export default function GRNReturnDetail({ id }: { id: string }) {
           <Lock className="h-3.5 w-3.5" /> Close Return
         </Button>
       )}
-      <Button variant="outline" size="sm" onClick={() => window.print()} className="gap-2">
-        <Printer className="h-3.5 w-3.5" /> Print
+      <Button variant="outline" size="sm" onClick={() => setShowPrint(true)} className="gap-2">
+        <Printer className="h-3.5 w-3.5" /> Preview &amp; Print
       </Button>
     </div>
   );
@@ -355,6 +358,15 @@ export default function GRNReturnDetail({ id }: { id: string }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <PrintPreviewModal
+        open={showPrint}
+        onClose={() => setShowPrint(false)}
+        title={rtv.returnNumber}
+        subtitle={`${rtv.vendorName ?? ""} · Return to Vendor`}
+      >
+        <GRNReturnPrint rtv={rtv} />
+      </PrintPreviewModal>
     </motion.div>
   );
 }
