@@ -8,6 +8,10 @@ import { requireAdmin } from "../lib/rbac";
 import jwt from "jsonwebtoken";
 import pg from "pg";
 import type { NextFunction } from "express";
+import { invalidateModuleCache } from "../lib/moduleCache";
+
+/** Modules that must never be disabled — they control access to admin tooling itself. */
+const PROTECTED_MODULES = new Set(["admin", "approvals"]);
 
 const router: IRouter = Router();
 const JWT_SECRET = process.env.SESSION_SECRET ?? "mystics-erp-secret";
@@ -91,6 +95,15 @@ router.get("/platform-admin/modules", async (_req: Request, res: Response): Prom
 router.put("/platform-admin/modules", async (req: Request, res: Response): Promise<void> => {
   const { module, enabled, settings } = req.body ?? {};
   if (!module) { res.status(400).json({ error: "module required" }); return; }
+
+  // Safety guard: admin and approvals modules can never be disabled.
+  if (PROTECTED_MODULES.has(module) && enabled === false) {
+    res.status(400).json({
+      error: `The '${module}' module cannot be disabled — it controls critical system access.`,
+    });
+    return;
+  }
+
   try {
     const actor = (req as any).actor;
     await withClient(c => c.query(
@@ -100,6 +113,9 @@ router.put("/platform-admin/modules", async (req: Request, res: Response): Promi
          SET enabled = $2, settings = $3::jsonb, updated_at = NOW(), updated_by = $4`,
       [module, enabled ?? true, JSON.stringify(settings ?? {}), actor?.userId ?? null]
     ));
+    // Invalidate the in-process cache so the enforcement middleware picks up
+    // the new value on the very next request (within the same server process).
+    invalidateModuleCache();
     res.json({ ok: true });
   } catch (e: any) {
     res.status(500).json({ error: e.message });

@@ -47,6 +47,13 @@ export type NavChild = {
   icon: React.ElementType;
   /** sub-module permission key; omit to show to all who can view the parent group */
   module?: string;
+  /**
+   * module_config key for this specific nav item.
+   * When set, the item is hidden if that module is disabled — independently
+   * of its parent group's module flag. Keeps NavRail and backend enforcement
+   * in one canonical place: the RAIL definition.
+   */
+  moduleFlag?: string;
 };
 
 type RailEntry =
@@ -87,8 +94,8 @@ const RAIL: RailEntry[] = [
     hasBadge: true,
     items: [
       { name: "Dashboard",          href: "/procurement/dashboard",   icon: BarChart2 },
-      { name: "Vendors",            href: "/procurement/vendors",     icon: Building2 },
-      { name: "Materials",          href: "/procurement/materials",   icon: Package },
+      { name: "Vendors",            href: "/procurement/vendors",     icon: Building2,     moduleFlag: "vendors"   },
+      { name: "Materials",          href: "/procurement/materials",   icon: Package,       moduleFlag: "materials" },
       { name: "Vendor Quotations",  href: "/procurement/quotations",  icon: ClipboardList },
       { name: "Purchase Orders",    href: "/procurement/pos",         icon: ShoppingCart },
       { name: "GRNs",               href: "/procurement/grns",        icon: Boxes },
@@ -542,6 +549,7 @@ function ModuleFlyout({
   onNav,
   onFavToggle,
   permMap,
+  moduleStatus,
 }: {
   section: Extract<RailEntry, { type: "group" }>;
   role: string;
@@ -551,8 +559,11 @@ function ModuleFlyout({
   onNav: () => void;
   onFavToggle: (href: string) => void;
   permMap?: Record<string, Record<string, boolean>>;
+  moduleStatus?: Record<string, boolean>;
 }) {
   const visibleItems = section.items.filter((item) => {
+    // Hide if the item's own moduleFlag is disabled (fail open when status unknown)
+    if (item.moduleFlag && moduleStatus && moduleStatus[item.moduleFlag] === false) return false;
     if (role === "admin" || role === "super_admin") return true;
     if (!item.module) return true; // no sub-module restriction
     if (!permMap) return true; // still loading
@@ -675,10 +686,37 @@ export function NavRail() {
     refetchOnWindowFocus: false,
   });
 
+  // Module status — cached 60 s on the server; used to hide disabled module groups
+  const { data: moduleStatus } = useQuery<Record<string, boolean>>({
+    queryKey: ["modules-status"],
+    queryFn: () => apiGet<Record<string, boolean>>("/modules/status"),
+    enabled: !!user,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+  });
+
+  // Some RAIL group keys don't match 1:1 with module_config keys.
+  // This map declares the additional module names to check for a given RAIL key.
+  // The group is hidden if ANY of its mapped modules is disabled.
+  const EXTRA_MODULE_CHECKS: Record<string, string[]> = {
+    // "finance" group covers both the Finance and Reports modules in module_config
+    finance: ["finance", "reports"],
+  };
+
   // Filter by RBAC permission map — DB-backed, no hardcoded role arrays
   // super_admin sees everything (same as admin)
+  // Also hide groups whose module has been disabled by a platform admin.
   const visible = RAIL.filter((e) => {
     if (e.type === "separator") return true;
+    // Check module-enabled flag (skip check if data not yet loaded — fail open)
+    if (e.type === "group" || e.type === "link") {
+      if (moduleStatus) {
+        // Check the primary key AND any extra modules mapped for this RAIL entry
+        const moduleKeys = EXTRA_MODULE_CHECKS[e.key] ?? [e.key];
+        if (moduleKeys.some((k) => moduleStatus[k] === false)) return false;
+      }
+    }
     if (e.type === "group") {
       if (role === "admin" || role === "super_admin") return true;
       if (!permMap) return true; // still loading — show all (server auth enforced)
@@ -686,6 +724,16 @@ export function NavRail() {
     }
     if (e.type === "link") return true; // Dashboard + Approvals visible to all authenticated users
     return true;
+  }) as RailEntry[];
+
+  // Drop separators that end up adjacent to each other (or at the edges) after filtering
+  const visibleWithoutOrphanSeps = visible.filter((e, i) => {
+    if (e.type !== "separator") return true;
+    const prev = visible[i - 1];
+    const next = visible[i + 1];
+    const prevIsSep = !prev || prev.type === "separator";
+    const nextIsSep = !next || next.type === "separator";
+    return !prevIsSep && !nextIsSep;
   }) as RailEntry[];
 
   // Publish flyout open state to Shell via context
@@ -711,7 +759,7 @@ export function NavRail() {
 
   // Determine what the open flyout renders
   const openGroupSection = openKey && openKey !== "recents" && openKey !== "favorites"
-    ? (visible.find((e) => e.type === "group" && e.key === openKey) as Extract<RailEntry, { type: "group" }> | undefined)
+    ? (visibleWithoutOrphanSeps.find((e) => e.type === "group" && e.key === openKey) as Extract<RailEntry, { type: "group" }> | undefined)
     : undefined;
 
   const showFlyout = !!openKey;
@@ -743,7 +791,7 @@ export function NavRail() {
 
         {/* Module icons */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-none py-2 flex flex-col items-center gap-0.5">
-          {visible.map((entry) => {
+          {visibleWithoutOrphanSeps.map((entry) => {
             if (entry.type === "separator") {
               return <div key={entry.key} className="w-6 h-px bg-white/[0.07] my-1.5 shrink-0" />;
             }
@@ -891,6 +939,7 @@ export function NavRail() {
                   onNav={closeFlyout}
                   onFavToggle={toggleFavorite}
                   permMap={permMap}
+                  moduleStatus={moduleStatus}
                 />
               )}
             </motion.div>

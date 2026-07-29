@@ -1,6 +1,8 @@
 import { Router, type IRouter } from "express";
 import { requireAuth } from "../lib/rbac";
 import { auditMiddleware } from "../middleware/auditMiddleware";
+import { requireModule } from "../middleware/moduleGuard";
+import { getAllModuleStatuses } from "../lib/moduleCache";
 import healthRouter from "./health";
 import storageRouter from "./storage";
 import procQuotationAttachmentsRouter from "./proc_quotation_attachments";
@@ -49,36 +51,72 @@ router.use(authRouter);
 router.use(requireAuth());
 // Automatic audit capture for all non-GET, non-excluded routes
 router.use(auditMiddleware());
-router.use(dashboardRouter);
-router.use(leadsRouter);
-router.use(quotationsRouter);
-router.use(crmInvoicesRouter);
-router.use(tasksRouter);
-router.use(escalationsRouter);
-router.use(projectsRouter);
-router.use(procurementRouter);
-router.use(inventoryRouter);
-router.use(engineeringRouter);
-router.use(commissioningRouter);
-router.use(oamRouter);
-router.use(vendorsRouter);
-router.use(materialsRouter);
-router.use(procQuotationsRouter);
-router.use(procPOsRouter);
-router.use(procGRNsRouter);
-router.use(procInvoicesRouter);
-router.use(procDashboardRouter);
+
+// ── Public module status endpoint (all authenticated users) ──────────────────
+// Used by the frontend NavRail to hide disabled module groups.
+router.get("/modules/status", async (_req, res): Promise<void> => {
+  try {
+    const statuses = await getAllModuleStatuses();
+    res.json(statuses);
+  } catch {
+    res.json({});
+  }
+});
+
+// ── Dashboard ────────────────────────────────────────────────────────────────
+router.use(requireModule("dashboard"), dashboardRouter);
+
+// ── CRM ─────────────────────────────────────────────────────────────────────
+router.use(requireModule("crm"), leadsRouter);
+router.use(requireModule("crm"), quotationsRouter);
+router.use(requireModule("crm"), crmInvoicesRouter);
+router.use(requireModule("crm"), tasksRouter);
+router.use(requireModule("crm"), escalationsRouter);
+
+// ── Projects ─────────────────────────────────────────────────────────────────
+router.use(requireModule("projects"), projectsRouter);
+router.use(requireModule("projects"), projLifecycleRouter);
+router.use(requireModule("projects"), projExecutionRouter);
+router.use(requireModule("projects"), projClosureRouter);
+
+// ── Procurement ───────────────────────────────────────────────────────────────
+router.use(requireModule("procurement"), procurementRouter);
+// vendors and materials each have their own module flag AND live under procurement
+router.use(requireModule("procurement"), requireModule("vendors"), vendorsRouter);
+router.use(requireModule("procurement"), requireModule("materials"), materialsRouter);
+router.use(requireModule("procurement"), procQuotationsRouter);
+router.use(requireModule("procurement"), procPOsRouter);
+router.use(requireModule("procurement"), procGRNsRouter);
+router.use(requireModule("procurement"), procInvoicesRouter);
+router.use(requireModule("procurement"), procDashboardRouter);
+router.use(requireModule("procurement"), grnReturnsRouter);
+
+// ── Inventory ─────────────────────────────────────────────────────────────────
+router.use(requireModule("inventory"), inventoryRouter);
+router.use(requireModule("inventory"), solarInventoryRouter);
+router.use(requireModule("inventory"), stockTransfersRouter);
+
+// ── Engineering ───────────────────────────────────────────────────────────────
+router.use(requireModule("engineering"), engineeringRouter);
+
+// ── Commissioning ─────────────────────────────────────────────────────────────
+router.use(requireModule("commissioning"), commissioningRouter);
+
+// ── O&M ──────────────────────────────────────────────────────────────────────
+router.use(requireModule("oam"), oamRouter);
+
+// ── Finance / Reports ─────────────────────────────────────────────────────────
+// NavRail uses the "finance" group key; backend must match to keep enforcement consistent.
+// Gating on both "finance" AND "reports" ensures the group is blocked if either is disabled.
+router.use(requireModule("finance"), requireModule("reports"), reportsRouter);
+
+// ── Notifications (cross-cutting — always on) ────────────────────────────────
 router.use(notificationsRouter);
-router.use(grnReturnsRouter);
-router.use(stockTransfersRouter);
-router.use(reportsRouter);
+
+// ── Admin & system (never gated by module guard) ────────────────────────────
 router.use(usersRouter);
 router.use(approvalsRouter);
 router.use(rbacRouter);
-router.use(solarInventoryRouter);
-router.use(projLifecycleRouter);
-router.use(projExecutionRouter);
-router.use(projClosureRouter);
 router.use(auditLogsRouter);
 router.use(dbAdminRouter);
 router.use(platformAdminRouter);
