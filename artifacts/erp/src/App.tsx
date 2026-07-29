@@ -18,8 +18,10 @@ import { usePermissions } from '@/lib/permissions';
 import { Button } from '@/components/ui/button';
 import { useGlobalShortcuts } from '@/lib/useGlobalShortcuts';
 import { KeyboardShortcutsModal } from '@/components/layout/KeyboardShortcutsModal';
+import { ZoomProvider } from '@/lib/zoom';
 
 // CRM — lazy loaded
+const CrmWorkspace = lazy(() => import('@/pages/crm/CrmWorkspace').then(m => ({ default: m.CrmWorkspace })));
 const LeadsList = lazy(() => import('@/pages/crm/LeadsList').then(m => ({ default: m.LeadsList })));
 const LeadDetail = lazy(() => import('@/pages/crm/LeadDetail').then(m => ({ default: m.LeadDetail })));
 const QuotationsList = lazy(() => import('@/pages/crm/QuotationsList').then(m => ({ default: m.QuotationsList })));
@@ -250,6 +252,7 @@ function Router() {
       <Route path="/approvals">{() => <ProtectedRoute component={ApprovalWorkbench} module="approvals" />}</Route>
 
       {/* CRM */}
+      <Route path="/crm">{() => <ProtectedRoute component={CrmWorkspace} module="crm" />}</Route>
       <Route path="/crm/leads">{() => <ProtectedRoute component={LeadsList} module="crm" />}</Route>
       <Route path="/crm/leads/:id">{(p) => <ProtectedRoute component={LeadDetail} module="crm" id={p.id} />}</Route>
       <Route path="/crm/quotations">{() => <ProtectedRoute component={QuotationsList} module="crm" />}</Route>
@@ -338,11 +341,13 @@ function App() {
         <TooltipProvider>
           <WouterRouter base={env.basePath}>
             <AuthProvider>
-              <SidebarProvider>
-                <ErrorBoundary>
-                  <Router />
-                </ErrorBoundary>
-              </SidebarProvider>
+              <ZoomProvider>
+                <SidebarProvider>
+                  <ErrorBoundary>
+                    <Router />
+                  </ErrorBoundary>
+                </SidebarProvider>
+              </ZoomProvider>
             </AuthProvider>
           </WouterRouter>
           <Toaster />

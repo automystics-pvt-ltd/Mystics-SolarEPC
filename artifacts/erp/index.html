@@ -18,6 +18,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   </head>
   <body>
+    <!--
+      Zoom flash-prevention: apply the stored zoom level synchronously before
+      React renders so there is no visible layout shift on page load.
+    -->
+    <script>
+      (function () {
+        try {
+          var z = parseFloat(localStorage.getItem("mystics_ui_zoom") || "1");
+          if (z && z !== 1) document.documentElement.style.zoom = String(z);
+        } catch (e) { /* localStorage unavailable — ignore */ }
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

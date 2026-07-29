@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { addRecentEntry, getRecentEntries, type RecentEntry } from "@/lib/recentHistory";
+import { ZoomControl } from "./ZoomControl";
 
 /* ── All nav items for command palette ───────────────────────────
    `module` mirrors NavRail group keys — item visible when:
@@ -662,6 +663,8 @@ export function Topbar() {
 
         {/* Right actions */}
         <div className="flex items-center gap-1.5">
+          <ZoomControl />
+
           <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-50 dark:bg-orange-500/10 border border-orange-100/60 dark:border-orange-500/20">
             <div className="h-1.5 w-1.5 rounded-full bg-[#EA580C]" />
             <span className="text-[11px] font-bold text-[#EA580C] tracking-wide">{fyLabel}</span>

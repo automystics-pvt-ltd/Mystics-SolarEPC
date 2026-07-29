@@ -447,7 +447,7 @@ export function ProjectWorkspace({ id }: { id: string }) {
           <span className="text-[11px] text-muted-foreground">PM:</span>
           <PMChip
             name={project.pmOwnerName}
-            email={project.pmOwnerEmail}
+            email={(project as any).pmOwnerEmail}
             size="xs"
           />
         </div>

@@ -66,12 +66,13 @@ const RAIL: RailEntry[] = [
   {
     type: "group", key: "crm", icon: Users2, label: "Sales & CRM",
     items: [
-      { name: "Leads",        href: "/crm/leads",       icon: Users },
-      { name: "Quotations",   href: "/crm/quotations",  icon: FileText },
-      { name: "Client POs",   href: "/crm/client-pos",  icon: FileCheck },
-      { name: "Invoices",     href: "/crm/invoices",    icon: Receipt },
-      { name: "Tasks",        href: "/crm/tasks",       icon: CheckSquare },
-      { name: "Escalations",  href: "/crm/escalations", icon: AlertTriangle },
+      { name: "Command Center", href: "/crm",              icon: Zap        },
+      { name: "Leads",          href: "/crm/leads",        icon: Users      },
+      { name: "Quotations",     href: "/crm/quotations",   icon: FileText   },
+      { name: "Client POs",     href: "/crm/client-pos",   icon: FileCheck  },
+      { name: "Invoices",       href: "/crm/invoices",     icon: Receipt    },
+      { name: "Tasks",          href: "/crm/tasks",        icon: CheckSquare },
+      { name: "Escalations",    href: "/crm/escalations",  icon: AlertTriangle },
     ],
   },
   {
