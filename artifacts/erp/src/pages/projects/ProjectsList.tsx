@@ -632,7 +632,8 @@ function StatCard({
 // ─────────────────────────────────────────────────────────────────────────────
 export function ProjectsList() {
   const { user } = useAuth();
-  const sortKey = user?.id ? `projects_sort_${user.id}` : null;
+  const sortKey         = user?.id ? `projects_sort_${user.id}`          : null;
+  const statusFilterKey = user?.id ? `projects_status_filter_${user.id}` : null;
 
   const [search,       setSearch]       = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -650,10 +651,25 @@ export function ProjectsList() {
     }
   }, [sortKey]);
 
+  // Load saved status filter preference once the user ID is known
+  useEffect(() => {
+    if (!statusFilterKey) return;
+    const saved = localStorage.getItem(statusFilterKey);
+    if (saved && (saved === "all" || STATUS_FILTERS.includes(saved as typeof STATUS_FILTERS[number]))) {
+      setStatusFilter(saved);
+    }
+  }, [statusFilterKey]);
+
   // Persist sort preference on change
   const handleSortChange = (value: SortOption) => {
     setSortBy(value);
     if (sortKey) localStorage.setItem(sortKey, value);
+  };
+
+  // Persist status filter preference on change
+  const handleStatusFilterChange = (value: string) => {
+    setStatusFilter(value);
+    if (statusFilterKey) localStorage.setItem(statusFilterKey, value);
   };
 
   const { data: projects, isPending } = useGetProjects({}, {
@@ -892,7 +908,7 @@ export function ProjectsList() {
             return (
               <button
                 key={s}
-                onClick={() => setStatusFilter(s)}
+                onClick={() => handleStatusFilterChange(s)}
                 className={cn(
                   "h-7 px-2.5 rounded-full text-[12px] font-medium transition-all flex items-center gap-1.5 border",
                   isActive
