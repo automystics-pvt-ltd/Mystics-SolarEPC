@@ -1,5 +1,5 @@
 // @refresh reset
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {
   useGetProjects,
   useCreateProject,
@@ -634,6 +634,7 @@ export function ProjectsList() {
   const { user } = useAuth();
   const sortKey         = user?.id ? `projects_sort_${user.id}`          : null;
   const statusFilterKey = user?.id ? `projects_status_filter_${user.id}` : null;
+  const pmFilterKey     = user?.id ? `projects_pm_filter_${user.id}`     : null;
 
   const [search,       setSearch]       = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -641,6 +642,9 @@ export function ProjectsList() {
   const [viewMode,     setViewMode]     = useState<ViewMode>("cards");
   const [sortBy,       setSortBy]       = useState<SortOption>("newest");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+
+  // Guard so the PM-filter restore only fires once (pmNames changes on every render)
+  const pmFilterRestored = useRef(false);
 
   // Load saved sort preference once the user ID is known
   useEffect(() => {
@@ -672,6 +676,12 @@ export function ProjectsList() {
     if (statusFilterKey) localStorage.setItem(statusFilterKey, value);
   };
 
+  // Persist PM filter preference on change
+  const handlePmFilterChange = (value: string) => {
+    setPmFilter(value);
+    if (pmFilterKey) localStorage.setItem(pmFilterKey, value);
+  };
+
   const { data: projects, isPending } = useGetProjects({}, {
     query: { queryKey: getGetProjectsQueryKey({}) },
   });
@@ -696,6 +706,16 @@ export function ProjectsList() {
     }
     return Array.from(names).sort();
   }, [projects]);
+
+  // Restore saved PM filter once projects have loaded (validates name still exists)
+  useEffect(() => {
+    if (!pmFilterKey || pmFilterRestored.current || pmNames.length === 0) return;
+    const saved = localStorage.getItem(pmFilterKey);
+    if (saved && saved !== "all" && pmNames.includes(saved)) {
+      setPmFilter(saved);
+    }
+    pmFilterRestored.current = true;
+  }, [pmFilterKey, pmNames]);
 
   // ── Filtered + sorted list ──
   const filtered = useMemo(() => {
@@ -855,7 +875,7 @@ export function ProjectsList() {
               <User2 className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground/50 pointer-events-none" />
               <select
                 value={pmFilter}
-                onChange={e => setPmFilter(e.target.value)}
+                onChange={e => handlePmFilterChange(e.target.value)}
                 className={cn(
                   "h-8 pl-7 pr-7 rounded-lg border bg-background text-[12px] font-medium text-foreground",
                   "appearance-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-ring",
