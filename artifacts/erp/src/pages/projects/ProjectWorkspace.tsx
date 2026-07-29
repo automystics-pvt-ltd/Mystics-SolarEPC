@@ -441,6 +441,18 @@ export function ProjectWorkspace({ id }: { id: string }) {
         </div>
       </header>
 
+      {/* ── MOBILE PM INFO ROW ───────────────────────────────────────────────── */}
+      {project.pmOwnerName && (
+        <div className="sm:hidden shrink-0 bg-background/95 border-b border-border/60 px-3 py-1.5 flex items-center gap-2">
+          <span className="text-[11px] text-muted-foreground">PM:</span>
+          <PMChip
+            name={project.pmOwnerName}
+            email={project.pmOwnerEmail}
+            size="xs"
+          />
+        </div>
+      )}
+
       {/* ── BODY ──────────────────────────────────────────────────────────────── */}
       <div className="flex-1 flex overflow-hidden">
 
