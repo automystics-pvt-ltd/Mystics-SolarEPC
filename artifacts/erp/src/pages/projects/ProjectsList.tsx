@@ -6,7 +6,8 @@ import {
   useGetPortfolioSummary,
   getGetProjectsQueryKey,
 } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { apiGet } from "@/lib/fetch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -39,6 +40,9 @@ import {
 import { CanCreate } from "@/lib/permissions";
 import { EmptyState, SkeletonCards } from "@/components/shared";
 
+// ── PM candidates type ────────────────────────────────────────────────────────
+interface PmCandidate { id: number; name: string; role: string; }
+
 // ── Form schema ───────────────────────────────────────────────────────────────
 const createProjectSchema = z.object({
   name: z.string().min(1, "Project name is required"),
@@ -46,6 +50,7 @@ const createProjectSchema = z.object({
   contractValue: z.coerce.number().optional(),
   startDate: z.string().optional(),
   plannedEnd: z.string().optional(),
+  pmOwnerId: z.coerce.number().optional(),
 });
 type CreateProjectForm = z.infer<typeof createProjectSchema>;
 
@@ -333,9 +338,15 @@ function CreateProjectDialog({
 }) {
   const queryClient = useQueryClient();
 
+  const { data: pmCandidates = [] } = useQuery<PmCandidate[]>({
+    queryKey: ["pm-candidates"],
+    queryFn: () => apiGet<PmCandidate[]>("/projects/pm-candidates"),
+    staleTime: 5 * 60_000,
+  });
+
   const form = useForm<CreateProjectForm>({
     resolver: zodResolver(createProjectSchema),
-    defaultValues: { name: "", siteLocation: "", startDate: "", plannedEnd: "" },
+    defaultValues: { name: "", siteLocation: "", startDate: "", plannedEnd: "", pmOwnerId: undefined },
   });
 
   const createMutation = useCreateProject({
@@ -474,7 +485,7 @@ function CreateProjectDialog({
             <div className="h-px bg-border/50 mx-6" />
 
             {/* ── Section: Financial ── */}
-            <div className="px-6 pt-4 pb-5 space-y-4">
+            <div className="px-6 pt-4 pb-4 space-y-4">
               <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
                 Financial
               </p>
@@ -497,6 +508,45 @@ function CreateProjectDialog({
                         step="any"
                         {...field}
                       />
+                    </div>
+                  </FormControl>
+                  <FormMessage className="text-[11px]" />
+                </FormItem>
+              )} />
+            </div>
+
+            {/* ── Divider ── */}
+            <div className="h-px bg-border/50 mx-6" />
+
+            {/* ── Section: Team ── */}
+            <div className="px-6 pt-4 pb-5 space-y-4">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
+                Team
+              </p>
+
+              <FormField control={form.control} name="pmOwnerId" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-[12px] font-semibold text-foreground/80">
+                    Project Manager
+                  </FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <User2 className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50 pointer-events-none" />
+                      <select
+                        className={cn(
+                          "w-full h-9 pl-8 pr-3 rounded-md border border-border/60 bg-muted/40 text-[13px] text-foreground",
+                          "appearance-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-ring",
+                          "transition-colors hover:border-border",
+                          !field.value && "text-muted-foreground"
+                        )}
+                        value={field.value ?? ""}
+                        onChange={e => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                      >
+                        <option value="">— Unassigned —</option>
+                        {pmCandidates.map(u => (
+                          <option key={u.id} value={u.id}>{u.name}</option>
+                        ))}
+                      </select>
                     </div>
                   </FormControl>
                   <FormMessage className="text-[11px]" />

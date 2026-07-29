@@ -1,16 +1,238 @@
 // @refresh reset
 import { useState, lazy, Suspense, useEffect } from "react";
-import { useGetProject, getGetProjectQueryKey } from "@workspace/api-client-react";
+import { useGetProject, getGetProjectQueryKey, useUpdateProject } from "@workspace/api-client-react";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@/lib/zodResolver";
+import { z } from "zod";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
   PanelLeftClose, PanelLeftOpen, Plus, ShoppingCart, ChevronRight, Menu,
+  Pencil, MapPin, Calendar, User2,
 } from "lucide-react";
 import { SkeletonStats, StatusBadge } from "@/components/shared";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
+} from "@/components/ui/form";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { apiGet } from "@/lib/fetch";
 import { ProjectSidebar } from "./components/ProjectSidebar";
+
+// ── PM candidates ─────────────────────────────────────────────────────────────
+interface PmCandidate { id: number; name: string; role: string; }
+
+// ── Edit Project schema ───────────────────────────────────────────────────────
+const editProjectSchema = z.object({
+  name: z.string().min(1, "Project name is required"),
+  siteLocation: z.string().optional(),
+  contractValue: z.coerce.number().optional(),
+  startDate: z.string().optional(),
+  plannedEnd: z.string().optional(),
+  pmOwnerId: z.coerce.number().optional(),
+});
+type EditProjectForm = z.infer<typeof editProjectSchema>;
+
+// ── EditProjectDialog ─────────────────────────────────────────────────────────
+function EditProjectDialog({
+  open, onOpenChange, project,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  project: any;
+}) {
+  const queryClient = useQueryClient();
+
+  const { data: pmCandidates = [] } = useQuery<PmCandidate[]>({
+    queryKey: ["pm-candidates"],
+    queryFn: () => apiGet<PmCandidate[]>("/projects/pm-candidates"),
+    staleTime: 5 * 60_000,
+  });
+
+  const form = useForm<EditProjectForm>({
+    resolver: zodResolver(editProjectSchema),
+    defaultValues: {
+      name: project.name ?? "",
+      siteLocation: project.siteLocation ?? "",
+      contractValue: project.contractValue ?? undefined,
+      startDate: project.startDate ?? "",
+      plannedEnd: project.plannedEnd ?? "",
+      pmOwnerId: project.pmOwnerId ?? undefined,
+    },
+  });
+
+  const updateMutation = useUpdateProject({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetProjectQueryKey(project.id) });
+        onOpenChange(false);
+      },
+    },
+  });
+
+  const handleClose = () => {
+    if (!updateMutation.isPending) {
+      onOpenChange(false);
+      form.reset();
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="max-w-[520px] p-0 overflow-hidden gap-0">
+
+        <DialogHeader className="px-6 pt-6 pb-5 border-b border-border/60">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center shrink-0">
+              <Pencil className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <DialogTitle className="text-[16px] font-bold text-foreground leading-none mb-0.5">
+                Edit Project
+              </DialogTitle>
+              <p className="text-[12px] text-muted-foreground truncate max-w-[320px]">
+                {project.name}
+              </p>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(d => updateMutation.mutate({ id: project.id, data: d }))}>
+
+            {/* Identity */}
+            <div className="px-6 pt-5 pb-4 space-y-4">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
+                Project Identity
+              </p>
+              <FormField control={form.control} name="name" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-[12px] font-semibold text-foreground/80">
+                    Project Name <span className="text-red-500 ml-0.5">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input className="h-9 bg-muted/40 border-border/60 focus-visible:bg-background text-[13px]" {...field} />
+                  </FormControl>
+                  <FormMessage className="text-[11px]" />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="siteLocation" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-[12px] font-semibold text-foreground/80">Site Location</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50 pointer-events-none" />
+                      <Input className="h-9 bg-muted/40 border-border/60 focus-visible:bg-background text-[13px] pl-8" placeholder="e.g. Pune, Maharashtra" {...field} />
+                    </div>
+                  </FormControl>
+                  <FormMessage className="text-[11px]" />
+                </FormItem>
+              )} />
+            </div>
+
+            <div className="h-px bg-border/50 mx-6" />
+
+            {/* Timeline */}
+            <div className="px-6 pt-4 pb-4 space-y-4">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">Timeline</p>
+              <div className="grid grid-cols-2 gap-3">
+                <FormField control={form.control} name="startDate" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-[12px] font-semibold text-foreground/80">Start Date</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50 pointer-events-none" />
+                        <Input className="h-9 bg-muted/40 border-border/60 focus-visible:bg-background text-[13px] pl-8" type="date" {...field} />
+                      </div>
+                    </FormControl>
+                    <FormMessage className="text-[11px]" />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="plannedEnd" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-[12px] font-semibold text-foreground/80">Planned End</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50 pointer-events-none" />
+                        <Input className="h-9 bg-muted/40 border-border/60 focus-visible:bg-background text-[13px] pl-8" type="date" {...field} />
+                      </div>
+                    </FormControl>
+                    <FormMessage className="text-[11px]" />
+                  </FormItem>
+                )} />
+              </div>
+            </div>
+
+            <div className="h-px bg-border/50 mx-6" />
+
+            {/* Financial + Team */}
+            <div className="px-6 pt-4 pb-4 space-y-4">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">Financial &amp; Team</p>
+              <FormField control={form.control} name="contractValue" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-[12px] font-semibold text-foreground/80">Contract Value</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] font-bold text-muted-foreground/60 pointer-events-none select-none">₹</span>
+                      <Input className="h-9 bg-muted/40 border-border/60 focus-visible:bg-background text-[13px] font-mono pl-6" type="number" placeholder="0" min={0} step="any" {...field} />
+                    </div>
+                  </FormControl>
+                  <FormMessage className="text-[11px]" />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="pmOwnerId" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-[12px] font-semibold text-foreground/80">Project Manager</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <User2 className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50 pointer-events-none" />
+                      <select
+                        className={cn(
+                          "w-full h-9 pl-8 pr-3 rounded-md border border-border/60 bg-muted/40 text-[13px] text-foreground",
+                          "appearance-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-ring transition-colors hover:border-border",
+                          !field.value && "text-muted-foreground"
+                        )}
+                        value={field.value ?? ""}
+                        onChange={e => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                      >
+                        <option value="">— Unassigned —</option>
+                        {pmCandidates.map(u => (
+                          <option key={u.id} value={u.id}>{u.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </FormControl>
+                  <FormMessage className="text-[11px]" />
+                </FormItem>
+              )} />
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-between px-6 py-4 border-t border-border/60 bg-muted/20">
+              <Button type="button" variant="ghost" size="sm" onClick={handleClose} disabled={updateMutation.isPending} className="text-[13px] text-muted-foreground">
+                Cancel
+              </Button>
+              <Button type="submit" size="sm" disabled={updateMutation.isPending} className="h-9 px-5 gap-1.5 bg-primary hover:bg-primary/90 text-white font-bold text-[13px]">
+                {updateMutation.isPending ? (
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-3.5 w-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                    Saving…
+                  </span>
+                ) : "Save Changes"}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 // ─── Lazy-load every tab panel ────────────────────────────────────────────────
 const ProjectOverview       = lazy(() => import("./tabs/ProjectOverview").then(m => ({ default: m.ProjectOverview })));
@@ -63,6 +285,7 @@ export function ProjectWorkspace({ id }: { id: string }) {
   const [activeTab,        setActiveTab]        = useState("overview");
   const [sidebarExpanded,  setSidebarExpanded]  = useState(true);   // expanded vs icon-rail (desktop)
   const [mobileSheetOpen,  setMobileSheetOpen]  = useState(false);
+  const [isEditOpen,       setIsEditOpen]       = useState(false);
 
   const { data: project, isPending } = useGetProject(projectId, {
     query: { enabled: !!projectId, queryKey: getGetProjectQueryKey(projectId) },
@@ -197,6 +420,14 @@ export function ProjectWorkspace({ id }: { id: string }) {
           {/* Quick actions */}
           <Button
             variant="outline" size="sm"
+            className="h-7 w-7 p-0 hidden sm:flex"
+            onClick={() => setIsEditOpen(true)}
+            title="Edit project"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="outline" size="sm"
             className="h-7 gap-1 text-[12px] hidden sm:flex"
             onClick={() => switchTab("dprs")}
           >
@@ -230,6 +461,9 @@ export function ProjectWorkspace({ id }: { id: string }) {
             collapsed={!sidebarExpanded}
           />
         </motion.aside>
+
+        {/* Edit project dialog */}
+        <EditProjectDialog open={isEditOpen} onOpenChange={setIsEditOpen} project={project} />
 
         {/* Mobile sidebar sheet */}
         <Sheet open={mobileSheetOpen} onOpenChange={setMobileSheetOpen}>

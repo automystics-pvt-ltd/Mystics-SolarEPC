@@ -39,6 +39,16 @@ function fmtBudget(b: typeof budgetsTable.$inferSelect) {
 }
 
 // ── PROJECTS ──────────────────────────────────────────────────────────────────
+
+// Returns users eligible to be assigned as PM (pm / admin / director roles)
+router.get("/projects/pm-candidates", async (req, res): Promise<void> => {
+  const rows = await db
+    .select({ id: usersTable.id, name: usersTable.name, role: usersTable.role })
+    .from(usersTable)
+    .orderBy(usersTable.name);
+  res.json(rows.filter(u => ["pm", "admin", "director"].includes(u.role)));
+});
+
 router.get("/projects/portfolio-summary", async (req, res): Promise<void> => {
   const projects = await db.select().from(projectsTable);
   res.json({
