@@ -1,5 +1,5 @@
 // @refresh reset
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   useGetProjects,
   useCreateProject,
@@ -38,6 +38,7 @@ import {
   DollarSign, Calendar, User2, TrendingUp, ArrowUpDown,
 } from "lucide-react";
 import { CanCreate } from "@/lib/permissions";
+import { useAuth } from "@/lib/auth";
 import { EmptyState, SkeletonCards } from "@/components/shared";
 
 // ── PM candidates type ────────────────────────────────────────────────────────
@@ -629,11 +630,29 @@ function StatCard({
 // Main page
 // ─────────────────────────────────────────────────────────────────────────────
 export function ProjectsList() {
+  const { user } = useAuth();
+  const sortKey = user?.id ? `projects_sort_${user.id}` : null;
+
   const [search,       setSearch]       = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [viewMode,     setViewMode]     = useState<ViewMode>("cards");
   const [sortBy,       setSortBy]       = useState<SortOption>("newest");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+
+  // Load saved sort preference once the user ID is known
+  useEffect(() => {
+    if (!sortKey) return;
+    const saved = localStorage.getItem(sortKey);
+    if (saved && SORT_OPTIONS.some(o => o.value === saved)) {
+      setSortBy(saved as SortOption);
+    }
+  }, [sortKey]);
+
+  // Persist sort preference on change
+  const handleSortChange = (value: SortOption) => {
+    setSortBy(value);
+    if (sortKey) localStorage.setItem(sortKey, value);
+  };
 
   const { data: projects, isPending } = useGetProjects({}, {
     query: { queryKey: getGetProjectsQueryKey({}) },
@@ -786,7 +805,7 @@ export function ProjectsList() {
             <ArrowUpDown className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground/50 pointer-events-none" />
             <select
               value={sortBy}
-              onChange={e => setSortBy(e.target.value as SortOption)}
+              onChange={e => handleSortChange(e.target.value as SortOption)}
               className={cn(
                 "h-8 pl-7 pr-7 rounded-lg border border-border/60 bg-background text-[12px] font-medium text-foreground",
                 "appearance-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-ring",
