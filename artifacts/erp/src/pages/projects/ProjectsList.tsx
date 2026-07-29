@@ -27,7 +27,7 @@ import {
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@/lib/zodResolver";
 import { z } from "zod";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { formatINRCompact } from "@/lib/currency";
@@ -39,7 +39,7 @@ import {
 } from "lucide-react";
 import { CanCreate } from "@/lib/permissions";
 import { useAuth } from "@/lib/auth";
-import { EmptyState, SkeletonCards } from "@/components/shared";
+import { EmptyState, SkeletonCards, PMChip } from "@/components/shared";
 
 // ── PM candidates type ────────────────────────────────────────────────────────
 interface PmCandidate { id: number; name: string; role: string; }
@@ -75,6 +75,7 @@ interface Project {
   contractValue?: number | null;
   percentComplete?: number | null;
   pmOwnerName?: string | null;
+  pmOwnerEmail?: string | null;
   startDate?: string | null;
   plannedEnd?: string | null;
   createdAt: string;
@@ -136,113 +137,113 @@ function ProjectCard({ project }: { project: Project }) {
   const pct  = project.percentComplete ?? 0;
   const dl   = deadlineLabel(project.plannedEnd);
   const code = projectCode(project.id);
+  const [, navigate] = useLocation();
 
   return (
-    <Link href={`/projects/${project.id}`}>
-      <motion.div
-        whileHover={{ y: -2, transition: { duration: 0.15 } }}
-        className={cn(
-          "group flex flex-col bg-card border rounded-xl overflow-hidden cursor-pointer",
-          "hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)]",
-          "transition-shadow duration-200 border-l-[3px]",
-          cfg.border
-        )}
-      >
-        {/* ── Card body ── */}
-        <div className="p-4 flex-1">
-          {/* Top row */}
-          <div className="flex items-start justify-between gap-2 mb-3.5">
-            {/* Avatar */}
-            <div className={cn(
-              "h-9 w-9 rounded-lg bg-gradient-to-br shrink-0 flex items-center justify-center shadow-sm",
-              projectGradient(project.id)
-            )}>
-              <FolderKanban className="h-[18px] w-[18px] text-white" />
-            </div>
-            {/* Code + status */}
-            <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
-              <span className="text-[10px] font-mono font-bold text-muted-foreground/50 tracking-wider">
-                {code}
-              </span>
-              <span className={cn(
-                "inline-flex items-center gap-1 text-[10px] font-bold px-2 py-[3px] rounded-full border",
-                cfg.pill
-              )}>
-                <span className={cn("h-1.5 w-1.5 rounded-full", cfg.dot)} />
-                {project.status}
-              </span>
-            </div>
+    <motion.div
+      whileHover={{ y: -2, transition: { duration: 0.15 } }}
+      className={cn(
+        "group flex flex-col bg-card border rounded-xl overflow-hidden cursor-pointer",
+        "hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)]",
+        "transition-shadow duration-200 border-l-[3px]",
+        cfg.border
+      )}
+      onClick={() => navigate(`/projects/${project.id}`)}
+      role="link"
+      tabIndex={0}
+      onKeyDown={e => { if (e.key === "Enter" || e.key === " ") navigate(`/projects/${project.id}`); }}
+    >
+      {/* ── Card body ── */}
+      <div className="p-4 flex-1">
+        {/* Top row */}
+        <div className="flex items-start justify-between gap-2 mb-3.5">
+          {/* Avatar */}
+          <div className={cn(
+            "h-9 w-9 rounded-lg bg-gradient-to-br shrink-0 flex items-center justify-center shadow-sm",
+            projectGradient(project.id)
+          )}>
+            <FolderKanban className="h-[18px] w-[18px] text-white" />
           </div>
-
-          {/* Name */}
-          <h3 className="text-[14px] font-bold text-foreground leading-snug group-hover:text-primary transition-colors line-clamp-2 mb-2">
-            {project.name}
-          </h3>
-
-          {/* Location */}
-          {project.siteLocation ? (
-            <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
-              <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" />
-              <span className="truncate">{project.siteLocation}</span>
-            </div>
-          ) : (
-            <div className="h-4" />
-          )}
-        </div>
-
-        {/* ── Progress ── */}
-        <div className="px-4 pb-3">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] text-muted-foreground">Progress</span>
-            <span className={cn("text-[12px] font-bold tabular-nums", progressColor(pct))}>
-              {pct}%
+          {/* Code + status */}
+          <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
+            <span className="text-[10px] font-mono font-bold text-muted-foreground/50 tracking-wider">
+              {code}
             </span>
-          </div>
-          <div className="h-[5px] bg-muted rounded-full overflow-hidden">
-            <motion.div
-              className={cn("h-full rounded-full", cfg.progress)}
-              initial={{ width: 0 }}
-              animate={{ width: `${pct}%` }}
-              transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
-            />
-          </div>
-        </div>
-
-        {/* ── Footer ── */}
-        <div className="px-4 py-3 border-t border-border/50 bg-muted/20 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-3 min-w-0">
-            {/* Contract value */}
-            <span className="text-[12px] font-bold font-mono text-foreground shrink-0">
-              {project.contractValue ? formatINRCompact(project.contractValue) : <span className="text-muted-foreground/40 font-sans font-normal">No value</span>}
-            </span>
-            {/* PM */}
-            {project.pmOwnerName && (
-              <div className="flex items-center gap-1 min-w-0 pl-3 border-l border-border/60">
-                <div className="h-4 w-4 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                  <span className="text-[8px] font-black text-primary leading-none">
-                    {project.pmOwnerName.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-                <span className="text-[11px] text-muted-foreground truncate">
-                  {project.pmOwnerName.split(" ")[0]}
-                </span>
-              </div>
-            )}
-          </div>
-          {/* Deadline */}
-          {dl && (
             <span className={cn(
-              "text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0",
-              dl.urgent
-                ? "bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400"
-                : "bg-muted text-muted-foreground"
+              "inline-flex items-center gap-1 text-[10px] font-bold px-2 py-[3px] rounded-full border",
+              cfg.pill
             )}>
-              {dl.text}
+              <span className={cn("h-1.5 w-1.5 rounded-full", cfg.dot)} />
+              {project.status}
             </span>
+          </div>
+        </div>
+
+        {/* Name */}
+        <h3 className="text-[14px] font-bold text-foreground leading-snug group-hover:text-primary transition-colors line-clamp-2 mb-2">
+          {project.name}
+        </h3>
+
+        {/* Location */}
+        {project.siteLocation ? (
+          <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
+            <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" />
+            <span className="truncate">{project.siteLocation}</span>
+          </div>
+        ) : (
+          <div className="h-4" />
+        )}
+      </div>
+
+      {/* ── Progress ── */}
+      <div className="px-4 pb-3">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-[11px] text-muted-foreground">Progress</span>
+          <span className={cn("text-[12px] font-bold tabular-nums", progressColor(pct))}>
+            {pct}%
+          </span>
+        </div>
+        <div className="h-[5px] bg-muted rounded-full overflow-hidden">
+          <motion.div
+            className={cn("h-full rounded-full", cfg.progress)}
+            initial={{ width: 0 }}
+            animate={{ width: `${pct}%` }}
+            transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
+          />
+        </div>
+      </div>
+
+      {/* ── Footer ── */}
+      <div className="px-4 py-3 border-t border-border/50 bg-muted/20 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-3 min-w-0">
+          {/* Contract value */}
+          <span className="text-[12px] font-bold font-mono text-foreground shrink-0">
+            {project.contractValue ? formatINRCompact(project.contractValue) : <span className="text-muted-foreground/40 font-sans font-normal">No value</span>}
+          </span>
+          {/* PM */}
+          {project.pmOwnerName && (
+            <div className="flex items-center pl-3 border-l border-border/60 min-w-0">
+              <PMChip
+                name={project.pmOwnerName}
+                email={project.pmOwnerEmail}
+                size="xs"
+              />
+            </div>
           )}
         </div>
-      </motion.div>
-    </Link>
+        {/* Deadline */}
+        {dl && (
+          <span className={cn(
+            "text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0",
+            dl.urgent
+              ? "bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400"
+              : "bg-muted text-muted-foreground"
+          )}>
+            {dl.text}
+          </span>
+        )}
+      </div>
+    </motion.div>
   );
 }
 

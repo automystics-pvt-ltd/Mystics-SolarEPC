@@ -3990,6 +3990,8 @@ components:
           type: ["integer", "null"]
         pmOwnerName:
           type: ["string", "null"]
+        pmOwnerEmail:
+          type: ["string", "null"]
         startDate:
           type: ["string", "null"]
         plannedEnd:

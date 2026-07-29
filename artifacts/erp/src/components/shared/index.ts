@@ -11,3 +11,4 @@ export { ConfirmDialog } from "./ConfirmDialog";
 export { Timeline } from "./Timeline";
 export type { TimelineItem } from "./Timeline";
 export { Kbd } from "./Kbd";
+export { PMChip } from "./PMChip";

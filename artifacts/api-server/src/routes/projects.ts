@@ -14,8 +14,8 @@ import {
 const router: IRouter = Router();
 router.use(requireAuth());
 
-function fmtProject(p: typeof projectsTable.$inferSelect, pmOwnerName: string | null = null) {
-  return { id: p.id, clientPoId: p.clientPoId, name: p.name, siteLocation: p.siteLocation, pmOwnerId: p.pmOwnerId, pmOwnerName, startDate: p.startDate, plannedEnd: p.plannedEnd, status: p.status, parentProjectId: p.parentProjectId, contractValue: p.contractValue ? Number(p.contractValue) : null, percentComplete: p.percentComplete, createdAt: p.createdAt.toISOString() };
+function fmtProject(p: typeof projectsTable.$inferSelect, pmOwnerName: string | null = null, pmOwnerEmail: string | null = null) {
+  return { id: p.id, clientPoId: p.clientPoId, name: p.name, siteLocation: p.siteLocation, pmOwnerId: p.pmOwnerId, pmOwnerName, pmOwnerEmail, startDate: p.startDate, plannedEnd: p.plannedEnd, status: p.status, parentProjectId: p.parentProjectId, contractValue: p.contractValue ? Number(p.contractValue) : null, percentComplete: p.percentComplete, createdAt: p.createdAt.toISOString() };
 }
 
 function fmtActivity(a: typeof activitiesTable.$inferSelect) {
@@ -43,7 +43,7 @@ function fmtBudget(b: typeof budgetsTable.$inferSelect) {
 // Returns users eligible to be assigned as PM (pm / admin / director roles)
 router.get("/projects/pm-candidates", async (req, res): Promise<void> => {
   const rows = await db
-    .select({ id: usersTable.id, name: usersTable.name, role: usersTable.role })
+    .select({ id: usersTable.id, name: usersTable.name, role: usersTable.role, email: usersTable.email })
     .from(usersTable)
     .orderBy(usersTable.name);
   res.json(rows.filter(u => ["pm", "admin", "director"].includes(u.role)));
@@ -63,14 +63,14 @@ router.get("/projects/portfolio-summary", async (req, res): Promise<void> => {
 });
 
 router.get("/projects", async (req, res): Promise<void> => {
-  let query = db.select({ project: projectsTable, pmName: usersTable.name })
+  let query = db.select({ project: projectsTable, pmName: usersTable.name, pmEmail: usersTable.email })
     .from(projectsTable)
     .leftJoin(usersTable, eq(projectsTable.pmOwnerId, usersTable.id))
     .orderBy(desc(projectsTable.createdAt))
     .$dynamic();
   if (req.query.status) query = query.where(eq(projectsTable.status, req.query.status as string));
   const rows = await query;
-  res.json(rows.map(r => fmtProject(r.project, r.pmName ?? null)));
+  res.json(rows.map(r => fmtProject(r.project, r.pmName ?? null, r.pmEmail ?? null)));
 });
 
 router.post("/projects", requirePermission("projects", "create"), async (req, res): Promise<void> => {
@@ -78,22 +78,24 @@ router.post("/projects", requirePermission("projects", "create"), async (req, re
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const [row] = await db.insert(projectsTable).values({ ...parsed.data, contractValue: parsed.data.contractValue?.toString() }).returning();
   let pmOwnerName: string | null = null;
+  let pmOwnerEmail: string | null = null;
   if (row.pmOwnerId) {
-    const [u] = await db.select({ name: usersTable.name }).from(usersTable).where(eq(usersTable.id, row.pmOwnerId));
+    const [u] = await db.select({ name: usersTable.name, email: usersTable.email }).from(usersTable).where(eq(usersTable.id, row.pmOwnerId));
     pmOwnerName = u?.name ?? null;
+    pmOwnerEmail = u?.email ?? null;
   }
-  res.status(201).json(fmtProject(row, pmOwnerName));
+  res.status(201).json(fmtProject(row, pmOwnerName, pmOwnerEmail));
 });
 
 router.get("/projects/:id", async (req, res): Promise<void> => {
   const params = GetProjectParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
-  const [result] = await db.select({ project: projectsTable, pmName: usersTable.name })
+  const [result] = await db.select({ project: projectsTable, pmName: usersTable.name, pmEmail: usersTable.email })
     .from(projectsTable)
     .leftJoin(usersTable, eq(projectsTable.pmOwnerId, usersTable.id))
     .where(eq(projectsTable.id, params.data.id));
   if (!result) { res.status(404).json({ error: "Project not found" }); return; }
-  res.json(fmtProject(result.project, result.pmName ?? null));
+  res.json(fmtProject(result.project, result.pmName ?? null, result.pmEmail ?? null));
 });
 
 router.patch("/projects/:id", requirePermission("projects", "edit"), async (req, res): Promise<void> => {
@@ -105,23 +107,26 @@ router.patch("/projects/:id", requirePermission("projects", "edit"), async (req,
   const [row] = await db.update(projectsTable).set(update).where(eq(projectsTable.id, params.data.id)).returning();
   if (!row) { res.status(404).json({ error: "Project not found" }); return; }
   let pmOwnerName: string | null = null;
+  let pmOwnerEmail: string | null = null;
   if (row.pmOwnerId) {
-    const [u] = await db.select({ name: usersTable.name }).from(usersTable).where(eq(usersTable.id, row.pmOwnerId));
+    const [u] = await db.select({ name: usersTable.name, email: usersTable.email }).from(usersTable).where(eq(usersTable.id, row.pmOwnerId));
     pmOwnerName = u?.name ?? null;
+    pmOwnerEmail = u?.email ?? null;
   }
-  res.json(fmtProject(row, pmOwnerName));
+  res.json(fmtProject(row, pmOwnerName, pmOwnerEmail));
 });
 
 router.get("/projects/:id/dashboard", async (req, res): Promise<void> => {
   const params = GetProjectParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
-  const [projectResult] = await db.select({ project: projectsTable, pmName: usersTable.name })
+  const [projectResult] = await db.select({ project: projectsTable, pmName: usersTable.name, pmEmail: usersTable.email })
     .from(projectsTable)
     .leftJoin(usersTable, eq(projectsTable.pmOwnerId, usersTable.id))
     .where(eq(projectsTable.id, params.data.id));
   if (!projectResult) { res.status(404).json({ error: "Project not found" }); return; }
   const project = projectResult.project;
   const pmOwnerName = projectResult.pmName ?? null;
+  const pmOwnerEmail = projectResult.pmEmail ?? null;
 
   const budgets = await db.select().from(budgetsTable).where(eq(budgetsTable.projectId, params.data.id));
   const [activitiesCount] = await db.select({ count: sql<number>`count(*)` }).from(activitiesTable).where(eq(activitiesTable.projectId, params.data.id));
@@ -135,7 +140,7 @@ router.get("/projects/:id/dashboard", async (req, res): Promise<void> => {
   const totalActual = budgets.reduce((s, b) => s + Number(b.actualAmount), 0);
 
   res.json({
-    project: fmtProject(project, pmOwnerName),
+    project: fmtProject(project, pmOwnerName, pmOwnerEmail),
     budgetSummary: { projectId: params.data.id, lines: budgets.map(b => ({ costHead: b.costHead, budgeted: Number(b.budgetedAmount), committed: Number(b.committedAmount), actual: Number(b.actualAmount), variance: Number(b.budgetedAmount) - Number(b.actualAmount) })), totalBudgeted, totalCommitted: budgets.reduce((s, b) => s + Number(b.committedAmount), 0), totalActual, totalVariance: totalBudgeted - totalActual },
     activitiesCount: Number(activitiesCount?.count ?? 0),
     openMRsCount: Number(openMRsCount?.count ?? 0),
