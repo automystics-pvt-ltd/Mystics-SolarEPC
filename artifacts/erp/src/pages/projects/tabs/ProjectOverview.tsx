@@ -8,6 +8,7 @@ import {
   ArrowUpRight, FileText, DollarSign, Zap, Activity,
   Clock, TrendingDown, CircleDot, AlertCircle,
 } from "lucide-react";
+import { PhaseTracker } from "../components/PhaseTracker";
 import { format, formatDistanceToNow } from "date-fns";
 import { motion } from "framer-motion";
 import { useLocation } from "wouter";
@@ -73,90 +74,6 @@ function KpiCard({
   );
 }
 
-/* ── Phase progress strip ───────────────────────────────────────────────────── */
-function PhaseStrip({ projectId }: { projectId: number }) {
-  const { data: phases = [] } = useQuery<Array<{
-    phase: string; status: "NotStarted" | "InProgress" | "Completed" | "Blocked";
-  }>>({
-    queryKey: ["project-phases", projectId],
-    queryFn: () => apiGet(`/projects/${projectId}/phases`),
-    enabled: !!projectId,
-  });
-
-  if (!phases.length) return null;
-
-  const LABELS: Record<string, string> = {
-    SiteSurvey: "Survey", Planning: "Planning", BOQ: "BOQ", Budgeting: "Budget",
-    ResourceAllocation: "Resources", Procurement: "Procurement", Installation: "Install",
-    QualityInspection: "QC", TestingCommissioning: "T&C", Handover: "Handover",
-    Warranty: "Warranty", Closure: "Closure",
-  };
-  const COLORS: Record<string, string> = {
-    Completed: "bg-emerald-500",
-    InProgress: "bg-blue-500",
-    Blocked: "bg-red-500",
-    NotStarted: "bg-muted-foreground/20",
-  };
-  const DOT: Record<string, string> = {
-    Completed: "bg-emerald-500",
-    InProgress: "bg-blue-500 animate-pulse",
-    Blocked: "bg-red-500",
-    NotStarted: "bg-border",
-  };
-
-  const completed = phases.filter(p => p.status === "Completed").length;
-
-  return (
-    <div className="rounded-xl border border-border/60 bg-card p-4">
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-          Project Lifecycle — {completed}/{phases.length} phases
-        </p>
-        <div className="flex items-center gap-2">
-          <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden">
-            <div
-              className="h-full bg-emerald-500 transition-all duration-500 rounded-full"
-              style={{ width: `${phases.length ? Math.round((completed / phases.length) * 100) : 0}%` }}
-            />
-          </div>
-          <span className="text-[11px] font-bold text-muted-foreground">
-            {phases.length ? Math.round((completed / phases.length) * 100) : 0}%
-          </span>
-        </div>
-      </div>
-      <div className="flex items-center gap-1 overflow-x-auto scrollbar-none pb-1">
-        {phases.map((p, i) => (
-          <div key={p.phase} className="flex items-center shrink-0">
-            <div className="flex flex-col items-center gap-1">
-              <div className={cn(
-                "h-2 w-2 rounded-full ring-2 ring-offset-1 ring-offset-card",
-                DOT[p.status],
-                p.status === "Completed" ? "ring-emerald-300" :
-                p.status === "InProgress" ? "ring-blue-300" :
-                p.status === "Blocked" ? "ring-red-300" : "ring-border"
-              )} />
-              <span className={cn(
-                "text-[9px] font-semibold whitespace-nowrap",
-                p.status === "Completed" ? "text-emerald-600 dark:text-emerald-400" :
-                p.status === "InProgress" ? "text-blue-600 dark:text-blue-400" :
-                p.status === "Blocked" ? "text-red-600 dark:text-red-400" :
-                "text-muted-foreground/60"
-              )}>
-                {LABELS[p.phase] ?? p.phase}
-              </span>
-            </div>
-            {i < phases.length - 1 && (
-              <div className={cn(
-                "w-6 h-px mx-0.5 mb-3",
-                p.status === "Completed" ? "bg-emerald-300" : "bg-border"
-              )} />
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 /* ── Health glance bar ───────────────────────────────────────────────────────── */
 function HealthGlance({
@@ -295,7 +212,7 @@ export function ProjectOverview({ projectId, onTabChange }: ProjectOverviewProps
       />
 
       {/* ── Phase lifecycle strip ─────────────────────────────────────────── */}
-      <PhaseStrip projectId={projectId} />
+      <PhaseTracker projectId={projectId} readOnly />
 
       {/* ── KPI cards 2×3 grid ───────────────────────────────────────────── */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
