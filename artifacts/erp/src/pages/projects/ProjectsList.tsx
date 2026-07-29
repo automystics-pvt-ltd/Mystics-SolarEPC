@@ -34,7 +34,7 @@ import { differenceInDays, parseISO } from "date-fns";
 import {
   Plus, Search, X, FolderKanban, MapPin, LayoutGrid, List,
   CheckCircle2, AlertTriangle, ChevronRight, CircleDot,
-  DollarSign, Calendar, User2, TrendingUp,
+  DollarSign, Calendar, User2, TrendingUp, ArrowUpDown,
 } from "lucide-react";
 import { CanCreate } from "@/lib/permissions";
 import { EmptyState, SkeletonCards } from "@/components/shared";
@@ -51,6 +51,15 @@ type CreateProjectForm = z.infer<typeof createProjectSchema>;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type ViewMode = "cards" | "list";
+type SortOption = "newest" | "deadline_asc" | "value_desc" | "progress_desc" | "progress_asc";
+
+const SORT_OPTIONS: { value: SortOption; label: string }[] = [
+  { value: "newest",       label: "Newest" },
+  { value: "deadline_asc", label: "Deadline ↑" },
+  { value: "value_desc",   label: "Value ↓" },
+  { value: "progress_desc",label: "Progress ↓" },
+  { value: "progress_asc", label: "Progress ↑" },
+];
 
 interface Project {
   id: number;
@@ -573,6 +582,7 @@ export function ProjectsList() {
   const [search,       setSearch]       = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [viewMode,     setViewMode]     = useState<ViewMode>("cards");
+  const [sortBy,       setSortBy]       = useState<SortOption>("newest");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   const { data: projects, isPending } = useGetProjects({}, {
@@ -590,9 +600,9 @@ export function ProjectsList() {
     }, {});
   }, [projects]);
 
-  // ── Filtered list ──
+  // ── Filtered + sorted list ──
   const filtered = useMemo(() => {
-    return projects?.filter(p => {
+    const list = projects?.filter(p => {
       const q = search.toLowerCase();
       const matchSearch = !q ||
         p.name.toLowerCase().includes(q) ||
@@ -600,7 +610,28 @@ export function ProjectsList() {
       const matchStatus = statusFilter === "all" || p.status === statusFilter;
       return matchSearch && matchStatus;
     }) ?? [];
-  }, [projects, search, statusFilter]);
+
+    return [...list].sort((a, b) => {
+      switch (sortBy) {
+        case "deadline_asc": {
+          // nulls last
+          if (!a.plannedEnd && !b.plannedEnd) return 0;
+          if (!a.plannedEnd) return 1;
+          if (!b.plannedEnd) return -1;
+          return a.plannedEnd.localeCompare(b.plannedEnd);
+        }
+        case "value_desc":
+          return (b.contractValue ?? 0) - (a.contractValue ?? 0);
+        case "progress_desc":
+          return (b.percentComplete ?? 0) - (a.percentComplete ?? 0);
+        case "progress_asc":
+          return (a.percentComplete ?? 0) - (b.percentComplete ?? 0);
+        case "newest":
+        default:
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+    });
+  }, [projects, search, statusFilter, sortBy]);
 
   const hasFilters = search.length > 0 || statusFilter !== "all";
 
@@ -698,6 +729,26 @@ export function ProjectsList() {
                 <X className="h-3.5 w-3.5" />
               </button>
             )}
+          </div>
+
+          {/* Sort dropdown */}
+          <div className="relative shrink-0">
+            <ArrowUpDown className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground/50 pointer-events-none" />
+            <select
+              value={sortBy}
+              onChange={e => setSortBy(e.target.value as SortOption)}
+              className={cn(
+                "h-8 pl-7 pr-7 rounded-lg border border-border/60 bg-background text-[12px] font-medium text-foreground",
+                "appearance-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-ring",
+                "hover:border-border transition-colors"
+              )}
+              aria-label="Sort projects"
+            >
+              {SORT_OPTIONS.map(o => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+            <span className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground/40 text-[10px]">▾</span>
           </div>
 
           {/* View toggle */}
