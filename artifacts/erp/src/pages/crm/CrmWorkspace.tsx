@@ -206,12 +206,23 @@ function PipelineSection({ leads, loading, onLeadClick, search }: {
   );
 
   return (
-    <div className="flex gap-4 overflow-x-auto pb-4 -mx-1 px-1" style={{ scrollbarWidth: "thin" }}>
+    <div
+      className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 -mx-1 px-1"
+      style={{
+        scrollbarWidth: "thin",
+        scrollSnapType: "x mandatory",
+        WebkitOverflowScrolling: "touch",
+      }}
+    >
       {PIPELINE_STAGES.map(stage => {
         const stageLeads = filtered.filter(l => l.status === stage.key);
         const stageValue = stageLeads.reduce((s, l) => s + Number(l.estimatedValue || 0), 0);
         return (
-          <div key={stage.key} className="flex flex-col shrink-0 w-[268px]">
+          <div
+            key={stage.key}
+            className="flex flex-col shrink-0 w-[82vw] max-w-[268px] sm:w-[268px]"
+            style={{ scrollSnapAlign: "start" }}
+          >
             {/* Column header */}
             <div className="flex items-center justify-between mb-3 px-0.5">
               <div className="flex items-center gap-2">

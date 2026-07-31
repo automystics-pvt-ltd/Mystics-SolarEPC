@@ -132,11 +132,13 @@ export default function UserManagement() {
       id: "lastActive",
       header: "Last Active",
       enableSorting: false,
+      meta: { responsive: "md" } as any,
       cell: () => <span className="text-xs text-muted-foreground">—</span>,
     },
     {
       accessorKey: "createdAt",
       header: "Created",
+      meta: { responsive: "lg" } as any,
       cell: ({ row }) => (
         <span className="text-xs text-muted-foreground">
           {row.original.createdAt ? new Date(row.original.createdAt).toLocaleDateString("en-IN") : "—"}
@@ -197,6 +199,7 @@ export default function UserManagement() {
               options: ROLES.map(r => ({ label: r.charAt(0).toUpperCase() + r.slice(1), value: r })),
             },
           ]}
+          stickyFirstCol
           emptyIcon={UserCog}
           emptyTitle="No users found"
           emptyDescription="Add a user to get started"

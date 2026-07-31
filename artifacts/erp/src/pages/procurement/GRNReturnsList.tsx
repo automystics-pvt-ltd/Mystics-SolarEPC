@@ -43,6 +43,7 @@ export default function GRNReturnsList() {
     {
       accessorKey: "grnId",
       header: "GRN ID",
+      meta: { responsive: "sm" } as any,
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground">#{row.original.grnId}</span>
       ),
@@ -50,6 +51,7 @@ export default function GRNReturnsList() {
     {
       accessorKey: "returnType",
       header: "Type",
+      meta: { responsive: "sm" } as any,
       cell: ({ row }) => (
         <Badge variant="outline" className="text-xs font-medium">{row.original.returnType}</Badge>
       ),
@@ -64,6 +66,7 @@ export default function GRNReturnsList() {
     {
       accessorKey: "totalReturnValue",
       header: "Return Value",
+      meta: { responsive: "md" } as any,
       cell: ({ row }) => (
         <span className="tabular-nums font-mono font-semibold text-sm text-foreground">
           {Number(row.original.totalReturnValue || 0).toLocaleString("en-IN", { style: "currency", currency: "INR" })}
@@ -73,6 +76,7 @@ export default function GRNReturnsList() {
     {
       accessorKey: "createdAt",
       header: "Created",
+      meta: { responsive: "lg" } as any,
       cell: ({ row }) => (
         <span className="text-xs text-muted-foreground tabular-nums">
           {new Date(row.original.createdAt).toLocaleDateString("en-IN")}
@@ -125,6 +129,7 @@ export default function GRNReturnsList() {
         emptyIcon={PackageX}
         emptyTitle="No GRN returns found"
         emptyDescription="Create a new return to get started"
+        stickyFirstCol
       />
     </motion.div>
   );

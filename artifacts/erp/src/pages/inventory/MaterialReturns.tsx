@@ -170,6 +170,7 @@ export function MaterialReturns() {
     {
       accessorKey: "toWarehouseName",
       header: "To Warehouse",
+      meta: { responsive: "sm" } as any,
       cell: ({ row }) => <span className="text-sm text-muted-foreground">{row.original.toWarehouseName || "—"}</span>,
     },
     {
@@ -187,6 +188,7 @@ export function MaterialReturns() {
     {
       accessorKey: "condition",
       header: "Condition",
+      meta: { responsive: "md" } as any,
       cell: ({ row }) => (
         <Badge variant="outline" className={cn(
           "text-[10px] font-bold",
@@ -199,6 +201,7 @@ export function MaterialReturns() {
     {
       accessorKey: "returnDate",
       header: "Return Date",
+      meta: { responsive: "lg" } as any,
       cell: ({ row }) => <span className="text-xs text-muted-foreground">{row.original.returnDate || "—"}</span>,
     },
   ];

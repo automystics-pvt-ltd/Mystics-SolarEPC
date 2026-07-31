@@ -74,6 +74,7 @@ export default function AmcContractsList() {
     {
       accessorKey: "projectId",
       header: "Project",
+      meta: { responsive: "sm" } as any,
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground font-mono">
           #{row.original.projectId}
@@ -83,6 +84,7 @@ export default function AmcContractsList() {
     {
       accessorKey: "startDate",
       header: "Start Date",
+      meta: { responsive: "md" } as any,
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground tabular-nums">
           {row.original.startDate}
@@ -110,6 +112,7 @@ export default function AmcContractsList() {
     {
       accessorKey: "visitFrequency",
       header: "Frequency",
+      meta: { responsive: "lg" } as any,
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground">
           {row.original.visitFrequency || "—"}

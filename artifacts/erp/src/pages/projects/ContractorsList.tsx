@@ -77,6 +77,7 @@ export function ContractorsList() {
     {
       accessorKey: "contact",
       header: "Contact",
+      meta: { responsive: "md" } as any,
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground flex items-center gap-1.5">
           <Phone className="h-3.5 w-3.5 text-muted-foreground/60" />
@@ -87,6 +88,7 @@ export function ContractorsList() {
     {
       accessorKey: "rating",
       header: "Rating",
+      meta: { responsive: "sm" } as any,
       cell: ({ row }) => (
         <div className="flex gap-0.5 text-amber-500">
           {Array.from({ length: 5 }).map((_, i) => (

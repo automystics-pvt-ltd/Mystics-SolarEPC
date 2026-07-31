@@ -59,6 +59,7 @@ export function ReorderPlanning() {
     {
       accessorKey: "warehouseName",
       header: "Warehouse",
+      meta: { responsive: "sm" } as any,
       cell: ({ row }) => <span className="text-sm text-muted-foreground">{row.original.warehouseName}</span>,
     },
     {
@@ -73,6 +74,7 @@ export function ReorderPlanning() {
     {
       id: "quantities",
       header: "Qty Analysis",
+      meta: { responsive: "md" } as any,
       cell: ({ row }) => {
         const r = row.original;
         return (
@@ -105,6 +107,7 @@ export function ReorderPlanning() {
     {
       accessorKey: "estimatedOrderValue",
       header: "Est. Order Value",
+      meta: { responsive: "lg" } as any,
       cell: ({ row }) => (
         <span className="font-mono font-bold text-sm text-foreground">
           {row.original.estimatedOrderValue > 0 ? `₹${Number(row.original.estimatedOrderValue).toLocaleString("en-IN")}` : "—"}
@@ -122,6 +125,7 @@ export function ReorderPlanning() {
     {
       accessorKey: "warehouseName",
       header: "Warehouse",
+      meta: { responsive: "sm" } as any,
       cell: ({ row }) => <span className="text-sm text-muted-foreground">{row.original.warehouseName || "—"}</span>,
     },
     {
@@ -134,6 +138,7 @@ export function ReorderPlanning() {
     {
       accessorKey: "shortageQty",
       header: "Shortage",
+      meta: { responsive: "md" } as any,
       cell: ({ row }) => (
         <span className="font-mono font-black text-amber-600">{row.original.shortageQty}</span>
       ),
@@ -141,6 +146,7 @@ export function ReorderPlanning() {
     {
       accessorKey: "suggestedOrderQty",
       header: "Order Qty",
+      meta: { responsive: "lg" } as any,
       cell: ({ row }) => (
         <span className="font-mono font-bold text-[#EA580C]">{row.original.suggestedOrderQty}</span>
       ),

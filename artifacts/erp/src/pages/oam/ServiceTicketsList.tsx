@@ -113,6 +113,7 @@ export default function ServiceTicketsList() {
     {
       accessorKey: "assignedTechnicianName",
       header: "Assigned To",
+      meta: { responsive: "sm" } as any,
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground flex items-center gap-1.5">
           <User className="w-3.5 h-3.5 text-muted-foreground/60" />
@@ -123,6 +124,7 @@ export default function ServiceTicketsList() {
     {
       accessorKey: "createdAt",
       header: "Date",
+      meta: { responsive: "md" } as any,
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground tabular-nums flex items-center gap-1.5">
           <Clock className="w-3.5 h-3.5 text-muted-foreground/60" />

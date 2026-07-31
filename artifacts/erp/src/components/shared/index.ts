@@ -1,10 +1,10 @@
 export { PageHeader } from "./PageHeader";
-export { StatCard } from "./StatCard";
+export { StatCard, CompactStatCard } from "./StatCard";
 export { EmptyState } from "./EmptyState";
 export { SkeletonList, SkeletonStats, SkeletonBar, SkeletonCards } from "./SkeletonList";
 export { SectionCard } from "./SectionCard";
 export { DataTable } from "./DataTable";
-export type { DataTableProps, FilterOption } from "./DataTable";
+export type { DataTableProps, FilterOption, ColumnResponsive } from "./DataTable";
 export { StatusBadge } from "./StatusBadge";
 export { DetailRow, DetailGrid } from "./DetailGrid";
 export { ConfirmDialog } from "./ConfirmDialog";
@@ -14,3 +14,4 @@ export { Kbd } from "./Kbd";
 export { PMChip } from "./PMChip";
 export { ExportButton } from "./ExportButton";
 export type { ExportConfig } from "./ExportButton";
+export { ResponsiveDialog } from "./ResponsiveDialog";

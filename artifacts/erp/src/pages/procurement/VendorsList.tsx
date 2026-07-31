@@ -5,7 +5,7 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ResponsiveDialog } from "@/components/shared";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQueryClient } from "@tanstack/react-query";
@@ -409,92 +409,92 @@ export default function VendorsList() {
           </p>
         </div>
 
-        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetDialog(); }}>
-          {perms.canCreate && (
-            <DialogTrigger asChild>
-              <Button className="h-9 px-4 gap-1.5 text-[13px] font-bold bg-primary hover:bg-primary/90 text-white shrink-0 self-start sm:self-auto">
-                <Plus className="h-4 w-4" />
-                Add Vendor
-              </Button>
-            </DialogTrigger>
-          )}
+        {perms.canCreate && (
+          <Button
+            className="h-9 px-4 gap-1.5 text-[13px] font-bold bg-primary hover:bg-primary/90 text-white shrink-0 self-start sm:self-auto"
+            onClick={() => setOpen(true)}
+          >
+            <Plus className="h-4 w-4" />
+            Add Vendor
+          </Button>
+        )}
 
-          <DialogContent className="sm:max-w-lg">
-            <DialogHeader>
-              <DialogTitle>New Vendor</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 pt-2">
+        <ResponsiveDialog
+          open={open}
+          onOpenChange={(v) => { setOpen(v); if (!v) resetDialog(); }}
+          title="New Vendor"
+        >
+          <div className="space-y-4 pt-1">
+            <div>
+              <Label>Vendor Name <span className="text-red-500">*</span></Label>
+              <Input
+                value={form.name}
+                onChange={e => setField("name", e.target.value)}
+                onBlur={() => touch("name")}
+                placeholder="e.g. Waaree Energies Ltd"
+                className={cn("mt-1 h-10", showError("name") && "border-red-400 focus-visible:ring-red-300")}
+              />
+              <FieldError msg={showError("name")} />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <Label>Vendor Name <span className="text-red-500">*</span></Label>
-                <Input
-                  value={form.name}
-                  onChange={e => setField("name", e.target.value)}
-                  onBlur={() => touch("name")}
-                  placeholder="e.g. Waaree Energies Ltd"
-                  className={cn("mt-1", showError("name") && "border-red-400 focus-visible:ring-red-300")}
-                />
-                <FieldError msg={showError("name")} />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <Label>Trade Name</Label>
-                  <Input value={form.tradeName ?? ""} onChange={e => setField("tradeName", e.target.value)} placeholder="e.g. SK Traders" className="mt-1" />
-                </div>
-                <div>
-                  <Label>Status</Label>
-                  <Select value={form.status} onValueChange={v => setField("status", v)}>
-                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {STATUS_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <Label>GSTIN</Label>
-                  <Input value={form.gstin ?? ""} onChange={e => setField("gstin", e.target.value, true)} onBlur={() => touch("gstin")} placeholder="27AABCU9603R1ZX" maxLength={15} className={cn("mt-1 font-mono tracking-wide", showError("gstin") && "border-red-400 focus-visible:ring-red-300")} />
-                  <p className="mt-0.5 text-[11px] text-muted-foreground">{(form.gstin ?? "").length}/15 chars</p>
-                  <FieldError msg={showError("gstin")} />
-                </div>
-                <div>
-                  <Label>PAN</Label>
-                  <Input value={form.pan ?? ""} onChange={e => setField("pan", e.target.value, true)} onBlur={() => touch("pan")} placeholder="AABCU9603R" maxLength={10} className={cn("mt-1 font-mono tracking-wide", showError("pan") && "border-red-400 focus-visible:ring-red-300")} />
-                  <p className="mt-0.5 text-[11px] text-muted-foreground">{(form.pan ?? "").length}/10 chars</p>
-                  <FieldError msg={showError("pan")} />
-                </div>
+                <Label>Trade Name</Label>
+                <Input value={form.tradeName ?? ""} onChange={e => setField("tradeName", e.target.value)} placeholder="e.g. SK Traders" className="mt-1 h-10" />
               </div>
               <div>
-                <Label>Primary Email</Label>
-                <Input type="text" inputMode="email" autoComplete="email" value={form.primaryEmail ?? ""} onChange={e => setField("primaryEmail", e.target.value)} onBlur={() => touch("primaryEmail")} placeholder="vendor@example.com" className={cn("mt-1", showError("primaryEmail") && "border-red-400 focus-visible:ring-red-300")} />
-                <FieldError msg={showError("primaryEmail")} />
-              </div>
-              <div>
-                <Label>Primary Phone</Label>
-                <Input value={form.primaryPhone ?? ""} onChange={e => { const v = e.target.value.replace(/\D/g, "").slice(0, 10); setField("primaryPhone", v); }} onBlur={() => touch("primaryPhone")} placeholder="9876543210" maxLength={10} inputMode="numeric" className={cn("mt-1", showError("primaryPhone") && "border-red-400 focus-visible:ring-red-300")} />
-                <p className="mt-0.5 text-[11px] text-muted-foreground">{(form.primaryPhone ?? "").length}/10 digits · Indian mobile</p>
-                <FieldError msg={showError("primaryPhone")} />
-              </div>
-              {anyError && (
-                <div className="rounded-lg border border-red-200 bg-red-50 dark:border-red-800/40 dark:bg-red-950/30 px-3 py-2.5">
-                  <div className="flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4 shrink-0 text-red-600 dark:text-red-400" />
-                    <p className="text-sm font-semibold text-red-700 dark:text-red-400">Please fix the following before creating:</p>
-                  </div>
-                  <ul className="mt-1.5 space-y-0.5 pl-6 list-disc">
-                    {Object.values(errors).map((msg, i) => <li key={i} className="text-xs text-red-600 dark:text-red-400">{msg}</li>)}
-                  </ul>
-                </div>
-              )}
-              <div className="flex justify-end gap-2 pt-1">
-                <Button variant="outline" onClick={() => { setOpen(false); resetDialog(); }}>Cancel</Button>
-                <Button onClick={handleCreate} disabled={createMut.isPending}>
-                  {createMut.isPending ? "Creating…" : "Create & Open"}
-                </Button>
+                <Label>Status</Label>
+                <Select value={form.status} onValueChange={v => setField("status", v)}>
+                  <SelectTrigger className="mt-1 h-10"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {STATUS_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-          </DialogContent>
-        </Dialog>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label>GSTIN</Label>
+                <Input value={form.gstin ?? ""} onChange={e => setField("gstin", e.target.value, true)} onBlur={() => touch("gstin")} placeholder="27AABCU9603R1ZX" maxLength={15} className={cn("mt-1 h-10 font-mono tracking-wide", showError("gstin") && "border-red-400 focus-visible:ring-red-300")} />
+                <p className="mt-0.5 text-[11px] text-muted-foreground">{(form.gstin ?? "").length}/15 chars</p>
+                <FieldError msg={showError("gstin")} />
+              </div>
+              <div>
+                <Label>PAN</Label>
+                <Input value={form.pan ?? ""} onChange={e => setField("pan", e.target.value, true)} onBlur={() => touch("pan")} placeholder="AABCU9603R" maxLength={10} className={cn("mt-1 h-10 font-mono tracking-wide", showError("pan") && "border-red-400 focus-visible:ring-red-300")} />
+                <p className="mt-0.5 text-[11px] text-muted-foreground">{(form.pan ?? "").length}/10 chars</p>
+                <FieldError msg={showError("pan")} />
+              </div>
+            </div>
+            <div>
+              <Label>Primary Email</Label>
+              <Input type="text" inputMode="email" autoComplete="email" value={form.primaryEmail ?? ""} onChange={e => setField("primaryEmail", e.target.value)} onBlur={() => touch("primaryEmail")} placeholder="vendor@example.com" className={cn("mt-1 h-10", showError("primaryEmail") && "border-red-400 focus-visible:ring-red-300")} />
+              <FieldError msg={showError("primaryEmail")} />
+            </div>
+            <div>
+              <Label>Primary Phone</Label>
+              <Input value={form.primaryPhone ?? ""} onChange={e => { const v = e.target.value.replace(/\D/g, "").slice(0, 10); setField("primaryPhone", v); }} onBlur={() => touch("primaryPhone")} placeholder="9876543210" maxLength={10} inputMode="numeric" className={cn("mt-1 h-10", showError("primaryPhone") && "border-red-400 focus-visible:ring-red-300")} />
+              <p className="mt-0.5 text-[11px] text-muted-foreground">{(form.primaryPhone ?? "").length}/10 digits · Indian mobile</p>
+              <FieldError msg={showError("primaryPhone")} />
+            </div>
+            {anyError && (
+              <div className="rounded-lg border border-red-200 bg-red-50 dark:border-red-800/40 dark:bg-red-950/30 px-3 py-2.5">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-red-600 dark:text-red-400" />
+                  <p className="text-sm font-semibold text-red-700 dark:text-red-400">Please fix the following before creating:</p>
+                </div>
+                <ul className="mt-1.5 space-y-0.5 pl-6 list-disc">
+                  {Object.values(errors).map((msg, i) => <li key={i} className="text-xs text-red-600 dark:text-red-400">{msg}</li>)}
+                </ul>
+              </div>
+            )}
+            <div className="flex justify-end gap-2 pt-1">
+              <Button variant="outline" onClick={() => { setOpen(false); resetDialog(); }}>Cancel</Button>
+              <Button onClick={handleCreate} disabled={createMut.isPending}>
+                {createMut.isPending ? "Creating…" : "Create & Open"}
+              </Button>
+            </div>
+          </div>
+        </ResponsiveDialog>
       </div>
 
       {/* ── Stat bar ── */}

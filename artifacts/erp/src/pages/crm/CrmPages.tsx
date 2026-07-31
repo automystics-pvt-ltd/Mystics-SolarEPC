@@ -47,6 +47,7 @@ export function ClientPOsList() {
       accessorKey: 'projectId',
       header: 'Project',
       enableSorting: false,
+      meta: { responsive: "sm" } as any,
       cell: ({ row }) => (
         row.original.projectId ? (
           <Link
@@ -64,6 +65,7 @@ export function ClientPOsList() {
     {
       accessorKey: 'createdAt',
       header: 'Date',
+      meta: { responsive: "md" } as any,
       cell: ({ row }) => (
         <span className="text-xs text-muted-foreground tabular-nums">
           {format(new Date(row.original.createdAt), 'MMM d, yyyy')}
@@ -122,6 +124,7 @@ export function CrmInvoicesList() {
     {
       accessorKey: 'type',
       header: 'Type',
+      meta: { responsive: "sm" } as any,
       cell: ({ row }) => (
         <span className="text-sm font-bold text-muted-foreground">{row.original.type}</span>
       ),
@@ -138,6 +141,7 @@ export function CrmInvoicesList() {
     {
       accessorKey: 'dueDate',
       header: 'Due Date',
+      meta: { responsive: "md" } as any,
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground">
           {row.original.dueDate ? format(new Date(row.original.dueDate), 'MMM d, yyyy') : '—'}
@@ -211,6 +215,7 @@ export function TasksList() {
     {
       accessorKey: 'ownerName',
       header: 'Assigned To',
+      meta: { responsive: "sm" } as any,
       cell: ({ row }) => (
         <span className="text-sm font-bold text-foreground">{row.original.ownerName}</span>
       ),
@@ -232,6 +237,7 @@ export function TasksList() {
     {
       accessorKey: 'dueDate',
       header: 'Due Date',
+      meta: { responsive: "md" } as any,
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground">
           {row.original.dueDate ? format(new Date(row.original.dueDate), 'MMM d, yyyy') : '—'}
@@ -296,6 +302,7 @@ export function EscalationsList() {
     {
       accessorKey: 'module',
       header: 'Module',
+      meta: { responsive: "sm" } as any,
       cell: ({ row }) => (
         <span className="text-sm font-bold text-muted-foreground bg-muted px-2.5 py-1 rounded-[6px]">{row.original.module}</span>
       ),
@@ -317,6 +324,7 @@ export function EscalationsList() {
     {
       accessorKey: 'raisedByName',
       header: 'Raised By',
+      meta: { responsive: "md" } as any,
       cell: ({ row }) => (
         <span className="text-sm font-bold text-foreground">{row.original.raisedByName}</span>
       ),
@@ -324,6 +332,7 @@ export function EscalationsList() {
     {
       accessorKey: 'createdAt',
       header: 'Date',
+      meta: { responsive: "lg" } as any,
       cell: ({ row }) => (
         <span className="text-xs text-muted-foreground tabular-nums">
           {format(new Date(row.original.createdAt), 'MMM d, yyyy')}

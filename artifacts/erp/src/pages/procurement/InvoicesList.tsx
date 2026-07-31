@@ -104,6 +104,7 @@ export default function InvoicesList() {
     {
       accessorKey: "poId",
       header: "PO #",
+      meta: { responsive: "sm" } as any,
       cell: ({ row }) => <span className="text-sm text-muted-foreground font-mono">#{row.original.poId}</span>,
     },
     {
@@ -140,6 +141,7 @@ export default function InvoicesList() {
     {
       accessorKey: "dueDate",
       header: "Due / Aging",
+      meta: { responsive: "md" } as any,
       cell: ({ row }) => (
         <div>
           {row.original.dueDate && <p className="text-xs text-muted-foreground">{row.original.dueDate}</p>}
@@ -150,6 +152,7 @@ export default function InvoicesList() {
     {
       accessorKey: "createdAt",
       header: "Created",
+      meta: { responsive: "lg" } as any,
       cell: ({ row }) => (
         <span className="text-xs text-muted-foreground">
           {row.original.createdAt ? new Date(row.original.createdAt).toLocaleDateString("en-IN") : "—"}
@@ -286,6 +289,7 @@ export default function InvoicesList() {
         emptyIcon={FileText}
         emptyTitle="No invoices found"
         emptyDescription="Invoices are 3-way matched against GRNs and purchase orders"
+        stickyFirstCol
       />}
     </motion.div>
   );

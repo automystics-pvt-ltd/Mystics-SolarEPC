@@ -81,6 +81,7 @@ export default function DesignDocsList() {
     {
       accessorKey: "projectId",
       header: "Project",
+      meta: { responsive: "sm" } as any,
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground font-mono">
           #{row.original.projectId}
@@ -106,6 +107,7 @@ export default function DesignDocsList() {
     {
       accessorKey: "version",
       header: "Version",
+      meta: { responsive: "md" } as any,
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground font-mono">
           {row.original.version || "v1"}
@@ -115,6 +117,7 @@ export default function DesignDocsList() {
     {
       accessorKey: "uploadedBy",
       header: "Uploaded By",
+      meta: { responsive: "lg" } as any,
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground">
           {row.original.uploadedBy ? `User #${row.original.uploadedBy}` : "—"}
@@ -124,6 +127,7 @@ export default function DesignDocsList() {
     {
       accessorKey: "createdAt",
       header: "Date",
+      meta: { responsive: "md" } as any,
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground tabular-nums">
           {row.original.createdAt

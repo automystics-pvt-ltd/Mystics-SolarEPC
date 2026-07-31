@@ -72,6 +72,7 @@ export default function CommissioningList() {
       id: "project",
       header: "Project",
       enableSorting: false,
+      meta: { responsive: "sm" } as any,
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground font-mono">
           #{row.original.projectId}
@@ -98,6 +99,7 @@ export default function CommissioningList() {
     {
       accessorKey: "clientSignatoryName",
       header: "Assigned To",
+      meta: { responsive: "md" } as any,
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground">
           {row.original.clientSignatoryName || "—"}
@@ -107,6 +109,7 @@ export default function CommissioningList() {
     {
       accessorKey: "commissionedOn",
       header: "Date",
+      meta: { responsive: "sm" } as any,
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground tabular-nums">
           {row.original.commissionedOn

@@ -45,6 +45,7 @@ export function QuotationsList() {
       accessorKey: 'leadId',
       header: 'Lead Ref',
       enableSorting: false,
+      meta: { responsive: "sm" } as any,
       cell: ({ row }) => (
         <Link
           href={`/crm/leads/${row.original.leadId}`}
@@ -72,6 +73,7 @@ export function QuotationsList() {
     {
       accessorKey: 'validTill',
       header: 'Valid Until',
+      meta: { responsive: "md" } as any,
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground">
           {row.original.validTill ? format(new Date(row.original.validTill), 'MMM d, yyyy') : <span className="text-muted-foreground/40">—</span>}
@@ -81,6 +83,7 @@ export function QuotationsList() {
     {
       accessorKey: 'createdAt',
       header: 'Created',
+      meta: { responsive: "lg" } as any,
       cell: ({ row }) => (
         <span className="text-xs text-muted-foreground tabular-nums">
           {format(new Date(row.original.createdAt), 'MMM d, yyyy')}

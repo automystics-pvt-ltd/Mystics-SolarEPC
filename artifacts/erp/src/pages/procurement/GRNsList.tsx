@@ -31,13 +31,6 @@ export default function GRNsList() {
       ),
     },
     {
-      accessorKey: "poId",
-      header: "PO Number",
-      cell: ({ row }) => (
-        <span className="text-sm text-muted-foreground">#{row.original.poId}</span>
-      ),
-    },
-    {
       accessorKey: "vendorName",
       header: "Vendor",
       cell: ({ row }) => (
@@ -52,8 +45,17 @@ export default function GRNsList() {
       ),
     },
     {
+      accessorKey: "poId",
+      header: "PO #",
+      meta: { responsive: "sm" } as any,
+      cell: ({ row }) => (
+        <span className="text-sm text-muted-foreground">#{row.original.poId}</span>
+      ),
+    },
+    {
       accessorKey: "deliveryDate",
-      header: "Received Date",
+      header: "Received",
+      meta: { responsive: "md" } as any,
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground">
           {row.original.deliveryDate ?? "—"}
@@ -126,6 +128,7 @@ export default function GRNsList() {
         emptyIcon={Package}
         emptyTitle="No GRNs found"
         emptyDescription="Create a GRN to record an incoming delivery against a purchase order"
+        stickyFirstCol
       />}
     </motion.div>
   );

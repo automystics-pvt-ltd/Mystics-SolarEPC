@@ -80,6 +80,7 @@ export function WarehousesList() {
       },
     },
     {
+      meta: { responsive: "md" } as any,
       accessorKey: "capacity",
       header: "Total Items / Capacity",
       enableSorting: false,
@@ -88,6 +89,7 @@ export function WarehousesList() {
       ),
     },
     {
+      meta: { responsive: "lg" } as any,
       accessorKey: "projectId",
       header: "Manager / Project",
       enableSorting: false,

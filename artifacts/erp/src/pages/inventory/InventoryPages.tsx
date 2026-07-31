@@ -27,6 +27,7 @@ export function GRNsList() {
     {
       accessorKey: "poId",
       header: "PO Ref",
+      meta: { responsive: "sm" } as any,
       cell: ({ row }) => (
         <span className="font-mono text-sm font-bold text-muted-foreground">PO-{row.original.poId}</span>
       ),
@@ -34,6 +35,7 @@ export function GRNsList() {
     {
       accessorKey: "warehouseId",
       header: "Warehouse",
+      meta: { responsive: "sm" } as any,
       cell: ({ row }) => (
         <span className="font-mono text-sm font-bold text-muted-foreground">WH-{row.original.warehouseId}</span>
       ),
@@ -41,6 +43,7 @@ export function GRNsList() {
     {
       accessorKey: "receivedDate",
       header: "Received",
+      meta: { responsive: "md" } as any,
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground">{format(new Date(row.original.receivedDate), "MMM d, yyyy")}</span>
       ),
@@ -108,6 +111,7 @@ export function DeliveryChallansList() {
     {
       accessorKey: "projectId",
       header: "Source",
+      meta: { responsive: "sm" } as any,
       cell: ({ row }) => (
         <span className="font-mono text-sm text-muted-foreground">
           {row.original.projectId ? `PRJ-${row.original.projectId}` : "—"}
@@ -125,6 +129,7 @@ export function DeliveryChallansList() {
       accessorKey: "purpose",
       header: "Items / Purpose",
       enableSorting: false,
+      meta: { responsive: "md" } as any,
       cell: ({ row }) => (
         <span className="text-xs text-muted-foreground">{row.original.purpose}</span>
       ),
@@ -140,6 +145,7 @@ export function DeliveryChallansList() {
     {
       accessorKey: "issuedDate",
       header: "Date",
+      meta: { responsive: "md" } as any,
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground">
           {format(new Date(row.original.issuedDate), "MMM d, yyyy")}
@@ -187,6 +193,7 @@ export function StockLedgerList() {
     {
       accessorKey: "warehouseId",
       header: "Warehouse",
+      meta: { responsive: "sm" } as any,
       cell: ({ row }) => (
         <span className="font-mono text-xs font-bold text-muted-foreground">WH-{row.original.warehouseId}</span>
       ),
@@ -214,6 +221,7 @@ export function StockLedgerList() {
     {
       accessorKey: "balanceQty",
       header: "Reference / Balance",
+      meta: { responsive: "md" } as any,
       cell: ({ row }) => (
         <span className="font-mono font-bold text-foreground">{row.original.balanceQty}</span>
       ),
@@ -221,6 +229,7 @@ export function StockLedgerList() {
     {
       accessorKey: "date",
       header: "Date",
+      meta: { responsive: "sm" } as any,
       cell: ({ row }) => (
         <span className="text-xs text-muted-foreground">{row.original.date}</span>
       ),
@@ -277,6 +286,7 @@ export function StockValuationList() {
     {
       accessorKey: "warehouseId",
       header: "Warehouse",
+      meta: { responsive: "sm" } as any,
       cell: ({ row }) => (
         <span className="font-mono text-xs font-bold text-muted-foreground">WH-{row.original.warehouseId}</span>
       ),
@@ -291,6 +301,7 @@ export function StockValuationList() {
     {
       accessorKey: "unitValue",
       header: "Unit Cost (₹)",
+      meta: { responsive: "md" } as any,
       cell: ({ row }) => (
         <span className="tabular-nums font-mono text-sm text-muted-foreground">{formatINR(row.original.unitValue)}</span>
       ),
@@ -305,6 +316,7 @@ export function StockValuationList() {
     {
       accessorKey: "asOfDate",
       header: "As Of",
+      meta: { responsive: "lg" } as any,
       cell: ({ row }) => (
         <span className="text-xs text-muted-foreground">{format(new Date(row.original.asOfDate), "MMM d, yyyy")}</span>
       ),
@@ -350,6 +362,7 @@ export function InventoryAuditsList() {
     {
       accessorKey: "warehouseId",
       header: "Warehouse",
+      meta: { responsive: "sm" } as any,
       cell: ({ row }) => (
         <span className="font-mono text-xs font-bold text-muted-foreground">WH-{row.original.warehouseId}</span>
       ),
@@ -365,11 +378,13 @@ export function InventoryAuditsList() {
       id: "auditor",
       header: "Auditor",
       enableSorting: false,
+      meta: { responsive: "md" } as any,
       cell: () => <span className="text-sm text-muted-foreground">—</span>,
     },
     {
       accessorKey: "auditDate",
       header: "Date",
+      meta: { responsive: "sm" } as any,
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground">{format(new Date(row.original.auditDate), "MMM d, yyyy")}</span>
       ),

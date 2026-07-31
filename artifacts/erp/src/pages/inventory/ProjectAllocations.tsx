@@ -169,6 +169,7 @@ export function ProjectAllocations() {
     {
       accessorKey: "warehouseName",
       header: "Warehouse",
+      meta: { responsive: "sm" } as any,
       cell: ({ row }) => <span className="text-sm text-muted-foreground">{row.original.warehouseName || "—"}</span>,
     },
     {
@@ -192,11 +193,13 @@ export function ProjectAllocations() {
     {
       accessorKey: "totalValue",
       header: "Value",
+      meta: { responsive: "md" } as any,
       cell: ({ row }) => <span className="font-mono text-sm font-bold">₹{Number(row.original.totalValue).toLocaleString("en-IN")}</span>,
     },
     {
       accessorKey: "requiredDate",
       header: "Required By",
+      meta: { responsive: "lg" } as any,
       cell: ({ row }) => <span className="text-xs text-muted-foreground">{row.original.requiredDate || "—"}</span>,
     },
   ];

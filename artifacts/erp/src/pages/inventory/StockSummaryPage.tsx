@@ -143,6 +143,7 @@ export function StockSummaryPage() {
       ),
     },
     {
+      meta: { responsive: "sm" } as any,
       accessorKey: "categoryName",
       header: "Category",
       cell: ({ row }) => (
@@ -152,6 +153,7 @@ export function StockSummaryPage() {
       ),
     },
     {
+      meta: { responsive: "md" } as any,
       accessorKey: "warehouseName",
       header: "Warehouse",
       cell: ({ row }) => <span className="text-sm text-muted-foreground">{row.original.warehouseName}</span>,
@@ -188,6 +190,7 @@ export function StockSummaryPage() {
       },
     },
     {
+      meta: { responsive: "lg" } as any,
       accessorKey: "totalValue",
       header: "Stock Value",
       cell: ({ row }) => (

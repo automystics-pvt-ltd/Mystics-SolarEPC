@@ -88,6 +88,7 @@ export default function MaintenanceList() {
     {
       accessorKey: "projectId",
       header: "Project",
+      meta: { responsive: "sm" } as any,
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground font-mono">#{row.original.projectId}</span>
       ),
@@ -102,6 +103,7 @@ export default function MaintenanceList() {
     {
       accessorKey: "assignedTechnicianName",
       header: "Assigned To",
+      meta: { responsive: "md" } as any,
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground flex items-center gap-1.5">
           <User className="w-3.5 h-3.5 text-muted-foreground/60" />
@@ -112,6 +114,7 @@ export default function MaintenanceList() {
     {
       accessorKey: "scheduledDate",
       header: "Scheduled Date",
+      meta: { responsive: "sm" } as any,
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground flex items-center gap-1.5 tabular-nums">
           <Calendar className="w-3.5 h-3.5 text-muted-foreground/60" />

@@ -245,6 +245,7 @@ export default function AuditLogs() {
     {
       accessorKey: "module",
       header: "Module",
+      meta: { responsive: "sm" } as any,
       cell: ({ row }) => <ModuleBadge module={row.original.module} />,
     },
     {
@@ -271,6 +272,7 @@ export default function AuditLogs() {
     {
       accessorKey: "ip_address",
       header: "IP / Device",
+      meta: { responsive: "lg" } as any,
       cell: ({ row }) => {
         const ip = row.original.ip_address;
         const ua = row.original.user_agent ?? "";
@@ -478,6 +480,7 @@ export default function AuditLogs() {
           noSelection
           onRowClick={row => setSelected(row)}
           pageSize={50}
+          stickyFirstCol
         />
       </SectionCard>
 

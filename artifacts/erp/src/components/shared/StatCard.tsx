@@ -51,13 +51,13 @@ export function StatCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.09em] text-muted-foreground mb-1">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.09em] text-muted-foreground mb-1 truncate">
             {label}
           </p>
           <div
             className={cn(
-              "font-bold text-foreground leading-tight tabular-nums",
-              compact ? "text-[20px]" : "text-[24px]"
+              "font-bold text-foreground leading-tight tabular-nums break-words",
+              compact ? "text-[18px] sm:text-[20px]" : "text-[20px] sm:text-[24px]"
             )}
           >
             {value}
