@@ -59,7 +59,10 @@ router.get("/reports/procurement", async (req, res): Promise<void> => {
       byVendor,
       monthly,
     });
-  } catch (e) { res.status(500).json({ error: String(e) }); }
+  } catch (e) {
+    console.error("[reports/procurement] error:", e);
+    res.status(500).json({ error: String(e) });
+  }
 });
 
 // GET /reports/grn — GRN quality & receipt analysis
@@ -105,7 +108,10 @@ router.get("/reports/grn", async (req, res): Promise<void> => {
         createdAt: g.createdAt.toISOString(),
       })),
     });
-  } catch (e) { res.status(500).json({ error: String(e) }); }
+  } catch (e) {
+    console.error("[reports/grn] error:", e);
+    res.status(500).json({ error: String(e) });
+  }
 });
 
 // GET /reports/invoices — invoice & payment summary
@@ -157,7 +163,10 @@ router.get("/reports/invoices", async (req, res): Promise<void> => {
         createdAt: i.createdAt.toISOString(),
       })),
     });
-  } catch (e) { res.status(500).json({ error: String(e) }); }
+  } catch (e) {
+    console.error("[reports/invoices] error:", e);
+    res.status(500).json({ error: String(e) });
+  }
 });
 
 // GET /reports/inventory — stock & warehouse summary
@@ -198,7 +207,10 @@ router.get("/reports/inventory", async (req, res): Promise<void> => {
         qty: n(l.qty), balanceQty: n(l.balanceQty), date: l.date,
       })),
     });
-  } catch (e) { res.status(500).json({ error: String(e) }); }
+  } catch (e) {
+    console.error("[reports/inventory] error:", e);
+    res.status(500).json({ error: String(e) });
+  }
 });
 
 // GET /reports/vendor-performance — vendor scorecard
@@ -338,7 +350,10 @@ router.get("/reports/vendor-performance", async (req, res): Promise<void> => {
 
     const performance = [...registeredPerf, ...unlinkedPerf].sort((a, b) => b.score - a.score);
     res.json({ vendors: performance });
-  } catch (e) { res.status(500).json({ error: String(e) }); }
+  } catch (e) {
+    console.error("[reports/vendor-performance] error:", e);
+    res.status(500).json({ error: String(e) });
+  }
 });
 
 // GET /reports/projects — project cost & budget summary
@@ -371,7 +386,10 @@ router.get("/reports/projects", async (req, res): Promise<void> => {
       },
       projects: summary,
     });
-  } catch (e) { res.status(500).json({ error: String(e) }); }
+  } catch (e) {
+    console.error("[reports/projects] error:", e);
+    res.status(500).json({ error: String(e) });
+  }
 });
 
 export default router;
