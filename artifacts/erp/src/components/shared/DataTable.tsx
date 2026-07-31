@@ -320,9 +320,12 @@ export function DataTable<TData>({
                 filename: exportFilename,
                 columns: columns
                   .filter((c) => c.id !== "__select" && c.id !== "__actions")
-                  .filter((c) => table.getColumn(c.id ?? "")?.getIsVisible() !== false)
+                  .filter((c) => {
+                    const colId = (c as any).accessorKey ?? c.id ?? "";
+                    return colId === "" || table.getColumn(colId)?.getIsVisible() !== false;
+                  })
                   .map((c) => ({
-                    header: typeof c.header === "string" ? c.header : (c.id ?? "").replace(/[_-]/g, " "),
+                    header: typeof c.header === "string" ? c.header : ((c as any).accessorKey ?? c.id ?? "").replace(/[_-]/g, " "),
                     key: (c as any).accessorKey ?? c.id ?? "",
                   })),
                 getRows: () =>

@@ -9,8 +9,10 @@ router.use(requireAuth());
 // GET /notifications — current user's notifications
 router.get("/notifications", async (req, res): Promise<void> => {
   try {
-    const userId = Number(req.query.userId);
-    if (!userId) { res.status(400).json({ error: "userId required" }); return; }
+    // Prefer JWT actor identity; fall back to query param for backwards compatibility
+    const actor = (req as any).actor as { userId: number } | undefined;
+    const userId = actor?.userId ?? Number(req.query.userId);
+    if (!userId) { res.json([]); return; }
     const limit = Number(req.query.limit ?? 50);
     const rows = await db.select().from(notificationsTable)
       .where(eq(notificationsTable.userId, userId))
@@ -23,7 +25,8 @@ router.get("/notifications", async (req, res): Promise<void> => {
 // GET /notifications/unread-count
 router.get("/notifications/unread-count", async (req, res): Promise<void> => {
   try {
-    const userId = Number(req.query.userId);
+    const actor = (req as any).actor as { userId: number } | undefined;
+    const userId = actor?.userId ?? Number(req.query.userId);
     if (!userId) { res.json({ count: 0 }); return; }
     const [row] = await db.select({ count: sql<number>`count(*)::int` })
       .from(notificationsTable)

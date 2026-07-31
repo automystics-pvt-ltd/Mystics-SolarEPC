@@ -2,9 +2,9 @@ import { Router, type IRouter } from "express";
 import { requireAuth, requirePermission } from "../lib/rbac";
 import {
   db, stockTransfersTable, stockTransferItemsTable,
-  warehousesTable, stockLedgerTable,
+  warehousesTable, stockLedgerTable, materialsTable,
 } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, inArray } from "drizzle-orm";
 
 const router: IRouter = Router();
 router.use(requireAuth());
@@ -82,13 +82,27 @@ router.post("/stock-transfers", requirePermission("inventory", "create"), async 
     }).returning();
 
     if (items.length > 0) {
+      // Look up material details for any item missing materialCode / materialName
+      const materialIds: number[] = [...new Set<number>(items.filter((i: any) => i.materialId && (!i.materialCode || !i.materialName)).map((i: any) => Number(i.materialId)))];
+      const materialLookup: Record<number, { code: string; name: string; unit: string }> = {};
+      if (materialIds.length > 0) {
+        const mats = await db.select({ id: materialsTable.id, code: materialsTable.code, name: materialsTable.name, uom: materialsTable.uom })
+          .from(materialsTable).where(inArray(materialsTable.id, materialIds));
+        for (const m of mats) materialLookup[m.id] = { code: m.code ?? "", name: m.name, unit: m.uom };
+      }
       await db.insert(stockTransferItemsTable).values(
-        items.map((i: any, idx: number) => ({
-          transferId: transfer.id, lineNo: idx + 1,
-          materialId: i.materialId, materialCode: i.materialCode, materialName: i.materialName,
-          uom: i.uom || "Nos", qty: String(i.qty || 0),
-          fromBin: i.fromBin, toBin: i.toBin, remarks: i.remarks,
-        }))
+        items.map((i: any, idx: number) => {
+          const mat = i.materialId ? materialLookup[Number(i.materialId)] : undefined;
+          return {
+            transferId: transfer.id, lineNo: idx + 1,
+            materialId: i.materialId,
+            materialCode: i.materialCode ?? mat?.code ?? "",
+            materialName: i.materialName ?? mat?.name ?? "",
+            uom: i.uom ?? mat?.unit ?? "Nos",
+            qty: String(i.qty || 0),
+            fromBin: i.fromBin, toBin: i.toBin, remarks: i.remarks,
+          };
+        })
       );
     }
 
