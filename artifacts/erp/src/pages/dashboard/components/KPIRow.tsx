@@ -1,13 +1,16 @@
 /**
  * KPIRow — Executive KPI cards with trend direction indicators.
  * Each card shows a metric, a trend label, and a coloured icon chip.
+ *
+ * When `value` is `null` the card renders an "unavailable" state (—) instead
+ * of a potentially misleading zero.
  */
 
 import { motion } from "framer-motion";
 import { Link } from "wouter";
 import {
   FolderKanban, ClipboardCheck, AlertCircle, ShoppingCart,
-  TrendingUp, TrendingDown, Minus, DollarSign,
+  TrendingUp, TrendingDown, Minus, DollarSign, WifiOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,7 +19,8 @@ import { formatINRCompact } from "@/lib/currency";
 export interface KPICardDef {
   id: string;
   label: string;
-  value: string | number;
+  /** Pass `null` to render an "unavailable" dash instead of a number. */
+  value: string | number | null;
   trend?: "up" | "down" | "flat";
   trendLabel?: string;
   href?: string;
@@ -39,51 +43,77 @@ const TrendIcon = ({ dir }: { dir?: "up" | "down" | "flat" }) => {
 
 function KPICard({ card, index }: { card: KPICardDef; index: number }) {
   const Icon = card.icon;
+  const isUnavailable = card.value === null;
+
   const inner = (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.06, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
       className={cn(
-        "relative overflow-hidden rounded-xl border border-border bg-card p-5 flex flex-col gap-4",
+        "relative overflow-hidden rounded-xl border bg-card p-5 flex flex-col gap-4",
         "shadow-sm hover:shadow-md transition-shadow duration-200",
-        card.href && "cursor-pointer"
+        isUnavailable
+          ? "border-border/50 opacity-75"
+          : "border-border",
+        card.href && !isUnavailable && "cursor-pointer"
       )}
     >
-      {/* coloured top accent strip */}
-      <div className={cn("absolute top-0 left-0 right-0 h-[3px]", card.accent)} />
+      {/* coloured top accent strip — muted grey when unavailable */}
+      <div className={cn(
+        "absolute top-0 left-0 right-0 h-[3px]",
+        isUnavailable ? "bg-muted-foreground/20" : card.accent
+      )} />
 
       {/* Header row */}
       <div className="flex items-start justify-between gap-3">
-        <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center shrink-0", card.iconBg)}>
-          <Icon className={cn("h-5 w-5", card.iconColor)} />
+        <div className={cn(
+          "h-10 w-10 rounded-xl flex items-center justify-center shrink-0",
+          isUnavailable ? "bg-muted" : card.iconBg
+        )}>
+          {isUnavailable
+            ? <WifiOff className="h-5 w-5 text-muted-foreground/50" />
+            : <Icon className={cn("h-5 w-5", card.iconColor)} />
+          }
         </div>
         <div className="flex items-center gap-1 mt-0.5">
-          <TrendIcon dir={card.trend} />
-          {card.trendLabel && (
-            <span className={cn(
-              "text-[11px] font-medium",
-              card.trend === "up"   ? "text-emerald-600 dark:text-emerald-400" :
-              card.trend === "down" ? "text-red-600 dark:text-red-400" :
-              "text-muted-foreground"
-            )}>
-              {card.trendLabel}
+          {isUnavailable ? (
+            <span className="text-[11px] font-medium text-muted-foreground/60 italic">
+              Unavailable
             </span>
+          ) : (
+            <>
+              <TrendIcon dir={card.trend} />
+              {card.trendLabel && (
+                <span className={cn(
+                  "text-[11px] font-medium",
+                  card.trend === "up"   ? "text-emerald-600 dark:text-emerald-400" :
+                  card.trend === "down" ? "text-red-600 dark:text-red-400" :
+                  "text-muted-foreground"
+                )}>
+                  {card.trendLabel}
+                </span>
+              )}
+            </>
           )}
         </div>
       </div>
 
       {/* Value */}
       <div>
-        <p className="text-2xl font-bold text-foreground tracking-tight leading-none">
-          {card.value}
+        <p className={cn(
+          "text-2xl font-bold tracking-tight leading-none",
+          isUnavailable ? "text-muted-foreground/40" : "text-foreground"
+        )}>
+          {isUnavailable ? "—" : card.value}
         </p>
         <p className="text-[13px] text-muted-foreground mt-1.5 leading-snug">{card.label}</p>
       </div>
     </motion.div>
   );
 
-  if (card.href) {
+  // Don't make unavailable cards navigable — there's nothing useful to show
+  if (card.href && !isUnavailable) {
     return <Link href={card.href}>{inner}</Link>;
   }
   return inner;
@@ -124,7 +154,6 @@ export function KPIRow({ cards, isLoading }: KPIRowProps) {
 
 /* ── Helpers for building the standard Mystics KPI set ── */
 
-
 export interface KPIData {
   activeProjects: number;
   revenuePipeline: number;
@@ -133,12 +162,38 @@ export interface KPIData {
   draftPOs: number;
 }
 
-export function buildKPICards(data: KPIData): KPICardDef[] {
+/**
+ * Which of the three dashboard data sources failed.
+ * Pass `true` to mark a source as errored; affected KPI cards render `null`
+ * (a dash) instead of a potentially misleading zero.
+ *
+ * Sources:
+ *   dashboard  → activeProjects (partial), overdueTaskCount
+ *   combined   → activeProjects (partial), revenuePipeline
+ *   procData   → pendingApprovals, draftPOs
+ */
+export interface KPISourceErrors {
+  dashboard?: boolean;
+  combined?: boolean;
+  procData?: boolean;
+}
+
+export function buildKPICards(data: KPIData, errors: KPISourceErrors = {}): KPICardDef[] {
+  // A KPI is unavailable only when *all* sources that feed it have errored.
+  // activeProjects comes from combined (primary) and dashboard (fallback).
+  const activeProjectsUnavailable = !!(errors.combined && errors.dashboard);
+  // revenuePipeline is purely from combined.
+  const revenuePipelineUnavailable = !!errors.combined;
+  // pendingApprovals and draftPOs are purely from procData.
+  const procUnavailable = !!errors.procData;
+  // overdueTaskCount is purely from dashboard.
+  const dashboardUnavailable = !!errors.dashboard;
+
   return [
     {
       id: "active-projects",
       label: "Active Projects",
-      value: data.activeProjects,
+      value: activeProjectsUnavailable ? null : data.activeProjects,
       trend: data.activeProjects > 0 ? "up" : "flat",
       trendLabel: data.activeProjects > 0 ? "Live" : "None",
       href: "/projects",
@@ -150,7 +205,7 @@ export function buildKPICards(data: KPIData): KPICardDef[] {
     {
       id: "revenue-pipeline",
       label: "Revenue Pipeline",
-      value: formatINRCompact(data.revenuePipeline),
+      value: revenuePipelineUnavailable ? null : formatINRCompact(data.revenuePipeline),
       trend: data.revenuePipeline > 0 ? "up" : "flat",
       trendLabel: "This FY",
       href: "/crm/quotations",
@@ -162,7 +217,7 @@ export function buildKPICards(data: KPIData): KPICardDef[] {
     {
       id: "pending-approvals",
       label: "Pending Approvals",
-      value: data.pendingApprovals,
+      value: procUnavailable ? null : data.pendingApprovals,
       trend: data.pendingApprovals > 5 ? "down" : data.pendingApprovals > 0 ? "flat" : "up",
       trendLabel: data.pendingApprovals > 0 ? "Need action" : "All clear",
       href: "/procurement/grns",
@@ -174,7 +229,7 @@ export function buildKPICards(data: KPIData): KPICardDef[] {
     {
       id: "overdue-tasks",
       label: "Overdue Tasks",
-      value: data.overdueTaskCount,
+      value: dashboardUnavailable ? null : data.overdueTaskCount,
       trend: data.overdueTaskCount === 0 ? "up" : "down",
       trendLabel: data.overdueTaskCount === 0 ? "On track" : "Overdue",
       href: "/projects",
@@ -190,7 +245,7 @@ export function buildKPICards(data: KPIData): KPICardDef[] {
     {
       id: "draft-pos",
       label: "Draft POs",
-      value: data.draftPOs,
+      value: procUnavailable ? null : data.draftPOs,
       trend: data.draftPOs > 0 ? "flat" : "up",
       trendLabel: data.draftPOs > 0 ? "Pending send" : "All sent",
       href: "/procurement/pos",

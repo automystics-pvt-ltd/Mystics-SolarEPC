@@ -19,7 +19,7 @@ import { useLocation } from "wouter";
 import {
   RefreshCw, Settings2, CheckCircle2, ShoppingCart,
   CircleDollarSign, TrendingUp, Ticket, X, Eye, EyeOff,
-  Clock, Flame, Users2,
+  Clock, Flame, Users2, AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,7 +38,7 @@ import { ActivityFeed, ActivityItem } from "./components/ActivityFeed";
 import { UpcomingTasksPanel, UpcomingItem } from "./components/UpcomingTasksPanel";
 import { PipelineChart } from "./components/PipelineChart";
 import { FinancialTrendChart } from "./components/FinancialTrendChart";
-import { KPIRow, KPIData, buildKPICards } from "./components/KPIRow";
+import { KPIRow, KPIData, KPISourceErrors, buildKPICards } from "./components/KPIRow";
 import { RecentlyAccessed } from "./components/RecentlyAccessed";
 import { FavoriteModules } from "./components/FavoriteModules";
 import { formatINRCompact } from "@/lib/currency";
@@ -294,6 +294,47 @@ function ActionRequiredPanel({ items, isLoading }: { items: ActionItem[]; isLoad
 }
 
 /* ════════════════════════════════════════════════════════════════
+   Data Source Error Banner
+════════════════════════════════════════════════════════════════ */
+interface DataSourceErrorBannerProps {
+  errors: { label: string; onRetry: () => void }[];
+}
+
+function DataSourceErrorBanner({ errors }: DataSourceErrorBannerProps) {
+  if (errors.length === 0) return null;
+
+  const sourceList = errors.map((e) => e.label).join(", ");
+  const handleRetryAll = () => errors.forEach((e) => e.onRetry());
+
+  return (
+    <div
+      role="alert"
+      className="flex items-center gap-3 rounded-xl border border-amber-200 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-[13px]"
+    >
+      <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+      <div className="flex-1 min-w-0">
+        <span className="font-semibold text-amber-800 dark:text-amber-300">
+          Some data couldn't load:
+        </span>{" "}
+        <span className="text-amber-700 dark:text-amber-400">{sourceList}</span>
+        <span className="text-amber-600/70 dark:text-amber-500/70">
+          {" "}— affected KPI cards show —
+        </span>
+      </div>
+      <Button
+        variant="outline"
+        size="sm"
+        className="shrink-0 h-7 text-[12px] border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40"
+        onClick={handleRetryAll}
+      >
+        <RefreshCw className="h-3 w-3 mr-1.5" />
+        Retry
+      </Button>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════
    Widget Customize Sheet
 ════════════════════════════════════════════════════════════════ */
 function CustomizeSheet({
@@ -371,14 +412,20 @@ export function Dashboard() {
   const { show, hidden, toggle, reset } = useDashboardPrefs();
 
   // ── Data fetching ──────────────────────────────────────────────────────────
-  const { data: dashboard, isPending: d1 } = useGetDashboard();
-  const { data: combined, isPending: d2 } = useGetCombinedDashboard();
-  const { data: procData, isPending: d3 } = useQuery({
+  const { data: dashboard, isPending: d1, isError: e1, refetch: r1 } = useGetDashboard();
+  const { data: combined, isPending: d2, isError: e2, refetch: r2 } = useGetCombinedDashboard();
+  const { data: procData, isPending: d3, isError: e3, refetch: r3 } = useQuery({
     queryKey: ["procurement-dashboard"],
     queryFn: () => apiGet<any>("/procurement-dashboard"),
   });
 
   const isLoading = d1 || d2 || d3;
+
+  const sourceErrors: KPISourceErrors = {
+    dashboard: e1,
+    combined: e2,
+    procData: e3,
+  };
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -423,7 +470,7 @@ export function Dashboard() {
     };
   }, [dashboard, combined, procData]);
 
-  const kpiCards = useMemo(() => buildKPICards(kpiData), [kpiData]);
+  const kpiCards = useMemo(() => buildKPICards(kpiData, sourceErrors), [kpiData, sourceErrors]);
 
   // Action Required items
   const actionItems: ActionItem[] = useMemo(() => {
@@ -576,6 +623,17 @@ export function Dashboard() {
       .slice(0, 8);
   }, [dashboard, combined, procData]);
 
+  // ── Failed data sources (only after loading completes) ────────────────────
+  const failedSources = useMemo(() => {
+    const list: { label: string; onRetry: () => void }[] = [];
+    if (!isLoading) {
+      if (e1) list.push({ label: "Main dashboard", onRetry: () => r1() });
+      if (e2) list.push({ label: "Portfolio & pipeline", onRetry: () => r2() });
+      if (e3) list.push({ label: "Procurement", onRetry: () => r3() });
+    }
+    return list;
+  }, [isLoading, e1, e2, e3, r1, r2, r3]);
+
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col gap-3 px-4 py-3 pb-8 min-h-0">
@@ -589,6 +647,11 @@ export function Dashboard() {
         openEscalations={dashboard?.openEscalations?.length ?? 0}
         activeLeads={(combined?.pipeline as any)?.totalLeads ?? dashboard?.recentLeads?.length ?? 0}
       />
+
+      {/* ① Data source error banner — non-blocking, shown only when a source fails */}
+      {failedSources.length > 0 && (
+        <DataSourceErrorBanner errors={failedSources} />
+      )}
 
       {/* ② Quick Actions — prominent horizontal strip at top for immediate access */}
       {show("quick_actions") && <QuickActionsGrid />}
