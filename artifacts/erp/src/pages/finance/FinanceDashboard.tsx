@@ -4,7 +4,7 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer,
 } from "recharts";
 import { Button } from "@/components/ui/button";
-import { DollarSign, Clock, CheckCircle2, AlertCircle, Download } from "lucide-react";
+import { DollarSign, Clock, CheckCircle2, AlertCircle, Download, AlertTriangle } from "lucide-react";
 import { apiGet } from "@/lib/fetch";
 import { exportToCsv } from "@/lib/export";
 import { cn } from "@/lib/utils";
@@ -34,7 +34,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export default function FinanceDashboard() {
-  const { data, isPending, isLoading } = useQuery({
+  const { data, isPending, isError, refetch } = useQuery({
     queryKey: ["finance-dashboard"],
     queryFn: () => apiGet<any>("/reports/invoices"),
     staleTime: 60000,
@@ -48,6 +48,22 @@ export default function FinanceDashboard() {
           subtitle="Revenue, receivables, and cash flow tracking"
         />
         <SkeletonStats count={4} />
+      </motion.div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-10">
+        <PageHeader
+          title="Finance Overview"
+          subtitle="Revenue, receivables, and cash flow tracking"
+        />
+        <div className="flex flex-col items-center gap-3 py-16 text-muted-foreground">
+          <AlertTriangle className="h-8 w-8 text-amber-500" />
+          <p className="text-sm font-medium">Failed to load finance data.</p>
+          <Button variant="outline" size="sm" onClick={() => refetch()}>Retry</Button>
+        </div>
       </motion.div>
     );
   }

@@ -78,11 +78,29 @@ function AlertRow({ item, onAck }: { item: any; onAck?: (id: number) => void }) 
 export function InventoryDashboard() {
   const [, nav] = useLocation();
 
-  const { data, isPending, refetch } = useQuery({
+  const { data, isPending, isError, refetch } = useQuery({
     queryKey: ["inventory-dashboard"],
     queryFn: () => apiGet<any>("/inventory/dashboard"),
     refetchInterval: 60_000,
   });
+
+  if (isError) {
+    return (
+      <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-6 pb-10">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-black tracking-tight text-foreground">Inventory</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Solar material stock across all warehouses</p>
+          </div>
+        </div>
+        <div className="flex flex-col items-center gap-3 py-16 text-muted-foreground">
+          <AlertTriangle className="h-8 w-8 text-amber-500" />
+          <p className="text-sm font-medium">Failed to load inventory data.</p>
+          <Button variant="outline" size="sm" onClick={() => refetch()}>Retry</Button>
+        </div>
+      </motion.div>
+    );
+  }
 
   const stats = data?.stats ?? {};
   const categories = data?.categoryBreakdown ?? [];
