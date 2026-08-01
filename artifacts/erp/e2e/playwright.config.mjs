@@ -47,6 +47,10 @@ export default defineConfig({
   reporter: [["list"], ["html", { open: "never", outputFolder: "../playwright-report" }]],
   timeout: 60_000,
 
+  /* Log in once before the suite starts and save the auth state so every
+   * test context starts already authenticated — no per-test login round-trip. */
+  globalSetup: "./global-setup.ts",
+
   use: {
     // Route through the Replit proxy at port 80.  That proxy maps "/" → ERP
     // (port 18996) and "/api/*" → the API server (port 8080), so in-browser
@@ -65,6 +69,9 @@ export default defineConfig({
     /* Tell the browser this is a touch device */
     hasTouch: true,
     isMobile: true,
+    /* Pre-load auth state written by globalSetup — each test context gets
+     * the token + user-cache already in localStorage, skipping /api/auth/me. */
+    storageState: ".auth/state.json",
   },
 
   projects: [

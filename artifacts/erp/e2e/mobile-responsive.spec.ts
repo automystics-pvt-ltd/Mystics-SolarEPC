@@ -6,59 +6,28 @@
  *     not grow wider than the 390 px viewport.
  *  2. "Add Vendor" opens a bottom Sheet, not a centered Dialog.
  *  3. CRM kanban scrolls horizontally with CSS snap alignment per column.
+ *
+ * Auth strategy
+ * -------------
+ * `globalSetup` (see playwright.config.mjs) logs in once and writes the JWT +
+ * user-cache to `.auth/state.json`.  Playwright restores that storageState into
+ * every new browser context, so tests navigate directly to protected routes
+ * without repeating the login round-trip.
  */
 
 import { test, expect, type Page } from "@playwright/test";
 
-// ── Auth helper ────────────────────────────────────────────────────────────────
+// ── Shared navigation helper ───────────────────────────────────────────────────
 
 /**
- * POST to the API server (port 8080 — page.request bypasses the Vite proxy)
- * and inject the JWT plus a minimal user-cache entry so React skips the
- * /api/auth/me round-trip and renders protected routes immediately.
+ * Navigate to a protected page.
  *
- * Must be called AFTER page.goto() so the localStorage context exists.
- */
-async function loginAs(page: Page, email: string, password: string) {
-  const resp = await page.request.post("http://localhost:8080/api/auth/login", {
-    data: { email, password },
-    headers: { "Content-Type": "application/json" },
-  });
-
-  if (!resp.ok()) {
-    throw new Error(`Login failed ${resp.status()}: ${await resp.text()}`);
-  }
-
-  const { token, user } = (await resp.json()) as {
-    token: string;
-    user: Record<string, unknown>;
-  };
-
-  // Store token AND user cache so the React app doesn't re-fetch /api/auth/me.
-  await page.evaluate(
-    ({ token, user }) => {
-      localStorage.setItem("mystics_token", token);
-      localStorage.setItem(
-        "mystics_user_v2",
-        JSON.stringify({ user, ts: Date.now() }),
-      );
-    },
-    { token, user },
-  );
-}
-
-// ── Shared setup ───────────────────────────────────────────────────────────────
-
-/**
- * Navigate to a protected page already authenticated.
- *
- * After navigating to the target path we wait for networkidle to give React
- * Query time to complete its initial data fetches before assertions run.
+ * Auth is already in localStorage (restored from storageState by Playwright).
+ * We just need to load the root once so the JS bundle is parsed and the token
+ * survives the SPA navigation, then jump to the target path.
  */
 async function gotoAuthenticated(page: Page, path: string) {
-  // Load root first so the JS bundle is parsed and localStorage is accessible.
   await page.goto("/", { waitUntil: "domcontentloaded" });
-  await loginAs(page, "admin@automystics.com", "admin123");
   await page.goto(path, { waitUntil: "domcontentloaded" });
   await page.waitForLoadState("networkidle", { timeout: 20_000 });
 }
@@ -156,19 +125,16 @@ test(
 test(
   "CRM kanban scrolls horizontally and columns have snap alignment",
   async ({ page }) => {
-    // Seed at least one lead via the API so the kanban body renders.
-    // (The pipeline section only mounts the scroll container when leads exist.)
-    const loginResp = await page.request.post(
-      "http://localhost:8080/api/auth/login",
-      {
-        data: {
-          email: "admin@automystics.com",
-          password: "admin123",
-        },
-        headers: { "Content-Type": "application/json" },
-      },
+    // We need a token to make pre-seed API calls.  Navigate to root first so
+    // storageState is loaded, then read the token that globalSetup placed there.
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    const token = await page.evaluate(
+      () => localStorage.getItem("mystics_token") ?? "",
     );
-    const { token } = (await loginResp.json()) as { token: string };
+
+    if (!token) {
+      throw new Error("CRM test: no auth token found in localStorage — globalSetup may have failed");
+    }
 
     // Check how many leads exist; create one if the DB is empty.
     const leadsResp = await page.request.get("http://localhost:8080/api/leads", {
@@ -195,7 +161,8 @@ test(
       });
     }
 
-    await gotoAuthenticated(page, "/crm");
+    await page.goto("/crm", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 20_000 });
     await expect(page).not.toHaveURL(/\/login/, { timeout: 5_000 });
 
     // PipelineSection renders a flex row with inline style
