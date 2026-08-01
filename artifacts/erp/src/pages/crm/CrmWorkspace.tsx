@@ -677,13 +677,21 @@ export function CrmWorkspace() {
   const [search, setSearch]             = useState("");
 
   // Data
-  const { data: leads = [],      isPending: leadsLoading }      = useGetLeads({});
+  const { data: rawLeads,       isPending: leadsLoading }      = useGetLeads({});
   const { data: summary }                                         = useGetLeadsPipelineSummary();
-  const { data: quotations = [], isPending: quotationsLoading }  = useGetQuotations({}, { query: { queryKey: getGetQuotationsQueryKey({}) } });
-  const { data: clientPOs = [],  isPending: posLoading }         = useGetClientPOs();
-  const { data: invoices = [],   isPending: invoicesLoading }    = useGetCrmInvoices();
-  const { data: tasks = [],      isPending: tasksLoading }       = useGetTasks();
-  const { data: escalations = [], isPending: escalationsLoading } = useGetEscalations();
+  const { data: rawQuotations,  isPending: quotationsLoading }  = useGetQuotations({}, { query: { queryKey: getGetQuotationsQueryKey({}) } });
+  const { data: rawClientPOs,   isPending: posLoading }         = useGetClientPOs();
+  const { data: rawInvoices,    isPending: invoicesLoading }    = useGetCrmInvoices();
+  const { data: rawTasks,       isPending: tasksLoading }       = useGetTasks();
+  const { data: rawEscalations, isPending: escalationsLoading } = useGetEscalations();
+  // Guard against null/non-array responses (data defaults to undefined but
+  // placeholderData or null server responses can bypass the = [] fallback).
+  const leads      = Array.isArray(rawLeads)       ? rawLeads       : [];
+  const quotations = Array.isArray(rawQuotations)  ? rawQuotations  : [];
+  const clientPOs  = Array.isArray(rawClientPOs)   ? rawClientPOs   : [];
+  const invoices   = Array.isArray(rawInvoices)    ? rawInvoices    : [];
+  const tasks      = Array.isArray(rawTasks)       ? rawTasks       : [];
+  const escalations = Array.isArray(rawEscalations) ? rawEscalations : [];
 
   // Computed metrics
   const metrics = useMemo(() => ({

@@ -138,8 +138,10 @@ const DOT_CLS: Record<string, string> = {
 
 /** Centralised status badge — use everywhere instead of ad-hoc Badge styling */
 export function StatusBadge({ status, size = "md", dot, className }: StatusBadgeProps) {
-  const cfg = STATUS_MAP[status] ?? {
-    label: status.replace(/([A-Z])/g, " $1").trim(),
+  // Guard against undefined/null status (e.g. when a row renders before data loads).
+  const safeStatus = status ?? "";
+  const cfg = STATUS_MAP[safeStatus] ?? {
+    label: safeStatus ? safeStatus.replace(/([A-Z])/g, " $1").trim() : "—",
     cls: S,
   };
 

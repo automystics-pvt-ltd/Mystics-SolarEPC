@@ -62,9 +62,10 @@ export default function InvoicesList() {
   const params: any = {};
   if (activeStatus) params.status = activeStatus;
 
-  const { data: invoices = [], isLoading, isError, error, refetch } = useGetProcInvoices(params, {
+  const { data: rawInvoices, isLoading, isError, error, refetch } = useGetProcInvoices(params, {
     query: { queryKey: getGetProcInvoicesQueryKey(params) }
   });
+  const invoices = Array.isArray(rawInvoices) ? rawInvoices : [];
 
   const { data: stats } = useQuery({
     queryKey: ["invoice-stats"],

@@ -17,10 +17,11 @@ const STATUS_OPTIONS = [
 export default function GRNsList() {
   const [, setLocation] = useLocation();
 
-  const { data: grns = [], isLoading, isError, error, refetch } = useGetProcGrns(
+  const { data: rawGrns, isLoading, isError, error, refetch } = useGetProcGrns(
     {},
     { query: { queryKey: getGetProcGrnsQueryKey({}) } }
   );
+  const grns = Array.isArray(rawGrns) ? rawGrns : [];
 
   const columns: ColumnDef<any, any>[] = [
     {

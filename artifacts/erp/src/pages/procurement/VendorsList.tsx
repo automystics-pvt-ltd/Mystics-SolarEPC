@@ -305,7 +305,8 @@ export default function VendorsList() {
   const [submitAttempted, setSubmitAttempted] = useState(false);
 
   const qc = useQueryClient();
-  const { data: vendors = [], isLoading, isError, error, refetch } = useGetVendors({});
+  const { data: rawVendors, isLoading, isError, error, refetch } = useGetVendors({});
+  const vendors = Array.isArray(rawVendors) ? rawVendors : [];
   const createMut = useCreateVendor();
   const perms = usePermissions("vendors");
 
