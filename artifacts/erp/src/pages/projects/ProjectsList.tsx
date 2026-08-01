@@ -682,9 +682,12 @@ export function ProjectsList() {
     if (pmFilterKey) localStorage.setItem(pmFilterKey, value);
   };
 
-  const { data: projects, isPending } = useGetProjects({}, {
+  const { data: rawProjects, isPending } = useGetProjects({}, {
     query: { queryKey: getGetProjectsQueryKey({}) },
   });
+  // Guard: placeholderData or a paginated envelope can return a non-array value.
+  // Normalise here so every downstream usage is guaranteed to be an array.
+  const projects = Array.isArray(rawProjects) ? rawProjects : [];
 
   const { data: summary } = useGetPortfolioSummary();
 
