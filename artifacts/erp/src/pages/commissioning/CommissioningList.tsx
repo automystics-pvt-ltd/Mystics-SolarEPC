@@ -8,7 +8,7 @@ import {
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ResponsiveDialog } from "@/components/shared/ResponsiveDialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -122,12 +122,10 @@ export default function CommissioningList() {
 
   const newChecklistDialog = (
     <CanCreate module="commissioning">
-      <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm" className="gap-1.5"><Plus className="w-3.5 h-3.5" /> New Checklist</Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader><DialogTitle>Create Commissioning Checklist</DialogTitle></DialogHeader>
+      <Button size="sm" className="gap-1.5" onClick={() => setOpen(true)}>
+        <Plus className="w-3.5 h-3.5" /> New Checklist
+      </Button>
+      <ResponsiveDialog open={open} onOpenChange={setOpen} title="Create Commissioning Checklist" maxWidth="sm:max-w-md">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-2">
           <div><Label>Project ID</Label><Input {...register("projectId")} placeholder="e.g. 4" className="mt-1" /></div>
           <div><Label>Commissioned On (optional)</Label><Input {...register("commissionedOn")} type="date" className="mt-1" /></div>
@@ -138,8 +136,7 @@ export default function CommissioningList() {
             <Button type="submit" disabled={createMut.isPending}>{createMut.isPending ? "Creating…" : "Create"}</Button>
           </div>
         </form>
-      </DialogContent>
-    </Dialog>
+      </ResponsiveDialog>
     </CanCreate>
   );
 

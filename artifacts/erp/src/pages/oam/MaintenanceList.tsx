@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useGetMaintenanceSchedules, useCreateMaintenanceSchedule, useCompleteMaintenanceSchedule, getGetMaintenanceSchedulesQueryKey } from "@workspace/api-client-react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ResponsiveDialog } from "@/components/shared/ResponsiveDialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -141,12 +142,11 @@ export default function MaintenanceList() {
   ];
 
   const scheduleVisitDialog = (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm" className="gap-1.5 shrink-0"><Plus className="w-3.5 h-3.5" /> Schedule Visit</Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader><DialogTitle>Schedule Maintenance Visit</DialogTitle></DialogHeader>
+    <>
+      <Button size="sm" className="gap-1.5 shrink-0" onClick={() => setOpen(true)}>
+        <Plus className="w-3.5 h-3.5" /> Schedule Visit
+      </Button>
+      <ResponsiveDialog open={open} onOpenChange={setOpen} title="Schedule Maintenance Visit" maxWidth="sm:max-w-md">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-2">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div><Label>Project ID</Label><Input {...register("projectId")} placeholder="e.g. 4" className="mt-1" /></div>
@@ -168,8 +168,8 @@ export default function MaintenanceList() {
             <Button type="submit" disabled={createMut.isPending}>{createMut.isPending ? "Scheduling…" : "Schedule"}</Button>
           </div>
         </form>
-      </DialogContent>
-    </Dialog>
+      </ResponsiveDialog>
+    </>
   );
 
   return (
