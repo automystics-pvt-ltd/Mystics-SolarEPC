@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useGetMaintenanceSchedules, useCreateMaintenanceSchedule, useCompleteMaintenanceSchedule, getGetMaintenanceSchedulesQueryKey } from "@workspace/api-client-react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ResponsiveDialog } from "@/components/shared/ResponsiveDialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -188,21 +187,18 @@ export default function MaintenanceList() {
       </div>
 
       {/* Complete dialog */}
-      <Dialog open={!!completeId} onOpenChange={v => !v && setCompleteId(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader><DialogTitle>Mark Visit Completed</DialogTitle></DialogHeader>
-          <form onSubmit={cSubmit(onComplete)} className="space-y-4 pt-2">
-            <div><Label>Completed Date</Label><Input {...cReg("completedDate")} type="date" className="mt-1" /></div>
-            <div><Label>Work Done</Label><Textarea {...cReg("workDone")} placeholder="Summary of work performed..." className="mt-1 min-h-[80px]" /></div>
-            <div><Label>Observations</Label><Textarea {...cReg("observations")} placeholder="Plant health, issues noticed..." className="mt-1" /></div>
-            <div><Label>Next Scheduled Date</Label><Input {...cReg("nextScheduledDate")} type="date" className="mt-1" /></div>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={() => setCompleteId(null)}>Cancel</Button>
-              <Button type="submit" disabled={completeMut.isPending}>{completeMut.isPending ? "Saving…" : "Mark Complete"}</Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <ResponsiveDialog open={!!completeId} onOpenChange={v => !v && setCompleteId(null)} title="Mark Visit Completed" maxWidth="sm:max-w-md">
+        <form onSubmit={cSubmit(onComplete)} className="space-y-4 pt-2">
+          <div><Label>Completed Date</Label><Input {...cReg("completedDate")} type="date" className="mt-1" /></div>
+          <div><Label>Work Done</Label><Textarea {...cReg("workDone")} placeholder="Summary of work performed..." className="mt-1 min-h-[80px]" /></div>
+          <div><Label>Observations</Label><Textarea {...cReg("observations")} placeholder="Plant health, issues noticed..." className="mt-1" /></div>
+          <div><Label>Next Scheduled Date</Label><Input {...cReg("nextScheduledDate")} type="date" className="mt-1" /></div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="outline" onClick={() => setCompleteId(null)}>Cancel</Button>
+            <Button type="submit" disabled={completeMut.isPending}>{completeMut.isPending ? "Saving…" : "Mark Complete"}</Button>
+          </div>
+        </form>
+      </ResponsiveDialog>
 
       <DataTable
         data={schedules as MaintenanceSchedule[]}
