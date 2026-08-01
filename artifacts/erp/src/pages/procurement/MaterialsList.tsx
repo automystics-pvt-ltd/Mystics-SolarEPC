@@ -1049,21 +1049,21 @@ export default function MaterialsList() {
                   action={materials.length === 0 ? { label: "Add first material", onClick: () => { setEditMaterial(null); setFormOpen(true); } } : undefined} />
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm min-w-[800px]">
+                  <table className="w-full text-sm">
                     <thead className="bg-muted/30 border-b border-border/60 sticky top-0">
                       <tr>
                         <th className="w-10 px-4 py-3">
                           <Checkbox checked={allSelected} onCheckedChange={toggleAll} aria-label="Select all" />
                         </th>
                         {[
-                          { key: "name", label: "Material" },
-                          { key: "categoryName", label: "Category" },
-                          { key: "uom", label: "UoM" },
-                          { key: "basePrice", label: "Base Price" },
-                          { key: "hsnSacCode", label: "HSN Code" },
-                          { key: "isActive", label: "Status" },
+                          { key: "name",         label: "Material",   cls: "" },
+                          { key: "categoryName", label: "Category",   cls: "hidden sm:table-cell" },
+                          { key: "uom",          label: "UoM",        cls: "hidden sm:table-cell" },
+                          { key: "basePrice",    label: "Base Price", cls: "hidden md:table-cell" },
+                          { key: "hsnSacCode",   label: "HSN Code",   cls: "hidden lg:table-cell" },
+                          { key: "isActive",     label: "Status",     cls: "" },
                         ].map(col => (
-                          <th key={col.key} className="text-left px-3 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors select-none" onClick={() => toggleSort(col.key)}>
+                          <th key={col.key} className={cn("text-left px-3 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors select-none", col.cls)} onClick={() => toggleSort(col.key)}>
                             <span className="flex items-center gap-1.5">{col.label} <SortIcon column={col.key} /></span>
                           </th>
                         ))}
@@ -1091,19 +1091,19 @@ export default function MaterialsList() {
                               </div>
                             </div>
                           </td>
-                          <td className="px-3 py-3.5">
+                          <td className="px-3 py-3.5 hidden sm:table-cell">
                             <span className="text-xs text-muted-foreground">{m.categoryName ?? "—"}</span>
                           </td>
-                          <td className="px-3 py-3.5">
+                          <td className="px-3 py-3.5 hidden sm:table-cell">
                             <Badge variant="outline" className="text-[10px] font-mono">{m.uom}</Badge>
                           </td>
-                          <td className="px-3 py-3.5">
+                          <td className="px-3 py-3.5 hidden md:table-cell">
                             <span className="text-sm font-medium text-foreground">{fmtCurrency(m.basePrice, m.currency)}</span>
                             {m.lastPurchasePrice && m.basePrice && m.lastPurchasePrice !== m.basePrice && (
                               <p className="text-[10px] text-muted-foreground">Last: {fmtCurrency(m.lastPurchasePrice, m.currency)}</p>
                             )}
                           </td>
-                          <td className="px-3 py-3.5">
+                          <td className="px-3 py-3.5 hidden lg:table-cell">
                             <span className="font-mono text-xs text-muted-foreground">{m.hsnSacCode ?? "—"}</span>
                           </td>
                           <td className="px-3 py-3.5">
