@@ -801,7 +801,7 @@ export default function MaterialsList() {
   const [dSearch, setDSearch]         = useState("");
   const [filters, setFilters]         = useState<Filters>({ categoryId: "", uom: "", status: "all" });
   const [showFilters, setShowFilters] = useState(false);
-  const [viewMode, setViewMode]       = useState<"table" | "card">("table");
+  const [viewMode, setViewMode]       = useState<"table" | "card">(() => window.innerWidth < 640 ? "card" : "table");
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [detailId, setDetailId]       = useState<number | null>(null);
   const [formOpen, setFormOpen]       = useState(false);
