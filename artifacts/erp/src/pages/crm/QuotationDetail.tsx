@@ -4,6 +4,7 @@ import {
   useApproveQuotation, useLogClientPO,
   useGetLeads, useGetMaterials, useCreateMaterial,
   getGetQuotationQueryKey, getGetQuotationsQueryKey, getGetMaterialsQueryKey,
+  getGetLeadsPipelineSummaryQueryKey, getGetLeadQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { apiPost } from "@/lib/fetch";
@@ -195,6 +196,10 @@ export function QuotationDetail({ id }: { id?: string }) {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetQuotationQueryKey(quoteId) });
         queryClient.invalidateQueries({ queryKey: getGetQuotationsQueryKey({}) });
+        queryClient.invalidateQueries({ queryKey: getGetLeadsPipelineSummaryQueryKey() });
+        if (quote?.leadId) {
+          queryClient.invalidateQueries({ queryKey: getGetLeadQueryKey(quote.leadId) });
+        }
         toast({ title: "Quotation approved" });
       },
       onError: (e: any) => toast({ variant: "destructive", title: "Failed to approve quotation", description: e?.message }),

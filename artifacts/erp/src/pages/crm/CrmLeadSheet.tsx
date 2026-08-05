@@ -456,6 +456,8 @@ function QuotationsTab({ leadId, leadCompanyName }: { leadId: number; leadCompan
       onSuccess: (_, vars) => {
         queryClient.invalidateQueries({ queryKey: getGetQuotationsQueryKey({ leadId }) });
         queryClient.invalidateQueries({ queryKey: getGetQuotationsQueryKey({}) });
+        queryClient.invalidateQueries({ queryKey: getGetLeadsPipelineSummaryQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetLeadQueryKey(leadId) });
         toast({ title: (vars.data as any).action === "approve" ? "Quotation approved" : "Quotation rejected" });
       },
     },
