@@ -3,6 +3,7 @@ import {
   useGetProcInvoice, getGetProcInvoiceQueryKey, getGetProcInvoicesQueryKey,
   useSubmitProcInvoice, useApproveProcInvoice, useRejectProcInvoice,
   useMarkProcInvoicePaid, useApproveProcInvoiceMismatch,
+  getGetProcurementPOQueryKey, getGetProcurementPOsQueryKey,
 } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
@@ -55,6 +56,11 @@ export default function InvoiceDetail({ id }: { id: string }) {
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: getGetProcInvoiceQueryKey(invId) });
     qc.invalidateQueries({ queryKey: getGetProcInvoicesQueryKey() });
+    const poId = (invoice as any)?.poId;
+    if (poId) {
+      qc.invalidateQueries({ queryKey: getGetProcurementPOQueryKey(poId) });
+      qc.invalidateQueries({ queryKey: getGetProcurementPOsQueryKey() });
+    }
   };
 
   const runAction = (action: string) => {

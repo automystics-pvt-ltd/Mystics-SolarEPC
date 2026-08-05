@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import {
   useGetProcGrn, getGetProcGrnQueryKey, getGetProcGrnsQueryKey,
   useSubmitProcGrn, useApproveProcGrn, useRejectProcGrn,
+  getGetProcurementPOQueryKey, getGetProcurementPOsQueryKey,
 } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
@@ -206,6 +207,11 @@ export default function GRNDetail({ id }: { id: string }) {
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: getGetProcGrnQueryKey(grnId) });
     qc.invalidateQueries({ queryKey: getGetProcGrnsQueryKey() });
+    const poId = (grn as any)?.poId;
+    if (poId) {
+      qc.invalidateQueries({ queryKey: getGetProcurementPOQueryKey(poId) });
+      qc.invalidateQueries({ queryKey: getGetProcurementPOsQueryKey() });
+    }
   };
 
   const runAction = (action: string) => {
