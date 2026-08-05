@@ -1,6 +1,9 @@
 // @refresh reset
 import { useState, lazy, Suspense, useEffect } from "react";
-import { useGetProject, getGetProjectQueryKey, useUpdateProject } from "@workspace/api-client-react";
+import {
+  useGetProject, getGetProjectQueryKey, useUpdateProject,
+  getGetProjectsQueryKey, getGetDashboardQueryKey, getGetCombinedDashboardQueryKey,
+} from "@workspace/api-client-react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@/lib/zodResolver";
@@ -70,7 +73,13 @@ function EditProjectDialog({
   const updateMutation = useUpdateProject({
     mutation: {
       onSuccess: () => {
+        // Refresh the individual project, the projects list, and both dashboard queries
+        // so every consumer (project detail, projects hub, main dashboard) reflects
+        // the edit immediately without a page reload.
         queryClient.invalidateQueries({ queryKey: getGetProjectQueryKey(project.id) });
+        queryClient.invalidateQueries({ queryKey: getGetProjectsQueryKey({}) });
+        queryClient.invalidateQueries({ queryKey: getGetDashboardQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetCombinedDashboardQueryKey() });
         onOpenChange(false);
       },
     },
