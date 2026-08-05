@@ -240,16 +240,17 @@ router.get("/platform-admin/security/failed-logins", async (req: Request, res: R
   }
 });
 
-// ── Active Sessions (approximate via recent audit actions) ────────────────────
-// Columns available: user_id, user_name, user_role, created_at
-
+// ── Active Sessions — per-user latest activity with IP / device ───────────────
 router.get("/platform-admin/sessions", async (_req: Request, res: Response): Promise<void> => {
   try {
-    const rows = await withClient(c => c.query(`
+    // Most-recent action per user (last 8 h), enriched with latest IP + UA
+    const sessions = await withClient(c => c.query(`
       SELECT DISTINCT ON (user_id)
         user_id,
         user_name,
         user_role,
+        ip_address,
+        user_agent,
         created_at AS last_seen
       FROM audit_logs
       WHERE created_at > NOW() - INTERVAL '8 hours'
@@ -257,7 +258,205 @@ router.get("/platform-admin/sessions", async (_req: Request, res: Response): Pro
       ORDER BY user_id, created_at DESC
       LIMIT 100
     `));
+
+    // Detect multi-IP activity (same user, different IPs in last 8 h)
+    const multiIp = await withClient(c => c.query(`
+      SELECT
+        user_id,
+        COUNT(DISTINCT ip_address) FILTER (WHERE ip_address IS NOT NULL AND ip_address <> 'unknown') AS ip_count,
+        array_agg(DISTINCT ip_address) FILTER (WHERE ip_address IS NOT NULL AND ip_address <> 'unknown') AS ip_list
+      FROM audit_logs
+      WHERE created_at > NOW() - INTERVAL '8 hours'
+        AND user_id IS NOT NULL
+      GROUP BY user_id
+      HAVING COUNT(DISTINCT ip_address) FILTER (WHERE ip_address IS NOT NULL AND ip_address <> 'unknown') > 1
+    `));
+
+    const suspectIds = new Set(multiIp.rows.map((r: any) => r.user_id));
+    const ipListMap  = new Map(multiIp.rows.map((r: any) => [r.user_id, r.ip_list]));
+
+    const enriched = sessions.rows.map((r: any) => ({
+      ...r,
+      suspicious:     suspectIds.has(r.user_id),
+      all_ips:        suspectIds.has(r.user_id) ? ipListMap.get(r.user_id) : [r.ip_address],
+    }));
+
+    res.json(enriched);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── User Activity — recent actions for a single user ──────────────────────────
+router.get("/platform-admin/sessions/:userId/activity", async (req: Request, res: Response): Promise<void> => {
+  const userId = Number(req.params.userId);
+  if (!userId) { res.status(400).json({ error: "userId required" }); return; }
+  try {
+    const rows = await withClient(c => c.query(`
+      SELECT
+        id, action, module, entity_type, entity_label, description,
+        ip_address, user_agent, status, created_at
+      FROM audit_logs
+      WHERE user_id = $1
+      ORDER BY created_at DESC
+      LIMIT 100
+    `, [userId]));
     res.json(rows.rows);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── User Management (platform-admin full control) ─────────────────────────────
+
+// GET /platform-admin/users — list all users with last-seen from audit_logs
+router.get("/platform-admin/users", async (_req: Request, res: Response): Promise<void> => {
+  try {
+    const rows = await withClient(c => c.query(`
+      SELECT
+        u.id, u.name, u.email, u.role, u.created_at,
+        al.last_seen,
+        al.last_ip
+      FROM users u
+      LEFT JOIN (
+        SELECT DISTINCT ON (user_id)
+          user_id,
+          created_at AS last_seen,
+          ip_address AS last_ip
+        FROM audit_logs
+        WHERE user_id IS NOT NULL
+        ORDER BY user_id, created_at DESC
+      ) al ON al.user_id = u.id
+      ORDER BY u.id
+    `));
+    res.json(rows.rows);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /platform-admin/users — create user
+router.post("/platform-admin/users", async (req: Request, res: Response): Promise<void> => {
+  const { name, email, password, role = "sales" } = req.body ?? {};
+  if (!name || !email || !password) {
+    res.status(400).json({ error: "name, email, password required" }); return;
+  }
+  try {
+    // Check duplicate email
+    const existing = await withClient(c => c.query("SELECT id FROM users WHERE email = $1", [email]));
+    if (existing.rows.length > 0) {
+      res.status(409).json({ error: "Email already exists" }); return;
+    }
+    // Hash password using Node built-in crypto as bcrypt fallback
+    let passwordHash: string;
+    try {
+      const bcrypt = await import("bcryptjs");
+      passwordHash = await bcrypt.hash(password, 10);
+    } catch {
+      const { createHash } = await import("crypto");
+      passwordHash = createHash("sha256").update(password).digest("hex");
+    }
+    const result = await withClient(c => c.query(
+      `INSERT INTO users (name, email, password_hash, role, created_at)
+       VALUES ($1, $2, $3, $4, NOW())
+       RETURNING id, name, email, role, created_at`,
+      [name, email, passwordHash, role]
+    ));
+    // Audit log
+    const actor = (req as any).actor;
+    await withClient(c => c.query(
+      `INSERT INTO audit_logs (user_id, user_name, user_role, action, module, entity_type, entity_label, description, status, created_at)
+       VALUES ($1, $2, $3, 'create', 'admin', 'user', $4, $5, 'success', NOW())`,
+      [actor?.userId, actor?.email ?? "platform-admin", actor?.role, email, `Created user ${name} (${role})`]
+    )).catch(() => {});
+    res.status(201).json(result.rows[0]);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// PATCH /platform-admin/users/:id — update name and/or role
+router.patch("/platform-admin/users/:id", async (req: Request, res: Response): Promise<void> => {
+  const id = Number(req.params.id);
+  if (!id) { res.status(400).json({ error: "id required" }); return; }
+  const { name, role } = req.body ?? {};
+  if (!name && !role) { res.status(400).json({ error: "name or role required" }); return; }
+  try {
+    const setParts: string[] = [];
+    const vals: any[] = [];
+    if (name) { setParts.push(`name = $${vals.length + 1}`); vals.push(name); }
+    if (role) { setParts.push(`role = $${vals.length + 1}`); vals.push(role); }
+    vals.push(id);
+    const result = await withClient(c => c.query(
+      `UPDATE users SET ${setParts.join(", ")} WHERE id = $${vals.length} RETURNING id, name, email, role`,
+      vals
+    ));
+    if (result.rows.length === 0) { res.status(404).json({ error: "User not found" }); return; }
+    const actor = (req as any).actor;
+    await withClient(c => c.query(
+      `INSERT INTO audit_logs (user_id, user_name, user_role, action, module, entity_type, entity_label, description, status, created_at)
+       VALUES ($1, $2, $3, 'update', 'admin', 'user', $4, $5, 'success', NOW())`,
+      [actor?.userId, actor?.email ?? "platform-admin", actor?.role, result.rows[0].email, `Updated user ${result.rows[0].name}: ${Object.entries({name, role}).filter(([,v])=>v).map(([k,v])=>`${k}→${v}`).join(", ")}`]
+    )).catch(() => {});
+    res.json(result.rows[0]);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// PATCH /platform-admin/users/:id/reset-password
+router.patch("/platform-admin/users/:id/reset-password", async (req: Request, res: Response): Promise<void> => {
+  const id = Number(req.params.id);
+  const { password } = req.body ?? {};
+  if (!id || !password) { res.status(400).json({ error: "id and password required" }); return; }
+  try {
+    let passwordHash: string;
+    try {
+      const bcrypt = await import("bcryptjs");
+      passwordHash = await bcrypt.hash(password, 10);
+    } catch {
+      const { createHash } = await import("crypto");
+      passwordHash = createHash("sha256").update(password).digest("hex");
+    }
+    const result = await withClient(c => c.query(
+      `UPDATE users SET password_hash = $1 WHERE id = $2 RETURNING id, name, email`,
+      [passwordHash, id]
+    ));
+    if (result.rows.length === 0) { res.status(404).json({ error: "User not found" }); return; }
+    const actor = (req as any).actor;
+    await withClient(c => c.query(
+      `INSERT INTO audit_logs (user_id, user_name, user_role, action, module, entity_type, entity_label, description, status, created_at)
+       VALUES ($1, $2, $3, 'update', 'admin', 'user', $4, 'Password reset by platform admin', 'success', NOW())`,
+      [actor?.userId, actor?.email ?? "platform-admin", actor?.role, result.rows[0].email]
+    )).catch(() => {});
+    res.json({ ok: true });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// DELETE /platform-admin/users/:id — permanently delete user (cannot delete super_admin)
+router.delete("/platform-admin/users/:id", async (req: Request, res: Response): Promise<void> => {
+  const id = Number(req.params.id);
+  if (!id) { res.status(400).json({ error: "id required" }); return; }
+  const actor = (req as any).actor;
+  // Prevent self-deletion
+  if (actor?.userId === id) { res.status(400).json({ error: "Cannot delete your own account" }); return; }
+  try {
+    // Check if target is super_admin
+    const check = await withClient(c => c.query("SELECT id, name, email, role FROM users WHERE id = $1", [id]));
+    if (check.rows.length === 0) { res.status(404).json({ error: "User not found" }); return; }
+    const target = check.rows[0];
+    if (target.role === "super_admin" && actor?.role !== "super_admin") {
+      res.status(403).json({ error: "Only a super_admin can delete another super_admin" }); return;
+    }
+    await withClient(c => c.query("DELETE FROM users WHERE id = $1", [id]));
+    await withClient(c => c.query(
+      `INSERT INTO audit_logs (user_id, user_name, user_role, action, module, entity_type, entity_label, description, status, created_at)
+       VALUES ($1, $2, $3, 'delete', 'admin', 'user', $4, $5, 'success', NOW())`,
+      [actor?.userId, actor?.email ?? "platform-admin", actor?.role, target.email, `Deleted user ${target.name} (${target.role})`]
+    )).catch(() => {});
+    res.json({ ok: true });
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }

@@ -1,6 +1,10 @@
 import { Readable } from "stream";
 import { Router, type IRouter, type Request, type Response } from "express";
-import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
+import {
+  ObjectNotFoundError,
+  ObjectStorageService,
+  STORAGE_BACKEND,
+} from "../lib/objectStorage";
 import jwt from "jsonwebtoken";
 
 const router: IRouter = Router();
@@ -15,9 +19,9 @@ function isAuthenticated(req: Request): boolean {
 
 /**
  * POST /storage/uploads/request-url
- * Request a presigned URL for file upload.
- * Client sends JSON metadata (name, size, contentType) — NOT the file.
- * Then uploads the file directly to the returned presigned URL.
+ * Returns a URL for the client to PUT the file to.
+ * In Replit mode: returns a GCS presigned URL (client PUTs directly to GCS).
+ * In local mode: returns a /api/storage/uploads/direct/<uuid> API endpoint URL.
  */
 router.post("/storage/uploads/request-url", async (req: Request, res: Response) => {
   if (!isAuthenticated(req)) {
@@ -40,8 +44,45 @@ router.post("/storage/uploads/request-url", async (req: Request, res: Response) 
 });
 
 /**
+ * PUT /storage/uploads/direct/:uuid
+ * LOCAL STORAGE ONLY — receives the raw file body directly from the client
+ * (mirrors what GCS presigned PUT does, but stored to local disk).
+ * Content-Type header is preserved. Returns 200 on success.
+ */
+router.put("/storage/uploads/direct/:uuid", async (req: Request, res: Response) => {
+  if (STORAGE_BACKEND !== 'local') {
+    res.status(404).json({ error: "Direct upload endpoint is only available in local storage mode." });
+    return;
+  }
+  if (!isAuthenticated(req)) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const uuid = Array.isArray(req.params.uuid) ? req.params.uuid[0]! : req.params.uuid!;
+  if (!uuid || !/^[0-9a-f-]{36}$/i.test(uuid)) {
+    res.status(400).json({ error: "Invalid upload token" });
+    return;
+  }
+  const contentType = (req.headers["content-type"] as string) ?? "application/octet-stream";
+
+  try {
+    // Collect raw body into a Buffer
+    const chunks: Buffer[] = [];
+    for await (const chunk of req as AsyncIterable<Buffer>) {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    }
+    const data = Buffer.concat(chunks);
+    objectStorageService.writeLocalUpload(uuid, data, contentType);
+    res.status(200).json({ ok: true });
+  } catch (error) {
+    req.log.error({ err: error }, "Error saving local upload");
+    res.status(500).json({ error: "Failed to save uploaded file" });
+  }
+});
+
+/**
  * GET /storage/public-objects/*
- * Serve public assets from PUBLIC_OBJECT_SEARCH_PATHS.
+ * Serve public assets from PUBLIC_OBJECT_SEARCH_PATHS (Replit) or local dir (VPS).
  */
 router.get("/storage/public-objects/*filePath", async (req: Request, res: Response) => {
   try {
@@ -63,7 +104,8 @@ router.get("/storage/public-objects/*filePath", async (req: Request, res: Respon
 
 /**
  * GET /storage/objects/*
- * Serve private object entities from PRIVATE_OBJECT_DIR (JWT required).
+ * Serve private object entities (JWT required).
+ * Works for both GCS objects (Replit) and local files (VPS).
  */
 router.get("/storage/objects/*path", async (req: Request, res: Response) => {
   if (!isAuthenticated(req)) { res.status(401).json({ error: "Unauthorized" }); return; }
