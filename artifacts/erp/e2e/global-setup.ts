@@ -12,6 +12,13 @@ import { chromium, type FullConfig } from "@playwright/test";
 import { execSync } from "child_process";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
+
+// Playwright esbuild transpiles TypeScript to ESM, so __dirname is not
+// available. Derive it from import.meta.url which IS available in ESM.
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore — import.meta is valid in ESM at runtime even though tsconfig says CommonJS
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 function resolveChromium(): string {
   if (process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH) {
@@ -31,7 +38,10 @@ function resolveChromium(): string {
 }
 
 export default async function globalSetup(_config: FullConfig): Promise<void> {
-  const authFile = path.join(__dirname, ".auth", "state.json");
+  // The playwright.config.mjs `storageState: ".auth/state.json"` is resolved
+  // relative to CWD (artifacts/erp) by Playwright at runtime, so we save here
+  // too.  __dirname points to e2e/ but the config reads from the project root.
+  const authFile = path.join(process.cwd(), ".auth", "state.json");
   fs.mkdirSync(path.dirname(authFile), { recursive: true });
 
   const browser = await chromium.launch({

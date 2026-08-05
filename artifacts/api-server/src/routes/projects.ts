@@ -76,7 +76,16 @@ router.get("/projects", async (req, res): Promise<void> => {
 router.post("/projects", requirePermission("projects", "create"), async (req, res): Promise<void> => {
   const parsed = CreateProjectBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
-  const [row] = await db.insert(projectsTable).values({ ...parsed.data, contractValue: parsed.data.contractValue?.toString() }).returning();
+  // Convert empty-string dates/strings to undefined so Drizzle omits them
+  // rather than trying to insert "" into a date/varchar column.
+  const data = {
+    ...parsed.data,
+    contractValue: parsed.data.contractValue?.toString(),
+    startDate:    parsed.data.startDate  || undefined,
+    plannedEnd:   parsed.data.plannedEnd || undefined,
+    siteLocation: parsed.data.siteLocation || undefined,
+  };
+  const [row] = await db.insert(projectsTable).values(data).returning();
   let pmOwnerName: string | null = null;
   let pmOwnerEmail: string | null = null;
   if (row.pmOwnerId) {
