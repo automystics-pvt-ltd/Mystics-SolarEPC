@@ -16,3 +16,4 @@
 - [ERP Zod v4 resolver fix](erp-zod-resolver-fix.md) — zod v4 uses .issues not .errors; always import zodResolver from @/lib/zodResolver, never @hookform/resolvers/zod directly; quotation_attachments column is object_path not file_key
 - [Solar EPC real seed data](solar-epc-seed-data.md) — comprehensive seed covering full P2P chain; key column name quirks for stock_ledger, material_stock_levels, material_suppliers, proc_invoice_items
 - [Mystics ERP audit logs module](mystics-erp-audit-logs.md) — system-wide audit trail; req.path inside /api router has NO /api prefix; params mutation bug pattern to avoid in pg queries
+- [ERP router base path](erp-router-base-path.md) — VITE_ROUTER_BASE=/erp (shared env var) required for direct URL navigation; keep Vite BASE_PATH at / for proxy asset serving; do NOT conflate the two

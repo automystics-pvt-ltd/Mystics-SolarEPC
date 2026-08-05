@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost, apiPatch } from "@/lib/fetch";
+import { useAuth } from "@/lib/auth";
 import { motion } from "framer-motion";
 import { SectionCard, StatusBadge, EmptyState } from "@/components/shared";
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 export function ProjectHandover({ projectId }: { projectId: number }) {
   const qc = useQueryClient();
+  const { user: authUser } = useAuth();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<Partial<HandoverRecord>>({
     handoverType: "Provisional", documentsProvided: [], pendingPunchItems: [], trainingProvided: false,
@@ -75,7 +77,7 @@ export function ProjectHandover({ projectId }: { projectId: number }) {
 
   const signMut = useMutation({
     mutationFn: ({ id, type }: { id: number; type: string }) =>
-      apiPost(`/handover/${id}/sign`, { type, signedBy: "Client Representative" }),
+      apiPost(`/handover/${id}/sign`, { type, signedBy: authUser?.name ?? "System" }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["project-handover", projectId] }); toast.success("Handover status updated"); },
     onError: () => toast.error("Sign operation failed"),
   });

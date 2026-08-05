@@ -273,6 +273,7 @@ function Router() {
 
       {/* Inventory */}
       <Route path="/inventory/dashboard">{() => <ProtectedRoute component={InventoryDashboard} module="inventory" />}</Route>
+      <Route path="/inventory">{() => <ProtectedRoute component={InventoryDashboard} module="inventory" />}</Route>
       <Route path="/inventory/stock-levels">{() => <ProtectedRoute component={StockSummaryPage} module="inventory" />}</Route>
       <Route path="/inventory/allocations">{() => <ProtectedRoute component={ProjectAllocations} module="inventory" />}</Route>
       <Route path="/inventory/returns">{() => <ProtectedRoute component={MaterialReturns} module="inventory" />}</Route>
@@ -287,6 +288,7 @@ function Router() {
 
       {/* Engineering */}
       <Route path="/engineering/docs">{() => <ProtectedRoute component={DesignDocsList} module="engineering" />}</Route>
+      <Route path="/engineering">{() => <ProtectedRoute component={DesignDocsList} module="engineering" />}</Route>
       <Route path="/engineering/docs/:id">{(p) => <ProtectedRoute component={DesignDocDetail} module="engineering" id={p.id} />}</Route>
 
       {/* Commissioning */}
@@ -295,6 +297,7 @@ function Router() {
 
       {/* O&M */}
       <Route path="/oam/amc">{() => <ProtectedRoute component={OamPages} module="oam" />}</Route>
+      <Route path="/oam">{() => <ProtectedRoute component={OamPages} module="oam" />}</Route>
       <Route path="/oam/maintenance">{() => <ProtectedRoute component={OamPages} module="oam" />}</Route>
       <Route path="/oam/tickets">{() => <ProtectedRoute component={OamPages} module="oam" />}</Route>
 

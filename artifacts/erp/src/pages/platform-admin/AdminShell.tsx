@@ -77,18 +77,18 @@ export function AdminShell({ section, children }: AdminShellProps) {
               const Icon = item.icon;
               const active = section === item.key;
               return (
-                <Link key={item.key} href={`/platform-admin/${item.key}`}>
-                  <a
-                    className={cn(
-                      "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors cursor-pointer select-none",
-                      active
-                        ? "bg-violet-600/20 text-violet-300 font-medium"
-                        : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
-                    )}
-                  >
-                    <Icon className={cn("w-4 h-4 shrink-0", active ? "text-violet-400" : "")} />
-                    {item.label}
-                  </a>
+                <Link
+                  key={item.key}
+                  href={`/platform-admin/${item.key}`}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors cursor-pointer select-none",
+                    active
+                      ? "bg-violet-600/20 text-violet-300 font-medium"
+                      : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+                  )}
+                >
+                  <Icon className={cn("w-4 h-4 shrink-0", active ? "text-violet-400" : "")} />
+                  {item.label}
                 </Link>
               );
             })}

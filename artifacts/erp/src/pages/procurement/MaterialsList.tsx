@@ -699,9 +699,22 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
           <div className="bg-muted/30 rounded-lg p-3 text-xs text-muted-foreground">
             <p className="font-semibold text-foreground mb-1">Expected CSV format:</p>
             <code className="text-[10px] block overflow-x-auto whitespace-nowrap">name,category,uom,brand,model,hsnSacCode,gstRate,basePrice,currency,minOrderQty,leadTimeDays</code>
-            <a href="/api/materials/export" download className="mt-2 inline-flex items-center gap-1 text-primary hover:underline">
+            <button
+              type="button"
+              onClick={async () => {
+                const token = localStorage.getItem("mystics_token");
+                const res = await fetch("/api/materials/export", { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+                if (!res.ok) return;
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url; a.download = "materials-catalogue.csv"; a.click();
+                URL.revokeObjectURL(url);
+              }}
+              className="mt-2 inline-flex items-center gap-1 text-primary hover:underline"
+            >
               <Download className="w-3 h-3" /> Download existing catalogue as template
-            </a>
+            </button>
           </div>
           <div className="border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors" onClick={() => fileRef.current?.click()}>
             <Upload className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />

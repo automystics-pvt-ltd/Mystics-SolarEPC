@@ -32,7 +32,6 @@ export default function InvoiceDetail({ id }: { id: string }) {
   const qc = useQueryClient();
   const invId = Number(id);
   const { user: authUser } = useAuth();
-  const user = (() => { try { return JSON.parse(localStorage.getItem("mystics_user") ?? "{}"); } catch { return {}; } })();
   const { canApprove: isApprover, canEdit } = usePermissions("procurement");
 
   const { data: invoice, isPending, isError } = useGetProcInvoice(invId, { query: { enabled: !!invId, queryKey: getGetProcInvoiceQueryKey(invId) } });
@@ -67,7 +66,7 @@ export default function InvoiceDetail({ id }: { id: string }) {
     if (["approve", "reject", "approve-mismatch"].includes(action) && !remarks.trim()) {
       toast({ title: "Remarks required", variant: "destructive" }); return;
     }
-    const payload = { id: invId, data: { userName: user.name, userId: user.id, remarks, paymentReference: paymentRef, paymentMode } as any };
+    const payload = { id: invId, data: { userName: authUser?.name, userId: authUser?.id, remarks, paymentReference: paymentRef, paymentMode } as any };
     const handlers = {
       onSuccess: () => { invalidate(); setActionDialog(null); setRemarks(""); setPaymentRef(""); setPaymentMode(""); toast({ title: `Invoice ${action} successful` }); },
       onError: (e: any) => toast({ title: "Failed", description: e?.message, variant: "destructive" }),
@@ -94,7 +93,7 @@ export default function InvoiceDetail({ id }: { id: string }) {
   const canApprove = isApprover && inv.status === "PendingApproval";
   const canReject = isApprover && inv.status === "PendingApproval";
   const canMarkPaid = isApprover && inv.status === "Approved";
-  const hasMobileActions = canSubmit || canApprove || canReject || canMarkPaid;
+  const hasMobileActions = canApproveMismatch || canSubmit || canApprove || canReject || canMarkPaid;
 
   const desktopActions = (
     <div className="hidden lg:flex gap-2 flex-wrap print:hidden">
@@ -283,6 +282,16 @@ export default function InvoiceDetail({ id }: { id: string }) {
           <div className="mx-3 mb-2 bg-card border border-border rounded-2xl shadow-xl overflow-hidden">
             {/* Main actions */}
             <div className="flex divide-x divide-border">
+              {canApproveMismatch && (
+                <button
+                  type="button"
+                  onClick={() => setActionDialog("approve-mismatch")}
+                  className="flex-1 flex flex-col items-center justify-center gap-1.5 py-4 text-amber-600 hover:bg-amber-50 active:bg-amber-100 transition-colors"
+                >
+                  <AlertTriangle className="w-6 h-6" />
+                  <span className="text-[11px] font-bold">Approve Mismatch</span>
+                </button>
+              )}
               {canSubmit && (
                 <button
                   type="button"

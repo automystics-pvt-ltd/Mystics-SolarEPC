@@ -13,8 +13,12 @@ export const env = {
   /** true in production build */
   isProd: import.meta.env.PROD,
 
-  /** Base path of the ERP app e.g. '/erp' */
-  basePath: (import.meta.env.BASE_URL ?? '/').replace(/\/$/, ''),
+  /**
+   * Base path used by WouterRouter to strip the proxy prefix before matching routes.
+   * Set via VITE_ROUTER_BASE env var (see .env). Kept separate from Vite's BASE_URL
+   * so asset paths through the Replit proxy are unaffected.
+   */
+  basePath: (import.meta.env.VITE_ROUTER_BASE ?? import.meta.env.BASE_URL ?? '/').replace(/\/$/, ''),
 
   /** API base URL — always relative so it works behind the Replit proxy */
   apiBase: '/api',
