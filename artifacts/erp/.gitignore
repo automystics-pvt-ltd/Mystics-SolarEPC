@@ -1,0 +1,10 @@
+# build output
+dist/
+
+# Playwright auth state (regenerated at runtime by global-setup.ts)
+.auth/
+e2e/.auth/
+
+# Playwright test results and reports (generated artifacts)
+test-results/
+playwright-report/
