@@ -752,14 +752,18 @@ function CategoryManager({ categories }: { categories: Category[] }) {
       <div className="border border-border/50 rounded-xl overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-muted/30 border-b border-border/60">
-            <tr>{["Code", "Name", "Description"].map(h => <th key={h} className="text-left px-4 py-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">{h}</th>)}</tr>
+            <tr>
+              <th className="hidden sm:table-cell text-left px-4 py-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Code</th>
+              <th className="text-left px-4 py-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Name</th>
+              <th className="hidden sm:table-cell text-left px-4 py-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Description</th>
+            </tr>
           </thead>
           <tbody className="divide-y divide-border/30">
             {categories.map(c => (
               <tr key={c.id} className="hover:bg-muted/30 transition-colors">
-                <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground w-20">{c.code ?? "—"}</td>
+                <td className="hidden sm:table-cell px-4 py-2.5 font-mono text-xs text-muted-foreground w-20">{c.code ?? "—"}</td>
                 <td className="px-4 py-2.5 font-semibold text-foreground">{c.name}</td>
-                <td className="px-4 py-2.5 text-muted-foreground text-xs">{c.description ?? "—"}</td>
+                <td className="hidden sm:table-cell px-4 py-2.5 text-muted-foreground text-xs">{c.description ?? "—"}</td>
               </tr>
             ))}
             {categories.length === 0 && <tr><td colSpan={3} className="text-center py-8 text-muted-foreground text-sm">No categories yet</td></tr>}
