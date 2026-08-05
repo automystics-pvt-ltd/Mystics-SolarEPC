@@ -7,6 +7,7 @@ import {
   getGetLeadsQueryKey, getGetLeadsPipelineSummaryQueryKey, getGetQuotationsQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/components/ui/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@/lib/zodResolver";
 import { z } from "zod";
@@ -544,6 +545,7 @@ function EscalationsSection({ escalations, loading, search }: {
 /* ── Create Lead Dialog ──────────────────────────────────────────────────── */
 function CreateLeadDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const form = useForm<z.infer<typeof createLeadSchema>>({
     resolver: zodResolver(createLeadSchema),
     defaultValues: {
@@ -557,9 +559,11 @@ function CreateLeadDialog({ open, onClose }: { open: boolean; onClose: () => voi
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetLeadsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetLeadsPipelineSummaryQueryKey() });
+        toast({ title: "Lead created", description: "New lead added to your pipeline." });
         onClose();
         form.reset();
       },
+      onError: (e: any) => toast({ variant: "destructive", title: "Failed to create lead", description: e?.message }),
     },
   });
 

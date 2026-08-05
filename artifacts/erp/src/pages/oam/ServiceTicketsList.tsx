@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/components/ui/use-toast";
 import { Ticket, Plus, Clock, CheckCircle2, AlertTriangle, User } from "lucide-react";
 import { motion } from "framer-motion";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -45,6 +46,7 @@ export default function ServiceTicketsList() {
   const [resolveId, setResolveId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("");
   const qc = useQueryClient();
+  const { toast } = useToast();
 
   const queryParams = statusFilter ? { status: statusFilter } : {};
   const { data: tickets = [], isPending } = useGetServiceTickets(queryParams, { query: { queryKey: getGetServiceTicketsQueryKey(queryParams) } });
@@ -55,14 +57,16 @@ export default function ServiceTicketsList() {
 
   const onSubmit = (d: any) => {
     createMut.mutate({ data: { ...d, projectId: Number(d.projectId), slaHours: d.slaHours ? Number(d.slaHours) : 48 } }, {
-      onSuccess: () => { qc.invalidateQueries({ queryKey: getGetServiceTicketsQueryKey({}) }); setOpen(false); reset(); },
+      onSuccess: () => { qc.invalidateQueries({ queryKey: getGetServiceTicketsQueryKey({}) }); toast({ title: "Ticket created" }); setOpen(false); reset(); },
+      onError: (e: any) => toast({ variant: "destructive", title: "Failed to create ticket", description: e?.message }),
     });
   };
 
   const onResolve = (d: any) => {
     if (!resolveId) return;
     resolveMut.mutate({ id: resolveId, data: d }, {
-      onSuccess: () => { qc.invalidateQueries({ queryKey: getGetServiceTicketsQueryKey({}) }); setResolveId(null); rReset(); },
+      onSuccess: () => { qc.invalidateQueries({ queryKey: getGetServiceTicketsQueryKey({}) }); toast({ title: "Ticket resolved" }); setResolveId(null); rReset(); },
+      onError: (e: any) => toast({ variant: "destructive", title: "Failed to resolve ticket", description: e?.message }),
     });
   };
 

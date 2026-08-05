@@ -110,6 +110,8 @@ export function WarehouseDetail({ id }: { id: string }) {
     mutationFn: (d: any) => apiPatch(`/inventory/warehouses-enhanced/${whId}`, d),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["warehouses-enhanced"] });
+      qc.invalidateQueries({ queryKey: ["warehouses"] });
+      qc.invalidateQueries({ queryKey: ["warehouse-detail", whId] });
       setEditOpen(false);
       toast({ title: "Warehouse details updated" });
     },

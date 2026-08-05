@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useQueryClient } from "@tanstack/react-query";
 import { getGetDesignDocumentsQueryKey } from "@workspace/api-client-react";
+import { useToast } from "@/components/ui/use-toast";
 import { FileText, Plus, CheckCircle2, Clock, XCircle, Layers } from "lucide-react";
 import { motion } from "framer-motion";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -50,6 +51,7 @@ export default function DesignDocsList() {
   const [projectIdFilter, setProjectIdFilter] = useState("");
   const [, setLocation] = useLocation();
   const qc = useQueryClient();
+  const { toast } = useToast();
 
   const queryParams = projectIdFilter ? { projectId: Number(projectIdFilter) } : undefined;
   const { data: docs = [], isPending } = useGetDesignDocuments(queryParams);
@@ -61,9 +63,11 @@ export default function DesignDocsList() {
     createMut.mutate({ data: { ...d, projectId: Number(d.projectId) } }, {
       onSuccess: () => {
         qc.invalidateQueries({ queryKey: getGetDesignDocumentsQueryKey() });
+        toast({ title: "Design document created" });
         setOpen(false);
         reset();
       },
+      onError: (e: any) => toast({ variant: "destructive", title: "Failed to create document", description: e?.message }),
     });
   };
 

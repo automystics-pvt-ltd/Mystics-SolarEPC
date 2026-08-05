@@ -3,7 +3,7 @@ import {
   useGetQuotation, useCreateQuotation, useUpdateQuotation,
   useApproveQuotation, useLogClientPO,
   useGetLeads, useGetMaterials, useCreateMaterial,
-  getGetQuotationQueryKey, getGetMaterialsQueryKey,
+  getGetQuotationQueryKey, getGetQuotationsQueryKey, getGetMaterialsQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { apiPost } from "@/lib/fetch";
@@ -170,22 +170,41 @@ export function QuotationDetail({ id }: { id?: string }) {
 
   // ── mutations ──
   const createMut = useCreateQuotation({
-    mutation: { onSuccess: (d) => { toast({ title: "Quotation created" }); navigate(`/QuotationDetail/quotations/${d.id}`); } },
+    mutation: {
+      onSuccess: (d) => {
+        queryClient.invalidateQueries({ queryKey: getGetQuotationsQueryKey({}) });
+        toast({ title: "Quotation created" });
+        navigate(`/crm/quotations/${d.id}`);
+      },
+      onError: (e: any) => toast({ variant: "destructive", title: "Failed to create quotation", description: e?.message }),
+    },
   });
   const updateMut = useUpdateQuotation({
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetQuotationQueryKey(quoteId) });
+        queryClient.invalidateQueries({ queryKey: getGetQuotationsQueryKey({}) });
         setIsEditing(false);
         toast({ title: "Quotation saved" });
       },
+      onError: (e: any) => toast({ variant: "destructive", title: "Failed to save quotation", description: e?.message }),
     },
   });
   const approveMut = useApproveQuotation({
-    mutation: { onSuccess: () => { queryClient.invalidateQueries({ queryKey: getGetQuotationQueryKey(quoteId) }); toast({ title: "Quotation approved" }); } },
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetQuotationQueryKey(quoteId) });
+        queryClient.invalidateQueries({ queryKey: getGetQuotationsQueryKey({}) });
+        toast({ title: "Quotation approved" });
+      },
+      onError: (e: any) => toast({ variant: "destructive", title: "Failed to approve quotation", description: e?.message }),
+    },
   });
   const logPoMut = useLogClientPO({
-    mutation: { onSuccess: () => { toast({ title: "Client PO logged — Project created!" }); navigate("/QuotationDetail/client-pos"); } },
+    mutation: {
+      onSuccess: () => { toast({ title: "Client PO logged — Project created!" }); navigate("/crm/client-pos"); },
+      onError: (e: any) => toast({ variant: "destructive", title: "Failed to log client PO", description: e?.message }),
+    },
   });
   const createMatMut = useCreateMaterial({
     mutation: {
@@ -325,7 +344,7 @@ export function QuotationDetail({ id }: { id?: string }) {
       <PageHeader
         title={isNew ? "New Quotation" : `QTN-${quoteId.toString().padStart(4, "0")}`}
         subtitle={!isNew ? `Version ${quote?.version} · Lead: ${(leads as any[]).find(l => l.id === quote?.leadId)?.companyName || `LD-${String(quote?.leadId).padStart(4, "0")}`}` : undefined}
-        backHref="/QuotationDetail/quotations"
+        backHref="/crm/quotations"
         badge={!isNew && quote?.approvalStatus ? <StatusBadge status={quote.approvalStatus} /> : undefined}
         actions={headerActions}
       />

@@ -5,6 +5,8 @@ import {
   useCreateProject,
   useGetPortfolioSummary,
   getGetProjectsQueryKey,
+  getGetDashboardQueryKey,
+  getGetCombinedDashboardQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiGet } from "@/lib/fetch";
@@ -39,6 +41,7 @@ import {
 } from "lucide-react";
 import { CanCreate } from "@/lib/permissions";
 import { useAuth } from "@/lib/auth";
+import { useToast } from "@/components/ui/use-toast";
 import { EmptyState, SkeletonCards, PMChip, ExportButton } from "@/components/shared";
 
 // ── PM candidates type ────────────────────────────────────────────────────────
@@ -351,13 +354,18 @@ function CreateProjectDialog({
     defaultValues: { name: "", siteLocation: "", startDate: "", plannedEnd: "", pmOwnerId: undefined },
   });
 
+  const { toast } = useToast();
   const createMutation = useCreateProject({
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetProjectsQueryKey({}) });
+        queryClient.invalidateQueries({ queryKey: getGetDashboardQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetCombinedDashboardQueryKey() });
+        toast({ title: "Project created" });
         onOpenChange(false);
         form.reset();
       },
+      onError: (e: any) => toast({ variant: "destructive", title: "Failed to create project", description: e?.message }),
     },
   });
 

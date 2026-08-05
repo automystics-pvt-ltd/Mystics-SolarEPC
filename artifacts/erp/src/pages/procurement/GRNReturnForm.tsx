@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +20,7 @@ export default function GRNReturnForm() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
+  const qc = useQueryClient();
 
   const [step, setStep] = useState<Step>("select-grn");
   const [selectedGrn, setSelectedGrn] = useState<any>(null);
@@ -50,6 +51,8 @@ export default function GRNReturnForm() {
   const createMutation = useMutation({
     mutationFn: (body: any) => apiPost<any>("/grn-returns", body),
     onSuccess: (data: any) => {
+      qc.invalidateQueries({ queryKey: ["grn-returns"] });
+      qc.invalidateQueries({ queryKey: ["proc-grns-all"] });
       toast({ title: "GRN Return created", description: `${data.returnNumber} created successfully` });
       setLocation("/procurement/grn-returns");
     },

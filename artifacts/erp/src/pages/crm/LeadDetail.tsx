@@ -1,5 +1,8 @@
 import { useGetLead, useUpdateLead, useGetQuotations } from "@workspace/api-client-react";
-import { getGetLeadQueryKey, getGetQuotationsQueryKey } from "@workspace/api-client-react";
+import {
+  getGetLeadQueryKey, getGetLeadsQueryKey, getGetLeadsPipelineSummaryQueryKey,
+  getGetQuotationsQueryKey,
+} from "@workspace/api-client-react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -46,9 +49,12 @@ export function LeadDetail({ id }: { id: string }) {
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetLeadQueryKey(leadId) });
+        queryClient.invalidateQueries({ queryKey: getGetLeadsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetLeadsPipelineSummaryQueryKey() });
         setIsEditing(false);
         toast({ title: "Lead updated successfully" });
-      }
+      },
+      onError: (e: any) => toast({ variant: "destructive", title: "Failed to update lead", description: e?.message }),
     }
   });
 

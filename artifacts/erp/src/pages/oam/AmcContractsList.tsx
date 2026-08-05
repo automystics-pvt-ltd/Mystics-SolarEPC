@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/components/ui/use-toast";
 import { FileCheck, Plus, IndianRupee } from "lucide-react";
 import { CanCreate } from "@/lib/permissions";
 import { motion } from "framer-motion";
@@ -38,13 +39,15 @@ type AmcContract = {
 export default function AmcContractsList() {
   const [open, setOpen] = useState(false);
   const qc = useQueryClient();
+  const { toast } = useToast();
   const { data: contracts = [], isPending } = useGetAmcContracts({}, { query: { queryKey: getGetAmcContractsQueryKey({}) } });
   const createMut = useCreateAmcContract();
   const { register, handleSubmit, setValue, reset } = useForm<any>();
 
   const onSubmit = (d: any) => {
     createMut.mutate({ data: { ...d, projectId: Number(d.projectId), annualValue: Number(d.annualValue) } }, {
-      onSuccess: () => { qc.invalidateQueries({ queryKey: getGetAmcContractsQueryKey({}) }); setOpen(false); reset(); },
+      onSuccess: () => { qc.invalidateQueries({ queryKey: getGetAmcContractsQueryKey({}) }); toast({ title: "AMC contract created" }); setOpen(false); reset(); },
+      onError: (e: any) => toast({ variant: "destructive", title: "Failed to create contract", description: e?.message }),
     });
   };
 
