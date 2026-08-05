@@ -47,7 +47,14 @@ export function PlatformAdminRoot({ section: sectionProp }: PlatformAdminRootPro
     );
   }
 
-  if (!user || !ALLOWED_ROLES.has(user.role)) {
+  // Not logged in at all → redirect to login
+  if (!user) {
+    navigate("/login");
+    return null;
+  }
+
+  // Logged in but wrong role → show access-denied screen
+  if (!ALLOWED_ROLES.has(user.role)) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-zinc-950 gap-4 text-center px-4">
         <div className="w-14 h-14 rounded-2xl bg-red-900/30 flex items-center justify-center">
@@ -58,9 +65,7 @@ export function PlatformAdminRoot({ section: sectionProp }: PlatformAdminRootPro
           <p className="text-sm text-zinc-500 mt-1">
             Platform Admin is only accessible to <span className="text-zinc-300">super_admin</span> and <span className="text-zinc-300">admin</span> accounts.
           </p>
-          {user && (
-            <p className="text-xs text-zinc-600 mt-2">Signed in as: {user.email} ({user.role})</p>
-          )}
+          <p className="text-xs text-zinc-600 mt-2">Signed in as: {user.email} ({user.role})</p>
         </div>
         <Button
           onClick={() => navigate("/dashboard")}

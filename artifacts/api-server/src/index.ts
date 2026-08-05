@@ -1,6 +1,7 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 import { runAuditLogsMigration } from "./migrations/create_audit_logs";
+import { runPlatformAdminMigration } from "./migrations/create_platform_admin";
 import {
   db, approvalRequestsTable, approvalRequestStepsTable, approvalActionsTable,
   approvalWorkflowStepsTable, notificationsTable, usersTable,
@@ -23,6 +24,7 @@ if (Number.isNaN(port) || port <= 0) {
 
 // Run idempotent migrations on every boot
 void runAuditLogsMigration();
+void runPlatformAdminMigration();
 
 app.listen(port, (err) => {
   if (err) {

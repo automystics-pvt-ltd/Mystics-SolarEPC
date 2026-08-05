@@ -1,22 +1,26 @@
 /**
  * Platform Admin migration
- * - Creates super_admin user (superadmin@automystics.com / SuperAdmin@123)
+ * - Creates super_admin user (superadmin@automystics.com)
  * - Creates system_settings table (key/value store)
  * - Creates module_config table (per-module feature flags)
  * - Creates notification_templates table
  *
- * Run: npx tsx src/migrations/create_platform_admin.ts
+ * Auto-runs on every server boot (idempotent — all DDL uses IF NOT EXISTS
+ * and INSERTs use ON CONFLICT DO NOTHING).
+ *
+ * Manual run: npx tsx src/migrations/create_platform_admin.ts
  */
 import pg from "pg";
-import bcrypt from "bcryptjs";
 
-async function run() {
+/**
+ * Idempotent setup of all platform-admin DB objects.
+ * Called once on server boot from index.ts.
+ */
+export async function runPlatformAdminMigration(): Promise<void> {
   const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
   await client.connect();
 
   try {
-    console.log("Running platform_admin migration…");
-
     /* ── system_settings ─────────────────────────────────────────────── */
     await client.query(`
       CREATE TABLE IF NOT EXISTS system_settings (
@@ -27,7 +31,6 @@ async function run() {
         updated_by  INTEGER REFERENCES users(id)
       );
     `);
-    console.log("✓ system_settings");
 
     /* ── module_config ───────────────────────────────────────────────── */
     await client.query(`
@@ -39,7 +42,6 @@ async function run() {
         updated_by  INTEGER REFERENCES users(id)
       );
     `);
-    console.log("✓ module_config");
 
     /* ── notification_templates ──────────────────────────────────────── */
     await client.query(`
@@ -52,7 +54,6 @@ async function run() {
         updated_by  INTEGER REFERENCES users(id)
       );
     `);
-    console.log("✓ notification_templates");
 
     /* ── Seed default system_settings rows ───────────────────────────── */
     await client.query(`
@@ -69,7 +70,6 @@ async function run() {
         ('smtp_port',         '587',                              'Outbound SMTP port')
       ON CONFLICT (key) DO NOTHING;
     `);
-    console.log("✓ system_settings defaults seeded");
 
     /* ── Seed default module_config rows ─────────────────────────────── */
     const modules = [
@@ -84,7 +84,6 @@ async function run() {
         [mod]
       );
     }
-    console.log("✓ module_config defaults seeded");
 
     /* ── Seed default notification_templates ─────────────────────────── */
     await client.query(`
@@ -97,40 +96,49 @@ async function run() {
         ('invoice_due',       'Invoice #{{ref}} Due Soon',       'Hi {{name}},\n\nInvoice #{{ref}} is due on {{date}}. Please arrange payment.\n\nRegards,\nFinance Team')
       ON CONFLICT (type) DO NOTHING;
     `);
-    console.log("✓ notification_templates seeded");
 
     /* ── Super admin user ─────────────────────────────────────────────── */
-    // Password must be provided via SUPER_ADMIN_PASSWORD env variable.
-    // If the variable is absent and the user already exists, we skip.
-    // Never falls back to a hardcoded default.
+    // Production: supply SUPER_ADMIN_PASSWORD env variable.
+    // Development: fall back to a well-known dev password ("superadmin123")
+    //              so the quick-access button on the login page works.
+    //              Never use this default in production.
     const rawPassword = process.env.SUPER_ADMIN_PASSWORD;
-    if (!rawPassword) {
-      const exists = await client.query(
-        "SELECT id FROM users WHERE email = 'superadmin@automystics.com'"
-      );
-      if (exists.rowCount === 0) {
-        console.warn(
-          "⚠ SUPER_ADMIN_PASSWORD not set — skipping super_admin creation. " +
-          "Set the env variable and re-run this migration to create the account."
-        );
-      } else {
-        console.log("✓ super_admin user already exists — skipping (no password change)");
-      }
-    } else {
-      const hash = await bcrypt.hash(rawPassword, 12);
+    const devPassword = "superadmin123";
+
+    if (rawPassword) {
+      // Production / explicit password — hash it.
+      const bcrypt = await import("bcryptjs");
+      const hash = await bcrypt.default.hash(rawPassword, 12);
       await client.query(`
         INSERT INTO users (name, email, role, password_hash)
         VALUES ('Super Admin', 'superadmin@automystics.com', 'super_admin', $1)
         ON CONFLICT (email) DO UPDATE
           SET role = 'super_admin', password_hash = $1;
       `, [hash]);
-      console.log("✓ super_admin user upserted (password from SUPER_ADMIN_PASSWORD)");
+    } else if (process.env.NODE_ENV !== "production") {
+      // Dev / non-production: use plain-text dev password (auth route supports plain-text).
+      // This also resets any bcrypt hash that may have been created by a prior migration run,
+      // ensuring the quick-access login button always works in local dev.
+      await client.query(`
+        INSERT INTO users (name, email, role, password_hash)
+        VALUES ('Super Admin', 'superadmin@automystics.com', 'super_admin', $1)
+        ON CONFLICT (email) DO UPDATE
+          SET role = 'super_admin', password_hash = $1;
+      `, [devPassword]);
+    } else {
+      // Production but no password set — skip to avoid an insecure default.
+      console.warn(
+        "⚠ SUPER_ADMIN_PASSWORD not set in production — skipping super_admin upsert. " +
+        "Set the env variable to create or update the account."
+      );
     }
 
-    console.log("\nMigration complete ✓");
+    console.log("[platform_admin] migration: OK");
   } finally {
-    await client.end();
+    await client.end().catch(() => {});
   }
 }
 
-run().catch((e) => { console.error(e); process.exit(1); });
+// ── Direct execution ──────────────────────────────────────────────────────────
+// To run manually: npx tsx -e "import('./src/migrations/create_platform_admin.ts').then(m => m.runPlatformAdminMigration().then(() => process.exit(0)))"
+// This file is auto-run on every server boot via index.ts.

@@ -149,6 +149,7 @@ export function Login() {
             <p className="text-xs font-medium text-gray-400 mb-3">Quick access (Demo only)</p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[
+                { label: "Super Admin", email: "superadmin@automystics.com", pw: "superadmin123" },
                 { label: "Admin", email: "admin@automystics.com", pw: "admin123" },
                 { label: "Sales", email: "meera@automystics.com", pw: "sales123" },
                 { label: "PM", email: "vikram@automystics.com", pw: "pm123" },
